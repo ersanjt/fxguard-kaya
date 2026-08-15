@@ -12,8 +12,9 @@ kayaCRM-kaya/
 ├── backend/          ← API + داشبورد وب + login (قلب محصول)
 ├── gateway/          ← اتصال WhatsApp Web (QR) + ارسال/دریافت
 ├── frontend/         ← داشبورد Vite (آینده؛ خروجی در backend/public/js/app/)
-├── android-app/      ← اپ native (سورس فعلاً خارج repo — README داخل پوشه)
-├── ios-app/          ← اپ iOS (مشابه اندروید)
+├── android-app/      ← اپ کارکنان اندروید (Kotlin + Compose)
+├── ios-app/          ← اپ کارکنان iOS (SwiftUI)
+├── mobile-shared/    ← توکن‌های UI و قرارداد API مشترک
 ├── docs/             ← مستندات فنی، deploy، بازاریابی
 ├── cpanel-landing/   ← لندینگ برای cPanel
 ├── backups/          ← بک‌آپ (محلی)

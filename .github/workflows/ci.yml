@@ -71,4 +71,26 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-  # android-app از مخزن حذف شده — اگر برگردد این job را دوباره فعال کنید.
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - name: Ensure Gradle wrapper
+        working-directory: android-app
+        run: |
+          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+            curl -fsSL -o gradle/wrapper/gradle-wrapper.jar \
+              https://raw.githubusercontent.com/gradle/gradle/v8.9.0/gradle/wrapper/gradle-wrapper.jar
+          fi
+          chmod +x gradlew
+      - name: Assemble debug
+        working-directory: android-app
+        run: ./gradlew :app:assembleDebug --no-daemon

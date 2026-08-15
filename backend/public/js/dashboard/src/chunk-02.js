@@ -1373,7 +1373,7 @@
                 })).then(function() {
                     unread.forEach(function(a) { a.read = true; });
                     renderAnnouncementsList();
-                    apiFetch('/api/analytics/dashboard').then(function(r) {
+                    fetchDashboardStats().then(function(r) {
                         if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data);
                     }).catch(function(){});
                 });
@@ -1419,7 +1419,7 @@
             const needRead = !a || !a.read;
             if (needRead) {
                 await apiFetch('/api/announcements/' + id + '/read', { method: 'POST' });
-                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             }
             if (!a) {
                 const res = await apiFetch('/api/announcements/for-me');
@@ -1516,7 +1516,7 @@
             const id = window._lastImportantAnnouncementId;
             if (id) {
                 window._lastImportantAnnouncementId = null;
-                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             }
             const m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
         }

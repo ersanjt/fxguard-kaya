@@ -130,6 +130,33 @@
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
             }
         }).catch(function(){});
+        let _dashboardStatsInflight = null;
+        let _dashboardStatsCache = null;
+        let _dashboardStatsCacheAt = 0;
+        function fetchDashboardStats(opts) {
+            const force = !!(opts && opts.force);
+            const now = Date.now();
+            if (!force && _dashboardStatsCache && (now - _dashboardStatsCacheAt) < 8000) {
+                return Promise.resolve(_dashboardStatsCache);
+            }
+            if (_dashboardStatsInflight) return _dashboardStatsInflight;
+            const run = async function () {
+                var last = null;
+                for (var attempt = 0; attempt < 3; attempt++) {
+                    last = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
+                    if (last && last.ok) {
+                        _dashboardStatsCache = last;
+                        _dashboardStatsCacheAt = Date.now();
+                        return last;
+                    }
+                    if (!last || last.status !== 429 || attempt === 2) return last;
+                    await new Promise(function (resolve) { setTimeout(resolve, 1200 * (attempt + 1)); });
+                }
+                return last;
+            };
+            _dashboardStatsInflight = run().finally(function () { _dashboardStatsInflight = null; });
+            return _dashboardStatsInflight;
+        }
         function updateNavBadges(stats) {
             if (stats) {
                 window.navBadgeCounts.conversations = (stats.unreadConversations || 0);
@@ -1980,7 +2007,7 @@
                 loadStaffActivity();
             }
             if (typeof updateNavBadges === 'function') {
-                apiFetch('/api/analytics/dashboard').then(function(r) {
+                fetchDashboardStats().then(function(r) {
                     if (r.ok && r.data) updateNavBadges(r.data);
                 }).catch(function(){});
             }
@@ -2104,7 +2131,8 @@
                         }
                     });
                     socket.on('call_offer', function(data) {
-                        if (internalCallIsJoining) {
+                        if (!data) return;
+                        if (internalCallIsJoining || internalCallLocalStream) {
                             handleCallOfferAsJoiner(data);
                             return;
                         }
@@ -2115,50 +2143,43 @@
                         showInternalCallModal(data.type === 'video' ? t('incoming_video_call') : t('incoming_voice_call'), true);
                     });
                     socket.on('call_answer', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        const pc = internalCallPeers[data.fromUserId];
+                        if (!data || !isSameCallThread(data.threadId)) return;
+                        const fromId = peerKey(data.fromUserId);
+                        const pc = internalCallPeers[fromId];
                         if (pc) {
                             pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function() {
-                                const queue = internalCallIceQueue[data.fromUserId] || [];
-                                internalCallIceQueue[data.fromUserId] = [];
-                                queue.forEach(function(c) {
-                                    if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(e) { console.warn('addIce:', e); });
-                                });
+                                flushIceQueue(fromId, pc);
+                                markInternalCallConnected();
                             }).catch(function(e) { console.warn('setRemoteDesc:', e); });
                         }
                     });
                     socket.on('call_ice', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        if (!data.candidate) return;
-                        const pc = internalCallPeers[data.fromUserId];
-                        if (pc) {
-                            if (pc.remoteDescription) {
-                                pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
-                            } else {
-                                if (!internalCallIceQueue[data.fromUserId]) internalCallIceQueue[data.fromUserId] = [];
-                                internalCallIceQueue[data.fromUserId].push(data.candidate);
-                            }
+                        if (!data || !data.candidate) return;
+                        if (!isSameCallThread(data.threadId) && !internalCallPendingOffer && !internalCallPendingInvite) return;
+                        const fromId = peerKey(data.fromUserId);
+                        const pc = internalCallPeers[fromId];
+                        if (pc && pc.remoteDescription) {
+                            pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
+                        } else {
+                            enqueueIceCandidate(fromId, data.candidate);
                         }
                     });
                     socket.on('call_participant_joined', function(data) {
-                        if (data.threadId !== currentInternalThreadId || !internalCallLocalStream) return;
-                        const newUserId = data.userId;
-                        if (internalCallPeers[newUserId]) return;
-                        const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                        internalCallPeers[newUserId] = pc;
-                        attachPeerConnectionStateHandlers(pc, newUserId);
-                        internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                        pc.onicecandidate = function(e) { const sk = getSocket(); if (e.candidate && sk) sk.emit('call_ice', { toUserId: newUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                        pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(newUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                        if (!data || !isSameCallThread(data.threadId) || !internalCallLocalStream) return;
+                        const newUserId = peerKey(data.userId);
+                        if (!newUserId || internalCallPeers[newUserId]) return;
+                        const pc = createCallPeerConnection(newUserId);
                         pc.createOffer().then(function(offer) { return pc.setLocalDescription(offer).then(function() { return offer; }); }).then(function(offer) {
                             const sk = getSocket(); if (sk) sk.emit('call_offer', { toUserId: newUserId, threadId: currentInternalThreadId, type: internalCallType, sdp: offer });
                         }).catch(function(err) { console.warn('createOffer for new participant:', err); });
                     });
                     socket.on('call_participant_left', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        const pc = internalCallPeers[data.userId];
-                        if (pc) { pc.close(); delete internalCallPeers[data.userId]; }
-                        removeRemoteVideoEl(data.userId);
+                        if (!data || !isSameCallThread(data.threadId)) return;
+                        const leftId = peerKey(data.userId);
+                        const pc = internalCallPeers[leftId];
+                        if (pc) { pc.close(); delete internalCallPeers[leftId]; }
+                        removeRemoteVideoEl(leftId);
+                        removeRemoteAudioEl(leftId);
                         const addBtn = document.getElementById('internalCallAddBtn');
                         if (addBtn) addBtn.style.display = (Object.keys(internalCallPeers).length > 0) ? 'flex' : 'none';
                         if (Object.keys(internalCallPeers).length === 0) hideInternalCallModal();

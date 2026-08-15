@@ -134,12 +134,14 @@ async function restoreLegacyCrmVisibility({ reason } = {}) {
 }
 
 /**
- * چت‌های روی لیست فعلی Gateway را دوباره باز نمی‌کند.
- * فقط مکالمات واتساپیِ خارج از آن لیست را آرشیو/محدود می‌کند.
+ * چت‌های روی لیست فعلی Gateway را در مکالمات فعال باز می‌کند.
+ * مکالمات واتساپیِ خارج از آن لیست (شمارهٔ قبلی) آرشیو/محدود می‌مانند.
+ * اگر لیست ناقص باشد (مثلاً فقط گروه)، بقیه را آرشیو نکن.
  */
-async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
+async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opts = {}) {
     const gw = normalizeLinkedNumber(gatewayNumber);
     const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
+    const archiveMissing = opts.archiveMissing !== false;
 
     // بدون لیست واقعی واتساپ، هیچ‌چیز را آرشیو نکن (جلوگیری از «همه آرشیو / هیچ‌کدام»)
     if (ids.length === 0) {
@@ -178,6 +180,7 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     const openIds = [];
     const archiveIds = [];
     const restrictCust = new Set();
+    const unrestrictCust = new Set();
 
     for (const conv of convs) {
         const phone = String(conv.customer?.phone || '');
@@ -187,9 +190,15 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
         const onCurrent = variants.some((v) => allowed.has(String(v).toLowerCase()));
 
         if (onCurrent) {
-            // تاریخچهٔ واتساپ شمارهٔ فعلی را دوباره باز نکن — فقط پیام زنده لیست عادی می‌سازد
+            if (conv.status === 'archived' || conv.isHiddenFromStaff) {
+                openIds.push(conv.id);
+            }
+            if (conv.customer && conv.customer.isRestrictedFromStaff) {
+                unrestrictCust.add(conv.customer.id);
+            }
             continue;
         }
+        if (!archiveMissing) continue;
         if (conv.status !== 'archived' || !conv.isHiddenFromStaff) {
             archiveIds.push(conv.id);
         }
@@ -222,19 +231,23 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     if (restrictCust.size) {
         await chunked(Customer, { isRestrictedFromStaff: true }, [...restrictCust]);
     }
+    if (unrestrictCust.size) {
+        await chunked(Customer, { isRestrictedFromStaff: false }, [...unrestrictCust]);
+    }
 
     logger.info('Applied visibility for current Gateway chats', {
         gatewayNumber: gw || null,
         allowedCount: ids.length,
-        opened: 0,
+        opened: openIds.length,
         archived: archiveIds.length,
-        unrestricted: 0,
+        unrestricted: unrestrictCust.size,
         restricted: restrictCust.size,
+        archiveMissing,
     });
     return {
-        opened: 0,
+        opened: openIds.length,
         archived: archiveIds.length,
-        unrestricted: 0,
+        unrestricted: unrestrictCust.size,
         restricted: restrictCust.size,
         allowedCount: ids.length,
     };

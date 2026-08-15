@@ -57,6 +57,7 @@
                 <div id="internalCallStatus" class="internal-call-status"></div>
                 <div id="internalCallDuration" class="internal-call-duration" style="display:none;"></div>
                 <div id="internalCallConnectionStatus" class="internal-call-connection-status" style="display:none;"></div>
+                <div id="internalCallRemoteAudioSink" class="internal-call-audio-sink" aria-hidden="true"></div>
                 <div id="internalCallVoicePlaceholder" class="internal-call-voice-placeholder" style="display:none;">
                     <div class="internal-call-voice-avatar" id="internalCallVoiceAvatar"></div>
                     <span class="internal-call-voice-name" id="internalCallVoiceName"></span>
@@ -512,11 +513,11 @@
         </div>
     </div>
     <!-- مودال ارسال انبوه -->
-    <div id="modalBulkSend" class="modal-overlay" style="display:none;">
-        <div class="modal-box" style="max-width:520px;">
-            <div class="modal-header"><h3 data-i18n="bulk_send">ارسال انبوه</h3><button type="button" class="modal-close" onclick="closeBulkSendModal()">&times;</button></div>
+    <div id="modalBulkSend" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="bulkSendTitle">
+        <div class="modal-box bulk-send-modal" style="max-width:520px;">
+            <div class="modal-header"><h3 id="bulkSendTitle" data-i18n="bulk_send">ارسال انبوه</h3><button type="button" class="modal-close" onclick="closeBulkSendModal()" aria-label="Close">&times;</button></div>
             <div class="modal-body">
-                <p class="bulk-hint" data-i18n="bulk_send_hint">مشتریان را از لیست انتخاب کنید یا «همه فیلترشده» را بزنید. متغیرها: {name}, {phone}, {date}, {time}</p>
+                <p class="bulk-hint" data-i18n="bulk_send_hint">مشتریان را از همین فهرست انتخاب کنید یا «همه فیلترشده» را بزنید. سقف هر ارسال ۱۰۰ نفر است.</p>
                 <div class="bulk-select-actions">
                     <button type="button" class="btn-secondary btn-sm" onclick="bulkSelectFiltered()" data-i18n="bulk_select_filtered">انتخاب همه فیلترشده</button>
                     <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن انتخاب</button>
@@ -524,15 +525,27 @@
                 <span class="bulk-selected-count" id="bulkSelectedCount">۰ مشتری انتخاب شده</span>
                 <label class="bulk-check-label"><input type="checkbox" id="bulkUseCloudTemplate" checked> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta (Cloud API — امن‌تر)</span></label>
                 <div id="bulkTemplateFields" class="bulk-template-fields">
+                    <p class="bulk-hint bulk-hint-sm" data-i18n="bulk_send_hint_template">قالب تأییدشدهٔ Meta ارسال می‌شود، نه متن آزاد. زبان باید دقیقاً با Business Manager یکی باشد.</p>
                     <label data-i18n="whatsapp_cloud_bulk_template">نام قالب Meta</label>
-                    <input type="text" id="bulkTemplateName" class="whatsapp-input" placeholder="hello_world" dir="ltr">
+                    <input type="text" id="bulkTemplateName" class="whatsapp-input" placeholder="hello_world" dir="ltr" autocomplete="off">
                     <label data-i18n="whatsapp_cloud_bulk_template_lang">زبان قالب</label>
-                    <input type="text" id="bulkTemplateLanguage" class="whatsapp-input" value="fa" dir="ltr" style="width:120px;">
+                    <input type="text" id="bulkTemplateLanguage" class="whatsapp-input" value="fa" dir="ltr" autocomplete="off">
+                    <p class="bulk-hint bulk-hint-sm" data-i18n="bulk_lang_hint">مثلاً fa یا en_US — باید با زبان قالب در Meta یکی باشد.</p>
+                    <label data-i18n="bulk_template_param">پارامتر قالب (اختیاری — {{1}})</label>
+                    <input type="text" id="bulkTemplateParam" class="whatsapp-input" data-i18n-ph="bulk_template_param_ph" placeholder="مقدار {{1}}">
+                    <p class="bulk-hint bulk-hint-sm" data-i18n="bulk_template_param_hint">فقط اگر قالب متغیر {{1}} دارد پر کنید؛ وگرنه خالی بگذارید. متغیرها: {name}, {phone}, {email}, {date}, {time}</p>
                 </div>
-                <label data-i18n="bulk_message">متن پیام</label>
-                <textarea id="bulkMessageContent" rows="5" data-i18n-ph="bulk_message_ph" placeholder="سلام {name} عزیز، ..."></textarea>
-                <label data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>
-                <input type="number" id="bulkDelaySec" min="2" max="60" value="5" style="width:80px;">
+                <div id="bulkFreeTextFields" class="bulk-freetext-fields" hidden>
+                    <p class="bulk-hint bulk-hint-sm" data-i18n="bulk_send_hint_text">این متن برای هر مشتری ارسال می‌شود. متغیرها: {name}, {phone}, {email}, {date}, {time}</p>
+                    <label for="bulkMessageContent" data-i18n="bulk_message">متن پیام</label>
+                    <textarea id="bulkMessageContent" rows="5" data-i18n-ph="bulk_message_ph" placeholder="سلام {name} عزیز، ..."></textarea>
+                </div>
+                <label for="bulkDelaySec" data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>
+                <input type="number" id="bulkDelaySec" min="2" max="60" value="5">
+                <div id="bulkJobProgress" class="bulk-job-progress" hidden>
+                    <div class="bulk-job-progress-track" aria-hidden="true"><span id="bulkJobProgressFill" class="bulk-job-progress-fill"></span></div>
+                    <p id="bulkJobProgressText" class="bulk-job-progress-text"></p>
+                </div>
             </div>
             <button type="button" class="btn-primary" id="bulkSendSubmitBtn" onclick="submitBulkSend()" data-i18n="bulk_send_submit">شروع ارسال</button>
         </div>

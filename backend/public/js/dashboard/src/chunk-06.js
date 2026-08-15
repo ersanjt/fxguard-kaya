@@ -2437,7 +2437,7 @@
                 if (btn) btn.setAttribute('aria-expanded', 'false');
                 if (btnMobile) btnMobile.setAttribute('aria-expanded', 'false');
                 if (_notifyCloseOnOutside) { document.removeEventListener('click', _notifyCloseOnOutside); _notifyCloseOnOutside = null; }
-                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                fetchDashboardStats().then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             };
             window.loadNotifyDropdownData = async function() {
                 const perms = (currentUser && currentUser.permissions) || {};

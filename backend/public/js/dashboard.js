@@ -2007,7 +2007,7 @@
                 loadStaffActivity();
             }
             if (typeof updateNavBadges === 'function') {
-                apiFetch('/api/analytics/dashboard').then(function(r) {
+                fetchDashboardStats().then(function(r) {
                     if (r.ok && r.data) updateNavBadges(r.data);
                 }).catch(function(){});
             }
@@ -2261,7 +2261,7 @@
             if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             navBadgeRefreshInterval = setInterval(function() {
                 if (!token) return;
-                apiFetch('/api/analytics/dashboard').then(function(res) {
+                fetchDashboardStats().then(function(res) {
                     if (res.ok && res.data) updateNavBadges(res.data);
                 }).catch(function(){});
                 if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
@@ -3260,7 +3260,7 @@
             if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
-                res = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
+                res = await fetchDashboardStats({ force: !!_attempt });
             } catch (e) {
                 if (seq !== _loadDashboardSeq) return;
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + t('loading_err') + '</div>';
@@ -3271,10 +3271,15 @@
             if (seq !== _loadDashboardSeq) return;
             if (res.needLogin) return;
             if (!res.ok) {
-                var errMsg = (res.data && res.data.error) ? res.data.error : t('loading_err');
+                var errMsg = (res.status === 429)
+                    ? (LANG === 'fa' ? 'در حال بارگذاری آمار… چند ثانیه دیگر تلاش کنید.' : 'Loading stats… please try again in a few seconds.')
+                    : ((res.data && res.data.error) ? res.data.error : t('loading_err'));
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(errMsg) + '</div>';
                 if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
                 setDashboardError(container, cardsTitleEl, errMsg);
+                if (res.status === 429 && (_attempt || 0) < 2) {
+                    setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 2500);
+                }
                 return;
             }
             const stats = res.data || {};
@@ -3414,7 +3419,7 @@
             if (a) {
                 apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() {
                     loadGeneralAnnouncementsMarquee();
-                    apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                    fetchDashboardStats().then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
                 });
                 showAnnouncementModal(a);
             } else {
@@ -3570,7 +3575,7 @@
                 })).then(function() {
                     unread.forEach(function(a) { a.read = true; });
                     renderAnnouncementsList();
-                    apiFetch('/api/analytics/dashboard').then(function(r) {
+                    fetchDashboardStats().then(function(r) {
                         if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data);
                     }).catch(function(){});
                 });
@@ -3616,7 +3621,7 @@
             const needRead = !a || !a.read;
             if (needRead) {
                 await apiFetch('/api/announcements/' + id + '/read', { method: 'POST' });
-                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             }
             if (!a) {
                 const res = await apiFetch('/api/announcements/for-me');
@@ -3713,7 +3718,7 @@
             const id = window._lastImportantAnnouncementId;
             if (id) {
                 window._lastImportantAnnouncementId = null;
-                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             }
             const m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
         }
@@ -5600,7 +5605,7 @@
                 barEl.style.display = 'none';
                 barEl.setAttribute('hidden', '');
             }
-            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             updateWaCallButtonsState();
             loadMessages(id);
             const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
@@ -14839,7 +14844,7 @@
                 if (btn) btn.setAttribute('aria-expanded', 'false');
                 if (btnMobile) btnMobile.setAttribute('aria-expanded', 'false');
                 if (_notifyCloseOnOutside) { document.removeEventListener('click', _notifyCloseOnOutside); _notifyCloseOnOutside = null; }
-                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                fetchDashboardStats().then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             };
             window.loadNotifyDropdownData = async function() {
                 const perms = (currentUser && currentUser.permissions) || {};

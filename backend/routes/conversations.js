@@ -263,49 +263,6 @@ router.post('/sync-groups', async (req, res, next) => {
             logger.warn('sync-groups: cutover failed', { error: cutErr?.message });
         }
 
-        const fetchGatewayChats = async () => {
-            let lastErr = null;
-            for (let attempt = 0; attempt < 4; attempt++) {
-                try {
-                    if (attempt > 0) {
-                        await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
-                        await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 12000 });
-                        await sleep(1200 * attempt);
-                    }
-                    // اول همهٔ چت‌ها (خصوصی + گروه)، بعد فقط گروه
-                    try {
-                        return await gatewayGet('/api/chats', { timeout: 45000, cfg });
-                    } catch (eAll) {
-                        if (eAll?.response?.status === 404) {
-                            return await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
-                        }
-                        throw eAll;
-                    }
-                } catch (e) {
-                    lastErr = e;
-                    const msg =
-                        (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
-                        e?.message ||
-                        '';
-                    const retryable =
-                        e?.response?.status === 503 ||
-                        /not ready|timeout|getChats|getGroups|Session closed|Target closed/i.test(
-                            String(msg)
-                        );
-                    if (!retryable) throw e;
-                }
-            }
-            throw lastErr || new Error('chats_fetch_failed');
-        };
-
-        let gwRes;
-        let fetchErr = null;
-        try {
-            gwRes = await fetchGatewayChats();
-        } catch (e) {
-            fetchErr = e;
-        }
-
         const normalizeChatRows = (payload) => {
             const chats = payload?.chats || payload?.data?.chats || null;
             if (Array.isArray(chats) && chats.length) {
@@ -330,6 +287,63 @@ router.post('/sync-groups', async (req, res, next) => {
                 }))
                 .filter((g) => g.id);
         };
+
+        const fetchGatewayChats = async () => {
+            let lastErr = null;
+            let lastEmpty = null;
+            for (let attempt = 0; attempt < 5; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
+                        await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 15000 });
+                        await sleep(1500 * attempt);
+                    }
+                    try {
+                        const all = await gatewayGet('/api/chats', { timeout: 90000, cfg });
+                        const rows = normalizeChatRows(all.data || {});
+                        if (rows.length) {
+                            return { gwRes: all, chatRows: rows, source: 'chats' };
+                        }
+                        lastEmpty = { gwRes: all, chatRows: rows, source: 'chats' };
+                    } catch (eAll) {
+                        lastErr = eAll;
+                    }
+                    try {
+                        const groups = await gatewayGet('/api/chats/groups', { timeout: 60000, cfg });
+                        const rows = normalizeChatRows(groups.data || {});
+                        if (rows.length) {
+                            return { gwRes: groups, chatRows: rows, source: 'groups-only' };
+                        }
+                    } catch (eGroups) {
+                        lastErr = eGroups;
+                    }
+                } catch (e) {
+                    lastErr = e;
+                    const msg =
+                        (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
+                        e?.message ||
+                        '';
+                    const retryable =
+                        e?.response?.status === 503 ||
+                        /not ready|timeout|getChats|getGroups|Session closed|Target closed/i.test(
+                            String(msg)
+                        );
+                    if (!retryable) throw e;
+                }
+            }
+            if (lastEmpty) return lastEmpty;
+            throw lastErr || new Error('chats_fetch_failed');
+        };
+
+        let fetched = null;
+        let fetchErr = null;
+        try {
+            fetched = await fetchGatewayChats();
+        } catch (e) {
+            fetchErr = e;
+        }
+        const gwRes = fetched && fetched.gwRes;
+        const chatSource = (fetched && fetched.source) || 'chats';
 
         // اگر لیست موقتاً نیامد ولی Gateway ready است — همه را باز نکن (تفکیک شماره از بین می‌رود)
         if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
@@ -377,7 +391,7 @@ router.post('/sync-groups', async (req, res, next) => {
             });
         }
 
-        const chatRows = normalizeChatRows(gwRes.data || {});
+        const chatRows = (fetched && fetched.chatRows) || normalizeChatRows(gwRes.data || {});
         let synced = 0;
         let groupsSynced = 0;
         for (const row of chatRows) {
@@ -399,7 +413,7 @@ router.post('/sync-groups', async (req, res, next) => {
                             defaults: {
                                 name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${chatId}`),
                                 source: 'whatsapp',
-                                isRestrictedFromStaff: true,
+                                isRestrictedFromStaff: false,
                             },
                             transaction: t,
                         });
@@ -418,6 +432,7 @@ router.post('/sync-groups', async (req, res, next) => {
                 }
                 const custUpdates = {};
                 if (chatName && customer.name !== chatName) custUpdates.name = chatName;
+                if (customer.isRestrictedFromStaff) custUpdates.isRestrictedFromStaff = false;
                 if (Object.keys(custUpdates).length) {
                     await customer.update(custUpdates, { transaction: t });
                 }
@@ -432,6 +447,18 @@ router.post('/sync-groups', async (req, res, next) => {
                     historicalImport: true,
                 });
 
+                const applyLivePreview = (target, upd) => {
+                    if (row.lastPreview && !target.lastMessagePreview) {
+                        upd.lastMessagePreview = row.lastPreview;
+                    }
+                    if (row.timestamp && !target.lastMessageAt) {
+                        const tsNum = Number(row.timestamp);
+                        if (Number.isFinite(tsNum) && tsNum > 0) {
+                            upd.lastMessageAt = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum);
+                        }
+                    }
+                };
+
                 const conv = await Conversation.findOne({
                     where: {
                         customerId: customer.id,
@@ -442,9 +469,7 @@ router.post('/sync-groups', async (req, res, next) => {
                 });
                 if (conv) {
                     const upd = { metadata: stampMeta(conv.metadata) };
-                    if (row.lastPreview && !conv.lastMessagePreview) {
-                        upd.lastMessagePreview = row.lastPreview;
-                    }
+                    applyLivePreview(conv, upd);
                     await conv.update(upd, { transaction: t });
                 } else {
                     const existing = await Conversation.findOne({
@@ -453,29 +478,24 @@ router.post('/sync-groups', async (req, res, next) => {
                         transaction: t,
                     });
                     if (existing) {
-                        const upd = { metadata: stampMeta(existing.metadata) };
-                        if (row.lastPreview && !existing.lastMessagePreview) {
-                            upd.lastMessagePreview = row.lastPreview;
-                        }
+                        const upd = {
+                            metadata: stampMeta(existing.metadata),
+                            status: 'open',
+                            isHiddenFromStaff: false,
+                            closedAt: null,
+                        };
+                        applyLivePreview(existing, upd);
                         await existing.update(upd, { transaction: t });
                     } else {
                         const createData = {
                             customerId: customer.id,
-                            status: 'archived',
+                            status: 'open',
                             priority: 'normal',
                             source: 'whatsapp',
-                            isHiddenFromStaff: true,
+                            isHiddenFromStaff: false,
                             metadata: stampMeta({}),
                         };
-                        if (row.lastPreview) {
-                            createData.lastMessagePreview = row.lastPreview;
-                            if (row.timestamp) {
-                                const tsNum = Number(row.timestamp);
-                                createData.lastMessageAt = new Date(
-                                    tsNum < 1e12 ? tsNum * 1000 : tsNum
-                                );
-                            }
-                        }
+                        applyLivePreview({}, createData);
                         await Conversation.create(createData, { transaction: t });
                     }
                 }
@@ -490,12 +510,14 @@ router.post('/sync-groups', async (req, res, next) => {
             }
         }
 
-        // فقط چت‌های همین شماره باز بمانند؛ بقیهٔ واتساپی‌ها به آرشیو برگردند
+        // چت‌های همین شماره را باز کن؛ بقیهٔ واتساپی‌ها (شمارهٔ قبلی) آرشیو بمانند
+        const archiveMissing = chatSource !== 'groups-only';
         let visibility = { archived: 0, opened: 0 };
         try {
             visibility = await applyVisibilityForCurrentGatewayChats(
                 chatRows.map((r) => r.id),
-                gatewayNumber || liveStatus.number
+                gatewayNumber || liveStatus.number,
+                { archiveMissing }
             );
         } catch (visErr) {
             logger.warn('sync-groups: visibility filter failed', { error: visErr?.message });
@@ -506,18 +528,21 @@ router.post('/sync-groups', async (req, res, next) => {
             groupsCount: groupsSynced,
             chatsCount: chatRows.length,
             synced,
+            opened: visibility.opened || 0,
             archivedOther: visibility.archived || 0,
             gatewayNumber: gatewayNumber || null,
+            source: chatSource,
             stale: !!gwRes?.data?.stale,
             message:
                 chatRows.length === 0
                     ? 'هیچ چتی از واتساپ این شماره دریافت نشد'
-                    : `${synced} سابقه در آرشیو همگام شد` +
+                    : `${synced} چت در مکالمات فعال همگام شد` +
                       (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
-                      ' — لیست عادی فقط با پیام زنده روی شمارهٔ جدید پر می‌شود' +
+                      (visibility.opened ? `؛ ${visibility.opened} مکالمه از آرشیو باز شد` : '') +
                       (visibility.archived
-                          ? `؛ ${visibility.archived} مکالمهٔ دیگر آرشیو شد`
+                          ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
                           : '') +
+                      (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
                       (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
     } catch (err) {

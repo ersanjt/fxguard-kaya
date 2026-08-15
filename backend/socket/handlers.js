@@ -10,6 +10,7 @@ const { canAccessConversationAsync } = require('../lib/conversationAccess');
 const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('../lib/outboundMessagePrefix');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
+const { asCallId, callUserRoom, normalizeCallSignal } = require('../lib/internalCallSignaling');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -173,63 +174,98 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
         });
 
         socket.on('call_offer', (data) => {
-            const { toUserId, threadId, type, sdp } = data;
-            if (!toUserId || !threadId || !sdp) return;
-            if (!callRooms[threadId]) callRooms[threadId] = { participants: new Set(), type: type || 'voice', createdAt: Date.now() };
-            callRooms[threadId].participants.add(String(socket.userId));
-            io.to('user_' + String(toUserId)).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
+            const sig = normalizeCallSignal(data, socket.userId);
+            if (!sig || !sig.sdp) return;
+            if (!callRooms[sig.threadId]) {
+                callRooms[sig.threadId] = { participants: new Set(), type: sig.type, createdAt: Date.now() };
+            }
+            callRooms[sig.threadId].participants.add(sig.fromUserId);
+            const dest = callUserRoom(sig.toUserId);
+            if (dest) io.to(dest).emit('call_offer', { fromUserId: sig.fromUserId, threadId: sig.threadId, type: sig.type, sdp: sig.sdp });
         });
         socket.on('call_answer', (data) => {
-            const { toUserId, threadId, sdp } = data;
-            if (!toUserId || !threadId || !sdp) return;
-            if (callRooms[threadId]) callRooms[threadId].participants.add(String(socket.userId));
-            io.to('user_' + String(toUserId)).emit('call_answer', { fromUserId: socket.userId, threadId, sdp });
+            const sig = normalizeCallSignal(data, socket.userId);
+            if (!sig || !sig.sdp) return;
+            const room = callRooms[sig.threadId];
+            const alreadyIn = room ? Array.from(room.participants) : [];
+            if (room) room.participants.add(sig.fromUserId);
+            const dest = callUserRoom(sig.toUserId);
+            if (dest) io.to(dest).emit('call_answer', { fromUserId: sig.fromUserId, threadId: sig.threadId, sdp: sig.sdp });
+            // Mesh: other people already in the call must connect to the answerer
+            alreadyIn.forEach((uid) => {
+                if (uid !== sig.toUserId && uid !== sig.fromUserId) {
+                    const peerRoom = callUserRoom(uid);
+                    if (peerRoom) io.to(peerRoom).emit('call_participant_joined', { userId: sig.fromUserId, threadId: sig.threadId });
+                }
+            });
         });
         socket.on('call_ice', (data) => {
-            const { toUserId, threadId, candidate } = data;
-            if (!toUserId || !threadId) return;
-            io.to('user_' + String(toUserId)).emit('call_ice', { fromUserId: socket.userId, threadId, candidate });
+            const sig = normalizeCallSignal(data, socket.userId);
+            if (!sig) return;
+            const dest = callUserRoom(sig.toUserId);
+            if (dest) io.to(dest).emit('call_ice', { fromUserId: sig.fromUserId, threadId: sig.threadId, candidate: sig.candidate });
         });
         socket.on('call_end', (data) => {
-            const { threadId } = data;
+            const threadId = asCallId(data && data.threadId);
             if (!threadId) return;
             const room = callRooms[threadId];
+            const me = asCallId(socket.userId);
             if (room) {
-                room.participants.delete(String(socket.userId));
-                room.participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_left', { userId: socket.userId, threadId }));
+                room.participants.delete(me);
+                room.participants.forEach((uid) => {
+                    const dest = callUserRoom(uid);
+                    if (dest) io.to(dest).emit('call_participant_left', { userId: me, threadId });
+                });
                 if (room.participants.size === 0) delete callRooms[threadId];
             }
         });
         socket.on('call_reject', (data) => {
-            const { toUserId, threadId } = data;
-            if (!toUserId || !threadId) return;
-            io.to('user_' + String(toUserId)).emit('call_reject', { fromUserId: socket.userId, threadId });
+            const sig = normalizeCallSignal(data, socket.userId);
+            if (!sig) return;
+            const dest = callUserRoom(sig.toUserId);
+            if (dest) io.to(dest).emit('call_reject', { fromUserId: sig.fromUserId, threadId: sig.threadId });
         });
         socket.on('call_invite', async (data) => {
-            const { toUserId, threadId, type, participantIds } = data;
-            if (!toUserId || !threadId) return;
-            const room = callRooms[threadId];
-            if (!room || !room.participants.has(String(socket.userId))) return;
+            const sig = normalizeCallSignal(data, socket.userId);
+            if (!sig) return;
+            const room = callRooms[sig.threadId];
+            if (!room || !room.participants.has(sig.fromUserId)) return;
             const fromUser = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
             const fromUserName = (fromUser && (fromUser.name || fromUser.email)) || '';
-            io.to('user_' + String(toUserId)).emit('call_invite', { fromUserId: socket.userId, fromUserName, threadId, type: type || room.type, participantIds: participantIds || Array.from(room.participants) });
+            const dest = callUserRoom(sig.toUserId);
+            if (dest) {
+                io.to(dest).emit('call_invite', {
+                    fromUserId: sig.fromUserId,
+                    fromUserName,
+                    threadId: sig.threadId,
+                    type: (data && data.type) || room.type || 'voice',
+                    participantIds: sig.participantIds || Array.from(room.participants)
+                });
+            }
         });
         socket.on('call_invite_accept', (data) => {
-            const { threadId, type } = data;
+            const threadId = asCallId(data && data.threadId);
             if (!threadId) return;
             const room = callRooms[threadId];
             if (!room) return;
+            const me = asCallId(socket.userId);
             const participants = Array.from(room.participants);
-            room.participants.add(String(socket.userId));
-            participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_joined', { userId: socket.userId, threadId }));
-            io.to('user_' + String(socket.userId)).emit('call_room_info', { threadId, participantIds: participants, type: type || room.type });
+            room.participants.add(me);
+            participants.forEach((uid) => {
+                const dest = callUserRoom(uid);
+                if (dest) io.to(dest).emit('call_participant_joined', { userId: me, threadId });
+            });
+            const selfRoom = callUserRoom(me);
+            if (selfRoom) io.to(selfRoom).emit('call_room_info', { threadId, participantIds: participants, type: (data && data.type) || room.type });
         });
         socket.on('call_invite_reject', async (data) => {
-            const { fromUserId, threadId } = data;
+            const fromUserId = asCallId(data && data.fromUserId);
+            const threadId = asCallId(data && data.threadId);
             if (!fromUserId || !threadId) return;
             const rejecter = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
             const userName = (rejecter && (rejecter.name || rejecter.email)) || '';
-            io.to('user_' + String(fromUserId)).emit('call_invite_reject', { userId: socket.userId, userName, threadId });
+            const dest = callUserRoom(fromUserId);
+            if (dest) io.to(dest).emit('call_invite_reject', { userId: asCallId(socket.userId), userName, threadId });
         });
 
         socket.on('status_change', (status) => {

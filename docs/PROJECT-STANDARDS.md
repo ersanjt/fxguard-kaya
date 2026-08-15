@@ -69,6 +69,11 @@ fxguard-kaya/
 
 ---
 
+## قرارداد کد — اپ موبایل (`android-app` + `ios-app`)
+
+هر دو کلاینت از **یک قرارداد** پیروی می‌کنند: `mobile-shared/design-tokens.json` و `docs/MOBILE-APP.md`.
+برندینگ از `GET /api/panel-settings/public/branding`؛ JWT با `Authorization: Bearer`.
+
 ## قرارداد کد — اپ اندروید (`android-app`)
 
 | لایه | مسیر نمونه | نقش |

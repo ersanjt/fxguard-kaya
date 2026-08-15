@@ -41,9 +41,14 @@ gateway/.wwebjs_cache*/
 backend/.env
 backend/env-production-paste.txt
 
-# android / ios — از دیپلوی سرور حذف شده؛ پوشهٔ لوکال commit نشود
-android-app/
-ios-app/
+# mobile build artifacts — سورس android-app / ios-app / mobile-shared داخل مخزن است
+android-app/.gradle/
+android-app/build/
+android-app/app/build/
+android-app/local.properties
+ios-app/**/xcuserdata/
+ios-app/**/DerivedData/
+ios-app/**/*.xcuserstate
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 

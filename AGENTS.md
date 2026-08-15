@@ -8,7 +8,7 @@ Before editing any file, read **`docs/CODEBASE-MAP.md`** — it maps every featu
 
 ## Scope
 
-Monorepo: **Node backend** (`backend/`), **WhatsApp gateway** (`gateway/`), **Vite dashboard** (`frontend/` → ships into `backend/public/js/app/`), **Android** (`android-app/` — see README), **iOS** (`ios-app/`), **docs** (`docs/`).
+Monorepo: **Node backend** (`backend/`), **WhatsApp gateway** (`gateway/`), **Vite dashboard** (`frontend/` → ships into `backend/public/js/app/`), **Android** (`android-app/`), **iOS** (`ios-app/`), shared tokens (`mobile-shared/`), **docs** (`docs/` · `docs/MOBILE-APP.md`).
 
 **Docs:** [PRODUCT-MARKETING-FA.md](docs/PRODUCT-MARKETING-FA.md) (sales) · [FOLDER-MAP-FA.md](docs/FOLDER-MAP-FA.md) (structure)
 

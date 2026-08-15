@@ -34,7 +34,7 @@
 | **Gateway** | `gateway/` | نشست WhatsApp Web، ارسال/دریافت پیام، تماس |
 | **پنل وب (فعال)** | `backend/public/` | SPA داشبورد + صفحه ورود |
 | **پنل مدرن (آینده)** | `frontend/` | Vite → `backend/public/js/app/` |
-| **موبایل** | `android-app/`, `ios-app/` | اپ کارکنان |
+| **موبایل** | `android-app/`, `ios-app/`, `mobile-shared/` | اپ کارکنان (Compose + SwiftUI، توکن مشترک) — `docs/MOBILE-APP.md` |
 
 ---
 
@@ -42,6 +42,7 @@
 
 | می‌خواهی عوض کنی… | **منبع (ویرایش)** | **خروجی (دست نزن)** | بعد از ویرایش |
 |-------------------|-------------------|---------------------|---------------|
+| اپ کارکنان iOS/اندروید | `ios-app/` · `android-app/` · `mobile-shared/` | — | `docs/MOBILE-APP.md` |
 | منطق JS پنل | `backend/public/js/dashboard/src/chunk-NN.js` | `backend/public/js/dashboard.js` | `cd backend && npm run build:dashboard` |
 | HTML پنل | `backend/public/partials/dashboard/html-part-NN.html` | `backend/public/dashboard.html` | همان |
 | استایل پنل | `backend/public/css/dashboard.css` | — | bump `?v=` در partial-01 و partial-06 |
@@ -73,6 +74,7 @@
 | استایل صفحه مکالمات | `css/dashboard.css` (بلاک `#conversations`) | additive CSS، specificity |
 | لیست چت / حباب پیام | `chunk-03.js` + `html-part-02/03` | `#conversations`, `#chatMessages` |
 | ارسال ویس/فایل | `chunk-03.js` + `backend/lib/conversationOutbound.js` + `lib/audioConverter.js` | |
+| پیوست چت داخلی | `chunk-02.js` → `renderInternalAttachment` | تصویر/ویدیو اینلاین؛ ذخیره فقط با `allowDownload` |
 | پیام خودکار «کارشناس X» | `backend/services/autoMessages.js` + `routes/conversations.js` | |
 | کاربران / کارت کاربر | `chunk-05.js` + `html-part-04` | `#users`, `renderUserList` |
 | تنظیمات ظاهر پنل | `chunk-04.js` + `routes/panelSettings.js` | `#panel-settings` |
@@ -171,6 +173,7 @@ gateway/
 | دسترسی نقش/بخش | `backend/lib/permissions.js` |
 | دسترسی مکالمه | `backend/lib/conversationAccess.js` |
 | CSP / هدرها | `backend/app/configureExpress.js` |
+| Rate limit کارکنان | `backend/lib/apiRateLimit.js` + `app/configureExpress.js` |
 | escape HTML در UI | `CRM.Utils.escapeHtml` در `js/modules/utils.js` |
 
 ---
@@ -206,6 +209,7 @@ gateway/
 | `backend/public/STRUCTURE.md` | تفکیک HTML/CSS/JS |
 | `backend/services/README.md` | پوشه‌های services |
 | `AGENTS.md` | راهنمای Cursor / AI |
+| `docs/MOBILE-APP.md` | اپ کارکنان iOS + Android |
 
 ---
 

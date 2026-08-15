@@ -296,9 +296,9 @@ SMTP_PASSWORD=your_app_password
 MAX_FILE_SIZE=10485760
 UPLOAD_PATH=./uploads
 
-# Rate Limiting
-RATE_LIMIT_WINDOW=15
-RATE_LIMIT_MAX=100
+# Rate Limiting (staff API, per signed-in browser / 15 minutes)
+API_RATE_LIMIT_WINDOW_MS=900000
+API_RATE_LIMIT_MAX=12000
 ```
 
 ---

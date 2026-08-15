@@ -35,7 +35,17 @@ router.get('/jobs', (req, res) => {
             jobs.push({ jobId: id, ...job });
         }
     }
-    res.json({ jobs });
+    res.json({ jobs, maxRecipients: BULK_MAX_RECIPIENTS });
+});
+
+/** GET /api/bulk/limits — سقف و تأخیر مجاز برای UI */
+router.get('/limits', (req, res) => {
+    res.json({
+        maxRecipients: BULK_MAX_RECIPIENTS,
+        minDelaySec: 2,
+        maxDelaySec: 60,
+        enabled: process.env.ENABLE_BULK_MESSAGING !== 'false',
+    });
 });
 
 /** جایگزینی متغیرها در متن: {name}, {phone}, {date}, {time} */
@@ -86,36 +96,65 @@ router.post('/send', async (req, res, next) => {
         const cloudReady = await isCloudApiConfigured();
         const effectiveTemplate = String(templateName || connCfg.cloudBulkTemplateName || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_NAME || '').trim();
         const effectiveLang = String(templateLanguage || connCfg.cloudBulkTemplateLanguage || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE || 'fa').trim() || 'fa';
-        const sendAsTemplate = cloudReady && effectiveTemplate && useCloudTemplate !== false;
+        const wantTemplate = useCloudTemplate === true || useCloudTemplate === 'true';
+
+        if (wantTemplate) {
+            if (!cloudReady) {
+                return res.status(400).json({ error: 'ارسال با قالب Meta فقط با Cloud API فعال ممکن است' });
+            }
+            if (!effectiveTemplate) {
+                return res.status(400).json({ error: 'نام قالب Meta الزامی است' });
+            }
+        }
+        const sendAsTemplate = wantTemplate;
 
         if (!sendAsTemplate && !content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        if (sendAsTemplate && !cloudReady) {
-            return res.status(400).json({ error: 'ارسال با قالب Meta فقط با Cloud API فعال ممکن است' });
-        }
         if (!sendAsTemplate && content.length > 4096) return res.status(400).json({ error: 'متن پیام بیش از ۴۰۹۶ کاراکتر مجاز نیست' });
         if (sendAsTemplate && media) {
             return res.status(400).json({ error: 'ارسال رسانه در حالت قالب Meta پشتیبانی نمی‌شود' });
         }
 
         const accessibleIds = await getAccessibleCustomerIds(req);
+        const accessibleSet = accessibleIds ? new Set(accessibleIds.map((id) => String(id))) : null;
         const customers = await Customer.findAll({
             where: { id: { [require('sequelize').Op.in]: customerIds } },
             attributes: ['id', 'name', 'phone', 'email']
         });
 
+        const foundIds = new Set(customers.map((c) => String(c.id)));
+        let skippedNotFound = 0;
+        for (const rawId of customerIds) {
+            if (!foundIds.has(String(rawId))) skippedNotFound += 1;
+        }
+
         const toSend = [];
+        let skippedAccess = 0;
+        let skippedPhone = 0;
         for (const c of customers) {
-            if (accessibleIds && !accessibleIds.includes(c.id)) continue;
+            if (accessibleSet && !accessibleSet.has(String(c.id))) {
+                skippedAccess += 1;
+                continue;
+            }
             const phone = normalizePhone(c.phone) || c.phone;
-            if (!phone) continue;
+            if (!phone) {
+                skippedPhone += 1;
+                continue;
+            }
             const finalContent = replaceTemplateVariables(content, c);
             const bodyParams = Array.isArray(templateBodyParams) && templateBodyParams.length
-                ? templateBodyParams.map((p) => replaceTemplateVariables(String(p), c))
-                : (finalContent ? [finalContent] : []);
+                ? templateBodyParams.map((p) => replaceTemplateVariables(String(p), c)).filter((p) => p)
+                : [];
             toSend.push({ customer: c, phone, content: finalContent, bodyParams });
         }
 
-        if (toSend.length === 0) return res.status(400).json({ error: 'هیچ مشتری معتبری برای ارسال یافت نشد' });
+        const skipped = {
+            notFound: skippedNotFound,
+            noAccess: skippedAccess,
+            noPhone: skippedPhone,
+            total: skippedNotFound + skippedAccess + skippedPhone,
+        };
+
+        if (toSend.length === 0) return res.status(400).json({ error: 'هیچ مشتری معتبری برای ارسال یافت نشد', skipped });
 
         const delayMsNum = Number(delayMs);
         const delay = Math.max(2000, Math.min(Number.isFinite(delayMsNum) ? delayMsNum : BULK_SEND_DELAY_MS, 60000)); // 2–60 ثانیه
@@ -134,6 +173,7 @@ router.post('/send', async (req, res, next) => {
             userId: req.userId,
             channel: sendAsTemplate ? 'cloud_template' : 'free_text',
             templateName: sendAsTemplate ? effectiveTemplate : null,
+            skipped,
         };
         bulkJobs.set(jobId, jobState);
 
@@ -151,6 +191,7 @@ router.post('/send', async (req, res, next) => {
                 : `ارسال به ${toSend.length} مشتری شروع شد. تأخیر بین هر پیام: ${delay / 1000} ثانیه`,
             jobId,
             total: toSend.length,
+            skipped,
             channel: jobState.channel,
             templateName: jobState.templateName,
             statusUrl: `/api/bulk/status/${jobId}`

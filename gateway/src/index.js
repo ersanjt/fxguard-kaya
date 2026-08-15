@@ -155,6 +155,16 @@ async function isDuplicateIncomingGatewayMessage(msgId) {
     }
 }
 
+function isWhatsAppGroupChat(chat, msg) {
+    if (chat && chat.isGroup) return true;
+    const ids = [
+        chat && chat.id && (chat.id._serialized || chat.id),
+        msg && msg.from,
+        msg && msg.to,
+    ];
+    return ids.some((v) => typeof v === 'string' && /@g\.us$/i.test(v));
+}
+
 function isGatewaySentEcho(waMsgId) {
     if (!waMsgId) return false;
     const key = String(waMsgId);
@@ -648,16 +658,22 @@ function attachClientEvents(c) {
     c.on('message', async (msg) => {
         healthCheckFailCount = 0;
         try {
+            // پیام خروجی (fromMe) فقط از message_create می‌آید — قبل از dedupe برگرد
+            if (msg.fromMe) return;
             const waIncomingId = msg?.id?.id;
             if (await isDuplicateIncomingGatewayMessage(waIncomingId)) return;
             const chat = await msg.getChat();
-            // پیام خروجی چت مستقیم از message_create پردازش می‌شود — اینجا دوباره نفرست (echo دوبل در CRM)
-            if (msg.fromMe && !chat?.isGroup) return;
+            const isGroup = isWhatsAppGroupChat(chat, msg);
             // برای گروه: getContact() با author فرستنده را برمی‌گرداند؛ برای چت مستقیم: contact فرستنده است
-            const contact = await msg.getContact();
+            let contact = null;
+            try {
+                contact = await msg.getContact();
+            } catch (_) {
+                /* گروه / LID: getContact گاهی fail می‌کند */
+            }
             let authorId = null;
             let authorName = null;
-            if (chat?.isGroup && !msg.fromMe) {
+            if (isGroup && !msg.fromMe) {
                 // چند منبع برای شناسه فرستنده (وابسته به نسخه whatsapp-web.js و پروتکل)
                 let rawAuthor =
                     msg.author ||
@@ -736,12 +752,14 @@ function attachClientEvents(c) {
                     lid: contactLid,
                     name: contact?.name || contact?.pushname || null,
                     isMyContact: contact?.isMyContact,
-                    profilePicUrl: await contact.getProfilePicUrl().catch(() => null),
+                    profilePicUrl: contact
+                        ? await contact.getProfilePicUrl().catch(() => null)
+                        : null,
                 },
                 chat: {
-                    id: chat?.id?._serialized,
+                    id: chat?.id?._serialized || (isGroup ? msg.from : null),
                     name: chat?.name || chat?.subject || chat?.formattedTitle || null,
-                    isGroup: chat?.isGroup || false,
+                    isGroup,
                 },
                 author: authorId,
                 authorName: authorName,
@@ -822,12 +840,14 @@ function attachClientEvents(c) {
             }
             if (await isDuplicateIncomingGatewayMessage(waEchoId)) return;
             const chat = await msg.getChat();
-            if (chat?.isGroup) return; // گروه‌ها را نادیده بگیر
+            const isGroup = isWhatsAppGroupChat(chat, msg);
             let contact = null;
-            try {
-                contact = await chat.getContact();
-            } catch (_) {
-                /* LID / privacy: getContact گاهی fail می‌کند */
+            if (!isGroup) {
+                try {
+                    contact = await chat.getContact();
+                } catch (_) {
+                    /* LID / privacy: getContact گاهی fail می‌کند */
+                }
             }
 
             const messageData = {
@@ -850,9 +870,9 @@ function attachClientEvents(c) {
                         : null,
                 },
                 chat: {
-                    id: chat?.id?._serialized,
-                    name: chat?.name || null,
-                    isGroup: false,
+                    id: chat?.id?._serialized || (isGroup ? msg.to || msg.from : null),
+                    name: chat?.name || chat?.subject || chat?.formattedTitle || null,
+                    isGroup,
                 },
             };
 
@@ -877,13 +897,61 @@ function attachClientEvents(c) {
 
             io.emit('new_message', messageData);
             logger.info('📤 Outgoing message from mobile captured', {
-                to: contact?.number || msg.to || null,
+                to: isGroup
+                    ? chat?.id?._serialized || msg.to || null
+                    : contact?.number || msg.to || null,
+                isGroup,
             });
         } catch (error) {
             logger.error('Error processing message_create', {
                 error: formatGatewayError(error),
                 stack: error?.stack?.slice?.(0, 300),
             });
+        }
+    });
+
+    // اضافه شدن این شماره به گروه — مکالمه را همان لحظه در CRM بساز
+    c.on('group_join', async (notification) => {
+        try {
+            const chat = await notification.getChat().catch(() => null);
+            const groupId =
+                (chat && chat.id && (chat.id._serialized || chat.id)) ||
+                notification?.chatId ||
+                notification?.id?.remote ||
+                null;
+            if (!groupId || !/@g\.us$/i.test(String(groupId))) return;
+            const joinId =
+                notification?.id?.id ||
+                (notification?.id && notification.id._serialized) ||
+                null;
+            if (joinId && (await isDuplicateIncomingGatewayMessage(joinId))) return;
+            const groupName =
+                (chat && (chat.name || chat.subject || chat.formattedTitle)) ||
+                notification?.body ||
+                null;
+            const messageData = {
+                id: joinId || `group_join_${String(groupId)}_${Date.now()}`,
+                from: String(groupId),
+                to: String(groupId),
+                body: groupName
+                    ? `فعالیت در گروه «${String(groupName).trim()}»`
+                    : 'این شماره به گروه واتساپ اضافه شد',
+                timestamp: notification?.timestamp || Math.floor(Date.now() / 1000),
+                hasMedia: false,
+                type: 'gp2',
+                fromMe: false,
+                contact: { number: null, name: groupName || null },
+                chat: {
+                    id: String(groupId),
+                    name: groupName ? String(groupName).trim() : null,
+                    isGroup: true,
+                },
+            };
+            await deliverIncomingMessage(messageData);
+            io.emit('new_message', messageData);
+            logger.info('👥 Group join captured', { groupId: String(groupId), name: groupName });
+        } catch (error) {
+            logger.warn('group_join handling failed', { error: formatGatewayError(error) });
         }
     });
 }
@@ -1458,8 +1526,29 @@ async function listWhatsAppGroupsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
     return client.pupPage.evaluate(() => {
         // runs inside WhatsApp Web Chromium page
-        // eslint-disable-next-line no-undef
-        const store = window.Store;
+        function resolveStore() {
+            // eslint-disable-next-line no-undef
+            if (window.Store && (window.Store.Chat || window.Store.GroupMetadata)) {
+                // eslint-disable-next-line no-undef
+                return window.Store;
+            }
+            try {
+                // eslint-disable-next-line no-undef
+                if (typeof window.require === 'function') {
+                    // eslint-disable-next-line no-undef
+                    const cols = window.require('WAWebCollections');
+                    if (cols) {
+                        return {
+                            Chat: cols.ChatCollection || cols.Chat,
+                            GroupMetadata: cols.GroupMetadataCollection || cols.GroupMetadata,
+                        };
+                    }
+                }
+            } catch (_) {}
+            // eslint-disable-next-line no-undef
+            return window.Store || null;
+        }
+        const store = resolveStore();
         if (!store) return [];
 
         function collectModels(collection) {
@@ -1666,8 +1755,29 @@ async function listWhatsAppAllChatsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
     return client.pupPage.evaluate(() => {
         // runs inside WhatsApp Web Chromium page
-        // eslint-disable-next-line no-undef
-        const store = window.Store;
+        function resolveStore() {
+            // eslint-disable-next-line no-undef
+            if (window.Store && (window.Store.Chat || window.Store.GroupMetadata)) {
+                // eslint-disable-next-line no-undef
+                return window.Store;
+            }
+            try {
+                // eslint-disable-next-line no-undef
+                if (typeof window.require === 'function') {
+                    // eslint-disable-next-line no-undef
+                    const cols = window.require('WAWebCollections');
+                    if (cols) {
+                        return {
+                            Chat: cols.ChatCollection || cols.Chat,
+                            GroupMetadata: cols.GroupMetadataCollection || cols.GroupMetadata,
+                        };
+                    }
+                }
+            } catch (_) {}
+            // eslint-disable-next-line no-undef
+            return window.Store || null;
+        }
+        const store = resolveStore();
         if (!store) return [];
 
         function collectModels(collection) {
@@ -1786,34 +1896,43 @@ async function listWhatsAppAllChats() {
         }
     }
 
-    try {
-        const fromStore = await Promise.race([
-            listWhatsAppAllChatsFromStore(),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getChats_store_timeout')), 18000)
-            ),
-        ]);
-        if (Array.isArray(fromStore) && fromStore.length > 0) {
-            lastChatsCache = { at: Date.now(), chats: fromStore };
-            const groupsOnly = fromStore.filter((c) => c.isGroup);
-            if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
-            logger.info('WhatsApp chats listed from Store', {
-                count: fromStore.length,
-                groups: groupsOnly.length,
+    const remember = (rows) => {
+        lastChatsCache = { at: Date.now(), chats: rows };
+        const groupsOnly = rows.filter((c) => c.isGroup);
+        if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
+        return rows;
+    };
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+            const fromStore = await Promise.race([
+                listWhatsAppAllChatsFromStore(),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('getChats_store_timeout')), 12000)
+                ),
+            ]);
+            if (Array.isArray(fromStore) && fromStore.length > 0) {
+                logger.info('WhatsApp chats listed from Store', {
+                    count: fromStore.length,
+                    groups: fromStore.filter((c) => c.isGroup).length,
+                    attempt: attempt + 1,
+                });
+                return remember(fromStore);
+            }
+        } catch (storeErr) {
+            logger.warn('Chat list via Store failed', {
+                error: formatGatewayError(storeErr),
+                attempt: attempt + 1,
             });
-            return fromStore;
         }
-    } catch (storeErr) {
-        logger.warn('Chat list via Store failed — falling back to getChats', {
-            error: formatGatewayError(storeErr),
-        });
+        if (attempt < 3) await sleep(1800 * (attempt + 1));
     }
 
     try {
         const chats = await Promise.race([
             client.getChats(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getChats_timeout')), 25000)
+                setTimeout(() => reject(new Error('getChats_timeout')), 20000)
             ),
         ]);
         const list = Array.isArray(chats) ? chats : [];
@@ -1824,7 +1943,7 @@ async function listWhatsAppAllChats() {
                 return {
                     id: String(id),
                     name: c.name || c.subject || c.formattedTitle || null,
-                    isGroup: !!c.isGroup,
+                    isGroup: !!c.isGroup || String(id).endsWith('@g.us'),
                     lastPreview: c.lastMessage
                         ? String(c.lastMessage.body || c.lastMessage.caption || '').slice(0, 120)
                         : null,
@@ -1832,21 +1951,42 @@ async function listWhatsAppAllChats() {
                 };
             })
             .filter(Boolean);
-        lastChatsCache = { at: Date.now(), chats: mapped };
-        const groupsOnly = mapped.filter((c) => c.isGroup);
-        if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
-        return mapped;
-    } catch (chatsErr) {
-        const age = Date.now() - (lastChatsCache.at || 0);
-        if (lastChatsCache.chats?.length && age < 30 * 60 * 1000) {
-            logger.warn('getChats failed — serving cached chats', {
-                error: formatGatewayError(chatsErr),
-                cached: lastChatsCache.chats.length,
-            });
-            return lastChatsCache.chats;
+        if (mapped.length) {
+            logger.info('WhatsApp chats listed from getChats', { count: mapped.length });
+            return remember(mapped);
         }
-        throw chatsErr;
+    } catch (chatsErr) {
+        logger.warn('getChats failed — trying groups fallback', {
+            error: formatGatewayError(chatsErr),
+        });
     }
+
+    try {
+        const groups = await listWhatsAppGroups();
+        if (Array.isArray(groups) && groups.length) {
+            const mapped = groups.map((g) => ({
+                id: g.id,
+                name: g.name || g.subject || null,
+                isGroup: true,
+                lastPreview: null,
+                timestamp: null,
+            }));
+            logger.info('WhatsApp chats listed from groups fallback', { count: mapped.length });
+            return remember(mapped);
+        }
+    } catch (gErr) {
+        logger.warn('Groups fallback failed', { error: formatGatewayError(gErr) });
+    }
+
+    const age = Date.now() - (lastChatsCache.at || 0);
+    if (lastChatsCache.chats?.length && age < 2 * 60 * 60 * 1000) {
+        logger.warn('Serving cached WhatsApp chats', {
+            cached: lastChatsCache.chats.length,
+            ageMs: age,
+        });
+        return lastChatsCache.chats;
+    }
+    throw new Error('chats_unavailable');
 }
 
 app.get('/api/chats', async (req, res) => {

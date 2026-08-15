@@ -1,0 +1,44 @@
+{
+  "product": "Kaya staff mobile",
+  "owner": "Ersan Jahed Tabrizi",
+  "source": "backend/public/css/login.css",
+  "defaultBaseUrl": "https://kaya.fxguard.io",
+  "rtlLanguages": ["fa", "tr"],
+  "colors": {
+    "bg": "#080D1A",
+    "bg2": "#0D1525",
+    "card": "#10182C",
+    "border": "#FFFFFF14",
+    "accent": "#10B981",
+    "accentHover": "#059669",
+    "accentSoft": "#10B98126",
+    "danger": "#EF4444",
+    "text": "#F0F4FC",
+    "text2": "#8B9DC3",
+    "text3": "#4E6080",
+    "inputBg": "#FFFFFF0A",
+    "bubbleIn": "#162033",
+    "bubbleOut": "#0F3D32"
+  },
+  "radius": {
+    "card": 16,
+    "control": 10,
+    "pill": 999
+  },
+  "api": {
+    "branding": "GET /api/panel-settings/public/branding",
+    "login": "POST /api/auth/login",
+    "totp": "POST /api/auth/totp/verify-login",
+    "me": "GET /api/auth/me",
+    "logout": "POST /api/auth/logout",
+    "forgot": "POST /api/auth/forgot-password",
+    "presence": "PATCH /api/auth/me/presence",
+    "conversations": "GET /api/conversations",
+    "messages": "GET /api/conversations/:id/messages",
+    "send": "POST /api/conversations/:id/send",
+    "read": "POST /api/conversations/:id/read",
+    "customers": "GET /api/customers",
+    "tickets": "GET /api/tickets",
+    "ticketStats": "GET /api/tickets/stats"
+  }
+}

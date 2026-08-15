@@ -83,9 +83,9 @@ cd backend && npm run build:dashboard
 ## موبایل
 
 - PWA از `/login`
-- UI responsive (breakpoint 900px)
-- APK از panel-settings
 - Native Android: [android-app/README.md](android-app/README.md)
+- Native iOS: [ios-app/README.md](ios-app/README.md)
+- نقشه راه: [docs/MOBILE-APP.md](docs/MOBILE-APP.md)
 
 ---
 

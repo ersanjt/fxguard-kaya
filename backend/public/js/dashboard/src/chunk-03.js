@@ -1203,7 +1203,7 @@
                 barEl.style.display = 'none';
                 barEl.setAttribute('hidden', '');
             }
-            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); fetchDashboardStats({ force: true }).then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             updateWaCallButtonsState();
             loadMessages(id);
             const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;

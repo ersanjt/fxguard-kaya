@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 const models = require('../models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
 const { Op } = require('sequelize');
-const { normalizePhone, getSendTarget, isLikelyWhatsAppLid, extractDigits } = require('../lib/phoneUtils');
+const { normalizePhone, getSendTarget, isLikelyWhatsAppLid, extractDigits, isGroupJid } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
@@ -435,22 +435,26 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
 async function processIncomingMessage(messageData, { io, rabbitChannel, redisClient, logger }) {
     try {
         if (messageData.isStatus) return;
-        const { body, contact, from, to, timestamp, hasMedia, media, chat } = messageData;
+        const { contact, from, to, timestamp, hasMedia, media, chat } = messageData;
+        let { body } = messageData;
         const isFromMe = !!messageData.fromMe;
-        const isGroup = !!(chat && chat.isGroup);
+        const groupChatId = [chat && chat.id, from, to]
+            .map((v) => (v == null ? '' : String(v).trim()))
+            .find((v) => isGroupJid(v)) || '';
+        const isGroup = !!(chat && chat.isGroup) || !!groupChatId;
 
-        // برای پیام‌های ارسالی از موبایل: شماره مشتری در to است نه from
+        // گروه: همیشه شناسهٔ گروه — حتی اگر پیام fromMe باشد (شمارهٔ خودِ خط را به‌جای گروه نگذار)
         let rawPhone;
-        if (isFromMe) {
+        if (isGroup) {
+            rawPhone = groupChatId || (chat && chat.id) || (isFromMe ? to : from);
+        } else if (isFromMe) {
             rawPhone = (contact && contact.number != null && String(contact.number).trim() !== '')
                 ? contact.number
                 : to;
         } else {
-            rawPhone = isGroup
-                ? (chat?.id || from)
-                : ((contact && contact.number != null && String(contact.number).trim() !== '')
-                    ? contact.number
-                    : from);
+            rawPhone = (contact && contact.number != null && String(contact.number).trim() !== '')
+                ? contact.number
+                : from;
         }
         // اگر فقط LID داریم، همان را نگه دار (ارسال بعدی با @lid انجام می‌شود)
         if (!isGroup && !rawPhone && contact && contact.lid) {
@@ -471,7 +475,18 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
         const hasText = body != null && String(body).trim().length > 0;
         const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()) || media.data);
-        if (!hasText && !hasUsableMedia) return;
+        const isGroupSystemEvent = isGroup && (
+            rawType === 'gp2' ||
+            rawType === 'group_notification' ||
+            rawType === 'notification' ||
+            rawType === 'notification_template' ||
+            rawType === 'groups_v4_invite'
+        );
+        if (!hasText && !hasUsableMedia) {
+            if (!isGroupSystemEvent) return;
+            const joinName = (chat && (chat.name || chat.subject || chat.formattedTitle) || '').toString().trim();
+            body = joinName ? `فعالیت در گروه «${joinName}»` : 'فعالیت در گروه واتساپ';
+        }
 
         const waMsgId = messageData.id ? String(messageData.id).trim() : null;
         if (waMsgId) {
