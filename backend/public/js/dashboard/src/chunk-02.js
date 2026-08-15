@@ -1843,6 +1843,19 @@
                     const customerId = (target.closest('[data-id]') || target).getAttribute('data-id') || '';
                     openCustomerModal(customerId);
                 }
+                else if (target.closest('.customer-modal-save') || target.matches('[onclick*="saveCustomerFromModal"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof saveCustomerFromModal === 'function') saveCustomerFromModal();
+                    return;
+                }
+                else if (target.closest('.customer-modal-close') || (target.matches('[onclick*="closeCustomerModal"]') && !target.closest('.customer-modal-save'))) {
+                    if (target.closest('#customerModal') || target.matches('[onclick*="closeCustomerModal"]')) {
+                        e.preventDefault();
+                        if (typeof closeCustomerModal === 'function') closeCustomerModal();
+                        return;
+                    }
+                }
                 else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
                     e.preventDefault();
                     if (typeof loadCustomers === 'function') loadCustomers();

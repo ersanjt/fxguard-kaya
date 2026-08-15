@@ -2539,6 +2539,10 @@
             window.submitBulkSend = typeof submitBulkSend === 'function' ? submitBulkSend : undefined;
             window.bulkSelectFiltered = typeof bulkSelectFiltered === 'function' ? bulkSelectFiltered : undefined;
             window.bulkClearSelection = typeof bulkClearSelection === 'function' ? bulkClearSelection : undefined;
+            window.openCustomerModal = typeof openCustomerModal === 'function' ? openCustomerModal : undefined;
+            window.closeCustomerModal = typeof closeCustomerModal === 'function' ? closeCustomerModal : undefined;
+            window.saveCustomerFromModal = typeof saveCustomerFromModal === 'function' ? saveCustomerFromModal : undefined;
+            window.loadCustomers = typeof loadCustomers === 'function' ? loadCustomers : undefined;
         })();
 
         async function loadLegacyLockdownCard() {

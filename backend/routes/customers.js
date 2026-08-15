@@ -274,16 +274,38 @@ router.post('/', async (req, res, next) => {
             address, city, country, postalCode, instagram, telegram, website } = req.body;
         if (!name && !phone) return res.status(400).json({ error: 'نام یا شماره تلفن الزامی است' });
         const allowedStatuses = ['active', 'inactive', 'blocked'];
+        const normalizedPhone = phone ? (normalizePhone(phone) || String(phone).trim()) : null;
+        if (normalizedPhone) {
+            const existing = await Customer.findOne({ where: { phone: normalizedPhone } });
+            if (existing) {
+                return res.status(409).json({
+                    error: existing.isRestrictedFromStaff
+                        ? 'این شماره قبلاً در آرشیو مشتریان ثبت شده است'
+                        : 'این شماره قبلاً ثبت شده است',
+                    id: existing.id,
+                });
+            }
+        }
+        let safeBirthDate = null;
+        if (birthDate) {
+            const raw = String(birthDate).trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) safeBirthDate = raw;
+            else {
+                const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                if (m) safeBirthDate = m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
+            }
+        }
         const customerData = {
             name: name ? String(name).trim() : null,
-            phone: phone ? (normalizePhone(phone) || String(phone).trim()) : null,
+            phone: normalizedPhone,
             email: email ? String(email).trim().toLowerCase() : null,
             notes: notes ? String(notes).trim() : null,
             status: status && allowedStatuses.includes(status) ? status : 'active',
             customFields: customFields && typeof customFields === 'object' ? customFields : {},
             source: source || 'manual',
             profilePic: profilePic ? String(profilePic).trim() : null,
-            birthDate: birthDate || null,
+            isRestrictedFromStaff: false,
+            birthDate: safeBirthDate,
             nationalId: nationalId || null,
             nationality: nationality || null,
             gender: ['male','female','other'].includes(gender) ? gender : null,

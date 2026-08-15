@@ -4024,6 +4024,19 @@
                     const customerId = (target.closest('[data-id]') || target).getAttribute('data-id') || '';
                     openCustomerModal(customerId);
                 }
+                else if (target.closest('.customer-modal-save') || target.matches('[onclick*="saveCustomerFromModal"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof saveCustomerFromModal === 'function') saveCustomerFromModal();
+                    return;
+                }
+                else if (target.closest('.customer-modal-close') || (target.matches('[onclick*="closeCustomerModal"]') && !target.closest('.customer-modal-save'))) {
+                    if (target.closest('#customerModal') || target.matches('[onclick*="closeCustomerModal"]')) {
+                        e.preventDefault();
+                        if (typeof closeCustomerModal === 'function') closeCustomerModal();
+                        return;
+                    }
+                }
                 else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
                     e.preventDefault();
                     if (typeof loadCustomers === 'function') loadCustomers();
@@ -8384,7 +8397,10 @@
             if (res.ok) { toast((res.data && res.data.message) || (LANG === 'fa' ? 'مشتری از دسترس خارج شد؛ پیام‌ها حفظ شدند' : 'Customer removed from active list; messages preserved')); closeCustomerModal(); showPage('customers'); loadCustomers(); currentCustomerId = null; currentCustomerData = null; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function saveCustomerFromModal() {
-            const id = document.getElementById('customerModalId').value.trim();
+            try {
+            const idEl = document.getElementById('customerModalId');
+            if (!idEl) { toast(t('err_generic') || 'Error', true); return; }
+            const id = idEl.value.trim();
             const name = document.getElementById('customerModalName').value.trim();
             const phone = (document.getElementById('customerModalPhone').value || '').trim().replace(/\s/g, '');
             const email = (document.getElementById('customerModalEmail').value || '').trim();
@@ -8395,7 +8411,13 @@
             // فیلدهای جدید
             const _getVal = function(fid) { const el = document.getElementById(fid); return el ? (el.value || '').trim() : ''; };
             const extraFields = {
-                birthDate: _getVal('customerModalBirthDate') || undefined,
+                birthDate: (function() {
+                    const raw = _getVal('customerModalBirthDate');
+                    if (!raw) return undefined;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+                    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+                    return m ? (m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0')) : undefined;
+                })(),
                 nationalId: _getVal('customerModalNationalId') || undefined,
                 nationality: _getVal('customerModalNationality') || undefined,
                 gender: _getVal('customerModalGender') || undefined,
@@ -8405,8 +8427,8 @@
                 city: _getVal('customerModalCity') || undefined,
                 country: _getVal('customerModalCountry') || undefined,
                 postalCode: _getVal('customerModalPostalCode') || undefined,
-                instagram: _getVal('customerModalInstagram') || undefined,
-                telegram: _getVal('customerModalTelegram') || undefined,
+                instagram: (function() { const v = _getVal('customerModalInstagram'); return (!v || v === '@username') ? undefined : v; })(),
+                telegram: (function() { const v = _getVal('customerModalTelegram'); return (!v || v === '@username') ? undefined : v; })(),
                 website: _getVal('customerModalWebsite') || undefined
             };
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
@@ -8431,6 +8453,9 @@
                     if (newId && customerModalSelectedTags.length) await apiFetch('/api/customers/' + newId + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
                     closeCustomerModal(); toast(t('btn_save')); loadCustomers();
                 } else toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+            } catch (err) {
+                toast((err && err.message) || t('err_generic') || 'Error', true);
             }
         }
 
@@ -14387,6 +14412,10 @@
             window.submitBulkSend = typeof submitBulkSend === 'function' ? submitBulkSend : undefined;
             window.bulkSelectFiltered = typeof bulkSelectFiltered === 'function' ? bulkSelectFiltered : undefined;
             window.bulkClearSelection = typeof bulkClearSelection === 'function' ? bulkClearSelection : undefined;
+            window.openCustomerModal = typeof openCustomerModal === 'function' ? openCustomerModal : undefined;
+            window.closeCustomerModal = typeof closeCustomerModal === 'function' ? closeCustomerModal : undefined;
+            window.saveCustomerFromModal = typeof saveCustomerFromModal === 'function' ? saveCustomerFromModal : undefined;
+            window.loadCustomers = typeof loadCustomers === 'function' ? loadCustomers : undefined;
         })();
 
         async function loadLegacyLockdownCard() {

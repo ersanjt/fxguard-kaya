@@ -56,15 +56,21 @@ function chatIdVariants(id) {
 /**
  * همهٔ مکالمات فعلی را آرشیو و از کارکنان مخفی می‌کند؛ مشتریان را محدود می‌کند.
  */
-async function lockdownExistingCrmData({ reason } = {}) {
+async function lockdownExistingCrmData({ reason, before } = {}) {
+    const convWhere = { id: { [Op.ne]: null } };
+    const custWhere = { id: { [Op.ne]: null }, isRestrictedFromStaff: false };
+    if (before) {
+        convWhere.createdAt = { [Op.lt]: before };
+        custWhere.createdAt = { [Op.lt]: before };
+    }
     const [convResult, custResult] = await Promise.all([
         Conversation.update(
             { isHiddenFromStaff: true, status: 'archived' },
-            { where: { id: { [Op.ne]: null } } }
+            { where: convWhere }
         ),
         Customer.update(
             { isRestrictedFromStaff: true },
-            { where: { id: { [Op.ne]: null }, isRestrictedFromStaff: false } }
+            { where: custWhere }
         ),
     ]);
     const conversationsUpdated = Array.isArray(convResult) ? convResult[0] : convResult;
@@ -342,11 +348,13 @@ async function ensureLegacyCutover(linkedNumber, meta = {}) {
         if (!alreadyCut) {
             const any = await Conversation.count();
             if (any > 0) {
+                const before = new Date(Date.now() - 5000);
                 const lockdown = await lockdownExistingCrmData({
                     reason: meta.reason || 'legacy_cutover',
+                    before,
                 });
                 if (number) row.lastLinkedGatewayNumber = number;
-                row.legacyLockdownAt = new Date();
+                row.legacyLockdownAt = before;
                 await row.save();
                 logger.warn('Legacy CRM cutover — previous chats/customers archived', {
                     number: number || prev || null,
