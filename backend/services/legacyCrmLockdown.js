@@ -109,6 +109,14 @@ async function restoreLegacyCrmVisibility({ reason } = {}) {
         (Array.isArray(convHidden) ? convHidden[0] : convHidden) +
         (typeof convArchived === 'number' ? convArchived : 0);
     const customersUpdated = Array.isArray(custResult) ? custResult[0] : custResult;
+    try {
+        const row = await WhatsappConnection.findByPk('default');
+        if (row) {
+            row.legacyLockdownAt = null;
+            await row.save();
+        }
+    } catch (_) {}
+
     const stats = await getLockdownStats();
     logger.info('Legacy CRM visibility restored', {
         reason: reason || 'manual',
@@ -120,9 +128,8 @@ async function restoreLegacyCrmVisibility({ reason } = {}) {
 }
 
 /**
- * فقط چت‌های موجود روی شمارهٔ فعلی Gateway را باز کن؛
- * بقیهٔ مکالمات واتساپی را دوباره آرشیو/مخفی کن.
- * آپدیت‌ها bulk هستند تا درخواست تایم‌اوت نشود.
+ * چت‌های روی لیست فعلی Gateway را دوباره باز نمی‌کند.
+ * فقط مکالمات واتساپیِ خارج از آن لیست را آرشیو/محدود می‌کند.
  */
 async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     const gw = normalizeLinkedNumber(gatewayNumber);
@@ -164,7 +171,6 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
 
     const openIds = [];
     const archiveIds = [];
-    const unrestrictCust = new Set();
     const restrictCust = new Set();
 
     for (const conv of convs) {
@@ -175,19 +181,14 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
         const onCurrent = variants.some((v) => allowed.has(String(v).toLowerCase()));
 
         if (onCurrent) {
-            if (conv.status === 'archived' || !!conv.isHiddenFromStaff) {
-                openIds.push(conv.id);
-            }
-            if (conv.customer?.isRestrictedFromStaff) {
-                unrestrictCust.add(conv.customer.id);
-            }
-        } else {
-            if (conv.status !== 'archived' || !conv.isHiddenFromStaff) {
-                archiveIds.push(conv.id);
-            }
-            if (conv.customer && !conv.customer.isRestrictedFromStaff) {
-                restrictCust.add(conv.customer.id);
-            }
+            // تاریخچهٔ واتساپ شمارهٔ فعلی را دوباره باز نکن — فقط پیام زنده لیست عادی می‌سازد
+            continue;
+        }
+        if (conv.status !== 'archived' || !conv.isHiddenFromStaff) {
+            archiveIds.push(conv.id);
+        }
+        if (conv.customer && !conv.customer.isRestrictedFromStaff) {
+            restrictCust.add(conv.customer.id);
         }
     }
 
@@ -212,9 +213,6 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
             archiveIds
         );
     }
-    if (unrestrictCust.size) {
-        await chunked(Customer, { isRestrictedFromStaff: false }, [...unrestrictCust]);
-    }
     if (restrictCust.size) {
         await chunked(Customer, { isRestrictedFromStaff: true }, [...restrictCust]);
     }
@@ -222,26 +220,21 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     logger.info('Applied visibility for current Gateway chats', {
         gatewayNumber: gw || null,
         allowedCount: ids.length,
-        opened: openIds.length,
+        opened: 0,
         archived: archiveIds.length,
-        unrestricted: unrestrictCust.size,
+        unrestricted: 0,
         restricted: restrictCust.size,
     });
     return {
-        opened: openIds.length,
+        opened: 0,
         archived: archiveIds.length,
-        unrestricted: unrestrictCust.size,
+        unrestricted: 0,
         restricted: restrictCust.size,
         allowedCount: ids.length,
     };
 }
 
-async function handleGatewayNumberReady(linkedNumber, meta = {}) {
-    const number = normalizeLinkedNumber(linkedNumber);
-    if (!number) {
-        return { changed: false, lockdown: null };
-    }
-
+async function getOrCreateConnectionRow() {
     const [row] = await WhatsappConnection.findOrCreate({
         where: { id: 'default' },
         defaults: {
@@ -250,30 +243,69 @@ async function handleGatewayNumberReady(linkedNumber, meta = {}) {
             gatewayEnabled: true,
         },
     });
+    return row;
+}
 
+/**
+ * یک‌بار دادهٔ قبلی را آرشیو/محدود می‌کند:
+ * تعویض شماره، اولین اتصال روی دیتای موجود، یا اولین cutover بعد از ارتقا.
+ */
+async function ensureLegacyCutover(linkedNumber, meta = {}) {
+    const number = normalizeLinkedNumber(linkedNumber);
+    const row = await getOrCreateConnectionRow();
     const prev = normalizeLinkedNumber(row.lastLinkedGatewayNumber);
-    if (!prev) {
+    const alreadyCut = !!row.legacyLockdownAt;
+
+    if (number && prev && prev !== number) {
+        const lockdown = await lockdownExistingCrmData({
+            reason: meta.reason || `gateway_number_changed:${prev}->${number}`,
+        });
+        row.lastLinkedGatewayNumber = number;
+        row.legacyLockdownAt = new Date();
+        await row.save();
+        logger.warn('WhatsApp gateway number changed — legacy CRM data archived and locked', {
+            previous: prev,
+            number,
+            ...lockdown,
+        });
+        return { changed: true, previous: prev, number, lockdown };
+    }
+
+    if (!alreadyCut) {
+        const visible = await Conversation.count({
+            where: { isHiddenFromStaff: false, status: { [Op.ne]: 'archived' } },
+        });
+        if (visible > 0) {
+            const lockdown = await lockdownExistingCrmData({
+                reason: meta.reason || 'legacy_cutover',
+            });
+            if (number) row.lastLinkedGatewayNumber = number;
+            row.legacyLockdownAt = new Date();
+            await row.save();
+            logger.warn('Legacy CRM cutover — previous chats/customers archived', {
+                number: number || prev || null,
+                ...lockdown,
+            });
+            return { changed: true, firstCutover: true, number: number || prev || null, lockdown };
+        }
+        if (number) row.lastLinkedGatewayNumber = number;
+        row.legacyLockdownAt = new Date();
+        await row.save();
+        return { changed: false, firstConnect: !prev, number, lockdown: null };
+    }
+
+    if (number && !prev) {
         row.lastLinkedGatewayNumber = number;
         await row.save();
-        logger.info('Gateway linked number recorded (first connect)', { number });
-        return { changed: false, firstConnect: true, number, lockdown: null };
     }
+    return { changed: false, number: number || prev || null, lockdown: null };
+}
 
-    if (prev === number) {
-        return { changed: false, number, lockdown: null };
+async function handleGatewayNumberReady(linkedNumber, meta = {}) {
+    if (!normalizeLinkedNumber(linkedNumber)) {
+        return { changed: false, lockdown: null };
     }
-
-    const lockdown = await lockdownExistingCrmData({
-        reason: meta.reason || `gateway_number_changed:${prev}->${number}`,
-    });
-    row.lastLinkedGatewayNumber = number;
-    await row.save();
-    logger.warn('WhatsApp gateway number changed — legacy CRM data archived and locked', {
-        previous: prev,
-        number,
-        ...lockdown,
-    });
-    return { changed: true, previous: prev, number, lockdown };
+    return ensureLegacyCutover(linkedNumber, meta);
 }
 
 async function getLockdownStats() {
@@ -303,6 +335,7 @@ module.exports = {
     lockdownExistingCrmData,
     restoreLegacyCrmVisibility,
     applyVisibilityForCurrentGatewayChats,
+    ensureLegacyCutover,
     handleGatewayNumberReady,
     getLockdownStats,
     normalizeLinkedNumber,

@@ -14,9 +14,9 @@ const {
 } = require('../lib/staffResourceGrants');
 const {
     restoreLegacyCrmVisibility,
-    applyVisibilityForCurrentGatewayChats,
     getLockdownStats,
     handleGatewayNumberReady,
+    ensureLegacyCutover,
     normalizeLinkedNumber,
 } = require('../services/legacyCrmLockdown');
 const { logActivity } = require('../services/activityLog');
@@ -42,25 +42,17 @@ router.get('/stats', async (req, res, next) => {
 
 /**
  * POST /api/access-grants/lockdown-legacy
- * فقط مکالمات خارج از چت‌لیست شمارهٔ فعلی Gateway را آرشیو/مخفی می‌کند.
- * (دیگر همهٔ مکالمات را یکجا قفل نمی‌کند)
+ * همهٔ مکالمات/مشتریان فعلی را آرشیو و محدود می‌کند (یک‌بار؛ چت زندهٔ بعدی لیست جدید می‌سازد).
  */
 router.post('/lockdown-legacy', async (req, res, next) => {
     try {
         if (!requireGrantAdmin(req, res)) return;
 
-        const {
-            gatewayGet,
-            gatewayPost,
-            getWhatsappConnectionConfig,
-        } = require('../lib/gatewayClient');
-        const logger = require('../config/logger');
-        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-        const cfg = await getWhatsappConnectionConfig();
+        const { gatewayGet, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
         let liveStatus = {};
         try {
-            const st = await gatewayGet('/api/status', { timeout: 10000, cfg });
+            const cfg = await getWhatsappConnectionConfig();
+            const st = await gatewayGet('/api/status', { timeout: 8000, cfg });
             liveStatus = st?.data || {};
         } catch (_) {}
 
@@ -69,113 +61,31 @@ router.post('/lockdown-legacy', async (req, res, next) => {
             normalizeLinkedNumber(req.body && req.body.number) ||
             '';
 
-        const isReady = (d) =>
-            !!(d && (d.whatsapp || d.usable || d.status === 'ready' || d.phase === 'ready'));
-
-        if (!isReady(liveStatus)) {
-            try {
-                await gatewayPost('/api/start', {}, { timeout: 20000, cfg });
-                for (let i = 0; i < 8; i++) {
-                    await sleep(1500);
-                    try {
-                        const st = await gatewayGet('/api/status', { timeout: 8000, cfg });
-                        liveStatus = st?.data || liveStatus;
-                        if (isReady(liveStatus)) break;
-                    } catch (_) {}
-                }
-            } catch (_) {}
-        }
-
-        if (!isReady(liveStatus)) {
-            return res.status(503).json({
-                error: 'Gateway واتساپ آماده نیست. ابتدا در تنظیمات واتساپ وضعیت «متصل» را ببینید، بعد دوباره بزنید.',
-            });
-        }
-
-        let chatsPayload = null;
-        let lastErrMsg = '';
-        for (let attempt = 0; attempt < 4; attempt++) {
-            try {
-                if (attempt > 0) {
-                    await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
-                    await sleep(1200 * attempt);
-                }
-                try {
-                    const gwRes = await gatewayGet('/api/chats', { timeout: 60000, cfg });
-                    chatsPayload = gwRes?.data || null;
-                } catch (eAll) {
-                    if (eAll?.response?.status === 404) {
-                        const gwRes = await gatewayGet('/api/chats/groups', {
-                            timeout: 45000,
-                            cfg,
-                        });
-                        chatsPayload = gwRes?.data || null;
-                    } else {
-                        throw eAll;
-                    }
-                }
-                break;
-            } catch (e) {
-                lastErrMsg =
-                    (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
-                    e?.message ||
-                    '';
-                logger.warn('lockdown-legacy: chats fetch failed', {
-                    attempt: attempt + 1,
-                    error: lastErrMsg,
-                });
-                const retryable =
-                    e?.response?.status === 503 ||
-                    /not ready|timeout|getChats|Session closed|Target closed/i.test(
-                        String(lastErrMsg)
-                    );
-                if (!retryable) break;
-            }
-        }
-
-        const raw =
-            (chatsPayload && (chatsPayload.chats || chatsPayload.groups || chatsPayload.data)) ||
-            [];
-        const list = Array.isArray(raw)
-            ? raw
-            : Array.isArray(raw?.chats)
-              ? raw.chats
-              : Array.isArray(raw?.groups)
-                ? raw.groups
-                : [];
-        const chatIds = list
-            .map((c) => (c && (c.id || c.chatId) ? String(c.id || c.chatId).trim() : ''))
-            .filter(Boolean);
-
-        if (!chatIds.length) {
-            return res.status(503).json({
-                error: lastErrMsg
-                    ? `لیست چت واتساپ نیامد (${String(lastErrMsg).slice(0, 120)}). ۲۰ ثانیه صبر کنید و دوباره بزنید، یا از صفحه مکالمات «همگام‌سازی چت‌ها و گروه‌ها» را بزنید.`
-                    : 'لیست چت از واتساپ خالی آمد — برای جلوگیری از آرشیو اشتباه، هیچ تغییری داده نشد. ۲۰ ثانیه بعد دوباره بزنید یا «همگام‌سازی چت‌ها» را بزنید.',
-                gatewayNumber: gatewayNumber || null,
-            });
-        }
-
-        const visibility = await applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber);
+        const result = await ensureLegacyCutover(gatewayNumber, {
+            reason: 'manual_lockdown_legacy',
+        });
         await logActivity({
             userId: req.userId,
             branchId: req.user.branchId,
             departmentId: req.user.departmentId,
             action: 'legacy_crm_lockdown',
             entityType: 'system',
-            summary: `تفکیک شماره Gateway: ${visibility.archived} آرشیو، ${visibility.opened} باز، ${chatIds.length} چت فعلی`,
-            metadata: { ...visibility, gatewayNumber },
+            summary: result.changed
+                ? 'مکالمات و مشتریان قبلی آرشیو و محدود شدند'
+                : 'قفل دادهٔ قبلی از قبل اعمال شده بود',
+            metadata: { ...result, gatewayNumber },
         }).catch(() => {});
         const stats = await getLockdownStats();
         res.json({
             ok: true,
-            ...visibility,
-            gatewayNumber: gatewayNumber || null,
-            chatsOnGateway: chatIds.length,
+            ...(result.lockdown || {}),
+            changed: !!result.changed,
+            alreadyApplied: !result.changed,
+            gatewayNumber: gatewayNumber || result.number || null,
             stats,
-            message: visibility.skipped
-                ? 'لیست خالی بود؛ تغییری اعمال نشد'
-                : `${visibility.opened} مکالمهٔ شمارهٔ فعلی باز شد؛ ${visibility.archived} مکالمهٔ دیگر به آرشیو رفت`,
+            message: result.changed
+                ? 'مکالمات و مشتریان قبلی آرشیو شدند. لیست عادی خالی است تا پیام زنده روی شمارهٔ جدید برسد.'
+                : 'قفل دادهٔ قبلی قبلاً اعمال شده. چت‌ها و مشتریان جدید شمارهٔ فعلی در لیست عادی می‌مانند.',
         });
     } catch (err) {
         next(err);

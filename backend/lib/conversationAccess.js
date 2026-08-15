@@ -6,6 +6,13 @@ const {
     visibleDespiteHiddenOr,
 } = require('./staffResourceGrants');
 
+function customerIsRestricted(conversation) {
+    if (conversation && conversation.customer && conversation.customer.isRestrictedFromStaff != null) {
+        return !!conversation.customer.isRestrictedFromStaff;
+    }
+    return !!(conversation && conversation._customerRestricted);
+}
+
 /** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 function canAccessConversation(user, userId, conversation, grants = null) {
     if (!conversation || !user) return false;
@@ -16,6 +23,7 @@ function canAccessConversation(user, userId, conversation, grants = null) {
         hasResourceGrant(grants, 'customer', conversation.customerId);
 
     if (conversation.isHiddenFromStaff && !granted) return false;
+    if (customerIsRestricted(conversation) && !granted) return false;
 
     if (granted) return true;
 
@@ -29,11 +37,31 @@ function canAccessConversation(user, userId, conversation, grants = null) {
 async function canAccessConversationAsync(user, userId, conversation) {
     if (!conversation || !user) return false;
     if (isMainAdmin(user) || canViewHiddenConversations(user)) return true;
-    if (!conversation.isHiddenFromStaff) {
-        return canAccessConversation(user, userId, conversation, null);
+
+    let view = conversation;
+    if (
+        conversation.customerId &&
+        (!conversation.customer || conversation.customer.isRestrictedFromStaff == null)
+    ) {
+        const { Customer } = require('../models');
+        const row = await Customer.findByPk(conversation.customerId, {
+            attributes: ['isRestrictedFromStaff'],
+            raw: true,
+        });
+        view = {
+            id: conversation.id,
+            customerId: conversation.customerId,
+            assignedTo: conversation.assignedTo,
+            departmentId: conversation.departmentId,
+            isHiddenFromStaff: conversation.isHiddenFromStaff,
+            customer: conversation.customer || row || null,
+            _customerRestricted: !!(row && row.isRestrictedFromStaff),
+        };
     }
-    const grants = await getUserGrantSets(userId);
-    return canAccessConversation(user, userId, conversation, grants);
+
+    const needsGrants = !!(view.isHiddenFromStaff || customerIsRestricted(view));
+    const grants = needsGrants ? await getUserGrantSets(userId) : null;
+    return canAccessConversation(user, userId, view, grants);
 }
 
 /** فیلتر Sequelize برای مخفی‌سازی مکالمات از دید کاربران غیرمجاز */

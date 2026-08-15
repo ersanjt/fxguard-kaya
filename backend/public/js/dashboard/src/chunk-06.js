@@ -2587,12 +2587,8 @@
                 btn.addEventListener('click', async function() {
                     if (!confirm(t('whatsapp_legacy_lockdown_confirm') || 'Lock previous CRM data?')) return;
                     btn.disabled = true;
-                    toast(LANG === 'fa' ? 'در حال خواندن چت‌های واتساپ شمارهٔ فعلی…' : 'Reading current WhatsApp chats…');
-                    // مسیر پایدار: همگام‌سازی + تفکیک (retry داخلی + timeout بلند)
-                    let r = await apiFetch('/api/conversations/sync-groups', { method: 'POST', timeoutMs: 180000 });
-                    if (!r.ok && !(r.data && r.data.soft)) {
-                        r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}', timeoutMs: 180000 });
-                    }
+                    toast(t('whatsapp_legacy_lockdown_working') || (LANG === 'fa' ? 'در حال آرشیو مکالمات و مشتریان قبلی…' : 'Archiving previous chats and customers…'));
+                    const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}', timeoutMs: 120000 });
                     btn.disabled = false;
                     if (r.ok) {
                         const msg = (r.data && r.data.message) || (t('whatsapp_legacy_lockdown_done') || 'Locked');

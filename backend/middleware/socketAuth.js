@@ -18,6 +18,7 @@ module.exports = async (socket, next) => {
         socket.userId = user.id;
         socket.departmentId = user.departmentId;
         socket.userRole = user.role;
+        socket.user = user;
         next();
     } catch (err) {
         next(new Error('توکن نامعتبر یا منقضی'));

@@ -3231,7 +3231,7 @@
             }
             if (kpiPrimaryEl && can('conversations')) {
                 const primaryItems = [
-                    { page: 'conversations', num: dashFormatNum(n(stats.openConversations)), label: t('dashboard_stat_conversations'), warn: n(stats.unreadConversations) > 0, convTab: 'open' },
+                    { page: 'conversations', num: dashFormatNum(n(stats.openConversations)), label: t('dashboard_stat_conversations'), warn: false, convTab: 'open' },
                     { page: 'conversations', num: dashFormatNum(n(stats.unreadConversations)), label: t('dashboard_stat_unread'), warn: n(stats.unreadConversations) > 0, convTab: 'unread' },
                     { page: 'conversations', num: dashFormatNum(n(stats.unansweredConversations)), label: t('dashboard_stat_unanswered'), warn: n(stats.unansweredConversations) > 0, convTab: 'unanswered' },
                     { page: 'conversations', num: dashFormatNum(n(stats.unassignedConversations)), label: t('dashboard_stat_unassigned'), warn: n(stats.unassignedConversations) > 0, convTab: 'unassigned' }
@@ -3248,8 +3248,8 @@
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.staffOnline)), label: t('dashboard_stat_online') });
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
-                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
-                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (t('dashboard_min') || (LANG === 'fa' ? 'دقیقه' : 'min')), label: t('dashboard_avg_response') || t('avg_response_time') || 'Avg response time', convTab: 'all' });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/5', label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
                 summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
             }
@@ -3710,10 +3710,8 @@
                     e.stopPropagation();
                     var _statPage = dashStat.getAttribute('data-dashboard-page') || '';
                     var _statConvTab = dashStat.getAttribute('data-conv-tab');
+                    if (_statConvTab && _statPage === 'conversations') window._pendingConvQuickTab = _statConvTab;
                     showPage(_statPage);
-                    if (_statConvTab && _statPage === 'conversations' && typeof setConvQuickTab === 'function') {
-                        setTimeout(function() { setConvQuickTab(_statConvTab); }, 0);
-                    }
                     return;
                 }
                 const dashAtt = targetEl && targetEl.closest && targetEl.closest('.dashboard-attention-link[data-dashboard-page]');
@@ -3722,10 +3720,8 @@
                     e.stopPropagation();
                     var _dashPage = dashAtt.getAttribute('data-dashboard-page') || '';
                     var _dashConvTab = dashAtt.getAttribute('data-conv-tab');
+                    if (_dashConvTab && _dashPage === 'conversations') window._pendingConvQuickTab = _dashConvTab;
                     showPage(_dashPage);
-                    if (_dashConvTab && _dashPage === 'conversations' && typeof setConvQuickTab === 'function') {
-                        setTimeout(function() { setConvQuickTab(_dashConvTab); }, 0);
-                    }
                     return;
                 }
                 const dashQuick = targetEl && targetEl.closest && targetEl.closest('.btn-quick[data-quick-action]');
@@ -3872,7 +3868,7 @@
                 const statLink = target.closest('.whatsapp-stat-link[data-stat]');
                 if (statLink && typeof showPage === 'function' && typeof setConvQuickTab === 'function') {
                     const stat = statLink.getAttribute('data-stat');
-                    if (stat) { e.preventDefault(); e.stopPropagation(); showPage('conversations'); setConvQuickTab(stat); }
+                    if (stat) { e.preventDefault(); e.stopPropagation(); window._pendingConvQuickTab = stat; showPage('conversations'); }
                     return;
                 }
                 // دکمه‌های اتصال واتساپ
@@ -4816,10 +4812,16 @@
         }
         
         const convPageSize = 50;
-        function setConvQuickTab(tab) {
+        function applyPendingConvQuickTab(tab) {
             convQuickTab = tab || 'all';
             convCurrentPage = 1;
-            document.querySelectorAll('.conv-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab); });
+            document.querySelectorAll('#convQuickTabsBar .conv-tab, #convQuickTabsPanel .conv-tab').forEach(function(b){
+                b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab);
+            });
+        }
+        window.applyPendingConvQuickTab = applyPendingConvQuickTab;
+        function setConvQuickTab(tab) {
+            applyPendingConvQuickTab(tab);
             applyConvFilters();
         }
         function toggleConvAdvancedFilters() {
@@ -5095,13 +5097,14 @@
         };
 
         let _loadConversationsInFlight = false;
+        let _loadConversationsSeq = 0;
         let _convListRateLimitedUntil = 0;
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             ensureMobileWaSender(false);
             if (!list) return;
-            if (!appendMode && _loadConversationsInFlight) return;
+            const seq = ++_loadConversationsSeq;
             if (Date.now() < _convListRateLimitedUntil) {
                 if (!appendMode) {
                     list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + escapeHtml(t('loading_err') || '') + ' ' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. کمی صبر کنید.' : 'Too many requests. Please wait.') + '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
@@ -5139,8 +5142,9 @@
             try {
                 res = await apiFetch('/api/conversations' + q);
             } finally {
-                _loadConversationsInFlight = false;
+                if (seq === _loadConversationsSeq) _loadConversationsInFlight = false;
             }
+            if (seq !== _loadConversationsSeq) return;
             if (res.needLogin) return;
             if (!res.ok) {
                 const ce = document.getElementById('convListCount');
@@ -9599,6 +9603,10 @@
             if (page === 'conversations') { 
                 loadConvFiltersInit();
                 if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
+                if (window._pendingConvQuickTab && typeof applyPendingConvQuickTab === 'function') {
+                    applyPendingConvQuickTab(window._pendingConvQuickTab);
+                    window._pendingConvQuickTab = null;
+                }
                 loadConversations(); 
                 setTimeout(function() { 
                     removeAllInlineHandlers(); 
@@ -14427,12 +14435,8 @@
                 btn.addEventListener('click', async function() {
                     if (!confirm(t('whatsapp_legacy_lockdown_confirm') || 'Lock previous CRM data?')) return;
                     btn.disabled = true;
-                    toast(LANG === 'fa' ? 'در حال خواندن چت‌های واتساپ شمارهٔ فعلی…' : 'Reading current WhatsApp chats…');
-                    // مسیر پایدار: همگام‌سازی + تفکیک (retry داخلی + timeout بلند)
-                    let r = await apiFetch('/api/conversations/sync-groups', { method: 'POST', timeoutMs: 180000 });
-                    if (!r.ok && !(r.data && r.data.soft)) {
-                        r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}', timeoutMs: 180000 });
-                    }
+                    toast(t('whatsapp_legacy_lockdown_working') || (LANG === 'fa' ? 'در حال آرشیو مکالمات و مشتریان قبلی…' : 'Archiving previous chats and customers…'));
+                    const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}', timeoutMs: 120000 });
                     btn.disabled = false;
                     if (r.ok) {
                         const msg = (r.data && r.data.message) || (t('whatsapp_legacy_lockdown_done') || 'Locked');

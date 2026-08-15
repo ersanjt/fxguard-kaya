@@ -265,6 +265,13 @@ async function runPreSync(sequelize, logger) {
             });
             logger.info('✅ whatsapp_connections.lastLinkedGatewayNumber column added (pre-sync)');
         }
+        if (connDesc && connDesc.legacyLockdownAt === undefined) {
+            await qi.addColumn('whatsapp_connections', 'legacyLockdownAt', {
+                type: DataTypes.DATE,
+                allowNull: true,
+            });
+            logger.info('✅ whatsapp_connections.legacyLockdownAt column added (pre-sync)');
+        }
     } catch (e) {
         if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
             logger.warn('whatsapp_connections pre-sync migration:', e.message);

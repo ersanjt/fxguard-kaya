@@ -7,7 +7,10 @@ function isSensitiveUploadPath(urlPath) {
     const p = String(urlPath || '')
         .replace(/\\/g, '/')
         .toLowerCase();
-    return SENSITIVE_PREFIXES.some((prefix) => p.includes(prefix));
+    if (SENSITIVE_PREFIXES.some((prefix) => p.includes(prefix))) return true;
+    const last = (p.split('/').filter(Boolean).pop() || '');
+    // پیوست چت: 1712345678901-filename.ext
+    return /^\d{10,}-/.test(last);
 }
 
 function protectSensitiveUploads(req, res, next) {

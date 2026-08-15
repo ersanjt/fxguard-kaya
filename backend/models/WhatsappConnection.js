@@ -67,6 +67,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'آخرین شماره واتساپ متصل‌شده از Gateway — برای تشخیص تعویض شماره و قفل دادهٔ قبلی',
         },
+        legacyLockdownAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'زمان قطع ارتباط دادهٔ قبلی؛ بعد از این فقط چت/مشتری جدید در لیست عادی می‌آید',
+        },
         numberFailoverEnabled: {
             type: DataTypes.BOOLEAN,
             allowNull: true,

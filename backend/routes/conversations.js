@@ -32,6 +32,7 @@ const {
     redactConversationList,
     publicCustomerSocketPayload,
 } = require('../lib/customerPhoneVisibility');
+const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -81,7 +82,7 @@ async function emitConversationNewMessage(req, conversation, msg) {
         /* ignore */
     }
     const customer = conversation.customer;
-    io.emit('new_message', {
+    await emitNewMessageToAuthorized(io, conversation, {
         conversationId: conversation.id,
         customerId: conversation.customerId,
         message: messagePayload,
@@ -238,6 +239,7 @@ router.post('/sync-groups', async (req, res, next) => {
             applyVisibilityForCurrentGatewayChats,
             chatIdVariants,
             normalizeLinkedNumber,
+            ensureLegacyCutover,
         } = require('../services/legacyCrmLockdown');
 
         // حتی اگر ensure کوتاه شکست خورد، یک وضعیت زنده بگیر — UI ممکن است «متصل» باشد
@@ -254,6 +256,12 @@ router.post('/sync-groups', async (req, res, next) => {
             normalizeLinkedNumber(liveStatus.number) ||
             normalizeLinkedNumber(readyGate?.data?.number) ||
             '';
+
+        try {
+            await ensureLegacyCutover(gatewayNumber || liveStatus.number, { reason: 'sync_groups' });
+        } catch (cutErr) {
+            logger.warn('sync-groups: cutover failed', { error: cutErr?.message });
+        }
 
         const fetchGatewayChats = async () => {
             let lastErr = null;
@@ -391,7 +399,7 @@ router.post('/sync-groups', async (req, res, next) => {
                             defaults: {
                                 name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${chatId}`),
                                 source: 'whatsapp',
-                                isRestrictedFromStaff: false,
+                                isRestrictedFromStaff: true,
                             },
                             transaction: t,
                         });
@@ -408,9 +416,11 @@ router.post('/sync-groups', async (req, res, next) => {
                     await t.rollback();
                     continue;
                 }
-                const custUpdates = { isRestrictedFromStaff: false };
+                const custUpdates = {};
                 if (chatName && customer.name !== chatName) custUpdates.name = chatName;
-                await customer.update(custUpdates, { transaction: t });
+                if (Object.keys(custUpdates).length) {
+                    await customer.update(custUpdates, { transaction: t });
+                }
 
                 const stampMeta = (meta) => ({
                     ...(meta || {}),
@@ -419,47 +429,42 @@ router.post('/sync-groups', async (req, res, next) => {
                         ? chatName || (meta && meta.groupName) || null
                         : meta && meta.groupName,
                     linkedGatewayNumber: gatewayNumber || (meta && meta.linkedGatewayNumber) || null,
-                    notOnCurrentGateway: false,
+                    historicalImport: true,
                 });
 
-                let conv = await Conversation.findOne({
+                const conv = await Conversation.findOne({
                     where: {
                         customerId: customer.id,
                         status: { [Op.notIn]: ['closed', 'archived'] },
+                        isHiddenFromStaff: false,
                     },
                     transaction: t,
                 });
-                if (!conv) {
-                    const archived = await Conversation.findOne({
-                        where: { customerId: customer.id, status: 'archived' },
+                if (conv) {
+                    const upd = { metadata: stampMeta(conv.metadata) };
+                    if (row.lastPreview && !conv.lastMessagePreview) {
+                        upd.lastMessagePreview = row.lastPreview;
+                    }
+                    await conv.update(upd, { transaction: t });
+                } else {
+                    const existing = await Conversation.findOne({
+                        where: { customerId: customer.id },
                         order: [['updatedAt', 'DESC']],
                         transaction: t,
                     });
-                    if (archived) {
-                        const upd = {
-                            status: 'open',
-                            isHiddenFromStaff: false,
-                            closedAt: null,
-                            metadata: stampMeta(archived.metadata),
-                        };
-                        if (row.lastPreview) {
+                    if (existing) {
+                        const upd = { metadata: stampMeta(existing.metadata) };
+                        if (row.lastPreview && !existing.lastMessagePreview) {
                             upd.lastMessagePreview = row.lastPreview;
-                            if (row.timestamp) {
-                                const tsNum = Number(row.timestamp);
-                                upd.lastMessageAt = new Date(
-                                    tsNum < 1e12 ? tsNum * 1000 : tsNum
-                                );
-                            }
                         }
-                        await archived.update(upd, { transaction: t });
-                        conv = archived;
+                        await existing.update(upd, { transaction: t });
                     } else {
                         const createData = {
                             customerId: customer.id,
-                            status: 'open',
+                            status: 'archived',
                             priority: 'normal',
                             source: 'whatsapp',
-                            isHiddenFromStaff: false,
+                            isHiddenFromStaff: true,
                             metadata: stampMeta({}),
                         };
                         if (row.lastPreview) {
@@ -473,15 +478,6 @@ router.post('/sync-groups', async (req, res, next) => {
                         }
                         await Conversation.create(createData, { transaction: t });
                     }
-                } else {
-                    const upd = {
-                        isHiddenFromStaff: false,
-                        metadata: stampMeta(conv.metadata),
-                    };
-                    if (row.lastPreview && !conv.lastMessagePreview) {
-                        upd.lastMessagePreview = row.lastPreview;
-                    }
-                    await conv.update(upd, { transaction: t });
                 }
                 await t.commit();
                 synced++;
@@ -516,10 +512,11 @@ router.post('/sync-groups', async (req, res, next) => {
             message:
                 chatRows.length === 0
                     ? 'هیچ چتی از واتساپ این شماره دریافت نشد'
-                    : `${synced} مکالمهٔ شمارهٔ فعلی همگام شد` +
+                    : `${synced} سابقه در آرشیو همگام شد` +
                       (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
+                      ' — لیست عادی فقط با پیام زنده روی شمارهٔ جدید پر می‌شود' +
                       (visibility.archived
-                          ? `؛ ${visibility.archived} مکالمهٔ شماره‌های دیگر به آرشیو برگشت`
+                          ? `؛ ${visibility.archived} مکالمهٔ دیگر آرشیو شد`
                           : '') +
                       (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
@@ -551,6 +548,12 @@ router.get('/', async (req, res, next) => {
         const where = {};
 
         const canViewHidden = req.canViewHiddenConversations && req.canViewHiddenConversations();
+        const hiddenOnly = req.query.hiddenOnly === '1' || req.query.hiddenOnly === 'true';
+        if (hiddenOnly && !canViewHidden) {
+            return res
+                .status(403)
+                .json({ error: 'فقط ادمین سطح بالا به مکالمات محدودشده دسترسی دارد' });
+        }
         if (status === 'archived' || archived === '1' || archived === 'true') {
             // آرشیو (از جمله مکالمات قفل‌شدهٔ شمارهٔ قبلی) فقط ادمین سطح بالا
             if (!canViewHidden) {
@@ -561,7 +564,7 @@ router.get('/', async (req, res, next) => {
             where.status = 'archived';
         } else if (status) {
             where.status = status;
-        } else {
+        } else if (!hiddenOnly) {
             // لیست عادی: آرشیو نشان داده نشود — تب آرشیو جداست
             where.status = { [Op.ne]: 'archived' };
         }
@@ -611,7 +614,6 @@ router.get('/', async (req, res, next) => {
             req.query.includeHidden === '1' ||
             req.query.includeHidden === 'true' ||
             viewingArchived;
-        const hiddenOnly = req.query.hiddenOnly === '1' || req.query.hiddenOnly === 'true';
         const listAccess = await conversationListWhereAsync(req.user, req.userId, {
             includeHidden,
             hiddenOnly,

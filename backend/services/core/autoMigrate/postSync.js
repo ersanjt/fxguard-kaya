@@ -154,6 +154,18 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                         logger.warn('whatsapp_connections.lastLinkedGatewayNumber', e.message);
                 }
             }
+            if (connDesc.legacyLockdownAt === undefined) {
+                try {
+                    await qi.addColumn('whatsapp_connections', 'legacyLockdownAt', {
+                        type: DataTypes.DATE,
+                        allowNull: true,
+                    });
+                    logger.info('✅ whatsapp_connections: legacyLockdownAt column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('whatsapp_connections.legacyLockdownAt', e.message);
+                }
+            }
         }
     } catch (e) {
         if (!String(e.message || '').includes('does not exist') && !String(e.message || '').includes('no such table'))

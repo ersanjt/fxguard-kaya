@@ -944,6 +944,54 @@ async function runTests() {
             { id: '2', role: 'agent', departmentId: deptA, isActive: true }
         ), false);
     });
+
+    section('Legacy cutover visibility');
+
+    await test('chatIdVariants and normalizeLinkedNumber', async () => {
+        const { chatIdVariants, normalizeLinkedNumber } = require('../services/legacyCrmLockdown');
+        const v = chatIdVariants('905551112233@c.us');
+        assert(v.includes('905551112233'));
+        assert(v.includes('905551112233@c.us'));
+        assert.strictEqual(normalizeLinkedNumber('+90 555 111 22 33'), '905551112233');
+    });
+
+    await test('restricted customer conversation is denied to assigned agent', async () => {
+        const { canAccessConversation } = require('../lib/conversationAccess');
+        const agent = { role: 'agent', departmentId: 'd1' };
+        const conv = {
+            id: 'c1',
+            customerId: 'cust1',
+            assignedTo: 'u1',
+            departmentId: 'd1',
+            isHiddenFromStaff: false,
+            customer: { isRestrictedFromStaff: true },
+        };
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), false);
+        const grants = { customerIds: new Set(['cust1']), conversationIds: new Set() };
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, grants), true);
+    });
+
+    await test('timestamp chat uploads require auth', async () => {
+        const { isSensitiveUploadPath } = require('../middleware/protectedUploads');
+        assert.strictEqual(isSensitiveUploadPath('/1712345678901-voice.ogg'), true);
+        assert.strictEqual(isSensitiveUploadPath('/customers/x.jpg'), true);
+        assert.strictEqual(isSensitiveUploadPath('/branding/logo.png'), false);
+    });
+
+    await test('hidden conversations are excluded from default All list', async () => {
+        const { Conversation } = require('../models');
+        const conv = await Conversation.findByPk(filterConversationId);
+        assert(conv, 'filter conversation missing');
+        await conv.update({ isHiddenFromStaff: true, status: 'archived' });
+        const all = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(all.status, 200);
+        assert(!all.body.data.some((c) => c.id === filterConversationId), 'hidden conv must not appear in All');
+        const hidden = await req.get('/api/conversations?hiddenOnly=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(hidden.status, 200);
+        assert(hidden.body.data.some((c) => c.id === filterConversationId), 'hidden conv should appear in restricted tab');
+    });
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

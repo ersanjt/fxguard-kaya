@@ -644,10 +644,16 @@
         }
         
         const convPageSize = 50;
-        function setConvQuickTab(tab) {
+        function applyPendingConvQuickTab(tab) {
             convQuickTab = tab || 'all';
             convCurrentPage = 1;
-            document.querySelectorAll('.conv-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab); });
+            document.querySelectorAll('#convQuickTabsBar .conv-tab, #convQuickTabsPanel .conv-tab').forEach(function(b){
+                b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab);
+            });
+        }
+        window.applyPendingConvQuickTab = applyPendingConvQuickTab;
+        function setConvQuickTab(tab) {
+            applyPendingConvQuickTab(tab);
             applyConvFilters();
         }
         function toggleConvAdvancedFilters() {
@@ -923,13 +929,14 @@
         };
 
         let _loadConversationsInFlight = false;
+        let _loadConversationsSeq = 0;
         let _convListRateLimitedUntil = 0;
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             ensureMobileWaSender(false);
             if (!list) return;
-            if (!appendMode && _loadConversationsInFlight) return;
+            const seq = ++_loadConversationsSeq;
             if (Date.now() < _convListRateLimitedUntil) {
                 if (!appendMode) {
                     list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + escapeHtml(t('loading_err') || '') + ' ' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. کمی صبر کنید.' : 'Too many requests. Please wait.') + '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
@@ -967,8 +974,9 @@
             try {
                 res = await apiFetch('/api/conversations' + q);
             } finally {
-                _loadConversationsInFlight = false;
+                if (seq === _loadConversationsSeq) _loadConversationsInFlight = false;
             }
+            if (seq !== _loadConversationsSeq) return;
             if (res.needLogin) return;
             if (!res.ok) {
                 const ce = document.getElementById('convListCount');

@@ -18,6 +18,7 @@ const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCu
 const { notifySystemEvent } = require('./systemEventNotifier');
 const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, parseMsgMetadata } = require('../lib/resolveMobileWhatsappUser');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
+const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -556,61 +557,39 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             where: {
                 customerId: customer.id,
                 status: { [Op.notIn]: ['closed', 'archived'] },
+                isHiddenFromStaff: false,
             },
             order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
         });
 
-        // مکالمهٔ آرشیو/مخفی (مثلاً بعد از عوض شدن شماره Gateway) — با پیام زنده دوباره باز کن
         let linkedGw = null;
+        let lockdownAt = null;
         try {
             const { WhatsappConnection } = require('../models');
             const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
             const row = await WhatsappConnection.findByPk('default');
             linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
+            lockdownAt = row?.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
         } catch (_) {}
 
-        if (!conversation) {
-            const archivedConv = await Conversation.findOne({
-                where: { customerId: customer.id, status: 'archived' },
-                order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
-            });
-            if (archivedConv) {
-                const meta = {
-                    ...(archivedConv.metadata || {}),
-                    linkedGatewayNumber: linkedGw || (archivedConv.metadata || {}).linkedGatewayNumber,
-                    notOnCurrentGateway: false,
-                };
-                await archivedConv.update({
-                    status: 'open',
-                    isHiddenFromStaff: false,
-                    closedAt: null,
-                    metadata: meta,
-                });
-                conversation = archivedConv;
-                logger.info('Reopened archived conversation on live WhatsApp message', {
-                    conversationId: conversation.id,
-                    customerId: customer.id,
-                    phone,
-                });
-            }
+        const incomingTs = timestamp
+            ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)
+            : new Date();
+        const isLiveAfterCutover =
+            !lockdownAt || incomingTs.getTime() >= lockdownAt.getTime() - 5000;
+
+        // آرشیو شمارهٔ قبلی را باز نکن — برای پیام زنده مکالمهٔ جدید بساز
+        if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
+            conversation = null;
         }
 
-        if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
-            const meta = {
-                ...(conversation.metadata || {}),
-                linkedGatewayNumber: linkedGw || (conversation.metadata || {}).linkedGatewayNumber,
-                notOnCurrentGateway: false,
-            };
-            await conversation.update({
-                status: 'open',
-                isHiddenFromStaff: false,
-                closedAt: null,
-                metadata: meta,
-            });
-            logger.info('Unhid conversation on live WhatsApp message', {
-                conversationId: conversation.id,
+        if (!isLiveAfterCutover) {
+            // بازپخش تاریخچه بعد از cutover نباید لیست عادی را پر کند
+            logger.info('Skipped historical WhatsApp replay after legacy cutover', {
                 customerId: customer.id,
+                phone,
             });
+            return { ok: true, skipped: 'legacy_history' };
         }
 
         if (customer.isRestrictedFromStaff) {
@@ -624,17 +603,23 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     where: {
                         customerId: customer.id,
                         status: { [Op.notIn]: ['closed', 'archived'] },
+                        isHiddenFromStaff: false,
                     },
                     transaction: t,
                     lock: t.LOCK.UPDATE,
                 });
                 if (!conversation) {
+                    const meta = isGroup
+                        ? { isGroup: true, groupName: groupNameFromChat || null }
+                        : {};
+                    if (linkedGw) meta.linkedGatewayNumber = linkedGw;
                     conversation = await Conversation.create({
                         customerId: customer.id,
                         status: 'open',
                         priority: 'normal',
                         source: 'whatsapp',
-                        metadata: isGroup ? { isGroup: true, groupName: groupNameFromChat || null } : {}
+                        isHiddenFromStaff: false,
+                        metadata: meta,
                     }, { transaction: t });
                 }
                 await t.commit();
@@ -644,6 +629,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     where: {
                         customerId: customer.id,
                         status: { [Op.notIn]: ['closed', 'archived'] },
+                        isHiddenFromStaff: false,
                     },
                 });
                 if (!conversation) throw txErr;
@@ -898,7 +884,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 if (aiReply) {
                     const autoMsg = await sendAutoReply(conversation, aiReply, rabbitChannel, logger, { isAI: true });
                     if (autoMsg) {
-                        io.emit('new_message', {
+                        await emitNewMessageToAuthorized(io, conversation, {
                             conversationId: conversation.id,
                             customerId: customer.id,
                             message: autoMsg,
@@ -926,7 +912,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             applyMobileWhatsappSenderToMessages([newMessage], mobileOwner);
         }
 
-        io.emit('new_message', {
+        if (!conversation.customer) conversation.customer = customer;
+        await emitNewMessageToAuthorized(io, conversation, {
             conversationId: conversation.id,
             customerId: customer.id,
             message: newMessage,

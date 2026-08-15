@@ -66,6 +66,16 @@ async function startServer() {
         await ensureDefaultDepartments();
         await ensureAdminUser(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger);
 
+        try {
+            const { ensureLegacyCutover } = require('./services/legacyCrmLockdown');
+            const cut = await ensureLegacyCutover(null, { reason: 'startup' });
+            if (cut && cut.changed) {
+                logger.warn('Startup legacy CRM cutover applied', cut);
+            }
+        } catch (cutErr) {
+            logger.warn('Startup legacy cutover skipped', { error: cutErr.message });
+        }
+
         if (!String(process.env.WHATSAPP_MOBILE_USER_ID || '').trim()
             && !String(process.env.WHATSAPP_MOBILE_USER_EMAIL || '').trim()) {
             logger.warn(

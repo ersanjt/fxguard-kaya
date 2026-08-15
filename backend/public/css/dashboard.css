@@ -2704,8 +2704,6 @@
                 text-overflow: ellipsis;
                 display: block;
             }
-            #pageConversations.wa-conversations-theme .conv-item-meta,
-            #pageConversations.wa-conversations-theme .conv-item-badges { display: none !important; }
             #pageConversations.wa-conversations-theme .conv-item-preview {
                 font-size: 0.8rem;
                 color: #8696a0;

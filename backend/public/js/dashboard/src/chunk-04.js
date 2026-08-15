@@ -1817,6 +1817,10 @@
             if (page === 'conversations') { 
                 loadConvFiltersInit();
                 if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
+                if (window._pendingConvQuickTab && typeof applyPendingConvQuickTab === 'function') {
+                    applyPendingConvQuickTab(window._pendingConvQuickTab);
+                    window._pendingConvQuickTab = null;
+                }
                 loadConversations(); 
                 setTimeout(function() { 
                     removeAllInlineHandlers(); 
