@@ -1919,8 +1919,7 @@
                 let html = '<div class="sup-int-chat-messages" style="display:flex;flex-direction:column;gap:12px;">';
                 messages.forEach(function(m) {
                     const fromName = (m.fromUser && m.fromUser.name) || (m.fromUser && m.fromUser.email) || '';
-                    const att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent);">\uD83D\uDCCE ' + escapeHtml(a.name || '') + '</a>'; }).join(' ') : '';
-                    html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
+                    html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div>' + internalMessageInnerHtml(m) + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
                 });
                 html += '</div>';
                 content.innerHTML = html;
@@ -2221,6 +2220,18 @@
             window.closeUserEditModal = closeUserEditModal;
             window.toggleUserForm = toggleUserForm;
             window.addUser = addUser;
+            window.toggleTicketForm = toggleTicketForm;
+            window.addTicket = addTicket;
+            window.loadTickets = loadTickets;
+            window.loadTicketDetail = loadTicketDetail;
+            window.showTicketList = showTicketList;
+            window.applyTicketFilters = applyTicketFilters;
+            window.updateTicketFromDetail = updateTicketFromDetail;
+            window.toggleTicketEditMode = toggleTicketEditMode;
+            window.archiveTicket = archiveTicket;
+            window.deleteTicketConfirm = deleteTicketConfirm;
+            window.submitTicketReply = submitTicketReply;
+            window.startProcessFromTicket = startProcessFromTicket;
             window.saveUserEdit = saveUserEdit;
             window.showOnboardingTour = showOnboardingTour;
             window.dismissOnboardingTour = dismissOnboardingTour;
@@ -2543,6 +2554,17 @@
             window.closeCustomerModal = typeof closeCustomerModal === 'function' ? closeCustomerModal : undefined;
             window.saveCustomerFromModal = typeof saveCustomerFromModal === 'function' ? saveCustomerFromModal : undefined;
             window.loadCustomers = typeof loadCustomers === 'function' ? loadCustomers : undefined;
+            window.startInternalCall = typeof startInternalCall === 'function' ? startInternalCall : undefined;
+            window.acceptInternalCall = typeof acceptInternalCall === 'function' ? acceptInternalCall : undefined;
+            window.rejectInternalCall = typeof rejectInternalCall === 'function' ? rejectInternalCall : undefined;
+            window.endInternalCall = typeof endInternalCall === 'function' ? endInternalCall : undefined;
+            window.acceptInternalCallInvite = typeof acceptInternalCallInvite === 'function' ? acceptInternalCallInvite : undefined;
+            window.rejectInternalCallInvite = typeof rejectInternalCallInvite === 'function' ? rejectInternalCallInvite : undefined;
+            window.showAddToCallModal = typeof showAddToCallModal === 'function' ? showAddToCallModal : undefined;
+            window.closeAddToCallModal = typeof closeAddToCallModal === 'function' ? closeAddToCallModal : undefined;
+            window.inviteSelectedToCall = typeof inviteSelectedToCall === 'function' ? inviteSelectedToCall : undefined;
+            window.toggleInternalCallMic = typeof toggleInternalCallMic === 'function' ? toggleInternalCallMic : undefined;
+            window.toggleInternalCallCamera = typeof toggleInternalCallCamera === 'function' ? toggleInternalCallCamera : undefined;
         })();
 
         async function loadLegacyLockdownCard() {

@@ -97,7 +97,7 @@
                 <div class="header-quick-actions">
                     <button type="button" class="header-quick-btn" data-perm="conversations" onclick="showPage('conversations'); openNewConvModal();" title="مکالمه جدید" aria-label="مکالمه جدید"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg><span data-i18n="dashboard_quick_new_conv">مکالمه جدید</span></button>
                     <button type="button" class="header-quick-btn" data-perm="customers" onclick="showPage('customers'); openCustomerModal();" title="مشتری جدید" aria-label="مشتری جدید"><svg viewBox="0 0 24 24"><use href="#icon-user-plus"/></svg><span data-i18n="dashboard_quick_new_customer">مشتری جدید</span></button>
-                    <button type="button" class="header-quick-btn" data-perm="tickets" onclick="showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" title="تیکت جدید" aria-label="تیکت جدید"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg><span data-i18n="dashboard_quick_new_ticket">تیکت جدید</span></button>
+                    <button type="button" class="header-quick-btn" data-perm="tickets" data-quick-action="ticket-new" onclick="showPage('tickets'); setTimeout(function(){ toggleTicketForm(true); }, 350);" title="تیکت جدید" aria-label="تیکت جدید"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg><span data-i18n="dashboard_quick_new_ticket">تیکت جدید</span></button>
                 </div>
                 <div class="header-right">
                     <div class="header-status-wrap">

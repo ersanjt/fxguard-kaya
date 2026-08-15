@@ -1899,9 +1899,16 @@
             updateInternalChatFloatingBtn();
         }
 
-        function toggleTicketForm() {
+        function toggleTicketForm(forceOpen) {
             const box = document.getElementById('ticketFormBox');
-            if (box.style.display === 'none') { box.style.display = 'block'; loadTicketFormSelects(); } else { box.style.display = 'none'; }
+            if (!box) return;
+            const isHidden = box.style.display === 'none' || box.style.display === '';
+            if (forceOpen === true || (forceOpen !== false && isHidden)) {
+                box.style.display = 'block';
+                loadTicketFormSelects();
+            } else {
+                box.style.display = 'none';
+            }
         }
         async function loadTicketFiltersInit() {
             await loadTicketFormSelects();
@@ -1973,7 +1980,11 @@
                     const meta = [createdStr, userDisplay(tk.creator), assign, dept].filter(Boolean).join(' · ');
                     const num = (tk.ticketNumber || '').trim();
                     const numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
-                    return '<div class="ticket-card" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
+                    const safeId = escapeHtml(tk.id || '');
+                    const deleteBtn = canManageTickets()
+                        ? '<button type="button" class="btn-danger btn-sm ticket-card-delete" data-ticket-id="' + safeId + '">' + (t('btn_delete') || (LANG === 'fa' ? 'حذف' : 'Delete')) + '</button>'
+                        : '';
+                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
                 }).join('');
             } catch (e) {
                 list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (e && e.message ? escapeHtml(e.message) : '') + '</div>';
@@ -1989,7 +2000,13 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
-        function canManageTickets() { return !!(currentUser && (currentUser.canManageTickets === true || (currentUser.permissions && currentUser.permissions.manage_tickets === true))); }
+        function canManageTickets() {
+            if (!currentUser) return false;
+            if (currentUser.canManageTickets === true) return true;
+            if (currentUser.permissions && currentUser.permissions.manage_tickets === true) return true;
+            var role = currentUser.role || '';
+            return role === 'owner' || role === 'admin' || role === 'manager';
+        }
         let ticketEditMode = false;
         function toggleTicketEditMode() {
             ticketEditMode = !ticketEditMode;
@@ -2039,10 +2056,11 @@
             if (!currentTicketId) return;
             updateTicketStatus(currentTicketId, 'archived');
         }
-        function deleteTicketConfirm() {
-            if (!currentTicketId) return;
+        function deleteTicketConfirm(id) {
+            var tid = id || currentTicketId;
+            if (!tid) return;
             if (!confirm(LANG === 'fa' ? 'آیا از حذف این تیکت مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Delete this ticket? This cannot be undone.')) return;
-            deleteTicket(currentTicketId);
+            deleteTicket(tid);
         }
         async function updateTicketStatus(id, status) {
             const res = await apiFetch('/api/tickets/' + id, { method: 'PUT', body: JSON.stringify({ status: status }) });

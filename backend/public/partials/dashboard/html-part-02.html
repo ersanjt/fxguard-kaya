@@ -173,7 +173,7 @@
                                 <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
                                 <option value="priority" data-i18n="sort_priority">بر اساس اولویت</option>
                             </select>
-                            <button type="button" class="btn-primary ticket-filter-btn" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            <button type="button" class="btn-primary ticket-filter-btn" id="btnApplyTicketFilters" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
                         </div>
                     </div>
                     <div id="ticketFormBox" class="ticket-create-form form-box" style="display:none;">
@@ -205,21 +205,21 @@
                             </div>
                         </div>
                         <div class="ticket-form-actions">
-                            <button type="button" class="btn-primary" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
-                            <button type="button" class="btn-secondary" onclick="toggleTicketForm()" data-i18n="cancel">انصراف</button>
+                            <button type="button" class="btn-primary" id="btnTicketSubmit" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
+                            <button type="button" class="btn-secondary" id="btnTicketFormCancel" onclick="toggleTicketForm()" data-i18n="cancel">انصراف</button>
                         </div>
                     </div>
                     <div id="ticketList" class="ticket-list"></div>
                     <div id="ticketDetail" class="ticket-detail-view" style="display:none;">
-                        <button type="button" class="ticket-back-btn btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <button type="button" class="ticket-back-btn btn-secondary" id="btnTicketBack" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
                         <div class="ticket-detail-toolbar">
-                            <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
+                            <button type="button" class="btn-secondary" id="btnTicketStartProcess" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
                             <div class="ticket-detail-controls">
                                 <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option><option value="archived" data-i18n="status_archived">آرشیو</option></select>
                                 <select id="ticketDetailAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
                                 <select id="ticketDetailPriority"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                                 <input type="date" id="ticketDetailDueDate" class="ticket-detail-due" title="مهلت">
-                                <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                <button type="button" class="btn-primary btn-sm" id="btnTicketApplyDetail" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
                                 <button type="button" class="btn-secondary btn-sm" id="ticketEditBtn" onclick="toggleTicketEditMode()" data-i18n="btn_edit">ویرایش</button>
                                 <button type="button" class="btn-secondary btn-sm" id="ticketArchiveBtn" onclick="archiveTicket()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
                                 <button type="button" class="btn-danger btn-sm" id="ticketDeleteBtn" onclick="deleteTicketConfirm()" data-i18n="btn_delete" style="display:none;">حذف</button>
@@ -251,7 +251,7 @@
                                 </label>
                                 <span id="ticketReplyAttachments" class="ticket-reply-attachments"></span>
                             </div>
-                            <button type="button" class="btn-primary" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
+                            <button type="button" class="btn-primary" id="btnTicketReplySubmit" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
                         </div>
                     </div>
                 </div>

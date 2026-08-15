@@ -249,20 +249,20 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
-        // حذف سخت تیکت فقط برای مالک/ادمین اصلی — و حتی آن‌ها آرشیو می‌کنند (پیام‌های سیستمی حفظ شوند)
-        if (!(isMainAdmin(req.user) || req.user.role === 'owner')) {
+        if (!canManageTicket(req)) {
             return res.status(403).json({
-                error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند تیکت را از لیست فعال خارج کند',
+                error: 'دسترسی حذف تیکت را ندارید',
             });
         }
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
-        await ticket.update({ status: 'archived' });
+        await TicketReply.destroy({ where: { ticketId: ticket.id } });
+        await ticket.destroy();
         res.json({
             ok: true,
-            archived: true,
-            message: 'تیکت آرشیو شد (حذف دائمی انجام نشد).',
+            deleted: true,
+            message: 'تیکت حذف شد.',
         });
     } catch (err) {
         next(err);

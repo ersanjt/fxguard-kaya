@@ -2,10 +2,10 @@
                         toast(name + (LANG === 'fa' ? ' دعوت را رد کرد' : ' declined the invite'));
                     });
                     socket.on('call_end', function(data) {
-                        if (data.threadId === currentInternalThreadId) endInternalCall();
+                        if (data && isSameCallThread(data.threadId)) endInternalCall();
                     });
                     socket.on('call_reject', function(data) {
-                        if (data.threadId === currentInternalThreadId) { hideInternalCallModal(); internalCallPendingOffer = null; internalCallIsIncoming = false; toast(t('call_rejected')); }
+                        if (data && isSameCallThread(data.threadId)) { hideInternalCallModal(); internalCallPendingOffer = null; internalCallIsIncoming = false; toast(t('call_rejected')); }
                     });
                     socket.on('unanswered_alert', function(data) {
                         playInternalChatSound();
@@ -59,7 +59,7 @@
             if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             navBadgeRefreshInterval = setInterval(function() {
                 if (!token) return;
-                apiFetch('/api/analytics/dashboard').then(function(res) {
+                fetchDashboardStats().then(function(res) {
                     if (res.ok && res.data) updateNavBadges(res.data);
                 }).catch(function(){});
                 if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
@@ -170,17 +170,69 @@
                 osc3.stop(t + 0.4);
             } catch (e) {}
         }
-        function isImageExt(name) { return /\.(png|jpg|jpeg|gif|webp)$/i.test(name || ''); }
+        function isImageExt(name) { return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name || ''); }
         function isPdfExt(name) { return /\.pdf$/i.test(name || ''); }
+        function isVideoExt(name) { return /\.(mp4|webm|mov)$/i.test(name || ''); }
+        function isAudioExt(name) { return /\.(mp3|ogg|wav|m4a|aac|oga|opus)$/i.test(name || ''); }
+        function internalAttachmentKind(a) {
+            const hay = String((a && a.name) || '') + ' ' + String((a && a.url) || '').split('?')[0];
+            if (isImageExt(hay)) return 'image';
+            if (isVideoExt(hay)) return 'video';
+            if (isAudioExt(hay)) return 'audio';
+            if (isPdfExt(hay)) return 'pdf';
+            return 'file';
+        }
+        function isInternalPlaceholderContent(content) {
+            const c = String(content || '').trim();
+            return !c || c === '(پیوست)' || c === '(Attachment)' || c === '(Ek)';
+        }
         function renderInternalAttachment(a) {
             const allowDl = a.allowDownload !== false;
             const name = a.name || t('file');
             let fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
             fullUrl = ensureHttpsUrl(fullUrl);
-            if (allowDl) return '<a href="' + escapeHtml(fullUrl) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">📎 ' + escapeHtml(name) + '</a>';
-            if (isImageExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><img src="' + escapeHtml(fullUrl) + '" alt="" style="max-width:100%; max-height:200px; border-radius:6px; pointer-events:none; user-select:none;" oncontextmenu="return false;"><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
-            if (isPdfExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><iframe src="' + escapeHtml(fullUrl) + '#toolbar=0" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px;" oncontextmenu="return false;"></iframe><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
-            return '<div style="margin-top:4px;"><span style="color:var(--text-secondary);">📎 ' + escapeHtml(name) + '</span> <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
+            const safeUrl = escapeHtml(fullUrl);
+            const safeName = escapeHtml(name);
+            const kind = internalAttachmentKind(a);
+            const viewOnlyCls = allowDl ? '' : ' internal-att-viewonly';
+            const viewOnlyBadge = allowDl ? '' : '<span class="internal-att-badge">' + (LANG === 'fa' ? 'فقط نمایش' : (LANG === 'tr' ? 'Sadece görüntüleme' : 'View only')) + '</span>';
+            const saveLabel = LANG === 'fa' ? 'ذخیره' : (LANG === 'tr' ? 'Kaydet' : 'Save');
+            const dlLink = allowDl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-dl" download="' + safeName + '">' + saveLabel + '</a>' : '';
+            const noCtx = allowDl ? '' : ' oncontextmenu="return false;"';
+            if (kind === 'image') {
+                const img = '<img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"' + (allowDl ? '' : ' class="internal-att-nosave"') + noCtx + ' onerror="this.onerror=null;this.style.display=\'none\';var f=this.closest(\'.internal-att\');if(f){var s=f.querySelector(\'.internal-att-fallback\');if(s)s.style.display=\'inline\';}">';
+                const media = allowDl
+                    ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-image-link">' + img + '</a>'
+                    : img;
+                return '<div class="internal-att internal-att-image' + viewOnlyCls + '">' + media + '<span class="internal-att-fallback" style="display:none;">🖼 ' + safeName + '</span>' + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'video') {
+                const vAttrs = allowDl ? '' : ' controlsList="nodownload noplaybackrate" disablepictureinpicture';
+                return '<div class="internal-att internal-att-video' + viewOnlyCls + '"><video src="' + safeUrl + '" controls preload="metadata" playsinline' + vAttrs + noCtx + '></video>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'audio') {
+                const aAttrs = allowDl ? '' : ' controlsList="nodownload noplaybackrate"';
+                return '<div class="internal-att internal-att-audio' + viewOnlyCls + '"><audio src="' + safeUrl + '" controls preload="metadata"' + aAttrs + noCtx + '></audio>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'pdf') {
+                return '<div class="internal-att internal-att-pdf' + viewOnlyCls + '"><iframe src="' + safeUrl + (allowDl ? '' : '#toolbar=0') + '" class="internal-att-pdf-frame" title="' + safeName + '"' + noCtx + '></iframe>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (allowDl) {
+                return '<div class="internal-att internal-att-file"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-file-link">📎 ' + safeName + '</a></div>';
+            }
+            return '<div class="internal-att internal-att-file' + viewOnlyCls + '"><span class="internal-att-file-name">📎 ' + safeName + '</span>' + viewOnlyBadge + '</div>';
+        }
+        function internalMessageInnerHtml(m) {
+            const atts = (m && m.attachments && m.attachments.length) ? m.attachments : [];
+            const attHtml = atts.map(renderInternalAttachment).join('');
+            const showText = !isInternalPlaceholderContent(m && m.content) || atts.length === 0;
+            return (showText ? '<div>' + linkifyMessageContent((m && m.content) || '') + '</div>' : '') + attHtml;
+        }
+        function buildInternalMessageHtml(m, me) {
+            const isOut = m.fromUserId === me;
+            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body">' + internalMessageInnerHtml(m) + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
         }
         function toggleInternalFileOption() {
             const fi = document.getElementById('internalChatFile');
@@ -193,11 +245,7 @@
             const emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
             const me = (currentUser && currentUser.id) || '';
-            const isOut = m.fromUserId === me;
-            const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const html = buildInternalMessageHtml(m, me);
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -1010,7 +1058,7 @@
             if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
-                res = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
+                res = await fetchDashboardStats({ force: !!_attempt });
             } catch (e) {
                 if (seq !== _loadDashboardSeq) return;
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + t('loading_err') + '</div>';
@@ -1021,10 +1069,15 @@
             if (seq !== _loadDashboardSeq) return;
             if (res.needLogin) return;
             if (!res.ok) {
-                var errMsg = (res.data && res.data.error) ? res.data.error : t('loading_err');
+                var errMsg = (res.status === 429)
+                    ? (LANG === 'fa' ? 'در حال بارگذاری آمار… چند ثانیه دیگر تلاش کنید.' : 'Loading stats… please try again in a few seconds.')
+                    : ((res.data && res.data.error) ? res.data.error : t('loading_err'));
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(errMsg) + '</div>';
                 if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
                 setDashboardError(container, cardsTitleEl, errMsg);
+                if (res.status === 429 && (_attempt || 0) < 2) {
+                    setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 2500);
+                }
                 return;
             }
             const stats = res.data || {};
@@ -1164,7 +1217,7 @@
             if (a) {
                 apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() {
                     loadGeneralAnnouncementsMarquee();
-                    apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                    fetchDashboardStats().then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
                 });
                 showAnnouncementModal(a);
             } else {
@@ -1556,7 +1609,7 @@
                         openCustomerModal();
                     } else if (_qa === 'ticket-new' && typeof showPage === 'function' && typeof toggleTicketForm === 'function') {
                         showPage('tickets');
-                        setTimeout(function() { toggleTicketForm(); }, 350);
+                        setTimeout(function() { toggleTicketForm(true); }, 350);
                     }
                     return;
                 }
@@ -1615,6 +1668,65 @@
                 // انصراف از فرم تسک
                 if (target.closest('#btnTaskCancel') && typeof toggleTaskForm === 'function') {
                     e.preventDefault(); e.stopPropagation(); toggleTaskForm();
+                    return;
+                }
+                // تیکت — باز/بسته کردن فرم ثبت
+                if ((target.closest('#btnTicketCreate') || target.closest('#emptyTicketCreateBtn') || target.closest('#btnTicketFormCancel')) && typeof toggleTicketForm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTicketForm();
+                    return;
+                }
+                if ((target.closest('.header-quick-btn[data-perm="tickets"]') || target.closest('.header-quick-btn[data-quick-action="ticket-new"]')) && typeof showPage === 'function' && typeof toggleTicketForm === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    showPage('tickets');
+                    setTimeout(function() { toggleTicketForm(true); }, 350);
+                    return;
+                }
+                if (target.closest('#btnTicketSubmit') && typeof addTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); addTicket();
+                    return;
+                }
+                if (target.closest('#btnApplyTicketFilters') && typeof applyTicketFilters === 'function') {
+                    e.preventDefault(); e.stopPropagation(); applyTicketFilters();
+                    return;
+                }
+                const ticketCardDelete = target.closest('.ticket-card-delete[data-ticket-id]');
+                if (ticketCardDelete && typeof deleteTicketConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    deleteTicketConfirm(ticketCardDelete.getAttribute('data-ticket-id'));
+                    return;
+                }
+                const ticketCardEl = target.closest('.ticket-card[data-ticket-id]');
+                if (ticketCardEl && !target.closest('.ticket-card-delete') && typeof loadTicketDetail === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    loadTicketDetail(ticketCardEl.getAttribute('data-ticket-id'));
+                    return;
+                }
+                if ((target.closest('#btnTicketBack') || target.closest('.ticket-back-btn')) && typeof showTicketList === 'function') {
+                    e.preventDefault(); e.stopPropagation(); showTicketList();
+                    return;
+                }
+                if (target.closest('#btnTicketStartProcess') && typeof startProcessFromTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); startProcessFromTicket();
+                    return;
+                }
+                if (target.closest('#btnTicketApplyDetail') && typeof updateTicketFromDetail === 'function') {
+                    e.preventDefault(); e.stopPropagation(); updateTicketFromDetail();
+                    return;
+                }
+                if (target.closest('#ticketEditBtn') && typeof toggleTicketEditMode === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTicketEditMode();
+                    return;
+                }
+                if (target.closest('#ticketArchiveBtn') && typeof archiveTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); archiveTicket();
+                    return;
+                }
+                if (target.closest('#ticketDeleteBtn') && typeof deleteTicketConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); deleteTicketConfirm();
+                    return;
+                }
+                if (target.closest('#btnTicketReplySubmit') && typeof submitTicketReply === 'function') {
+                    e.preventDefault(); e.stopPropagation(); submitTicketReply();
                     return;
                 }
                 // کلیک روی آیتم تسک — باز کردن جزئیات
@@ -1772,6 +1884,15 @@
                 if (removeMemberBtn && typeof removeInternalThreadMember === 'function') { e.preventDefault(); e.stopPropagation(); removeInternalThreadMember(removeMemberBtn.getAttribute('data-user-id')); return; }
                 if (target.closest('.internal-call-btn[data-call-type="voice"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('voice'); return; }
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
+                if (target.closest('#internalCallAcceptBtn') && typeof acceptInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); acceptInternalCall(); return; }
+                if (target.closest('#internalCallRejectBtn') && typeof rejectInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); rejectInternalCall(); return; }
+                if (target.closest('#internalCallEndBtn') && typeof endInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); endInternalCall(); return; }
+                if (target.closest('#internalCallAddBtn') && typeof showAddToCallModal === 'function') { e.preventDefault(); e.stopPropagation(); showAddToCallModal(); return; }
+                if (target.closest('#internalCallMicBtn') && typeof toggleInternalCallMic === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalCallMic(); return; }
+                if (target.closest('#internalCallCameraBtn') && typeof toggleInternalCallCamera === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalCallCamera(); return; }
+                if (target.closest('#addToCallInviteBtn') && typeof inviteSelectedToCall === 'function') { e.preventDefault(); e.stopPropagation(); inviteSelectedToCall(); return; }
+                if (target.closest('#internalCallInviteModal .accept') && typeof acceptInternalCallInvite === 'function') { e.preventDefault(); e.stopPropagation(); acceptInternalCallInvite(); return; }
+                if (target.closest('#internalCallInviteModal .reject') && typeof rejectInternalCallInvite === 'function') { e.preventDefault(); e.stopPropagation(); rejectInternalCallInvite(); return; }
                 // Handle internal chat popup header click (minimize)
                 if (target.closest('.internal-chat-popup-header-compact') && !target.closest('.internal-chat-popup-actions') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
                 // صفحه کاربران — CSP / حذف onclick (backup به toggleUserForm/addUser نیاز به window دارد)
@@ -1858,6 +1979,7 @@
                 }
                 else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
                     e.preventDefault();
+                    window._custListRateLimitedUntil = 0;
                     if (typeof loadCustomers === 'function') loadCustomers();
                 }
                 else if (target.closest('.customer-avatar-clickable')) {
@@ -1870,9 +1992,87 @@
                     e.preventDefault();
                     if (typeof closeImagePreviewModal === 'function') closeImagePreviewModal();
                 }
-                else if (target.matches('[onclick*="toggleTicketForm"]')) {
+                else if (target.closest('#btnTicketCreate') || target.closest('#emptyTicketCreateBtn') || target.closest('#btnTicketFormCancel')) {
                     e.preventDefault();
-                    toggleTicketForm();
+                    e.stopPropagation();
+                    if (typeof toggleTicketForm === 'function') toggleTicketForm();
+                    return;
+                }
+                else if (target.closest('.header-quick-btn[data-perm="tickets"]') || target.closest('.header-quick-btn[data-quick-action="ticket-new"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof showPage === 'function') showPage('tickets');
+                    setTimeout(function() {
+                        if (typeof toggleTicketForm === 'function') toggleTicketForm(true);
+                    }, 350);
+                    return;
+                }
+                else if (target.closest('#btnTicketSubmit') || target.matches('[onclick*="addTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof addTicket === 'function') addTicket();
+                    return;
+                }
+                else if (target.closest('#btnApplyTicketFilters') || target.matches('[onclick*="applyTicketFilters"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof applyTicketFilters === 'function') applyTicketFilters();
+                    return;
+                }
+                else if (target.closest('#btnTicketBack') || target.closest('.ticket-back-btn') || target.matches('[onclick*="showTicketList"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof showTicketList === 'function') showTicketList();
+                    return;
+                }
+                else if (target.closest('#btnTicketStartProcess') || target.matches('[onclick*="startProcessFromTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof startProcessFromTicket === 'function') startProcessFromTicket();
+                    return;
+                }
+                else if (target.closest('#btnTicketApplyDetail') || target.matches('[onclick*="updateTicketFromDetail"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof updateTicketFromDetail === 'function') updateTicketFromDetail();
+                    return;
+                }
+                else if (target.closest('#ticketEditBtn') || target.matches('[onclick*="toggleTicketEditMode"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof toggleTicketEditMode === 'function') toggleTicketEditMode();
+                    return;
+                }
+                else if (target.closest('#ticketArchiveBtn') || target.matches('[onclick*="archiveTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof archiveTicket === 'function') archiveTicket();
+                    return;
+                }
+                else if (target.closest('#ticketDeleteBtn') || target.matches('[onclick*="deleteTicketConfirm"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof deleteTicketConfirm === 'function') deleteTicketConfirm();
+                    return;
+                }
+                else if (target.closest('#btnTicketReplySubmit') || target.matches('[onclick*="submitTicketReply"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof submitTicketReply === 'function') submitTicketReply();
+                    return;
+                }
+                else if (target.closest('.ticket-card[data-ticket-id]') || target.closest('.ticket-card[onclick*="loadTicketDetail"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var ticketCard = target.closest('.ticket-card');
+                    var ticketId = (ticketCard && (ticketCard.getAttribute('data-ticket-id') || '')) || '';
+                    if (!ticketId && ticketCard) {
+                        var oc = ticketCard.getAttribute('onclick') || '';
+                        var m = oc.match(/loadTicketDetail\(['"]([^'"]+)['"]\)/);
+                        if (m) ticketId = m[1];
+                    }
+                    if (ticketId && typeof loadTicketDetail === 'function') loadTicketDetail(ticketId);
+                    return;
                 }
                 else if (target.matches('[onclick*="startCustomerChat"]') || target.closest('.customer-send-btn')) {
                     e.preventDefault();
@@ -1900,11 +2100,6 @@
                     e.preventDefault();
                     var custId = target.getAttribute('data-cust-id') || '';
                     if (custId) openTransactionModal(custId);
-                }
-                else if (target.matches('[onclick*="loadTicketDetail"]')) {
-                    e.preventDefault();
-                    const ticketId = target.getAttribute('data-ticket-id') || '';
-                    if (ticketId) loadTicketDetail(ticketId);
                 }
             }, true); // Use capturing phase to catch before other handlers
             document.addEventListener('keydown', function(e) {
@@ -1944,6 +2139,11 @@
                     const f = e.target.files && e.target.files[0];
                     const label = document.getElementById('internalChatPopupFileLabel');
                     if (label) { label.textContent = f ? f.name : ''; label.style.display = f ? 'inline' : 'none'; }
+                }
+                if (e.target.id === 'ticketReplyFile') {
+                    const f = e.target.files && e.target.files[0];
+                    const label = document.getElementById('ticketReplyAttachments');
+                    if (label) label.textContent = f ? f.name : '';
                 }
             }, true);
         }

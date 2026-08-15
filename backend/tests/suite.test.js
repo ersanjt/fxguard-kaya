@@ -323,6 +323,31 @@ async function runTests() {
         assert.strictEqual(stats.body.total, rows.length, 'stats total should match scoped list length');
     });
 
+    await test('DELETE /api/tickets permanently removes ticket for admin', async () => {
+        const created = await req.post('/api/tickets')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ title: 'Ticket to delete', description: 'remove me', priority: 'low' });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        const id = created.body.id;
+        const del = await req.delete('/api/tickets/' + id)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(del.status, 200, JSON.stringify(del.body));
+        assert.strictEqual(del.body.deleted, true);
+        const getGone = await req.get('/api/tickets/' + id)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(getGone.status, 404);
+    });
+
+    await test('DELETE /api/tickets is forbidden for agent', async () => {
+        const created = await req.post('/api/tickets')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ title: 'Agent cannot delete', assignedTo: createdUserId, priority: 'low' });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        const del = await req.delete('/api/tickets/' + created.body.id)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(del.status, 403);
+    });
+
     // ── Users: Read ──────────────────────────────────────────────────────────
     section('Users — Read');
 
@@ -495,6 +520,70 @@ async function runTests() {
         const r = await req.put('/api/customers/bad-id')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'X' });
+        assert.strictEqual(r.status, 400);
+    });
+
+    section('Bulk messaging');
+
+    await test('GET /api/bulk/limits without auth returns 401', async () => {
+        const r = await req.get('/api/bulk/limits');
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('GET /api/bulk/limits returns maxRecipients', async () => {
+        const r = await req.get('/api/bulk/limits')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(typeof r.body.maxRecipients, 'number');
+        assert(r.body.maxRecipients >= 1);
+        assert.strictEqual(r.body.minDelaySec, 2);
+        assert.strictEqual(r.body.maxDelaySec, 60);
+    });
+
+    await test('POST /api/bulk/send without auth returns 401', async () => {
+        const r = await req.post('/api/bulk/send')
+            .send({ customerIds: [createdCustomerId], message: 'hi', useCloudTemplate: false });
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('POST /api/bulk/send as agent without permission returns 403', async () => {
+        const r = await req.post('/api/bulk/send')
+            .set('Authorization', `Bearer ${agentToken}`)
+            .send({ customerIds: [createdCustomerId], message: 'hi', useCloudTemplate: false });
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('POST /api/bulk/send without customerIds returns 400', async () => {
+        const r = await req.post('/api/bulk/send')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ message: 'hi', useCloudTemplate: false });
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/bulk/send free text without message returns 400', async () => {
+        const r = await req.post('/api/bulk/send')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerIds: [createdCustomerId], useCloudTemplate: false });
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/bulk/send template mode without Cloud API returns 400', async () => {
+        const r = await req.post('/api/bulk/send')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerIds: [createdCustomerId], useCloudTemplate: true, templateName: 'hello_world' });
+        assert.strictEqual(r.status, 400);
+        assert(r.body.error);
+    });
+
+    await test('POST /api/bulk/send rejects more than max recipients', async () => {
+        const limits = await req.get('/api/bulk/limits')
+            .set('Authorization', `Bearer ${adminToken}`);
+        const max = limits.body.maxRecipients || 100;
+        const ids = [];
+        for (let i = 0; i < max + 1; i++) ids.push('00000000-0000-4000-8000-' + String(i).padStart(12, '0'));
+        const r = await req.post('/api/bulk/send')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerIds: ids, message: 'hi', useCloudTemplate: false });
         assert.strictEqual(r.status, 400);
     });
 
@@ -698,6 +787,57 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.some(c => c.id === filterConversationId), 'Group conversation should appear in group filter');
+    });
+
+    section('Incoming WhatsApp groups');
+
+    await test('fromMe group message creates a visible group conversation, not a private chat', async () => {
+        const groupId = '120363999000111222@g.us';
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-group-fromme-1',
+            from: groupId,
+            to: groupId,
+            body: 'سلام از گروه',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: true,
+            type: 'chat',
+            contact: { number: '989121111111', name: 'Connected Line' },
+            chat: { id: groupId, name: 'گروه تست کایا', isGroup: true },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+
+        const list = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(list.status, 200);
+        const found = (list.body.data || []).find((c) =>
+            c.customer && String(c.customer.phone) === groupId
+        );
+        assert(found, 'group conversation should appear in All after a live group message');
+        assert(found.metadata && found.metadata.isGroup, 'conversation must be marked as group');
+        assert.notStrictEqual(found.customer.phone, '989121111111');
+    });
+
+    await test('group join notification without text still creates a visible conversation', async () => {
+        const groupId = '120363999000111333@g.us';
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-group-join-1',
+            from: groupId,
+            body: '',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'gp2',
+            contact: { number: null, name: null },
+            chat: { id: groupId, name: 'گروه تازه', isGroup: true },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+
+        const list = await req.get('/api/conversations?isGroup=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(list.status, 200);
+        assert(
+            (list.body.data || []).some((c) => c.customer && String(c.customer.phone) === groupId),
+            'joining a group should create a conversation even without a text body'
+        );
     });
 
     // ── Security: Auth Boundaries ────────────────────────────────────────────
@@ -956,6 +1096,43 @@ async function runTests() {
 
     section('Legacy cutover visibility');
 
+    await test('applyVisibility opens current gateway chats into All', async () => {
+        const { Customer, Conversation } = require('../models');
+        const { applyVisibilityForCurrentGatewayChats } = require('../services/legacyCrmLockdown');
+        const groupId = '120363888000111444@g.us';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone: groupId },
+            defaults: {
+                name: 'Visible Group',
+                source: 'whatsapp',
+                isRestrictedFromStaff: true,
+            },
+        });
+        await cust.update({ isRestrictedFromStaff: true });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'archived',
+            isHiddenFromStaff: true,
+            source: 'whatsapp',
+            metadata: { isGroup: true, groupName: 'Visible Group' },
+        });
+        const result = await applyVisibilityForCurrentGatewayChats([groupId], '905339470880');
+        assert((result.opened || 0) >= 1, 'expected at least one conversation to open');
+        await conv.reload();
+        await cust.reload();
+        assert.strictEqual(conv.status, 'open');
+        assert.strictEqual(conv.isHiddenFromStaff, false);
+        assert.strictEqual(cust.isRestrictedFromStaff, false);
+
+        const all = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(all.status, 200);
+        assert(
+            (all.body.data || []).some((c) => c.id === conv.id),
+            'opened group must appear in All'
+        );
+    });
+
     await test('chatIdVariants and normalizeLinkedNumber', async () => {
         const { chatIdVariants, normalizeLinkedNumber } = require('../services/legacyCrmLockdown');
         const v = chatIdVariants('905551112233@c.us');
@@ -978,6 +1155,20 @@ async function runTests() {
         assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), false);
         const grants = { customerIds: new Set(['cust1']), conversationIds: new Set() };
         assert.strictEqual(canAccessConversation(agent, 'u1', conv, grants), true);
+    });
+
+    await test('internal call signaling normalizes user and thread ids', async () => {
+        const { asCallId, callUserRoom, normalizeCallSignal } = require('../lib/internalCallSignaling');
+        const uid = '3f1c0a2e-1111-4aaa-8bbb-999999999999';
+        assert.strictEqual(asCallId(uid), uid);
+        assert.strictEqual(callUserRoom(uid), 'user_' + uid);
+        assert.strictEqual(normalizeCallSignal(null, uid), null);
+        assert.strictEqual(normalizeCallSignal({ toUserId: uid }, uid), null);
+        const sig = normalizeCallSignal({ toUserId: uid, threadId: 'thread-1', type: 'voice', sdp: { type: 'offer' } }, uid);
+        assert.strictEqual(sig.toUserId, uid);
+        assert.strictEqual(sig.threadId, 'thread-1');
+        assert.strictEqual(sig.fromUserId, uid);
+        assert.strictEqual(sig.type, 'voice');
     });
 
     await test('timestamp chat uploads require auth', async () => {

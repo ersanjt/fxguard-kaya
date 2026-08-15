@@ -1762,6 +1762,7 @@
         .internal-call-local-video { position: absolute; bottom: 12px; right: 12px; left: auto; width: 120px; height: 90px; max-width: 35%; object-fit: cover; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3); z-index: 2; transform: scaleX(-1); }
         [dir="rtl"] .internal-call-local-video { right: auto; left: 12px; }
         .internal-call-videos video[style*="display: none"] { display: none !important; }
+        .internal-call-audio-sink { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
         .internal-call-connection-status { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; margin-bottom: 12px; }
         .internal-call-connection-status.connecting { color: var(--accent); }
         .internal-call-connection-status.connected { color: #22c55e; }
@@ -2308,7 +2309,8 @@
         [dir="rtl"] .ticket-number { margin-left: 0; margin-right: 8px; }
         .ticket-card-title { font-weight: 600; color: var(--text-primary); font-size: 1rem; display: block; margin-top: 2px; }
         .ticket-card-meta { font-size: 0.85rem; color: var(--text-secondary); margin-top: 6px; }
-        .ticket-card-badges { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; }
+        .ticket-card-badges { display: flex; gap: 8px; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+        .ticket-card-delete { margin-inline-start: 4px; }
         .ticket-badge { font-size: 0.75rem; padding: 4px 10px; border-radius: 8px; font-weight: 500; }
         .ticket-badge-prio.urgent { background: rgba(239,68,68,0.2); color: #ef4444; }
         .ticket-badge-prio.high { background: rgba(245,158,11,0.2); color: #f59e0b; }
@@ -5460,6 +5462,22 @@
         [dir="rtl"] #internalChatPane .chat-messages .msg.out .msg-body { border-bottom-right-radius: 16px; border-bottom-left-radius: 6px; }
         #internalChatPane .chat-messages .msg.out .msg-body .time { color: rgba(255,255,255,0.9); }
         #internalChatPane .chat-messages .time { font-size: 0.75rem; color: var(--text-muted); opacity: 0.9; }
+        .internal-att { margin-top: 2px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+        .internal-att-image img { max-width: 100%; width: auto; height: auto; max-height: min(280px, 50vmin); border-radius: 10px; display: block; object-fit: contain; background: rgba(0,0,0,0.12); }
+        .internal-att-image-link { display: block; cursor: pointer; }
+        .internal-att-image img.internal-att-nosave { pointer-events: none; user-select: none; -webkit-user-drag: none; }
+        .internal-att-video video { max-width: 100%; width: 100%; max-height: min(240px, 40vh); border-radius: 10px; background: #000; }
+        .internal-att-audio audio { width: 100%; max-width: 260px; }
+        .internal-att-pdf-frame { width: 100%; min-width: 180px; height: 200px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+        .internal-att-file-link, .internal-att-dl { color: inherit; text-decoration: underline; font-size: 0.85rem; font-weight: 500; }
+        .internal-att-file-name { color: inherit; }
+        .internal-att-badge { font-size: 0.7rem; opacity: 0.85; display: inline-block; }
+        #internalChatPane .chat-messages .msg.out .internal-att-dl,
+        #internalChatPane .chat-messages .msg.out .internal-att-file-link,
+        .internal-chat-popup-messages .msg.out .internal-att-dl,
+        .internal-chat-popup-messages .msg.out .internal-att-file-link { color: rgba(255,255,255,0.95); }
+        #internalChatPane .chat-messages .msg-body:has(.internal-att-image):not(:has(> div:not(.internal-att):not(.time))) { padding: 6px; }
+        .internal-chat-popup-messages .msg-body:has(.internal-att-image):not(:has(> div:not(.internal-att):not(.time))) { padding: 4px; }
         #internalChatPane .chat-messages::-webkit-scrollbar { width: 8px; }
         #internalChatPane .chat-messages::-webkit-scrollbar-track { background: transparent; }
         #internalChatPane .chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
@@ -5859,9 +5877,20 @@
             .quick-reports-grid { gap: 12px; }
         }
         /* Bulk Send & Import Modals */
+        #modalBulkSend .modal-body { white-space: normal; }
         .bulk-hint, .import-hint { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.5; }
-        .bulk-select-actions { display: flex; gap: 8px; margin-bottom: 8px; }
+        .bulk-hint-sm { font-size: 0.8rem; margin-top: 4px; margin-bottom: 8px; }
+        .bulk-select-actions { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
         .bulk-selected-count { font-size: 0.9rem; color: var(--accent); font-weight: 500; display: block; margin-bottom: 12px; }
+        .bulk-check-label { display: flex; align-items: flex-start; gap: 8px; margin: 12px 0; cursor: pointer; line-height: 1.4; }
+        #modalBulkSend .bulk-check-label input[type="checkbox"] { width: auto; min-width: 18px; height: 18px; padding: 0; margin: 2px 0 0; flex-shrink: 0; }
+        .bulk-template-fields, .bulk-freetext-fields { margin-bottom: 8px; }
+        #modalBulkSend .modal-body input#bulkDelaySec { width: 80px; }
+        #modalBulkSend .modal-body input#bulkTemplateLanguage { width: 120px; }
+        .bulk-job-progress { margin-top: 16px; }
+        .bulk-job-progress-track { height: 8px; background: var(--bg-secondary); border-radius: 999px; overflow: hidden; border: 1px solid var(--border); }
+        .bulk-job-progress-fill { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.3s ease; }
+        .bulk-job-progress-text { margin: 8px 0 0; font-size: 0.85rem; color: var(--text-secondary); }
         .modal-body #bulkMessageContent { width: 100%; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); resize: vertical; min-height: 120px; }
         .import-file-label { display: block; cursor: pointer; }
         .import-file-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--accent-soft); color: var(--accent); border: 1px dashed var(--accent); border-radius: var(--radius-sm); font-weight: 500; transition: background 0.2s, border-color 0.2s; }

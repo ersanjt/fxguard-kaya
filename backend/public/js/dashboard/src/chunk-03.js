@@ -135,9 +135,9 @@
             } else if (onclick === "showPage('customers'); openCustomerModal();") {
                 showPage('customers');
                 setTimeout(openCustomerModal, 100);
-            } else if (onclick === "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);") {
+            } else if (btn.getAttribute('data-quick-action') === 'ticket-new' || onclick.indexOf('toggleTicketForm') !== -1) {
                 showPage('tickets');
-                setTimeout(toggleTicketForm, 350);
+                setTimeout(function() { toggleTicketForm(true); }, 350);
             }
         }
         
@@ -3338,11 +3338,20 @@
                 return 0;
             });
         }
+        window._custListRateLimitedUntil = window._custListRateLimitedUntil || 0;
+        function renderCustomerRateLimitState(list) {
+            if (!list) return;
+            list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' : 'Too many requests. Please wait a few minutes.') + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+        }
         async function loadCustomers() {
             const list = document.getElementById('customerList');
             const statsEl = document.getElementById('customerStats');
             const countEl = document.getElementById('customerListCount');
             if (!list) return;
+            if (Date.now() < (window._custListRateLimitedUntil || 0)) {
+                renderCustomerRateLimitState(list);
+                return;
+            }
             setLoading('customerList', 5);
             let q = '?limit=200';
             const searchEl = document.getElementById('customerSearch');
@@ -3352,11 +3361,19 @@
             if (customerQuickTab === 'archive') q += '&restrictedOnly=true';
             const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
-            if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
+            if (!res.ok) {
+                const is429 = res.status === 429 || (res.error && String(res.error).indexOf('تعداد درخواست') !== -1) || (res.data && res.data.error && String(res.data.error).indexOf('تعداد درخواست') !== -1);
+                if (is429) window._custListRateLimitedUntil = Date.now() + 45000;
+                else window._custListRateLimitedUntil = 0;
+                list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+                return;
+            }
+            window._custListRateLimitedUntil = 0;
             const data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
             if (!data.data || data.data.length === 0) {
+                window._currentCustomerListData = [];
                 const emptyMsg = customerQuickTab === 'archive'
                     ? (t('empty_customers_archive') || (LANG === 'fa' ? 'مشتری قفل‌شده‌ای از شماره قبلی نیست.' : 'No locked customers from a previous number.'))
                     : t('empty_customers');
@@ -3364,13 +3381,14 @@
                     ? ''
                     : '<button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button>';
                 list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + escapeHtml(emptyMsg) + '</p>' + emptyBtn + '</div>';
+                updateBulkSelectedCount();
                 return;
             }
             const sortEl = document.getElementById('customerSort');
             const sortVal = sortEl ? sortEl.value : 'newest';
             const sorted = sortCustomerList(data.data, sortVal);
             window._currentCustomerListData = sorted;
-            const bulkIds = window._bulkSelectedIds || [];
+            const bulkIds = (window._bulkSelectedIds || []).map(String);
             list.innerHTML = sorted.map(function(c) {
                 const seePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
                 const name = c.name || (seePhone ? c.phone : '') || t('customer');
@@ -3390,7 +3408,7 @@
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
+                const checked = bulkIds.indexOf(String(c.id)) >= 0 ? ' checked' : '';
                 const phoneShown = seePhone ? (c.phone || '') : '';
                 const restrictedBadge = c.isRestrictedFromStaff
                     ? '<span class="badge customer-badge-restricted">' + escapeHtml(t('customer_restricted_badge') || (LANG === 'fa' ? 'آرشیو شماره قبلی' : 'Previous number')) + '</span>'
@@ -3466,77 +3484,240 @@
         }
 
         window._bulkSelectedIds = window._bulkSelectedIds || [];
+        window._bulkMaxRecipients = window._bulkMaxRecipients || 100;
+        window._bulkSendInFlight = false;
+        window._bulkActiveJobId = null;
+        window._bulkJobPollTimer = null;
+
+        function bulkId(value) { return String(value || ''); }
+        function bulkFmt(key, fallback, vars) {
+            var s = (typeof t === 'function' && t(key)) || fallback || key;
+            if (vars) Object.keys(vars).forEach(function(k) { s = s.split('{' + k + '}').join(String(vars[k])); });
+            return s;
+        }
+        function getBulkMaxRecipients() {
+            var n = parseInt(window._bulkMaxRecipients, 10);
+            return Number.isFinite(n) && n > 0 ? n : 100;
+        }
+        function syncBulkCheckboxes() {
+            var selected = {};
+            (window._bulkSelectedIds || []).forEach(function(id) { selected[bulkId(id)] = true; });
+            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) {
+                cb.checked = !!selected[bulkId(cb.getAttribute('data-customer-id'))];
+            });
+        }
+        function setBulkSubmitState() {
+            var submitBtn = document.getElementById('bulkSendSubmitBtn');
+            if (!submitBtn) return;
+            var n = (window._bulkSelectedIds || []).length;
+            var busy = !!window._bulkSendInFlight;
+            submitBtn.disabled = busy || n === 0;
+            submitBtn.textContent = busy
+                ? bulkFmt('bulk_sending', LANG === 'fa' ? 'در حال ارسال...' : 'Sending...')
+                : (typeof t === 'function' ? t('bulk_send_submit') : (LANG === 'fa' ? 'شروع ارسال' : 'Start sending'));
+            submitBtn.title = n === 0 ? bulkFmt('bulk_err_select', LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : '';
+        }
         function toggleBulkSelect(el) {
-            const id = el && el.getAttribute('data-customer-id');
+            const id = bulkId(el && el.getAttribute('data-customer-id'));
             if (!id) return;
             const arr = window._bulkSelectedIds;
             const idx = arr.indexOf(id);
-            if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+            if (idx >= 0) arr.splice(idx, 1);
+            else {
+                if (arr.length >= getBulkMaxRecipients()) {
+                    toast(bulkFmt('bulk_selected_capped', '', { n: arr.length, max: getBulkMaxRecipients() }), true);
+                    if (el) el.checked = false;
+                    return;
+                }
+                arr.push(id);
+            }
             updateBulkSelectedCount();
         }
         function updateBulkSelectedCount() {
-            const n = window._bulkSelectedIds.length || 0;
+            const n = (window._bulkSelectedIds || []).length;
             const el = document.getElementById('bulkSelectedCount');
-            if (el) el.textContent = n + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
+            if (el) el.textContent = bulkFmt('bulk_selected_count', '{n}', { n: n });
             const bar = document.getElementById('customerBulkBar');
             const barCount = document.getElementById('customerBulkBarCount');
             if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
-            if (barCount) barCount.textContent = n + ' ' + (LANG === 'fa' ? 'انتخاب شده' : 'selected');
-            const submitBtn = document.getElementById('bulkSendSubmitBtn');
-            if (submitBtn) { submitBtn.disabled = n === 0; submitBtn.title = n === 0 ? (LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : ''; }
+            if (barCount) barCount.textContent = bulkFmt('bulk_selected_count', '{n}', { n: n });
+            setBulkSubmitState();
         }
         function bulkSelectFiltered() {
             const data = window._currentCustomerListData || [];
-            window._bulkSelectedIds = data.map(function(c) { return c.id; });
-            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = true; });
+            const max = getBulkMaxRecipients();
+            const ids = [];
+            const seen = {};
+            data.forEach(function(c) {
+                const id = bulkId(c && c.id);
+                if (!id || seen[id] || ids.length >= max) return;
+                seen[id] = true;
+                ids.push(id);
+            });
+            window._bulkSelectedIds = ids;
+            syncBulkCheckboxes();
             updateBulkSelectedCount();
-            toast((LANG === 'fa' ? 'همه مشتریان فیلترشده انتخاب شدند' : 'All filtered customers selected'));
+            if (data.length > max) toast(bulkFmt('bulk_selected_capped', '', { n: ids.length, max: max }), false);
+            else toast(bulkFmt('bulk_selected_count', '', { n: ids.length }));
         }
         function bulkClearSelection() {
             window._bulkSelectedIds = [];
             document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = false; });
             updateBulkSelectedCount();
         }
+        function syncBulkSendMode() {
+            var useTpl = document.getElementById('bulkUseCloudTemplate');
+            var templateOn = !!(useTpl && useTpl.checked);
+            var tplFields = document.getElementById('bulkTemplateFields');
+            var textFields = document.getElementById('bulkFreeTextFields');
+            if (tplFields) tplFields.hidden = !templateOn;
+            if (textFields) textFields.hidden = templateOn;
+        }
+        function resetBulkJobProgress() {
+            var wrap = document.getElementById('bulkJobProgress');
+            var fill = document.getElementById('bulkJobProgressFill');
+            var text = document.getElementById('bulkJobProgressText');
+            if (wrap) wrap.hidden = true;
+            if (fill) fill.style.width = '0%';
+            if (text) text.textContent = '';
+        }
+        function renderBulkJobProgress(job) {
+            if (!job) return;
+            var wrap = document.getElementById('bulkJobProgress');
+            var fill = document.getElementById('bulkJobProgressFill');
+            var text = document.getElementById('bulkJobProgressText');
+            if (wrap) wrap.hidden = false;
+            var total = job.total || 0;
+            var done = (job.sent || 0) + (job.failed || 0);
+            var pct = total ? Math.round((done / total) * 100) : 0;
+            if (fill) fill.style.width = pct + '%';
+            var line = bulkFmt('bulk_job_progress', '{sent}/{total} · {failed}', { sent: job.sent || 0, total: total, failed: job.failed || 0 });
+            var skippedN = job.skipped && job.skipped.total ? job.skipped.total : 0;
+            if (skippedN) line += ' · ' + bulkFmt('bulk_job_skipped', '{n}', { n: skippedN });
+            if (text) text.textContent = line;
+        }
+        function stopBulkJobPoll() {
+            if (window._bulkJobPollTimer) {
+                clearInterval(window._bulkJobPollTimer);
+                window._bulkJobPollTimer = null;
+            }
+        }
+        function finishBulkJob(job) {
+            stopBulkJobPoll();
+            window._bulkSendInFlight = false;
+            window._bulkActiveJobId = null;
+            setBulkSubmitState();
+            if (!job) return;
+            renderBulkJobProgress(job);
+            var msg = bulkFmt('bulk_job_done', '', { sent: job.sent || 0, failed: job.failed || 0 });
+            var skippedN = job.skipped && job.skipped.total ? job.skipped.total : 0;
+            if (skippedN) msg += ' ' + bulkFmt('bulk_job_skipped', '', { n: skippedN });
+            toast(msg, job.status === 'error' || (job.failed || 0) > 0);
+            if (typeof loadCustomers === 'function') loadCustomers();
+        }
+        function startBulkJobPoll(jobId) {
+            stopBulkJobPoll();
+            window._bulkActiveJobId = jobId;
+            async function tick() {
+                var res = await apiFetch('/api/bulk/status/' + encodeURIComponent(jobId));
+                if (!res.ok || !res.data) return;
+                renderBulkJobProgress(res.data);
+                if (res.data.status === 'done' || res.data.status === 'error') finishBulkJob(res.data);
+            }
+            tick();
+            window._bulkJobPollTimer = setInterval(tick, 1500);
+        }
+        function bindBulkSendModalChrome() {
+            var overlay = document.getElementById('modalBulkSend');
+            if (!overlay || overlay._bulkChromeBound) return;
+            overlay._bulkChromeBound = true;
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) closeBulkSendModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Escape') return;
+                if (overlay.style.display === 'flex') closeBulkSendModal();
+            });
+            var useTpl = document.getElementById('bulkUseCloudTemplate');
+            if (useTpl) useTpl.addEventListener('change', syncBulkSendMode);
+        }
         function openBulkSendModal() {
             if (typeof canAccessSection === 'function' ? !canAccessSection('bulk_messaging') : !((currentUser && currentUser.permissions && currentUser.permissions.bulk_messaging))) {
                 toast(t('no_access') || 'دسترسی ندارید', true);
                 return;
             }
-            document.getElementById('modalBulkSend').style.display = 'flex';
-            document.getElementById('bulkMessageContent').value = '';
-            document.getElementById('bulkDelaySec').value = 5;
-            var useTpl = document.getElementById('bulkUseCloudTemplate');
-            if (useTpl) useTpl.checked = true;
+            bindBulkSendModalChrome();
+            var modal = document.getElementById('modalBulkSend');
+            if (modal) modal.style.display = 'flex';
+            if (!window._bulkSendInFlight) {
+                var msgEl = document.getElementById('bulkMessageContent');
+                var delayEl = document.getElementById('bulkDelaySec');
+                var paramEl = document.getElementById('bulkTemplateParam');
+                var useTpl = document.getElementById('bulkUseCloudTemplate');
+                if (msgEl) msgEl.value = '';
+                if (paramEl) paramEl.value = '';
+                if (delayEl) delayEl.value = 5;
+                if (useTpl) useTpl.checked = true;
+                resetBulkJobProgress();
+            }
+            syncBulkSendMode();
             updateBulkSelectedCount();
-            apiFetch('/api/whatsapp/connection').then(function(res) {
-                if (!res.ok || !res.data) return;
-                var tplName = document.getElementById('bulkTemplateName');
-                var tplLang = document.getElementById('bulkTemplateLanguage');
-                if (tplName && res.data.cloudBulkTemplateName) tplName.value = res.data.cloudBulkTemplateName;
-                if (tplLang && res.data.cloudBulkTemplateLanguage) tplLang.value = res.data.cloudBulkTemplateLanguage;
+            apiFetch('/api/bulk/limits').then(function(res) {
+                if (res.ok && res.data && res.data.maxRecipients) window._bulkMaxRecipients = res.data.maxRecipients;
             });
-            if ((window._bulkSelectedIds || []).length === 0) toast(LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first', false);
+            if (!window._bulkSendInFlight) {
+                apiFetch('/api/whatsapp/connection').then(function(res) {
+                    if (!res.ok || !res.data) return;
+                    var tplName = document.getElementById('bulkTemplateName');
+                    var tplLang = document.getElementById('bulkTemplateLanguage');
+                    if (tplName && res.data.cloudBulkTemplateName) tplName.value = res.data.cloudBulkTemplateName;
+                    if (tplLang && res.data.cloudBulkTemplateLanguage) tplLang.value = res.data.cloudBulkTemplateLanguage;
+                });
+            }
+            if ((window._bulkSelectedIds || []).length === 0) toast(bulkFmt('bulk_select_none', LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first'), false);
         }
-        function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
+        function closeBulkSendModal() {
+            var modal = document.getElementById('modalBulkSend');
+            if (modal) modal.style.display = 'none';
+        }
         async function submitBulkSend() {
-            const ids = window._bulkSelectedIds || [];
-            if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer', true); return; }
+            if (window._bulkSendInFlight) return;
+            const ids = (window._bulkSelectedIds || []).map(bulkId).filter(Boolean);
+            if (ids.length === 0) { toast(bulkFmt('bulk_err_select', ''), true); return; }
+            const max = getBulkMaxRecipients();
+            if (ids.length > max) { toast(bulkFmt('bulk_selected_capped', '', { n: ids.length, max: max }), true); return; }
             const useCloudTemplate = !!(document.getElementById('bulkUseCloudTemplate') && document.getElementById('bulkUseCloudTemplate').checked);
             const templateName = (document.getElementById('bulkTemplateName') && document.getElementById('bulkTemplateName').value || '').trim();
             const templateLanguage = (document.getElementById('bulkTemplateLanguage') && document.getElementById('bulkTemplateLanguage').value || 'fa').trim();
+            const templateParam = (document.getElementById('bulkTemplateParam') && document.getElementById('bulkTemplateParam').value || '').trim();
             const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
-            if (useCloudTemplate && !templateName) { toast(LANG === 'fa' ? 'نام قالب Meta الزامی است' : 'Meta template name required', true); return; }
-            if (!useCloudTemplate && !content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
+            if (useCloudTemplate && !templateName) { toast(bulkFmt('bulk_err_template_name', ''), true); return; }
+            if (!useCloudTemplate && !content) { toast(bulkFmt('bulk_err_message', ''), true); return; }
+            if (!confirm(bulkFmt('bulk_confirm', '', { n: ids.length }))) return;
             const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
             const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
-            const body = { customerIds: ids, message: content, delayMs: delayMs, useCloudTemplate: useCloudTemplate };
+            const body = { customerIds: ids, delayMs: delayMs, useCloudTemplate: useCloudTemplate };
             if (useCloudTemplate) {
                 body.templateName = templateName;
                 body.templateLanguage = templateLanguage;
+                if (templateParam) body.templateBodyParams = [templateParam];
+            } else {
+                body.message = content;
             }
+            window._bulkSendInFlight = true;
+            setBulkSubmitState();
             const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) { toast((LANG === 'fa' ? 'ارسال شروع شد. ' : 'Sending started. ') + (res.data && res.data.message ? res.data.message : '')); closeBulkSendModal(); bulkClearSelection(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.needLogin) { window._bulkSendInFlight = false; setBulkSubmitState(); return; }
+            if (res.ok) {
+                toast((res.data && res.data.message) || bulkFmt('bulk_sending', ''), false);
+                if (res.data && res.data.skipped) renderBulkJobProgress({ total: res.data.total || ids.length, sent: 0, failed: 0, skipped: res.data.skipped });
+                if (res.data && res.data.jobId) startBulkJobPoll(res.data.jobId);
+                else { window._bulkSendInFlight = false; setBulkSubmitState(); }
+            } else {
+                window._bulkSendInFlight = false;
+                setBulkSubmitState();
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
         }
 
         window._importFileRows = null;

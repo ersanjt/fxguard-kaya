@@ -130,6 +130,33 @@
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
             }
         }).catch(function(){});
+        let _dashboardStatsInflight = null;
+        let _dashboardStatsCache = null;
+        let _dashboardStatsCacheAt = 0;
+        function fetchDashboardStats(opts) {
+            const force = !!(opts && opts.force);
+            const now = Date.now();
+            if (!force && _dashboardStatsCache && (now - _dashboardStatsCacheAt) < 8000) {
+                return Promise.resolve(_dashboardStatsCache);
+            }
+            if (_dashboardStatsInflight) return _dashboardStatsInflight;
+            const run = async function () {
+                var last = null;
+                for (var attempt = 0; attempt < 3; attempt++) {
+                    last = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
+                    if (last && last.ok) {
+                        _dashboardStatsCache = last;
+                        _dashboardStatsCacheAt = Date.now();
+                        return last;
+                    }
+                    if (!last || last.status !== 429 || attempt === 2) return last;
+                    await new Promise(function (resolve) { setTimeout(resolve, 1200 * (attempt + 1)); });
+                }
+                return last;
+            };
+            _dashboardStatsInflight = run().finally(function () { _dashboardStatsInflight = null; });
+            return _dashboardStatsInflight;
+        }
         function updateNavBadges(stats) {
             if (stats) {
                 window.navBadgeCounts.conversations = (stats.unreadConversations || 0);
@@ -2104,7 +2131,8 @@
                         }
                     });
                     socket.on('call_offer', function(data) {
-                        if (internalCallIsJoining) {
+                        if (!data) return;
+                        if (internalCallIsJoining || internalCallLocalStream) {
                             handleCallOfferAsJoiner(data);
                             return;
                         }
@@ -2115,50 +2143,43 @@
                         showInternalCallModal(data.type === 'video' ? t('incoming_video_call') : t('incoming_voice_call'), true);
                     });
                     socket.on('call_answer', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        const pc = internalCallPeers[data.fromUserId];
+                        if (!data || !isSameCallThread(data.threadId)) return;
+                        const fromId = peerKey(data.fromUserId);
+                        const pc = internalCallPeers[fromId];
                         if (pc) {
                             pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function() {
-                                const queue = internalCallIceQueue[data.fromUserId] || [];
-                                internalCallIceQueue[data.fromUserId] = [];
-                                queue.forEach(function(c) {
-                                    if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(e) { console.warn('addIce:', e); });
-                                });
+                                flushIceQueue(fromId, pc);
+                                markInternalCallConnected();
                             }).catch(function(e) { console.warn('setRemoteDesc:', e); });
                         }
                     });
                     socket.on('call_ice', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        if (!data.candidate) return;
-                        const pc = internalCallPeers[data.fromUserId];
-                        if (pc) {
-                            if (pc.remoteDescription) {
-                                pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
-                            } else {
-                                if (!internalCallIceQueue[data.fromUserId]) internalCallIceQueue[data.fromUserId] = [];
-                                internalCallIceQueue[data.fromUserId].push(data.candidate);
-                            }
+                        if (!data || !data.candidate) return;
+                        if (!isSameCallThread(data.threadId) && !internalCallPendingOffer && !internalCallPendingInvite) return;
+                        const fromId = peerKey(data.fromUserId);
+                        const pc = internalCallPeers[fromId];
+                        if (pc && pc.remoteDescription) {
+                            pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
+                        } else {
+                            enqueueIceCandidate(fromId, data.candidate);
                         }
                     });
                     socket.on('call_participant_joined', function(data) {
-                        if (data.threadId !== currentInternalThreadId || !internalCallLocalStream) return;
-                        const newUserId = data.userId;
-                        if (internalCallPeers[newUserId]) return;
-                        const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                        internalCallPeers[newUserId] = pc;
-                        attachPeerConnectionStateHandlers(pc, newUserId);
-                        internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                        pc.onicecandidate = function(e) { const sk = getSocket(); if (e.candidate && sk) sk.emit('call_ice', { toUserId: newUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                        pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(newUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                        if (!data || !isSameCallThread(data.threadId) || !internalCallLocalStream) return;
+                        const newUserId = peerKey(data.userId);
+                        if (!newUserId || internalCallPeers[newUserId]) return;
+                        const pc = createCallPeerConnection(newUserId);
                         pc.createOffer().then(function(offer) { return pc.setLocalDescription(offer).then(function() { return offer; }); }).then(function(offer) {
                             const sk = getSocket(); if (sk) sk.emit('call_offer', { toUserId: newUserId, threadId: currentInternalThreadId, type: internalCallType, sdp: offer });
                         }).catch(function(err) { console.warn('createOffer for new participant:', err); });
                     });
                     socket.on('call_participant_left', function(data) {
-                        if (data.threadId !== currentInternalThreadId) return;
-                        const pc = internalCallPeers[data.userId];
-                        if (pc) { pc.close(); delete internalCallPeers[data.userId]; }
-                        removeRemoteVideoEl(data.userId);
+                        if (!data || !isSameCallThread(data.threadId)) return;
+                        const leftId = peerKey(data.userId);
+                        const pc = internalCallPeers[leftId];
+                        if (pc) { pc.close(); delete internalCallPeers[leftId]; }
+                        removeRemoteVideoEl(leftId);
+                        removeRemoteAudioEl(leftId);
                         const addBtn = document.getElementById('internalCallAddBtn');
                         if (addBtn) addBtn.style.display = (Object.keys(internalCallPeers).length > 0) ? 'flex' : 'none';
                         if (Object.keys(internalCallPeers).length === 0) hideInternalCallModal();
@@ -2183,10 +2204,10 @@
                         toast(name + (LANG === 'fa' ? ' دعوت را رد کرد' : ' declined the invite'));
                     });
                     socket.on('call_end', function(data) {
-                        if (data.threadId === currentInternalThreadId) endInternalCall();
+                        if (data && isSameCallThread(data.threadId)) endInternalCall();
                     });
                     socket.on('call_reject', function(data) {
-                        if (data.threadId === currentInternalThreadId) { hideInternalCallModal(); internalCallPendingOffer = null; internalCallIsIncoming = false; toast(t('call_rejected')); }
+                        if (data && isSameCallThread(data.threadId)) { hideInternalCallModal(); internalCallPendingOffer = null; internalCallIsIncoming = false; toast(t('call_rejected')); }
                     });
                     socket.on('unanswered_alert', function(data) {
                         playInternalChatSound();
@@ -2351,17 +2372,69 @@
                 osc3.stop(t + 0.4);
             } catch (e) {}
         }
-        function isImageExt(name) { return /\.(png|jpg|jpeg|gif|webp)$/i.test(name || ''); }
+        function isImageExt(name) { return /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name || ''); }
         function isPdfExt(name) { return /\.pdf$/i.test(name || ''); }
+        function isVideoExt(name) { return /\.(mp4|webm|mov)$/i.test(name || ''); }
+        function isAudioExt(name) { return /\.(mp3|ogg|wav|m4a|aac|oga|opus)$/i.test(name || ''); }
+        function internalAttachmentKind(a) {
+            const hay = String((a && a.name) || '') + ' ' + String((a && a.url) || '').split('?')[0];
+            if (isImageExt(hay)) return 'image';
+            if (isVideoExt(hay)) return 'video';
+            if (isAudioExt(hay)) return 'audio';
+            if (isPdfExt(hay)) return 'pdf';
+            return 'file';
+        }
+        function isInternalPlaceholderContent(content) {
+            const c = String(content || '').trim();
+            return !c || c === '(پیوست)' || c === '(Attachment)' || c === '(Ek)';
+        }
         function renderInternalAttachment(a) {
             const allowDl = a.allowDownload !== false;
             const name = a.name || t('file');
             let fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
             fullUrl = ensureHttpsUrl(fullUrl);
-            if (allowDl) return '<a href="' + escapeHtml(fullUrl) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">📎 ' + escapeHtml(name) + '</a>';
-            if (isImageExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><img src="' + escapeHtml(fullUrl) + '" alt="" style="max-width:100%; max-height:200px; border-radius:6px; pointer-events:none; user-select:none;" oncontextmenu="return false;"><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
-            if (isPdfExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><iframe src="' + escapeHtml(fullUrl) + '#toolbar=0" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px;" oncontextmenu="return false;"></iframe><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
-            return '<div style="margin-top:4px;"><span style="color:var(--text-secondary);">📎 ' + escapeHtml(name) + '</span> <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
+            const safeUrl = escapeHtml(fullUrl);
+            const safeName = escapeHtml(name);
+            const kind = internalAttachmentKind(a);
+            const viewOnlyCls = allowDl ? '' : ' internal-att-viewonly';
+            const viewOnlyBadge = allowDl ? '' : '<span class="internal-att-badge">' + (LANG === 'fa' ? 'فقط نمایش' : (LANG === 'tr' ? 'Sadece görüntüleme' : 'View only')) + '</span>';
+            const saveLabel = LANG === 'fa' ? 'ذخیره' : (LANG === 'tr' ? 'Kaydet' : 'Save');
+            const dlLink = allowDl ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-dl" download="' + safeName + '">' + saveLabel + '</a>' : '';
+            const noCtx = allowDl ? '' : ' oncontextmenu="return false;"';
+            if (kind === 'image') {
+                const img = '<img src="' + safeUrl + '" alt="' + safeName + '" loading="lazy"' + (allowDl ? '' : ' class="internal-att-nosave"') + noCtx + ' onerror="this.onerror=null;this.style.display=\'none\';var f=this.closest(\'.internal-att\');if(f){var s=f.querySelector(\'.internal-att-fallback\');if(s)s.style.display=\'inline\';}">';
+                const media = allowDl
+                    ? '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-image-link">' + img + '</a>'
+                    : img;
+                return '<div class="internal-att internal-att-image' + viewOnlyCls + '">' + media + '<span class="internal-att-fallback" style="display:none;">🖼 ' + safeName + '</span>' + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'video') {
+                const vAttrs = allowDl ? '' : ' controlsList="nodownload noplaybackrate" disablepictureinpicture';
+                return '<div class="internal-att internal-att-video' + viewOnlyCls + '"><video src="' + safeUrl + '" controls preload="metadata" playsinline' + vAttrs + noCtx + '></video>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'audio') {
+                const aAttrs = allowDl ? '' : ' controlsList="nodownload noplaybackrate"';
+                return '<div class="internal-att internal-att-audio' + viewOnlyCls + '"><audio src="' + safeUrl + '" controls preload="metadata"' + aAttrs + noCtx + '></audio>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (kind === 'pdf') {
+                return '<div class="internal-att internal-att-pdf' + viewOnlyCls + '"><iframe src="' + safeUrl + (allowDl ? '' : '#toolbar=0') + '" class="internal-att-pdf-frame" title="' + safeName + '"' + noCtx + '></iframe>' + dlLink + viewOnlyBadge + '</div>';
+            }
+            if (allowDl) {
+                return '<div class="internal-att internal-att-file"><a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="internal-att-file-link">📎 ' + safeName + '</a></div>';
+            }
+            return '<div class="internal-att internal-att-file' + viewOnlyCls + '"><span class="internal-att-file-name">📎 ' + safeName + '</span>' + viewOnlyBadge + '</div>';
+        }
+        function internalMessageInnerHtml(m) {
+            const atts = (m && m.attachments && m.attachments.length) ? m.attachments : [];
+            const attHtml = atts.map(renderInternalAttachment).join('');
+            const showText = !isInternalPlaceholderContent(m && m.content) || atts.length === 0;
+            return (showText ? '<div>' + linkifyMessageContent((m && m.content) || '') + '</div>' : '') + attHtml;
+        }
+        function buildInternalMessageHtml(m, me) {
+            const isOut = m.fromUserId === me;
+            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body">' + internalMessageInnerHtml(m) + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
         }
         function toggleInternalFileOption() {
             const fi = document.getElementById('internalChatFile');
@@ -2374,11 +2447,7 @@
             const emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
             const me = (currentUser && currentUser.id) || '';
-            const isOut = m.fromUserId === me;
-            const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const html = buildInternalMessageHtml(m, me);
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -3737,7 +3806,7 @@
                         openCustomerModal();
                     } else if (_qa === 'ticket-new' && typeof showPage === 'function' && typeof toggleTicketForm === 'function') {
                         showPage('tickets');
-                        setTimeout(function() { toggleTicketForm(); }, 350);
+                        setTimeout(function() { toggleTicketForm(true); }, 350);
                     }
                     return;
                 }
@@ -3796,6 +3865,65 @@
                 // انصراف از فرم تسک
                 if (target.closest('#btnTaskCancel') && typeof toggleTaskForm === 'function') {
                     e.preventDefault(); e.stopPropagation(); toggleTaskForm();
+                    return;
+                }
+                // تیکت — باز/بسته کردن فرم ثبت
+                if ((target.closest('#btnTicketCreate') || target.closest('#emptyTicketCreateBtn') || target.closest('#btnTicketFormCancel')) && typeof toggleTicketForm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTicketForm();
+                    return;
+                }
+                if ((target.closest('.header-quick-btn[data-perm="tickets"]') || target.closest('.header-quick-btn[data-quick-action="ticket-new"]')) && typeof showPage === 'function' && typeof toggleTicketForm === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    showPage('tickets');
+                    setTimeout(function() { toggleTicketForm(true); }, 350);
+                    return;
+                }
+                if (target.closest('#btnTicketSubmit') && typeof addTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); addTicket();
+                    return;
+                }
+                if (target.closest('#btnApplyTicketFilters') && typeof applyTicketFilters === 'function') {
+                    e.preventDefault(); e.stopPropagation(); applyTicketFilters();
+                    return;
+                }
+                const ticketCardDelete = target.closest('.ticket-card-delete[data-ticket-id]');
+                if (ticketCardDelete && typeof deleteTicketConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    deleteTicketConfirm(ticketCardDelete.getAttribute('data-ticket-id'));
+                    return;
+                }
+                const ticketCardEl = target.closest('.ticket-card[data-ticket-id]');
+                if (ticketCardEl && !target.closest('.ticket-card-delete') && typeof loadTicketDetail === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    loadTicketDetail(ticketCardEl.getAttribute('data-ticket-id'));
+                    return;
+                }
+                if ((target.closest('#btnTicketBack') || target.closest('.ticket-back-btn')) && typeof showTicketList === 'function') {
+                    e.preventDefault(); e.stopPropagation(); showTicketList();
+                    return;
+                }
+                if (target.closest('#btnTicketStartProcess') && typeof startProcessFromTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); startProcessFromTicket();
+                    return;
+                }
+                if (target.closest('#btnTicketApplyDetail') && typeof updateTicketFromDetail === 'function') {
+                    e.preventDefault(); e.stopPropagation(); updateTicketFromDetail();
+                    return;
+                }
+                if (target.closest('#ticketEditBtn') && typeof toggleTicketEditMode === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTicketEditMode();
+                    return;
+                }
+                if (target.closest('#ticketArchiveBtn') && typeof archiveTicket === 'function') {
+                    e.preventDefault(); e.stopPropagation(); archiveTicket();
+                    return;
+                }
+                if (target.closest('#ticketDeleteBtn') && typeof deleteTicketConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); deleteTicketConfirm();
+                    return;
+                }
+                if (target.closest('#btnTicketReplySubmit') && typeof submitTicketReply === 'function') {
+                    e.preventDefault(); e.stopPropagation(); submitTicketReply();
                     return;
                 }
                 // کلیک روی آیتم تسک — باز کردن جزئیات
@@ -3953,6 +4081,15 @@
                 if (removeMemberBtn && typeof removeInternalThreadMember === 'function') { e.preventDefault(); e.stopPropagation(); removeInternalThreadMember(removeMemberBtn.getAttribute('data-user-id')); return; }
                 if (target.closest('.internal-call-btn[data-call-type="voice"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('voice'); return; }
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
+                if (target.closest('#internalCallAcceptBtn') && typeof acceptInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); acceptInternalCall(); return; }
+                if (target.closest('#internalCallRejectBtn') && typeof rejectInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); rejectInternalCall(); return; }
+                if (target.closest('#internalCallEndBtn') && typeof endInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); endInternalCall(); return; }
+                if (target.closest('#internalCallAddBtn') && typeof showAddToCallModal === 'function') { e.preventDefault(); e.stopPropagation(); showAddToCallModal(); return; }
+                if (target.closest('#internalCallMicBtn') && typeof toggleInternalCallMic === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalCallMic(); return; }
+                if (target.closest('#internalCallCameraBtn') && typeof toggleInternalCallCamera === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalCallCamera(); return; }
+                if (target.closest('#addToCallInviteBtn') && typeof inviteSelectedToCall === 'function') { e.preventDefault(); e.stopPropagation(); inviteSelectedToCall(); return; }
+                if (target.closest('#internalCallInviteModal .accept') && typeof acceptInternalCallInvite === 'function') { e.preventDefault(); e.stopPropagation(); acceptInternalCallInvite(); return; }
+                if (target.closest('#internalCallInviteModal .reject') && typeof rejectInternalCallInvite === 'function') { e.preventDefault(); e.stopPropagation(); rejectInternalCallInvite(); return; }
                 // Handle internal chat popup header click (minimize)
                 if (target.closest('.internal-chat-popup-header-compact') && !target.closest('.internal-chat-popup-actions') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
                 // صفحه کاربران — CSP / حذف onclick (backup به toggleUserForm/addUser نیاز به window دارد)
@@ -4039,6 +4176,7 @@
                 }
                 else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
                     e.preventDefault();
+                    window._custListRateLimitedUntil = 0;
                     if (typeof loadCustomers === 'function') loadCustomers();
                 }
                 else if (target.closest('.customer-avatar-clickable')) {
@@ -4051,9 +4189,87 @@
                     e.preventDefault();
                     if (typeof closeImagePreviewModal === 'function') closeImagePreviewModal();
                 }
-                else if (target.matches('[onclick*="toggleTicketForm"]')) {
+                else if (target.closest('#btnTicketCreate') || target.closest('#emptyTicketCreateBtn') || target.closest('#btnTicketFormCancel')) {
                     e.preventDefault();
-                    toggleTicketForm();
+                    e.stopPropagation();
+                    if (typeof toggleTicketForm === 'function') toggleTicketForm();
+                    return;
+                }
+                else if (target.closest('.header-quick-btn[data-perm="tickets"]') || target.closest('.header-quick-btn[data-quick-action="ticket-new"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof showPage === 'function') showPage('tickets');
+                    setTimeout(function() {
+                        if (typeof toggleTicketForm === 'function') toggleTicketForm(true);
+                    }, 350);
+                    return;
+                }
+                else if (target.closest('#btnTicketSubmit') || target.matches('[onclick*="addTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof addTicket === 'function') addTicket();
+                    return;
+                }
+                else if (target.closest('#btnApplyTicketFilters') || target.matches('[onclick*="applyTicketFilters"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof applyTicketFilters === 'function') applyTicketFilters();
+                    return;
+                }
+                else if (target.closest('#btnTicketBack') || target.closest('.ticket-back-btn') || target.matches('[onclick*="showTicketList"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof showTicketList === 'function') showTicketList();
+                    return;
+                }
+                else if (target.closest('#btnTicketStartProcess') || target.matches('[onclick*="startProcessFromTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof startProcessFromTicket === 'function') startProcessFromTicket();
+                    return;
+                }
+                else if (target.closest('#btnTicketApplyDetail') || target.matches('[onclick*="updateTicketFromDetail"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof updateTicketFromDetail === 'function') updateTicketFromDetail();
+                    return;
+                }
+                else if (target.closest('#ticketEditBtn') || target.matches('[onclick*="toggleTicketEditMode"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof toggleTicketEditMode === 'function') toggleTicketEditMode();
+                    return;
+                }
+                else if (target.closest('#ticketArchiveBtn') || target.matches('[onclick*="archiveTicket"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof archiveTicket === 'function') archiveTicket();
+                    return;
+                }
+                else if (target.closest('#ticketDeleteBtn') || target.matches('[onclick*="deleteTicketConfirm"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof deleteTicketConfirm === 'function') deleteTicketConfirm();
+                    return;
+                }
+                else if (target.closest('#btnTicketReplySubmit') || target.matches('[onclick*="submitTicketReply"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof submitTicketReply === 'function') submitTicketReply();
+                    return;
+                }
+                else if (target.closest('.ticket-card[data-ticket-id]') || target.closest('.ticket-card[onclick*="loadTicketDetail"]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var ticketCard = target.closest('.ticket-card');
+                    var ticketId = (ticketCard && (ticketCard.getAttribute('data-ticket-id') || '')) || '';
+                    if (!ticketId && ticketCard) {
+                        var oc = ticketCard.getAttribute('onclick') || '';
+                        var m = oc.match(/loadTicketDetail\(['"]([^'"]+)['"]\)/);
+                        if (m) ticketId = m[1];
+                    }
+                    if (ticketId && typeof loadTicketDetail === 'function') loadTicketDetail(ticketId);
+                    return;
                 }
                 else if (target.matches('[onclick*="startCustomerChat"]') || target.closest('.customer-send-btn')) {
                     e.preventDefault();
@@ -4081,11 +4297,6 @@
                     e.preventDefault();
                     var custId = target.getAttribute('data-cust-id') || '';
                     if (custId) openTransactionModal(custId);
-                }
-                else if (target.matches('[onclick*="loadTicketDetail"]')) {
-                    e.preventDefault();
-                    const ticketId = target.getAttribute('data-ticket-id') || '';
-                    if (ticketId) loadTicketDetail(ticketId);
                 }
             }, true); // Use capturing phase to catch before other handlers
             document.addEventListener('keydown', function(e) {
@@ -4125,6 +4336,11 @@
                     const f = e.target.files && e.target.files[0];
                     const label = document.getElementById('internalChatPopupFileLabel');
                     if (label) { label.textContent = f ? f.name : ''; label.style.display = f ? 'inline' : 'none'; }
+                }
+                if (e.target.id === 'ticketReplyFile') {
+                    const f = e.target.files && e.target.files[0];
+                    const label = document.getElementById('ticketReplyAttachments');
+                    if (label) label.textContent = f ? f.name : '';
                 }
             }, true);
         }
@@ -4316,9 +4532,9 @@
             } else if (onclick === "showPage('customers'); openCustomerModal();") {
                 showPage('customers');
                 setTimeout(openCustomerModal, 100);
-            } else if (onclick === "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);") {
+            } else if (btn.getAttribute('data-quick-action') === 'ticket-new' || onclick.indexOf('toggleTicketForm') !== -1) {
                 showPage('tickets');
-                setTimeout(toggleTicketForm, 350);
+                setTimeout(function() { toggleTicketForm(true); }, 350);
             }
         }
         
@@ -7519,11 +7735,20 @@
                 return 0;
             });
         }
+        window._custListRateLimitedUntil = window._custListRateLimitedUntil || 0;
+        function renderCustomerRateLimitState(list) {
+            if (!list) return;
+            list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' : 'Too many requests. Please wait a few minutes.') + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+        }
         async function loadCustomers() {
             const list = document.getElementById('customerList');
             const statsEl = document.getElementById('customerStats');
             const countEl = document.getElementById('customerListCount');
             if (!list) return;
+            if (Date.now() < (window._custListRateLimitedUntil || 0)) {
+                renderCustomerRateLimitState(list);
+                return;
+            }
             setLoading('customerList', 5);
             let q = '?limit=200';
             const searchEl = document.getElementById('customerSearch');
@@ -7533,11 +7758,19 @@
             if (customerQuickTab === 'archive') q += '&restrictedOnly=true';
             const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
-            if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
+            if (!res.ok) {
+                const is429 = res.status === 429 || (res.error && String(res.error).indexOf('تعداد درخواست') !== -1) || (res.data && res.data.error && String(res.data.error).indexOf('تعداد درخواست') !== -1);
+                if (is429) window._custListRateLimitedUntil = Date.now() + 45000;
+                else window._custListRateLimitedUntil = 0;
+                list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+                return;
+            }
+            window._custListRateLimitedUntil = 0;
             const data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
             if (!data.data || data.data.length === 0) {
+                window._currentCustomerListData = [];
                 const emptyMsg = customerQuickTab === 'archive'
                     ? (t('empty_customers_archive') || (LANG === 'fa' ? 'مشتری قفل‌شده‌ای از شماره قبلی نیست.' : 'No locked customers from a previous number.'))
                     : t('empty_customers');
@@ -7545,13 +7778,14 @@
                     ? ''
                     : '<button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button>';
                 list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + escapeHtml(emptyMsg) + '</p>' + emptyBtn + '</div>';
+                updateBulkSelectedCount();
                 return;
             }
             const sortEl = document.getElementById('customerSort');
             const sortVal = sortEl ? sortEl.value : 'newest';
             const sorted = sortCustomerList(data.data, sortVal);
             window._currentCustomerListData = sorted;
-            const bulkIds = window._bulkSelectedIds || [];
+            const bulkIds = (window._bulkSelectedIds || []).map(String);
             list.innerHTML = sorted.map(function(c) {
                 const seePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
                 const name = c.name || (seePhone ? c.phone : '') || t('customer');
@@ -7571,7 +7805,7 @@
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
+                const checked = bulkIds.indexOf(String(c.id)) >= 0 ? ' checked' : '';
                 const phoneShown = seePhone ? (c.phone || '') : '';
                 const restrictedBadge = c.isRestrictedFromStaff
                     ? '<span class="badge customer-badge-restricted">' + escapeHtml(t('customer_restricted_badge') || (LANG === 'fa' ? 'آرشیو شماره قبلی' : 'Previous number')) + '</span>'
@@ -7647,77 +7881,240 @@
         }
 
         window._bulkSelectedIds = window._bulkSelectedIds || [];
+        window._bulkMaxRecipients = window._bulkMaxRecipients || 100;
+        window._bulkSendInFlight = false;
+        window._bulkActiveJobId = null;
+        window._bulkJobPollTimer = null;
+
+        function bulkId(value) { return String(value || ''); }
+        function bulkFmt(key, fallback, vars) {
+            var s = (typeof t === 'function' && t(key)) || fallback || key;
+            if (vars) Object.keys(vars).forEach(function(k) { s = s.split('{' + k + '}').join(String(vars[k])); });
+            return s;
+        }
+        function getBulkMaxRecipients() {
+            var n = parseInt(window._bulkMaxRecipients, 10);
+            return Number.isFinite(n) && n > 0 ? n : 100;
+        }
+        function syncBulkCheckboxes() {
+            var selected = {};
+            (window._bulkSelectedIds || []).forEach(function(id) { selected[bulkId(id)] = true; });
+            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) {
+                cb.checked = !!selected[bulkId(cb.getAttribute('data-customer-id'))];
+            });
+        }
+        function setBulkSubmitState() {
+            var submitBtn = document.getElementById('bulkSendSubmitBtn');
+            if (!submitBtn) return;
+            var n = (window._bulkSelectedIds || []).length;
+            var busy = !!window._bulkSendInFlight;
+            submitBtn.disabled = busy || n === 0;
+            submitBtn.textContent = busy
+                ? bulkFmt('bulk_sending', LANG === 'fa' ? 'در حال ارسال...' : 'Sending...')
+                : (typeof t === 'function' ? t('bulk_send_submit') : (LANG === 'fa' ? 'شروع ارسال' : 'Start sending'));
+            submitBtn.title = n === 0 ? bulkFmt('bulk_err_select', LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : '';
+        }
         function toggleBulkSelect(el) {
-            const id = el && el.getAttribute('data-customer-id');
+            const id = bulkId(el && el.getAttribute('data-customer-id'));
             if (!id) return;
             const arr = window._bulkSelectedIds;
             const idx = arr.indexOf(id);
-            if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+            if (idx >= 0) arr.splice(idx, 1);
+            else {
+                if (arr.length >= getBulkMaxRecipients()) {
+                    toast(bulkFmt('bulk_selected_capped', '', { n: arr.length, max: getBulkMaxRecipients() }), true);
+                    if (el) el.checked = false;
+                    return;
+                }
+                arr.push(id);
+            }
             updateBulkSelectedCount();
         }
         function updateBulkSelectedCount() {
-            const n = window._bulkSelectedIds.length || 0;
+            const n = (window._bulkSelectedIds || []).length;
             const el = document.getElementById('bulkSelectedCount');
-            if (el) el.textContent = n + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
+            if (el) el.textContent = bulkFmt('bulk_selected_count', '{n}', { n: n });
             const bar = document.getElementById('customerBulkBar');
             const barCount = document.getElementById('customerBulkBarCount');
             if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
-            if (barCount) barCount.textContent = n + ' ' + (LANG === 'fa' ? 'انتخاب شده' : 'selected');
-            const submitBtn = document.getElementById('bulkSendSubmitBtn');
-            if (submitBtn) { submitBtn.disabled = n === 0; submitBtn.title = n === 0 ? (LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : ''; }
+            if (barCount) barCount.textContent = bulkFmt('bulk_selected_count', '{n}', { n: n });
+            setBulkSubmitState();
         }
         function bulkSelectFiltered() {
             const data = window._currentCustomerListData || [];
-            window._bulkSelectedIds = data.map(function(c) { return c.id; });
-            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = true; });
+            const max = getBulkMaxRecipients();
+            const ids = [];
+            const seen = {};
+            data.forEach(function(c) {
+                const id = bulkId(c && c.id);
+                if (!id || seen[id] || ids.length >= max) return;
+                seen[id] = true;
+                ids.push(id);
+            });
+            window._bulkSelectedIds = ids;
+            syncBulkCheckboxes();
             updateBulkSelectedCount();
-            toast((LANG === 'fa' ? 'همه مشتریان فیلترشده انتخاب شدند' : 'All filtered customers selected'));
+            if (data.length > max) toast(bulkFmt('bulk_selected_capped', '', { n: ids.length, max: max }), false);
+            else toast(bulkFmt('bulk_selected_count', '', { n: ids.length }));
         }
         function bulkClearSelection() {
             window._bulkSelectedIds = [];
             document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = false; });
             updateBulkSelectedCount();
         }
+        function syncBulkSendMode() {
+            var useTpl = document.getElementById('bulkUseCloudTemplate');
+            var templateOn = !!(useTpl && useTpl.checked);
+            var tplFields = document.getElementById('bulkTemplateFields');
+            var textFields = document.getElementById('bulkFreeTextFields');
+            if (tplFields) tplFields.hidden = !templateOn;
+            if (textFields) textFields.hidden = templateOn;
+        }
+        function resetBulkJobProgress() {
+            var wrap = document.getElementById('bulkJobProgress');
+            var fill = document.getElementById('bulkJobProgressFill');
+            var text = document.getElementById('bulkJobProgressText');
+            if (wrap) wrap.hidden = true;
+            if (fill) fill.style.width = '0%';
+            if (text) text.textContent = '';
+        }
+        function renderBulkJobProgress(job) {
+            if (!job) return;
+            var wrap = document.getElementById('bulkJobProgress');
+            var fill = document.getElementById('bulkJobProgressFill');
+            var text = document.getElementById('bulkJobProgressText');
+            if (wrap) wrap.hidden = false;
+            var total = job.total || 0;
+            var done = (job.sent || 0) + (job.failed || 0);
+            var pct = total ? Math.round((done / total) * 100) : 0;
+            if (fill) fill.style.width = pct + '%';
+            var line = bulkFmt('bulk_job_progress', '{sent}/{total} · {failed}', { sent: job.sent || 0, total: total, failed: job.failed || 0 });
+            var skippedN = job.skipped && job.skipped.total ? job.skipped.total : 0;
+            if (skippedN) line += ' · ' + bulkFmt('bulk_job_skipped', '{n}', { n: skippedN });
+            if (text) text.textContent = line;
+        }
+        function stopBulkJobPoll() {
+            if (window._bulkJobPollTimer) {
+                clearInterval(window._bulkJobPollTimer);
+                window._bulkJobPollTimer = null;
+            }
+        }
+        function finishBulkJob(job) {
+            stopBulkJobPoll();
+            window._bulkSendInFlight = false;
+            window._bulkActiveJobId = null;
+            setBulkSubmitState();
+            if (!job) return;
+            renderBulkJobProgress(job);
+            var msg = bulkFmt('bulk_job_done', '', { sent: job.sent || 0, failed: job.failed || 0 });
+            var skippedN = job.skipped && job.skipped.total ? job.skipped.total : 0;
+            if (skippedN) msg += ' ' + bulkFmt('bulk_job_skipped', '', { n: skippedN });
+            toast(msg, job.status === 'error' || (job.failed || 0) > 0);
+            if (typeof loadCustomers === 'function') loadCustomers();
+        }
+        function startBulkJobPoll(jobId) {
+            stopBulkJobPoll();
+            window._bulkActiveJobId = jobId;
+            async function tick() {
+                var res = await apiFetch('/api/bulk/status/' + encodeURIComponent(jobId));
+                if (!res.ok || !res.data) return;
+                renderBulkJobProgress(res.data);
+                if (res.data.status === 'done' || res.data.status === 'error') finishBulkJob(res.data);
+            }
+            tick();
+            window._bulkJobPollTimer = setInterval(tick, 1500);
+        }
+        function bindBulkSendModalChrome() {
+            var overlay = document.getElementById('modalBulkSend');
+            if (!overlay || overlay._bulkChromeBound) return;
+            overlay._bulkChromeBound = true;
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) closeBulkSendModal();
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Escape') return;
+                if (overlay.style.display === 'flex') closeBulkSendModal();
+            });
+            var useTpl = document.getElementById('bulkUseCloudTemplate');
+            if (useTpl) useTpl.addEventListener('change', syncBulkSendMode);
+        }
         function openBulkSendModal() {
             if (typeof canAccessSection === 'function' ? !canAccessSection('bulk_messaging') : !((currentUser && currentUser.permissions && currentUser.permissions.bulk_messaging))) {
                 toast(t('no_access') || 'دسترسی ندارید', true);
                 return;
             }
-            document.getElementById('modalBulkSend').style.display = 'flex';
-            document.getElementById('bulkMessageContent').value = '';
-            document.getElementById('bulkDelaySec').value = 5;
-            var useTpl = document.getElementById('bulkUseCloudTemplate');
-            if (useTpl) useTpl.checked = true;
+            bindBulkSendModalChrome();
+            var modal = document.getElementById('modalBulkSend');
+            if (modal) modal.style.display = 'flex';
+            if (!window._bulkSendInFlight) {
+                var msgEl = document.getElementById('bulkMessageContent');
+                var delayEl = document.getElementById('bulkDelaySec');
+                var paramEl = document.getElementById('bulkTemplateParam');
+                var useTpl = document.getElementById('bulkUseCloudTemplate');
+                if (msgEl) msgEl.value = '';
+                if (paramEl) paramEl.value = '';
+                if (delayEl) delayEl.value = 5;
+                if (useTpl) useTpl.checked = true;
+                resetBulkJobProgress();
+            }
+            syncBulkSendMode();
             updateBulkSelectedCount();
-            apiFetch('/api/whatsapp/connection').then(function(res) {
-                if (!res.ok || !res.data) return;
-                var tplName = document.getElementById('bulkTemplateName');
-                var tplLang = document.getElementById('bulkTemplateLanguage');
-                if (tplName && res.data.cloudBulkTemplateName) tplName.value = res.data.cloudBulkTemplateName;
-                if (tplLang && res.data.cloudBulkTemplateLanguage) tplLang.value = res.data.cloudBulkTemplateLanguage;
+            apiFetch('/api/bulk/limits').then(function(res) {
+                if (res.ok && res.data && res.data.maxRecipients) window._bulkMaxRecipients = res.data.maxRecipients;
             });
-            if ((window._bulkSelectedIds || []).length === 0) toast(LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first', false);
+            if (!window._bulkSendInFlight) {
+                apiFetch('/api/whatsapp/connection').then(function(res) {
+                    if (!res.ok || !res.data) return;
+                    var tplName = document.getElementById('bulkTemplateName');
+                    var tplLang = document.getElementById('bulkTemplateLanguage');
+                    if (tplName && res.data.cloudBulkTemplateName) tplName.value = res.data.cloudBulkTemplateName;
+                    if (tplLang && res.data.cloudBulkTemplateLanguage) tplLang.value = res.data.cloudBulkTemplateLanguage;
+                });
+            }
+            if ((window._bulkSelectedIds || []).length === 0) toast(bulkFmt('bulk_select_none', LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first'), false);
         }
-        function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
+        function closeBulkSendModal() {
+            var modal = document.getElementById('modalBulkSend');
+            if (modal) modal.style.display = 'none';
+        }
         async function submitBulkSend() {
-            const ids = window._bulkSelectedIds || [];
-            if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer', true); return; }
+            if (window._bulkSendInFlight) return;
+            const ids = (window._bulkSelectedIds || []).map(bulkId).filter(Boolean);
+            if (ids.length === 0) { toast(bulkFmt('bulk_err_select', ''), true); return; }
+            const max = getBulkMaxRecipients();
+            if (ids.length > max) { toast(bulkFmt('bulk_selected_capped', '', { n: ids.length, max: max }), true); return; }
             const useCloudTemplate = !!(document.getElementById('bulkUseCloudTemplate') && document.getElementById('bulkUseCloudTemplate').checked);
             const templateName = (document.getElementById('bulkTemplateName') && document.getElementById('bulkTemplateName').value || '').trim();
             const templateLanguage = (document.getElementById('bulkTemplateLanguage') && document.getElementById('bulkTemplateLanguage').value || 'fa').trim();
+            const templateParam = (document.getElementById('bulkTemplateParam') && document.getElementById('bulkTemplateParam').value || '').trim();
             const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
-            if (useCloudTemplate && !templateName) { toast(LANG === 'fa' ? 'نام قالب Meta الزامی است' : 'Meta template name required', true); return; }
-            if (!useCloudTemplate && !content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
+            if (useCloudTemplate && !templateName) { toast(bulkFmt('bulk_err_template_name', ''), true); return; }
+            if (!useCloudTemplate && !content) { toast(bulkFmt('bulk_err_message', ''), true); return; }
+            if (!confirm(bulkFmt('bulk_confirm', '', { n: ids.length }))) return;
             const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
             const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
-            const body = { customerIds: ids, message: content, delayMs: delayMs, useCloudTemplate: useCloudTemplate };
+            const body = { customerIds: ids, delayMs: delayMs, useCloudTemplate: useCloudTemplate };
             if (useCloudTemplate) {
                 body.templateName = templateName;
                 body.templateLanguage = templateLanguage;
+                if (templateParam) body.templateBodyParams = [templateParam];
+            } else {
+                body.message = content;
             }
+            window._bulkSendInFlight = true;
+            setBulkSubmitState();
             const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) { toast((LANG === 'fa' ? 'ارسال شروع شد. ' : 'Sending started. ') + (res.data && res.data.message ? res.data.message : '')); closeBulkSendModal(); bulkClearSelection(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.needLogin) { window._bulkSendInFlight = false; setBulkSubmitState(); return; }
+            if (res.ok) {
+                toast((res.data && res.data.message) || bulkFmt('bulk_sending', ''), false);
+                if (res.data && res.data.skipped) renderBulkJobProgress({ total: res.data.total || ids.length, sent: 0, failed: 0, skipped: res.data.skipped });
+                if (res.data && res.data.jobId) startBulkJobPoll(res.data.jobId);
+                else { window._bulkSendInFlight = false; setBulkSubmitState(); }
+            } else {
+                window._bulkSendInFlight = false;
+                setBulkSubmitState();
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
         }
 
         window._importFileRows = null;
@@ -9711,9 +10108,16 @@
             updateInternalChatFloatingBtn();
         }
 
-        function toggleTicketForm() {
+        function toggleTicketForm(forceOpen) {
             const box = document.getElementById('ticketFormBox');
-            if (box.style.display === 'none') { box.style.display = 'block'; loadTicketFormSelects(); } else { box.style.display = 'none'; }
+            if (!box) return;
+            const isHidden = box.style.display === 'none' || box.style.display === '';
+            if (forceOpen === true || (forceOpen !== false && isHidden)) {
+                box.style.display = 'block';
+                loadTicketFormSelects();
+            } else {
+                box.style.display = 'none';
+            }
         }
         async function loadTicketFiltersInit() {
             await loadTicketFormSelects();
@@ -9785,7 +10189,11 @@
                     const meta = [createdStr, userDisplay(tk.creator), assign, dept].filter(Boolean).join(' · ');
                     const num = (tk.ticketNumber || '').trim();
                     const numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
-                    return '<div class="ticket-card" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
+                    const safeId = escapeHtml(tk.id || '');
+                    const deleteBtn = canManageTickets()
+                        ? '<button type="button" class="btn-danger btn-sm ticket-card-delete" data-ticket-id="' + safeId + '">' + (t('btn_delete') || (LANG === 'fa' ? 'حذف' : 'Delete')) + '</button>'
+                        : '';
+                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
                 }).join('');
             } catch (e) {
                 list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (e && e.message ? escapeHtml(e.message) : '') + '</div>';
@@ -9801,7 +10209,13 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
-        function canManageTickets() { return !!(currentUser && (currentUser.canManageTickets === true || (currentUser.permissions && currentUser.permissions.manage_tickets === true))); }
+        function canManageTickets() {
+            if (!currentUser) return false;
+            if (currentUser.canManageTickets === true) return true;
+            if (currentUser.permissions && currentUser.permissions.manage_tickets === true) return true;
+            var role = currentUser.role || '';
+            return role === 'owner' || role === 'admin' || role === 'manager';
+        }
         let ticketEditMode = false;
         function toggleTicketEditMode() {
             ticketEditMode = !ticketEditMode;
@@ -9851,10 +10265,11 @@
             if (!currentTicketId) return;
             updateTicketStatus(currentTicketId, 'archived');
         }
-        function deleteTicketConfirm() {
-            if (!currentTicketId) return;
+        function deleteTicketConfirm(id) {
+            var tid = id || currentTicketId;
+            if (!tid) return;
             if (!confirm(LANG === 'fa' ? 'آیا از حذف این تیکت مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Delete this ticket? This cannot be undone.')) return;
-            deleteTicket(currentTicketId);
+            deleteTicket(tid);
         }
         async function updateTicketStatus(id, status) {
             const res = await apiFetch('/api/tickets/' + id, { method: 'PUT', body: JSON.stringify({ status: status }) });
@@ -10850,8 +11265,15 @@
         let internalCallCameraOff = false;
         let internalCallStartedAt = null;
         let internalCallDurationInterval = null;
-        // STUN: non-Google first so WebRTC can work when Google is unreachable (e.g. from Iran without VPN)
-        var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.stunprotocol.org:3478' }, { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
+        let internalCallMarkedConnected = false;
+        // STUN: Cloudflare + stunprotocol first so WebRTC can work when Google is unreachable
+        var INTERNAL_CALL_ICE_SERVERS = [
+            { urls: 'stun:stun.cloudflare.com:3478' },
+            { urls: 'stun:stun.stunprotocol.org:3478' },
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' }
+        ];
         (function loadWebrtcIceFromConfig() {
             try {
                 fetch((typeof API !== 'undefined' ? API : '') + '/api/config')
@@ -10864,6 +11286,103 @@
                     .catch(function () {});
             } catch (_e) {}
         })();
+        function peerKey(id) {
+            return id == null ? '' : String(id);
+        }
+        function isSameCallThread(threadId) {
+            if (threadId == null) return false;
+            var tid = String(threadId);
+            if (currentInternalThreadId && String(currentInternalThreadId) === tid) return true;
+            if (internalCallPendingOffer && String(internalCallPendingOffer.threadId) === tid) return true;
+            if (internalCallPendingInvite && String(internalCallPendingInvite.threadId) === tid) return true;
+            return false;
+        }
+        function enqueueIceCandidate(fromUserId, candidate) {
+            var key = peerKey(fromUserId);
+            if (!key || !candidate) return;
+            if (!internalCallIceQueue[key]) internalCallIceQueue[key] = [];
+            internalCallIceQueue[key].push(candidate);
+        }
+        function flushIceQueue(fromUserId, pc) {
+            var key = peerKey(fromUserId);
+            var queue = internalCallIceQueue[key] || [];
+            internalCallIceQueue[key] = [];
+            if (!pc) return;
+            queue.forEach(function(c) {
+                if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(e) { console.warn('addIce:', e); });
+            });
+        }
+        function getOrCreateRemoteAudioEl(userId) {
+            var sink = document.getElementById('internalCallRemoteAudioSink');
+            if (!sink) return null;
+            var id = 'internalCallRemoteAudio_' + peerKey(userId);
+            var el = document.getElementById(id);
+            if (!el) {
+                el = document.createElement('audio');
+                el.id = id;
+                el.autoplay = true;
+                el.playsInline = true;
+                el.setAttribute('playsinline', '');
+                el.setAttribute('autoplay', '');
+                sink.appendChild(el);
+            }
+            return el;
+        }
+        function removeRemoteAudioEl(userId) {
+            var el = document.getElementById('internalCallRemoteAudio_' + peerKey(userId));
+            if (el) { el.srcObject = null; el.remove(); }
+        }
+        function attachRemoteStream(userId, stream) {
+            if (!stream) return;
+            var audioEl = getOrCreateRemoteAudioEl(userId);
+            if (audioEl) {
+                audioEl.srcObject = stream;
+                audioEl.muted = false;
+                audioEl.volume = 1;
+                var playP = audioEl.play();
+                if (playP && playP.catch) playP.catch(function() {});
+            }
+            if (internalCallType === 'video') {
+                var rv = getOrCreateRemoteVideoEl(userId);
+                if (rv) {
+                    rv.srcObject = stream;
+                    rv.play().catch(function() {});
+                }
+            }
+        }
+        function createCallPeerConnection(remoteUserId) {
+            var toId = peerKey(remoteUserId);
+            var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS, iceCandidatePoolSize: 4 });
+            internalCallPeers[toId] = pc;
+            attachPeerConnectionStateHandlers(pc, toId);
+            if (internalCallLocalStream) {
+                internalCallLocalStream.getTracks().forEach(function(tr) { pc.addTrack(tr, internalCallLocalStream); });
+            }
+            pc.onicecandidate = function(e) {
+                var s = getSocket();
+                if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate });
+            };
+            pc.ontrack = function(e) {
+                var stream = (e.streams && e.streams[0]) || (e.track ? new MediaStream([e.track]) : null);
+                attachRemoteStream(toId, stream);
+            };
+            return pc;
+        }
+        function markInternalCallConnected() {
+            if (internalCallMarkedConnected) return;
+            internalCallMarkedConnected = true;
+            stopCallRingtone();
+            var statusEl = document.getElementById('internalCallStatus');
+            if (statusEl) statusEl.textContent = t('in_call');
+            startInternalCallDurationTimer();
+            var rejectBtn = document.getElementById('internalCallRejectBtn');
+            var endBtn = document.getElementById('internalCallEndBtn');
+            if (rejectBtn) rejectBtn.style.display = 'none';
+            if (endBtn) endBtn.style.display = 'flex';
+            var addBtn = document.getElementById('internalCallAddBtn');
+            if (addBtn) addBtn.style.display = 'flex';
+            playCallConnected();
+        }
         function mediaErrorMessage(err) {
             var name = (err && err.name) || '';
             if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
@@ -10955,12 +11474,24 @@
         }
         function attachPeerConnectionStateHandlers(pc, userId) {
             if (!pc) return;
+            var failedToast = false;
             function updateState() {
                 const state = pc.iceConnectionState || (pc.connectionState || '');
-                if (state === 'connected' || state === 'completed') updateInternalCallConnectionStatus(t('call_connected') || 'متصل', 'connected');
-                else if (state === 'connecting' || state === 'checking') updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
-                else if (state === 'failed') updateInternalCallConnectionStatus(t('call_failed') || 'خطا در اتصال', 'failed');
-                else if (state === 'disconnected') updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
+                if (state === 'connected' || state === 'completed') {
+                    updateInternalCallConnectionStatus(t('call_connected') || 'متصل', 'connected');
+                    markInternalCallConnected();
+                } else if (state === 'connecting' || state === 'checking') {
+                    updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
+                } else if (state === 'failed') {
+                    updateInternalCallConnectionStatus(t('call_failed') || 'خطا در اتصال', 'failed');
+                    try { if (typeof pc.restartIce === 'function') pc.restartIce(); } catch (e) {}
+                    if (!failedToast) {
+                        failedToast = true;
+                        toast(t('call_failed') || (LANG === 'fa' ? 'اتصال تماس برقرار نشد' : 'Call connection failed'), true);
+                    }
+                } else if (state === 'disconnected') {
+                    updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
+                }
             }
             pc.oniceconnectionstatechange = updateState;
             try { pc.onconnectionstatechange = updateState; } catch (e) {}
@@ -10969,13 +11500,13 @@
         function getOrCreateRemoteVideoEl(userId) {
             const container = document.getElementById('internalCallRemoteVideos');
             if (!container) return null;
-            const id = 'internalCallRemoteVideo_' + userId;
+            const id = 'internalCallRemoteVideo_' + peerKey(userId);
             let el = document.getElementById(id);
             if (!el) { el = document.createElement('video'); el.id = id; el.className = 'internal-call-remote-video'; el.autoplay = true; el.playsInline = true; container.appendChild(el); }
             return el;
         }
         function removeRemoteVideoEl(userId) {
-            const el = document.getElementById('internalCallRemoteVideo_' + userId);
+            const el = document.getElementById('internalCallRemoteVideo_' + peerKey(userId));
             if (el) { el.srcObject = null; el.remove(); }
         }
         let internalThreadsCache = [];
@@ -11126,6 +11657,7 @@
             if (statusEl) statusEl.textContent = statusText || '';
             if (voicePlaceholder) voicePlaceholder.style.display = isVoice ? 'flex' : 'none';
             if (videosWrap) videosWrap.style.display = isVoice ? 'none' : 'block';
+            /* Remote audio plays on #internalCallRemoteAudioSink — never display:none */
             if (isVoice) {
                 const d = getInternalCallOtherDisplay();
                 if (voiceAvatar) voiceAvatar.textContent = d.initial;
@@ -11161,8 +11693,11 @@
             Object.keys(internalCallPeers).forEach(function(uid) { const pc = internalCallPeers[uid]; if (pc) pc.close(); });
             internalCallPeers = {};
             internalCallIceQueue = {};
+            internalCallMarkedConnected = false;
             const container = document.getElementById('internalCallRemoteVideos');
             if (container) container.innerHTML = '';
+            const audioSink = document.getElementById('internalCallRemoteAudioSink');
+            if (audioSink) audioSink.innerHTML = '';
             internalCallPendingOffer = null;
             internalCallPendingInvite = null;
             internalCallIsIncoming = false;
@@ -11198,22 +11733,18 @@
             if (!s || !s.connected) { toast(t('user_offline') || 'کاربر آفلاین است', true); return; }
             try {
                 internalCallType = type;
+                internalCallMarkedConnected = false;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
                 currentInternalThreadOtherUserId = targets[0];
                 for (var i = 0; i < targets.length; i++) {
                     (function (toId) {
-                        const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                        internalCallPeers[toId] = pc;
-                        attachPeerConnectionStateHandlers(pc, toId);
-                        internalCallLocalStream.getTracks().forEach(function(tr){ pc.addTrack(tr, internalCallLocalStream); });
-                        pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                        pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                        const pc = createCallPeerConnection(toId);
                         pc.createOffer().then(function(offer) {
                             return pc.setLocalDescription(offer).then(function() {
                                 s.emit('call_offer', { toUserId: toId, threadId: currentInternalThreadId, type: type, sdp: offer });
                             });
                         }).catch(function(err) { console.warn('call offer failed', toId, err); });
-                    })(targets[i]);
+                    })(peerKey(targets[i]));
                 }
                 showInternalCallModal(type === 'video' ? t('calling_video') : t('calling_voice'), false);
                 const localV = document.getElementById('internalCallLocalVideo');
@@ -11228,25 +11759,22 @@
         }
         async function acceptInternalCall() {
             if (!internalCallPendingOffer) return;
-            const toUserId = internalCallPendingOffer.fromUserId;
+            const toUserId = peerKey(internalCallPendingOffer.fromUserId);
             const threadId = internalCallPendingOffer.threadId;
             const s = getSocket();
             if (!s || !s.connected) return;
             try {
                 const type = internalCallPendingOffer.type || 'voice';
                 internalCallType = type;
+                internalCallMarkedConnected = false;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                internalCallPeers[toUserId] = pc;
-                attachPeerConnectionStateHandlers(pc, toUserId);
-                internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toUserId, threadId: threadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                currentInternalThreadId = threadId;
+                const pc = createCallPeerConnection(toUserId);
                 await pc.setRemoteDescription(new RTCSessionDescription(internalCallPendingOffer.sdp));
+                flushIceQueue(toUserId, pc);
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 s.emit('call_answer', { toUserId: toUserId, threadId: threadId, sdp: answer });
-                currentInternalThreadId = threadId;
                 currentInternalThreadOtherUserId = toUserId;
                 showInternalCallModal(t('in_call'), false);
                 const localV = document.getElementById('internalCallLocalVideo');
@@ -11275,21 +11803,20 @@
             hideInternalCallModal();
         }
         async function handleCallOfferAsJoiner(data) {
-            const fromUserId = data.fromUserId;
+            if (!data || !data.sdp) return;
+            const fromUserId = peerKey(data.fromUserId);
             const threadId = data.threadId;
             const s = getSocket();
-            if (!s || threadId !== currentInternalThreadId || internalCallPeers[fromUserId]) return;
+            if (!s || !internalCallLocalStream || !fromUserId) return;
+            if (threadId != null && currentInternalThreadId && String(threadId) !== String(currentInternalThreadId)) return;
+            if (internalCallPeers[fromUserId]) return;
             try {
-                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                internalCallPeers[fromUserId] = pc;
-                attachPeerConnectionStateHandlers(pc, fromUserId);
-                internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: fromUserId, threadId: threadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(fromUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                const pc = createCallPeerConnection(fromUserId);
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                flushIceQueue(fromUserId, pc);
                 const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
-                s.emit('call_answer', { toUserId: fromUserId, threadId: threadId, sdp: answer });
+                s.emit('call_answer', { toUserId: fromUserId, threadId: threadId || currentInternalThreadId, sdp: answer });
             } catch (err) { console.warn('handleCallOfferAsJoiner:', err); }
         }
         async function acceptInternalCallInvite() {
@@ -11304,6 +11831,7 @@
                 currentInternalThreadOtherUserId = internalCallPendingInvite.fromUserId;
                 internalCallType = type;
                 internalCallIsJoining = true;
+                internalCallMarkedConnected = false;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
                 s.emit('call_invite_accept', { threadId: threadId, type: type });
                 showInternalCallModal(t('in_call'), false);
@@ -11591,11 +12119,7 @@
                 } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             }
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
-                const isOut = m.fromUserId === me;
-                const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-                const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+                return buildInternalMessageHtml(m, me);
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
@@ -11690,11 +12214,7 @@
             const quickEl = document.getElementById('internalChatPopupQuickReplies');
             if (quickEl) { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             const me = (currentUser && currentUser.id) || '';
-            const isOut = m.fromUserId === me;
-            const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const html = buildInternalMessageHtml(m, me);
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -11717,11 +12237,7 @@
                 } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             }
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
-                const isOut = m.fromUserId === me;
-                const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-                const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+                return buildInternalMessageHtml(m, me);
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
@@ -13805,8 +14321,7 @@
                 let html = '<div class="sup-int-chat-messages" style="display:flex;flex-direction:column;gap:12px;">';
                 messages.forEach(function(m) {
                     const fromName = (m.fromUser && m.fromUser.name) || (m.fromUser && m.fromUser.email) || '';
-                    const att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent);">\uD83D\uDCCE ' + escapeHtml(a.name || '') + '</a>'; }).join(' ') : '';
-                    html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
+                    html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div>' + internalMessageInnerHtml(m) + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
                 });
                 html += '</div>';
                 content.innerHTML = html;
@@ -14107,6 +14622,18 @@
             window.closeUserEditModal = closeUserEditModal;
             window.toggleUserForm = toggleUserForm;
             window.addUser = addUser;
+            window.toggleTicketForm = toggleTicketForm;
+            window.addTicket = addTicket;
+            window.loadTickets = loadTickets;
+            window.loadTicketDetail = loadTicketDetail;
+            window.showTicketList = showTicketList;
+            window.applyTicketFilters = applyTicketFilters;
+            window.updateTicketFromDetail = updateTicketFromDetail;
+            window.toggleTicketEditMode = toggleTicketEditMode;
+            window.archiveTicket = archiveTicket;
+            window.deleteTicketConfirm = deleteTicketConfirm;
+            window.submitTicketReply = submitTicketReply;
+            window.startProcessFromTicket = startProcessFromTicket;
             window.saveUserEdit = saveUserEdit;
             window.showOnboardingTour = showOnboardingTour;
             window.dismissOnboardingTour = dismissOnboardingTour;
@@ -14429,6 +14956,17 @@
             window.closeCustomerModal = typeof closeCustomerModal === 'function' ? closeCustomerModal : undefined;
             window.saveCustomerFromModal = typeof saveCustomerFromModal === 'function' ? saveCustomerFromModal : undefined;
             window.loadCustomers = typeof loadCustomers === 'function' ? loadCustomers : undefined;
+            window.startInternalCall = typeof startInternalCall === 'function' ? startInternalCall : undefined;
+            window.acceptInternalCall = typeof acceptInternalCall === 'function' ? acceptInternalCall : undefined;
+            window.rejectInternalCall = typeof rejectInternalCall === 'function' ? rejectInternalCall : undefined;
+            window.endInternalCall = typeof endInternalCall === 'function' ? endInternalCall : undefined;
+            window.acceptInternalCallInvite = typeof acceptInternalCallInvite === 'function' ? acceptInternalCallInvite : undefined;
+            window.rejectInternalCallInvite = typeof rejectInternalCallInvite === 'function' ? rejectInternalCallInvite : undefined;
+            window.showAddToCallModal = typeof showAddToCallModal === 'function' ? showAddToCallModal : undefined;
+            window.closeAddToCallModal = typeof closeAddToCallModal === 'function' ? closeAddToCallModal : undefined;
+            window.inviteSelectedToCall = typeof inviteSelectedToCall === 'function' ? inviteSelectedToCall : undefined;
+            window.toggleInternalCallMic = typeof toggleInternalCallMic === 'function' ? toggleInternalCallMic : undefined;
+            window.toggleInternalCallCamera = typeof toggleInternalCallCamera === 'function' ? toggleInternalCallCamera : undefined;
         })();
 
         async function loadLegacyLockdownCard() {
