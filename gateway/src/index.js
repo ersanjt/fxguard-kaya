@@ -936,11 +936,9 @@ async function deliverIncomingMessage(messageData) {
     const via = String(process.env.INCOMING_VIA || 'http').toLowerCase();
     if (via === 'rabbit' && rabbitChannel) {
         try {
-            rabbitChannel.sendToQueue(
-                INCOMING_QUEUE,
-                Buffer.from(JSON.stringify(messageData)),
-                { persistent: true }
-            );
+            rabbitChannel.sendToQueue(INCOMING_QUEUE, Buffer.from(JSON.stringify(messageData)), {
+                persistent: true,
+            });
             return;
         } catch (e) {
             logger.warn('Rabbit incoming publish failed — falling back to HTTP', {
