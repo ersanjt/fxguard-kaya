@@ -60,11 +60,11 @@ async function lockdownExistingCrmData({ reason } = {}) {
     const [convResult, custResult] = await Promise.all([
         Conversation.update(
             { isHiddenFromStaff: true, status: 'archived' },
-            { where: {} }
+            { where: { id: { [Op.ne]: null } } }
         ),
         Customer.update(
             { isRestrictedFromStaff: true },
-            { where: { isRestrictedFromStaff: false } }
+            { where: { id: { [Op.ne]: null }, isRestrictedFromStaff: false } }
         ),
     ]);
     const conversationsUpdated = Array.isArray(convResult) ? convResult[0] : convResult;
@@ -246,59 +246,135 @@ async function getOrCreateConnectionRow() {
     return row;
 }
 
+async function getLegacyLockdownAt() {
+    try {
+        const row = await WhatsappConnection.findByPk('default');
+        return row && row.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+/** مکالمات/مشتریان ساخته‌شده قبل از cutover که هنوز در لیست عادی‌اند */
+async function sweepLeftoverLegacyVisibility(lockdownAt) {
+    if (!lockdownAt) return { conversationsUpdated: 0, customersUpdated: 0 };
+    const cutAt = new Date(lockdownAt);
+    const [convResult] = await Conversation.update(
+        { isHiddenFromStaff: true, status: 'archived' },
+        {
+            where: {
+                createdAt: { [Op.lt]: cutAt },
+                [Op.or]: [{ isHiddenFromStaff: false }, { isHiddenFromStaff: null }],
+            },
+        }
+    );
+    const liveRows = await Conversation.findAll({
+        where: {
+            isHiddenFromStaff: false,
+            status: { [Op.ne]: 'archived' },
+            createdAt: { [Op.gte]: cutAt },
+        },
+        attributes: ['customerId'],
+        raw: true,
+    });
+    const keepIds = [...new Set(liveRows.map((r) => r.customerId).filter(Boolean))];
+    const custWhere = {
+        isRestrictedFromStaff: false,
+        createdAt: { [Op.lt]: cutAt },
+    };
+    if (keepIds.length) custWhere.id = { [Op.notIn]: keepIds };
+    const [custResult] = await Customer.update({ isRestrictedFromStaff: true }, { where: custWhere });
+    const conversationsUpdated = typeof convResult === 'number' ? convResult : 0;
+    const customersUpdated = typeof custResult === 'number' ? custResult : 0;
+    if (conversationsUpdated || customersUpdated) {
+        logger.warn('Swept leftover pre-cutover CRM rows back to archive', {
+            conversationsUpdated,
+            customersUpdated,
+            cutAt: cutAt.toISOString(),
+        });
+    }
+    return { conversationsUpdated, customersUpdated };
+}
+
+let cutoverInflight = null;
+
 /**
- * یک‌بار دادهٔ قبلی را آرشیو/محدود می‌کند:
- * تعویض شماره، اولین اتصال روی دیتای موجود، یا اولین cutover بعد از ارتقا.
+ * یک‌بار دادهٔ قبلی را آرشیو/محدود می‌کند و باقیماندهٔ لیست عادی را جارو می‌کند.
  */
 async function ensureLegacyCutover(linkedNumber, meta = {}) {
-    const number = normalizeLinkedNumber(linkedNumber);
-    const row = await getOrCreateConnectionRow();
-    const prev = normalizeLinkedNumber(row.lastLinkedGatewayNumber);
-    const alreadyCut = !!row.legacyLockdownAt;
+    if (cutoverInflight) return cutoverInflight;
+    cutoverInflight = (async () => {
+        const number = normalizeLinkedNumber(linkedNumber);
+        const row = await getOrCreateConnectionRow();
+        const prev = normalizeLinkedNumber(row.lastLinkedGatewayNumber);
+        const alreadyCut = !!row.legacyLockdownAt;
+        const force = !!(meta && meta.force);
 
-    if (number && prev && prev !== number) {
-        const lockdown = await lockdownExistingCrmData({
-            reason: meta.reason || `gateway_number_changed:${prev}->${number}`,
-        });
-        row.lastLinkedGatewayNumber = number;
-        row.legacyLockdownAt = new Date();
-        await row.save();
-        logger.warn('WhatsApp gateway number changed — legacy CRM data archived and locked', {
-            previous: prev,
-            number,
-            ...lockdown,
-        });
-        return { changed: true, previous: prev, number, lockdown };
-    }
-
-    if (!alreadyCut) {
-        const visible = await Conversation.count({
-            where: { isHiddenFromStaff: false, status: { [Op.ne]: 'archived' } },
-        });
-        if (visible > 0) {
+        if (force) {
             const lockdown = await lockdownExistingCrmData({
-                reason: meta.reason || 'legacy_cutover',
+                reason: meta.reason || 'forced_legacy_cutover',
             });
             if (number) row.lastLinkedGatewayNumber = number;
             row.legacyLockdownAt = new Date();
             await row.save();
-            logger.warn('Legacy CRM cutover — previous chats/customers archived', {
+            logger.warn('Forced legacy CRM cutover — all current chats/customers archived', {
                 number: number || prev || null,
                 ...lockdown,
             });
-            return { changed: true, firstCutover: true, number: number || prev || null, lockdown };
+            return { changed: true, forced: true, number: number || prev || null, lockdown };
         }
-        if (number) row.lastLinkedGatewayNumber = number;
-        row.legacyLockdownAt = new Date();
-        await row.save();
-        return { changed: false, firstConnect: !prev, number, lockdown: null };
-    }
 
-    if (number && !prev) {
-        row.lastLinkedGatewayNumber = number;
-        await row.save();
-    }
-    return { changed: false, number: number || prev || null, lockdown: null };
+        if (number && prev && prev !== number) {
+            const lockdown = await lockdownExistingCrmData({
+                reason: meta.reason || `gateway_number_changed:${prev}->${number}`,
+            });
+            row.lastLinkedGatewayNumber = number;
+            row.legacyLockdownAt = new Date();
+            await row.save();
+            logger.warn('WhatsApp gateway number changed — legacy CRM data archived and locked', {
+                previous: prev,
+                number,
+                ...lockdown,
+            });
+            return { changed: true, previous: prev, number, lockdown };
+        }
+
+        if (!alreadyCut) {
+            const any = await Conversation.count();
+            if (any > 0) {
+                const lockdown = await lockdownExistingCrmData({
+                    reason: meta.reason || 'legacy_cutover',
+                });
+                if (number) row.lastLinkedGatewayNumber = number;
+                row.legacyLockdownAt = new Date();
+                await row.save();
+                logger.warn('Legacy CRM cutover — previous chats/customers archived', {
+                    number: number || prev || null,
+                    ...lockdown,
+                });
+                return { changed: true, firstCutover: true, number: number || prev || null, lockdown };
+            }
+            if (number) row.lastLinkedGatewayNumber = number;
+            row.legacyLockdownAt = new Date();
+            await row.save();
+            return { changed: false, firstConnect: !prev, number, lockdown: null };
+        }
+
+        const sweep = await sweepLeftoverLegacyVisibility(row.legacyLockdownAt);
+        if (number && !prev) {
+            row.lastLinkedGatewayNumber = number;
+            await row.save();
+        }
+        return {
+            changed: !!(sweep.conversationsUpdated || sweep.customersUpdated),
+            swept: true,
+            number: number || prev || null,
+            lockdown: sweep,
+        };
+    })().finally(() => {
+        cutoverInflight = null;
+    });
+    return cutoverInflight;
 }
 
 async function handleGatewayNumberReady(linkedNumber, meta = {}) {
@@ -336,6 +412,7 @@ module.exports = {
     restoreLegacyCrmVisibility,
     applyVisibilityForCurrentGatewayChats,
     ensureLegacyCutover,
+    getLegacyLockdownAt,
     handleGatewayNumberReady,
     getLockdownStats,
     normalizeLinkedNumber,

@@ -78,6 +78,10 @@ async function dashboard(req, res, next) {
         if (!req.canAccess('dashboard')) {
             return res.status(403).json({ error: 'دسترسی به داشبورد ندارید' });
         }
+        try {
+            const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
+            await ensureLegacyCutover(null, { reason: 'dashboard_stats' });
+        } catch (_) {}
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 

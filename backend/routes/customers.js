@@ -39,6 +39,10 @@ const docUpload = multer({
 router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        try {
+            const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
+            await ensureLegacyCutover(null, { reason: 'customers_list' });
+        } catch (_) {}
         const { page = 1, limit = 100, search, status } = req.query;
         const { page: p, limit: l, offset } = parsePagination(page, limit, 200);
         const customerIds = await getAccessibleCustomerIds(req, {

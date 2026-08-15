@@ -530,6 +530,10 @@ router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations'))
             return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        try {
+            const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
+            await ensureLegacyCutover(null, { reason: 'conversations_list' });
+        } catch (_) {}
         const {
             status,
             priority,
@@ -620,6 +624,17 @@ router.get('/', async (req, res, next) => {
         });
         if (listAccess && Object.keys(listAccess).length) {
             where[Op.and] = (where[Op.and] || []).concat([listAccess]);
+        }
+        if (!hiddenOnly && !viewingArchived) {
+            try {
+                const { getLegacyLockdownAt } = require('../services/legacyCrmLockdown');
+                const cutAt = await getLegacyLockdownAt();
+                if (cutAt) {
+                    where[Op.and] = (where[Op.and] || []).concat([
+                        { createdAt: { [Op.gte]: cutAt } },
+                    ]);
+                }
+            } catch (_) {}
         }
 
         // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB

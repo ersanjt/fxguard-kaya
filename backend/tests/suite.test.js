@@ -978,6 +978,34 @@ async function runTests() {
         assert.strictEqual(isSensitiveUploadPath('/branding/logo.png'), false);
     });
 
+    await test('pre-cutover leftovers are hidden from All after sweep', async () => {
+        const { Conversation, WhatsappConnection } = require('../models');
+        const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
+        const conv = await Conversation.findByPk(filterConversationId);
+        assert(conv, 'filter conversation missing');
+        const oldCreated = new Date(Date.now() - 86400000);
+        await conv.update({
+            createdAt: oldCreated,
+            isHiddenFromStaff: false,
+            status: 'open',
+        });
+        const row = await WhatsappConnection.findByPk('default');
+        if (row) {
+            row.legacyLockdownAt = new Date();
+            await row.save();
+        }
+        const sweep = await ensureLegacyCutover(null, { reason: 'test_sweep' });
+        assert(sweep.changed || sweep.swept, 'expected leftover sweep');
+        const all = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(all.status, 200);
+        assert(!all.body.data.some((c) => c.id === filterConversationId), 'pre-cutover conv must leave All');
+        const archived = await req.get('/api/conversations?status=archived&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(archived.status, 200);
+        assert(archived.body.data.some((c) => c.id === filterConversationId), 'pre-cutover conv should be in archive');
+    });
+
     await test('hidden conversations are excluded from default All list', async () => {
         const { Conversation } = require('../models');
         const conv = await Conversation.findByPk(filterConversationId);

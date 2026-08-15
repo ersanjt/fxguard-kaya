@@ -63,6 +63,7 @@ router.post('/lockdown-legacy', async (req, res, next) => {
 
         const result = await ensureLegacyCutover(gatewayNumber, {
             reason: 'manual_lockdown_legacy',
+            force: true,
         });
         await logActivity({
             userId: req.userId,
