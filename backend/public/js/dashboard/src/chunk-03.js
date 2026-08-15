@@ -1314,7 +1314,7 @@
                     if (!anyAct) actionsEl.setAttribute('hidden', '');
                 }
                 const chatSend = document.querySelector('.chat-send');
-                if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
+                if (chatSend) chatSend.style.display = '';
                 const ratingSection = document.getElementById('convRatingSection');
                 if (ratingSection) {
                     ratingSection.style.display = 'block';
@@ -2937,8 +2937,21 @@
                 if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
                 const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
                 if (res.needLogin) return;
-                if (res.ok) loadMessages(currentConvId);
-                else {
+                if (res.ok) {
+                    const liveId = res.data && res.data.conversationId;
+                    if (liveId && liveId !== currentConvId && typeof openChat === 'function') {
+                        const item = document.querySelector('.conv-list-item.active');
+                        const name = (item && item.getAttribute('data-name')) || '';
+                        const phone = (item && item.getAttribute('data-phone')) || '';
+                        const pic = (item && item.getAttribute('data-profile-pic')) || '';
+                        const ig = item && item.getAttribute('data-is-group') === '1';
+                        currentConvId = liveId;
+                        openChat(liveId, name, phone, pic, ig);
+                    } else {
+                        loadMessages(currentConvId);
+                    }
+                    if (typeof loadConversations === 'function') loadConversations();
+                } else {
                     var sendErr = (res.data && res.data.error) || res.error || (typeof getApiError === 'function' ? getApiError(res) : null);
                     toast(sendErr || (LANG === 'tr' ? 'Gönderilemedi' : LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
                 }

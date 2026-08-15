@@ -5,6 +5,11 @@
  */
 async function emitNewMessageToAuthorized(io, conversation, payload) {
     if (!io || !payload || !conversation) return;
+    // چت زندهٔ غیرمخفی: همهٔ نشست‌های واردشده ببینند (رفتار قبلی اینباکس)
+    if (!conversation.isHiddenFromStaff) {
+        io.emit('new_message', payload);
+        return;
+    }
     let sockets;
     try {
         sockets = await io.fetchSockets();

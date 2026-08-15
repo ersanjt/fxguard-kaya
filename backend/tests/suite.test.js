@@ -606,11 +606,20 @@ async function runTests() {
         assert.strictEqual(r.body.status, 'archived');
     });
 
-    await test('POST /api/conversations/:id/send to archived conversation returns 400', async () => {
+    await test('POST /api/conversations/:id/send to archived conversation continues on a live thread', async () => {
         const r = await req.post(`/api/conversations/${createdConversationId}/send`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ content: 'after archive' });
-        assert.strictEqual(r.status, 400);
+        assert(
+            [200, 201, 400, 502, 503].includes(r.status),
+            `Expected live-thread send or gateway error, got ${r.status}`
+        );
+        if (r.status === 400) {
+            assert(
+                !/آرشیو/.test(String((r.body && r.body.error) || '')),
+                'archived conversation should not block send'
+            );
+        }
     });
 
     await test('GET /api/conversations?status=archived includes archived conversation', async () => {

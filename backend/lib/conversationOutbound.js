@@ -1,7 +1,8 @@
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
-const { Message } = require('../models');
+const { Message, Conversation, Customer } = require('../models');
+const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
@@ -36,6 +37,46 @@ function resolveUploadFilePath(uploadsDir, relUnderUploads) {
     return resolvedFile;
 }
 
+async function ensureLiveConversationForOutbound(conversation) {
+    if (!conversation || !conversation.customerId) return null;
+    if (conversation.status !== 'archived' && !conversation.isHiddenFromStaff) {
+        return conversation;
+    }
+    const include = [
+        { model: Customer, as: 'customer' },
+        { model: require('../models').Department, as: 'department', required: false },
+    ];
+    let live = await Conversation.findOne({
+        where: {
+            customerId: conversation.customerId,
+            status: { [Op.notIn]: ['closed', 'archived'] },
+            isHiddenFromStaff: false,
+        },
+        include,
+        order: [['updatedAt', 'DESC']],
+    });
+    if (!live) {
+        const meta = { ...(conversation.metadata || {}), continuedFrom: conversation.id };
+        live = await Conversation.create({
+            customerId: conversation.customerId,
+            status: 'open',
+            priority: conversation.priority || 'normal',
+            source: conversation.source || 'whatsapp',
+            isHiddenFromStaff: false,
+            departmentId: conversation.departmentId || null,
+            assignedTo: conversation.assignedTo || null,
+            branchId: conversation.branchId || null,
+            metadata: meta,
+        });
+        live = await Conversation.findByPk(live.id, { include });
+    }
+    if (live && live.customer && live.customer.isRestrictedFromStaff) {
+        await live.customer.update({ isRestrictedFromStaff: false });
+        await live.customer.reload();
+    }
+    return live;
+}
+
 /**
  * ارسال پیام خروجی به مشتری (متن/مدیا) و همگام‌سازی با واتساپ.
  * @returns {{ msg, error?: string, status?: number }}
@@ -44,8 +85,12 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     if (!conversation || !conversation.customer) {
         return { msg: null, error: 'مشتری مکالمه یافت نشد', status: 404 };
     }
-    if (conversation.status === 'archived') {
-        return { msg: null, error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد. ابتدا وضعیت را تغییر دهید.', status: 400 };
+    if (conversation.status === 'archived' || conversation.isHiddenFromStaff) {
+        const live = await ensureLiveConversationForOutbound(conversation);
+        if (!live) {
+            return { msg: null, error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد.', status: 400 };
+        }
+        conversation = live;
     }
     const text = content || '';
     if (!text && !media) {
@@ -391,7 +436,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         },
     });
 
-    return { msg };
+    return { msg, conversationId: conversation.id };
 }
 
-module.exports = { deliverOutboundConversationMessage };
+module.exports = { deliverOutboundConversationMessage, ensureLiveConversationForOutbound };

@@ -575,8 +575,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const incomingTs = timestamp
             ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)
             : new Date();
+        const incomingTsMs = incomingTs.getTime();
+        const ageMs = Number.isFinite(incomingTsMs) ? Date.now() - incomingTsMs : 0;
+        const isRecentLive = !Number.isFinite(incomingTsMs) || ageMs < 20 * 60 * 1000;
         const isLiveAfterCutover =
-            !lockdownAt || incomingTs.getTime() >= lockdownAt.getTime() - 5000;
+            isRecentLive || !lockdownAt || incomingTsMs >= lockdownAt.getTime() - 5000;
 
         // آرشیو شمارهٔ قبلی را باز نکن — برای پیام زنده مکالمهٔ جدید بساز
         if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
@@ -584,7 +587,6 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         if (!isLiveAfterCutover) {
-            // بازپخش تاریخچه بعد از cutover نباید لیست عادی را پر کند
             logger.info('Skipped historical WhatsApp replay after legacy cutover', {
                 customerId: customer.id,
                 phone,

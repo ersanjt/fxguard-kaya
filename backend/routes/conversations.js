@@ -625,17 +625,6 @@ router.get('/', async (req, res, next) => {
         if (listAccess && Object.keys(listAccess).length) {
             where[Op.and] = (where[Op.and] || []).concat([listAccess]);
         }
-        if (!hiddenOnly && !viewingArchived) {
-            try {
-                const { getLegacyLockdownAt } = require('../services/legacyCrmLockdown');
-                const cutAt = await getLegacyLockdownAt();
-                if (cutAt) {
-                    where[Op.and] = (where[Op.and] || []).concat([
-                        { createdAt: { [Op.gte]: cutAt } },
-                    ]);
-                }
-            } catch (_) {}
-        }
 
         // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB
         const normalizedSearch = search
@@ -1516,8 +1505,19 @@ router.post('/:id/send', async (req, res, next) => {
                 messageId: result.msg && result.msg.id ? result.msg.id : undefined,
             });
         }
-        await emitConversationNewMessage(req, conversation, result.msg);
-        res.json(result.msg);
+        let emitConv = conversation;
+        if (result.conversationId && result.conversationId !== conversation.id) {
+            const live = await Conversation.findByPk(result.conversationId, {
+                include: [
+                    { model: Customer, as: 'customer' },
+                    { model: Department, as: 'department', required: false },
+                ],
+            });
+            if (live) emitConv = live;
+        }
+        await emitConversationNewMessage(req, emitConv, result.msg);
+        const payload = result.msg && result.msg.toJSON ? result.msg.toJSON() : result.msg;
+        res.json(Object.assign({}, payload, { conversationId: emitConv.id }));
     } catch (err) {
         if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
             return res.status(503).json({
