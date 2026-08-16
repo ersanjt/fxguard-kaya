@@ -1306,6 +1306,57 @@ async function runTests() {
         assert.strictEqual(hidden.status, 200);
         assert(hidden.body.data.some((c) => c.id === filterConversationId), 'hidden conv should appear in restricted tab');
     });
+
+    await test('archive backup then purge keeps گروه فروش کایا and deletes other archive', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const [oldCust] = await Customer.findOrCreate({
+            where: { phone: '120363000000111000@g.us' },
+            defaults: { name: 'Old Archive Group', source: 'whatsapp' },
+        });
+        const [keepCust] = await Customer.findOrCreate({
+            where: { phone: '120363000000222000@g.us' },
+            defaults: { name: 'گروه فروش کایا', source: 'whatsapp', isRestrictedFromStaff: true },
+        });
+        const oldConv = await Conversation.create({
+            customerId: oldCust.id,
+            status: 'archived',
+            isHiddenFromStaff: true,
+            source: 'whatsapp',
+            metadata: { isGroup: true, groupName: 'Old Archive Group' },
+        });
+        const keepConv = await Conversation.create({
+            customerId: keepCust.id,
+            status: 'archived',
+            isHiddenFromStaff: true,
+            source: 'whatsapp',
+            metadata: { isGroup: true, groupName: 'گروه فروش کایا' },
+        });
+        await Message.create({
+            conversationId: oldConv.id,
+            customerId: oldCust.id,
+            direction: 'incoming',
+            content: 'old archived text',
+            type: 'text',
+        });
+        const backup = await req.get('/api/conversations/archive-backup')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(backup.status, 200, `backup failed: ${backup.status}`);
+        assert(backup.headers['content-type'] && /gzip|octet/i.test(String(backup.headers['content-type'])));
+        const agentDenied = await req.get('/api/conversations/archive-backup')
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(agentDenied.status, 403);
+        const purge = await req.post('/api/conversations/archive-purge')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(purge.status, 200, `purge failed: ${JSON.stringify(purge.body)}`);
+        assert((purge.body.purged && purge.body.purged.deletedConversations) >= 1, 'expected archived rows deleted');
+        const gone = await Conversation.findByPk(oldConv.id);
+        assert.strictEqual(gone, null);
+        await keepConv.reload();
+        await keepCust.reload();
+        assert.strictEqual(keepConv.status, 'open');
+        assert.strictEqual(keepConv.isHiddenFromStaff, false);
+        assert.strictEqual(keepCust.isRestrictedFromStaff, false);
+    });
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

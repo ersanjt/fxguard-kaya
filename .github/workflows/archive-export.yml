@@ -1,0 +1,62 @@
+name: Archive export and purge
+
+on:
+  workflow_dispatch:
+    inputs:
+      purge:
+        description: After backup, permanently delete archive (keeps گروه فروش کایا)
+        type: boolean
+        default: true
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+    steps:
+      - name: Export archive on server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 3m
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            node scripts/export-archive.js
+
+      - name: Fetch backup file
+        uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Copy backup from server
+        run: |
+          mkdir -p downloaded
+          scp -o StrictHostKeyChecking=accept-new fxguard@92.205.58.83:/var/www/kayaCRM-kaya/backups/archive-latest.json.gz downloaded/kaya-archive-latest.json.gz
+          ls -lh downloaded/kaya-archive-latest.json.gz
+
+      - name: Upload backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaya-archive-backup
+          path: downloaded/kaya-archive-latest.json.gz
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Purge archive on server
+        if: ${{ inputs.purge }}
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 3m
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            node scripts/export-archive.js --purge --confirm

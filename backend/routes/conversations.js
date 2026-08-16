@@ -583,6 +583,53 @@ router.post('/sync-groups', async (req, res, next) => {
     }
 });
 
+function canExportOrPurgeArchive(req) {
+    return !!(isMainAdmin(req.user) || (req.canManageConversations && req.canManageConversations()));
+}
+
+// ——— دانلود بکاپ آرشیو (فقط ادمین اصلی / مالک)
+router.get('/archive-backup', async (req, res, next) => {
+    try {
+        if (!canExportOrPurgeArchive(req)) {
+            return res.status(403).json({ error: 'فقط ادمین اصلی می‌تواند بکاپ آرشیو را دانلود کند' });
+        }
+        const { exportArchiveToFile } = require('../services/archiveExport');
+        const exported = await exportArchiveToFile();
+        res.setHeader('Content-Type', 'application/gzip');
+        res.setHeader('Content-Disposition', `attachment; filename="${exported.fileName}"`);
+        res.setHeader('X-Archive-Conversations', String(exported.conversationCount));
+        res.setHeader('X-Archive-Messages', String(exported.messageCount));
+        return res.sendFile(exported.filePath);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ——— پاک‌سازی آرشیو بعد از بکاپ (گروه فروش کایا نگه داشته می‌شود)
+router.post('/archive-purge', async (req, res, next) => {
+    try {
+        if (!canExportOrPurgeArchive(req)) {
+            return res.status(403).json({ error: 'فقط ادمین اصلی می‌تواند آرشیو را پاک کند' });
+        }
+        const { exportArchiveToFile, purgeArchive } = require('../services/archiveExport');
+        const exported = await exportArchiveToFile();
+        const purged = await purgeArchive({ keepCurrentGroups: true });
+        res.json({
+            ok: true,
+            backup: {
+                fileName: exported.fileName,
+                conversationCount: exported.conversationCount,
+                messageCount: exported.messageCount,
+                bytes: exported.bytes,
+            },
+            purged,
+            message: `${exported.conversationCount} مکالمه آرشیو بکاپ شد؛ ${purged.deletedConversations} مکالمه پاک شد؛ ${purged.keptConversations} گروه فعلی در لیست فعال ماند.`,
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // ——— لیست مکالمات (با فیلتر و سیاست دسترسی)
 router.get('/', async (req, res, next) => {
     try {
