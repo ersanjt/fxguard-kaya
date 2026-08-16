@@ -13,6 +13,17 @@ function customerIsRestricted(conversation) {
     return !!(conversation && conversation._customerRestricted);
 }
 
+function idsEq(a, b) {
+    return a != null && b != null && String(a) === String(b);
+}
+
+function isLiveInboxConversation(conversation) {
+    if (!conversation || conversation.isHiddenFromStaff) return false;
+    const status = conversation.status || 'open';
+    if (status === 'archived' || status === 'closed') return false;
+    return true;
+}
+
 /** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 function canAccessConversation(user, userId, conversation, grants = null) {
     if (!conversation || !user) return false;
@@ -23,14 +34,21 @@ function canAccessConversation(user, userId, conversation, grants = null) {
         hasResourceGrant(grants, 'customer', conversation.customerId);
 
     if (conversation.isHiddenFromStaff && !granted) return false;
-    if (customerIsRestricted(conversation) && !granted) return false;
+    // محدودیت مشتری فقط با مکالمهٔ قفل‌شده (شمارهٔ قبلی) معنا دارد — چت فعال را نبند
+    if (customerIsRestricted(conversation) && conversation.isHiddenFromStaff && !granted) {
+        return false;
+    }
 
     if (granted) return true;
 
-    const role = user.role;
-    if (role === 'owner' || role === 'admin' || role === 'manager') return true;
-    if (conversation.assignedTo === userId) return true;
-    if (user.departmentId && conversation.departmentId === user.departmentId) return true;
+    const role = user.role || '';
+    if (role === 'owner' || role === 'admin' || role === 'manager' || role === 'supervisor') {
+        return true;
+    }
+    if (idsEq(conversation.assignedTo, userId)) return true;
+    if (user.departmentId && idsEq(conversation.departmentId, user.departmentId)) return true;
+    // اینباکس مشترک: مکالمهٔ فعال قفل‌نشده برای همهٔ کارکنان مکالمات
+    if (isLiveInboxConversation(conversation)) return true;
     return false;
 }
 
@@ -53,6 +71,7 @@ async function canAccessConversationAsync(user, userId, conversation) {
             customerId: conversation.customerId,
             assignedTo: conversation.assignedTo,
             departmentId: conversation.departmentId,
+            status: conversation.status,
             isHiddenFromStaff: conversation.isHiddenFromStaff,
             customer: conversation.customer || row || null,
             _customerRestricted: !!(row && row.isRestrictedFromStaff),
@@ -98,24 +117,8 @@ function conversationListWhere(user, userId, grants = null, opts = {}) {
 
     const visibility = visibleDespiteHiddenOr(grants);
 
-    if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
-        return visibility;
-    }
-
-    const orConditions = [{ assignedTo: userId }];
-    if (user.departmentId) orConditions.push({ departmentId: user.departmentId });
-
-    const grantedCust = grants && grants.customerIds ? [...grants.customerIds] : [];
-    const grantedConv = grants && grants.conversationIds ? [...grants.conversationIds] : [];
-    if (grantedCust.length) orConditions.push({ customerId: { [Op.in]: grantedCust } });
-    if (grantedConv.length) orConditions.push({ id: { [Op.in]: grantedConv } });
-
-    return {
-        [Op.and]: [
-            visibility,
-            { [Op.or]: orConditions },
-        ],
-    };
+    // اینباکس واتساپ مشترک: همهٔ کارکنان بخش مکالمات، چت‌های غیرقفل را می‌بینند
+    return visibility;
 }
 
 async function conversationListWhereAsync(user, userId, opts = {}) {

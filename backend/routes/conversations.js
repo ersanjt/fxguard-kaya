@@ -22,6 +22,7 @@ const {
     canAccessConversationAsync,
     conversationListWhereAsync,
 } = require('../lib/conversationAccess');
+const { getUserGrantSets, grantedCustomerIdList } = require('../lib/staffResourceGrants');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
@@ -237,6 +238,7 @@ router.post('/sync-groups', async (req, res, next) => {
 
         const {
             applyVisibilityForCurrentGatewayChats,
+            promoteExistingGroupConversations,
             chatIdVariants,
             normalizeLinkedNumber,
             ensureLegacyCutover,
@@ -345,20 +347,32 @@ router.post('/sync-groups', async (req, res, next) => {
         const gwRes = fetched && fetched.gwRes;
         const chatSource = (fetched && fetched.source) || 'chats';
 
-        // اگر لیست موقتاً نیامد ولی Gateway ready است — همه را باز نکن (تفکیک شماره از بین می‌رود)
+        // اگر لیست موقتاً نیامد ولی Gateway ready است — گروه‌های موجود در DB را باز کن
         if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
-            logger.warn('sync-groups: chats list failed while Gateway ready — soft path', {
+            logger.warn('sync-groups: chats list failed while Gateway ready — promote stored groups', {
                 error: fetchErr?.response?.data?.error || fetchErr?.message || null,
                 gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
             });
+            let promoted = { opened: 0 };
+            try {
+                promoted = await promoteExistingGroupConversations(
+                    gatewayNumber || liveStatus.number
+                );
+            } catch (promErr) {
+                logger.warn('sync-groups: promote stored groups failed', {
+                    error: promErr?.message,
+                });
+            }
             return res.json({
                 ok: true,
-                groupsCount: 0,
-                chatsCount: 0,
-                synced: 0,
+                groupsCount: promoted.opened || 0,
+                chatsCount: promoted.opened || 0,
+                synced: promoted.opened || 0,
+                opened: promoted.opened || 0,
                 soft: true,
-                message:
-                    'Gateway متصل است اما الان لیست چت‌های همین شماره از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید — چت‌های شمارهٔ قبلی در آرشیو می‌مانند.',
+                message: promoted.opened
+                    ? `${promoted.opened} گروه از سابقه در مکالمات فعال باز شد. ۲۰ ثانیه بعد دوباره همگام کنید تا لیست زنده واتساپ هم بیاید.`
+                    : 'Gateway متصل است اما الان لیست چت‌های همین شماره از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
             });
         }
 
@@ -510,8 +524,12 @@ router.post('/sync-groups', async (req, res, next) => {
             }
         }
 
-        // چت‌های همین شماره را باز کن؛ بقیهٔ واتساپی‌ها (شمارهٔ قبلی) آرشیو بمانند
-        const archiveMissing = chatSource !== 'groups-only';
+        // لیست ناقص (مثلاً فقط ۱ چت) بقیه را آرشیو نکند — گروه‌ها را قورت می‌دهد
+        const listingIncomplete =
+            chatSource === 'groups-only' ||
+            chatRows.length < 8 ||
+            !!gwRes?.data?.incomplete;
+        const archiveMissing = !listingIncomplete;
         let visibility = { archived: 0, opened: 0 };
         try {
             visibility = await applyVisibilityForCurrentGatewayChats(
@@ -523,27 +541,42 @@ router.post('/sync-groups', async (req, res, next) => {
             logger.warn('sync-groups: visibility filter failed', { error: visErr?.message });
         }
 
+        let promoted = { opened: 0 };
+        try {
+            promoted = await promoteExistingGroupConversations(
+                gatewayNumber || liveStatus.number
+            );
+        } catch (promErr) {
+            logger.warn('sync-groups: promote stored groups failed', {
+                error: promErr?.message,
+            });
+        }
+
+        const openedTotal = (visibility.opened || 0) + (promoted.opened || 0);
         res.json({
             ok: true,
             groupsCount: groupsSynced,
             chatsCount: chatRows.length,
             synced,
-            opened: visibility.opened || 0,
+            opened: openedTotal,
             archivedOther: visibility.archived || 0,
+            incomplete: listingIncomplete,
             gatewayNumber: gatewayNumber || null,
             source: chatSource,
             stale: !!gwRes?.data?.stale,
             message:
                 chatRows.length === 0
-                    ? 'هیچ چتی از واتساپ این شماره دریافت نشد'
-                    : `${synced} چت در مکالمات فعال همگام شد` +
-                      (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
-                      (visibility.opened ? `؛ ${visibility.opened} مکالمه از آرشیو باز شد` : '') +
-                      (visibility.archived
-                          ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
-                          : '') +
-                      (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
-                      (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
+                    ? 'هیچ چتی از واتساپ این شماره دریافت نشد. ۲۰ ثانیه بعد دوباره همگام کنید یا یک پیام داخل گروه بفرستید.'
+                    : listingIncomplete && groupsSynced === 0
+                      ? `واتساپ فعلاً فقط ${chatRows.length} چت داد و گروهی در لیست نبود. یک پیام داخل گروه بفرستید و ۲۰ ثانیه بعد دوباره «همگام‌سازی» را بزنید.`
+                      : `${synced} چت در مکالمات فعال همگام شد` +
+                        (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
+                        (openedTotal ? `؛ ${openedTotal} مکالمه از آرشیو باز شد` : '') +
+                        (visibility.archived
+                            ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
+                            : '') +
+                        (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
+                        (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
     } catch (err) {
         next(err);
@@ -606,11 +639,13 @@ router.get('/', async (req, res, next) => {
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
         if (isGroup === '1' || isGroup === 'true') {
             const dialect = sequelize.getDialect();
-            const tbl = Conversation.tableName || 'Conversations';
+            const convTbl = Conversation.tableName || 'Conversations';
+            const custTbl = Customer.tableName || 'Customers';
+            const custFk = dialect === 'postgres' ? '"customerId"' : 'customerId';
             const subq =
                 dialect === 'postgres'
-                    ? `(SELECT id FROM "${tbl}" WHERE (metadata->>'isGroup')::text = 'true')`
-                    : `(SELECT id FROM "${tbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
+                    ? `(SELECT c.id FROM "${convTbl}" c LEFT JOIN "${custTbl}" cu ON cu.id = c.${custFk} WHERE (c.metadata->>'isGroup')::text = 'true' OR cu.phone ILIKE '%@g.us')`
+                    : `(SELECT c.id FROM "${convTbl}" c LEFT JOIN "${custTbl}" cu ON cu.id = c.${custFk} WHERE json_extract(c.metadata, '$.isGroup') IN (1, 'true') OR cu.phone LIKE '%@g.us')`;
             where[Op.and] = (where[Op.and] || []).concat([
                 sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(subq)),
             ]);
@@ -667,7 +702,7 @@ router.get('/', async (req, res, next) => {
             {
                 model: Customer,
                 as: 'customer',
-                attributes: ['id', 'name', 'phone', 'profilePic'],
+                attributes: ['id', 'name', 'phone', 'profilePic', 'isRestrictedFromStaff'],
                 ...(customerSearchWhere ? { where: customerSearchWhere, required: true } : {}),
             },
             { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
@@ -679,6 +714,19 @@ router.get('/', async (req, res, next) => {
                 required: false,
             },
         ];
+
+        // لیست عادی: مشتری محدودشده فقط با اعطا دیده شود (هم‌تراز canAccessConversation)
+        if (!hiddenOnly && !includeHidden) {
+            const grants = await getUserGrantSets(req.userId);
+            const grantedIds = grantedCustomerIdList(grants);
+            const restrictOr = [{ isRestrictedFromStaff: false }];
+            if (grantedIds.length) restrictOr.push({ id: { [Op.in]: grantedIds } });
+            const cust = include[0];
+            cust.required = true;
+            cust.where = cust.where
+                ? { [Op.and]: [cust.where, { [Op.or]: restrictOr }] }
+                : { [Op.or]: restrictOr };
+        }
 
         const { page: p, limit: l, offset } = parsePagination(page, limit, 100);
         const { rows, count } = await Conversation.findAndCountAll({

@@ -1042,7 +1042,7 @@
             }
             const newItems = visibleRows.map(function(c) {
                 const cust = c.customer || {};
-                const isGroup = !!(c.metadata && c.metadata.isGroup);
+                const isGroup = !!(c.metadata && c.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
                 const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
                 const rawPhone = cust.phone || '';
                 const phone = canSeePhone ? rawPhone : '';

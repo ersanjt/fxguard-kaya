@@ -602,6 +602,33 @@ function attachClientEvents(c) {
         } catch (_) {
             notifyBackendStatus('ready', null, {}).catch(() => {});
         }
+        const warmChats = (delayMs) => {
+            setTimeout(() => {
+                hookChatCollectionObserver()
+                    .catch(() => {})
+                    .finally(() => {
+                        listWhatsAppAllChats()
+                            .then((chats) => {
+                                logger.info('WhatsApp chats warmed after ready', {
+                                    delayMs,
+                                    count: Array.isArray(chats) ? chats.length : 0,
+                                    groups: Array.isArray(chats)
+                                        ? chats.filter((x) => x && x.isGroup).length
+                                        : 0,
+                                });
+                            })
+                            .catch((e) =>
+                                logger.warn('Warm chat list after ready failed', {
+                                    delayMs,
+                                    error: formatGatewayError(e),
+                                })
+                            );
+                    });
+            }, delayMs);
+        };
+        warmChats(4000);
+        warmChats(15000);
+        warmChats(40000);
     });
 
     c.on('disconnected', async (reason) => {
@@ -781,6 +808,14 @@ function attachClientEvents(c) {
                 }
             }
 
+            rememberSeenChat(
+                messageData.chat && messageData.chat.id,
+                messageData.chat && messageData.chat.name,
+                messageData.chat && messageData.chat.isGroup,
+                messageData.body,
+                messageData.timestamp
+            );
+
             // Send to backend (HTTP by default — see deliverIncomingMessage)
             await deliverIncomingMessage(messageData);
 
@@ -893,6 +928,14 @@ function attachClientEvents(c) {
                 }
             }
 
+            rememberSeenChat(
+                messageData.chat && messageData.chat.id,
+                messageData.chat && messageData.chat.name,
+                isGroup,
+                messageData.body,
+                messageData.timestamp
+            );
+
             await deliverIncomingMessage(messageData);
 
             io.emit('new_message', messageData);
@@ -947,6 +990,7 @@ function attachClientEvents(c) {
                     isGroup: true,
                 },
             };
+            rememberSeenChat(String(groupId), groupName, true, messageData.body, messageData.timestamp);
             await deliverIncomingMessage(messageData);
             io.emit('new_message', messageData);
             logger.info('👥 Group join captured', { groupId: String(groupId), name: groupName });
@@ -1522,35 +1566,135 @@ let lastGroupsCache = { at: 0, groups: [] };
 /** آخرین لیست موفق همهٔ چت‌ها (خصوصی + گروه) */
 let lastChatsCache = { at: 0, chats: [] };
 
-async function listWhatsAppGroupsFromStore() {
-    if (!client?.pupPage) throw new Error('pupPage_unavailable');
-    return client.pupPage.evaluate(() => {
-        // runs inside WhatsApp Web Chromium page
-        function resolveStore() {
-            // eslint-disable-next-line no-undef
-            if (window.Store && (window.Store.Chat || window.Store.GroupMetadata)) {
-                // eslint-disable-next-line no-undef
-                return window.Store;
+function mergeChatRows(a, b) {
+    const map = new Map();
+    for (const row of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
+        if (!row || row.id == null) continue;
+        const id = String(row.id).trim();
+        if (!id || !id.includes('@') || id.endsWith('@broadcast') || id === 'status@broadcast') {
+            continue;
+        }
+        const next = {
+            id,
+            name: row.name ? String(row.name) : null,
+            isGroup: !!row.isGroup || /@g\.us$/i.test(id),
+            lastPreview: row.lastPreview ? String(row.lastPreview).slice(0, 120) : null,
+            timestamp: row.timestamp || null,
+        };
+        const prev = map.get(id);
+        if (!prev) {
+            map.set(id, next);
+            continue;
+        }
+        map.set(id, {
+            id,
+            name: next.name || prev.name,
+            isGroup: !!(next.isGroup || prev.isGroup),
+            lastPreview: next.lastPreview || prev.lastPreview,
+            timestamp: next.timestamp || prev.timestamp,
+        });
+    }
+    return [...map.values()];
+}
+
+function rememberChatRows(rows) {
+    const merged = mergeChatRows(lastChatsCache.chats, rows);
+    lastChatsCache = { at: Date.now(), chats: merged };
+    const groupsOnly = merged
+        .filter((c) => c && c.isGroup)
+        .map((c) => ({ id: c.id, name: c.name }));
+    if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
+    return merged;
+}
+
+function rememberSeenChat(id, name, isGroup, preview, ts) {
+    rememberChatRows([
+        {
+            id,
+            name,
+            isGroup,
+            lastPreview: preview,
+            timestamp: ts,
+        },
+    ]);
+}
+
+async function waitForWhatsAppStore(maxMs = 18000) {
+    if (!client?.pupPage) return false;
+    const started = Date.now();
+    while (Date.now() - started < maxMs) {
+        try {
+            const ok = await client.pupPage.evaluate(() => {
+                if (window.Store && (window.Store.Chat || window.Store.GroupMetadata)) return true;
+                try {
+                    if (typeof window.require === 'function') {
+                        const cols = window.require('WAWebCollections');
+                        if (cols && (cols.ChatCollection || cols.Chat || cols.GroupMetadataCollection)) {
+                            return true;
+                        }
+                    }
+                } catch (_) {}
+                return !!(window.WWebJS && window.WWebJS.getChats);
+            });
+            if (ok) return true;
+        } catch (_) {}
+        await sleep(700);
+    }
+    return false;
+}
+
+async function hookChatCollectionObserver() {
+    if (!client?.pupPage) return;
+    try {
+        await client.pupPage.exposeFunction('__kayaRememberChat', (id, name, isGroup, preview, ts) => {
+            rememberSeenChat(id, name, isGroup, preview, ts);
+        });
+    } catch (_) {
+        /* already exposed for this page */
+    }
+    try {
+        await client.pupPage.evaluate(() => {
+            function attach(Chat) {
+                if (!Chat || typeof Chat.on !== 'function') return false;
+                if (Chat.__kayaHooked) return true;
+                Chat.__kayaHooked = true;
+                Chat.on('add', (c) => {
+                    try {
+                        const id = c && c.id && (c.id._serialized || c.id);
+                        if (!id || typeof window.__kayaRememberChat !== 'function') return;
+                        window.__kayaRememberChat(
+                            String(id),
+                            c.name || c.formattedTitle || c.subject || null,
+                            !!(c.isGroup || String(id).endsWith('@g.us')),
+                            null,
+                            c.t || null
+                        );
+                    } catch (_) {}
+                });
+                return true;
             }
+            if (attach(window.Store && window.Store.Chat)) return true;
             try {
-                // eslint-disable-next-line no-undef
                 if (typeof window.require === 'function') {
-                    // eslint-disable-next-line no-undef
                     const cols = window.require('WAWebCollections');
-                    if (cols) {
-                        return {
-                            Chat: cols.ChatCollection || cols.Chat,
-                            GroupMetadata: cols.GroupMetadataCollection || cols.GroupMetadata,
-                        };
+                    if (attach(cols && (cols.ChatCollection || cols.Chat))) return true;
+                    const chatCol = window.require('WAWebChatCollection');
+                    if (attach(chatCol && (chatCol.ChatCollection || chatCol.default || chatCol))) {
+                        return true;
                     }
                 }
             } catch (_) {}
-            // eslint-disable-next-line no-undef
-            return window.Store || null;
-        }
-        const store = resolveStore();
-        if (!store) return [];
+            return false;
+        });
+    } catch (e) {
+        logger.warn('Chat collection observer hook failed', { error: formatGatewayError(e) });
+    }
+}
 
+/** استخراج چت/گروه از صفحهٔ واتساپ وب (Store + ماژول‌های جدید + WWebJS) */
+async function extractWhatsAppChatsInBrowser() {
+    if (!client?.pupPage) throw new Error('pupPage_unavailable');
+    return client.pupPage.evaluate(() => {
         function collectModels(collection) {
             if (!collection) return [];
             try {
@@ -1582,51 +1726,137 @@ async function listWhatsAppGroupsFromStore() {
             if (!id) return null;
             if (id._serialized) return String(id._serialized);
             if (id.user && id.server) return String(id.user) + '@' + String(id.server);
+            if (typeof id === 'string' && id.includes('@')) return id;
             return null;
         }
 
         const seen = Object.create(null);
         const out = [];
 
-        function pushGroup(ser, name) {
-            if (!ser || !String(ser).endsWith('@g.us')) return;
-            if (seen[ser]) {
-                if (name && !seen[ser].name) seen[ser].name = String(name);
+        function pushChat(ser, name, isGroup, preview, ts) {
+            if (!ser) return;
+            const s = String(ser);
+            if (!s.includes('@')) return;
+            if (s === 'status@broadcast' || s.endsWith('@broadcast')) return;
+            if (seen[s]) {
+                if (name && !seen[s].name) seen[s].name = String(name);
+                if (isGroup) seen[s].isGroup = true;
                 return;
             }
-            const row = { id: String(ser), name: name ? String(name) : null };
-            seen[ser] = row;
+            const row = {
+                id: s,
+                name: name ? String(name) : null,
+                isGroup: !!isGroup || s.endsWith('@g.us'),
+                lastPreview: preview ? String(preview).slice(0, 120) : null,
+                timestamp: ts || null,
+            };
+            seen[s] = row;
             out.push(row);
         }
 
-        // ۱) همهٔ گروه‌هایی که حساب عضو آن‌هاست (حتی بدون پیام اخیر در Chat list)
-        const metas = collectModels(store.GroupMetadata);
-        for (let i = 0; i < metas.length; i++) {
-            const m = metas[i];
-            const ser = jidOf(m);
-            const name = (m && (m.subject || m.name || m.formattedTitle)) || null;
-            pushGroup(ser, name);
+        function ingestCollection(collection, forceGroup) {
+            const models = collectModels(collection);
+            for (let i = 0; i < models.length; i++) {
+                const c = models[i];
+                const ser = jidOf(c);
+                if (!ser) continue;
+                const isGroup = !!(forceGroup || (c && c.isGroup) || String(ser).endsWith('@g.us'));
+                const name =
+                    (c &&
+                        (c.name ||
+                            c.subject ||
+                            c.formattedTitle ||
+                            c.verifiedName ||
+                            (c.contact && (c.contact.name || c.contact.pushname)) ||
+                            (c.groupMetadata && c.groupMetadata.subject))) ||
+                    null;
+                let preview = null;
+                let ts = null;
+                try {
+                    if (c && c.lastMessage) {
+                        preview =
+                            c.lastMessage.body ||
+                            c.lastMessage.caption ||
+                            (c.lastMessage.type ? '[' + c.lastMessage.type + ']' : null);
+                        ts = c.lastMessage.t || c.lastMessage.timestamp || null;
+                    } else if (c && typeof c.t === 'number') {
+                        ts = c.t;
+                    }
+                    if (!preview && c && c.previewMessage) {
+                        preview = c.previewMessage.body || c.previewMessage.caption || null;
+                    }
+                } catch (_) {}
+                pushChat(ser, name, isGroup, preview, ts);
+            }
         }
 
-        // ۲) گروه‌های حاضر در لیست چت (نام ممکن است بهتر باشد)
-        const chats = collectModels(store.Chat);
-        for (let i = 0; i < chats.length; i++) {
-            const c = chats[i];
-            const ser = jidOf(c);
-            if (!ser || !String(ser).endsWith('@g.us')) continue;
-            const name =
-                (c &&
-                    (c.name ||
-                        c.formattedTitle ||
-                        c.verifiedName ||
-                        (c.contact && (c.contact.name || c.contact.pushname)) ||
-                        (c.groupMetadata && c.groupMetadata.subject))) ||
-                null;
-            pushGroup(ser, name);
+        function ingestStore(store) {
+            if (!store) return;
+            ingestCollection(store.Chat || store.ChatCollection, false);
+            ingestCollection(store.GroupMetadata || store.GroupMetadataCollection, true);
         }
+
+        ingestStore(window.Store);
+
+        const reqNames = [
+            'WAWebCollections',
+            'WAWebChatCollection',
+            'WAWebGroupMetadataCollection',
+            'WAWebGroupChatCollection',
+        ];
+        if (typeof window.require === 'function') {
+            for (let i = 0; i < reqNames.length; i++) {
+                try {
+                    const mod = window.require(reqNames[i]);
+                    if (!mod) continue;
+                    ingestStore(mod);
+                    ingestCollection(mod.ChatCollection || mod.Chat || mod.default, false);
+                    ingestCollection(
+                        mod.GroupMetadataCollection || mod.GroupMetadata,
+                        true
+                    );
+                } catch (_) {}
+            }
+        }
+
+        try {
+            if (window.WWebJS && typeof window.WWebJS.getChats === 'function') {
+                const wchats = window.WWebJS.getChats();
+                ingestCollection(Array.isArray(wchats) ? wchats : collectModels(wchats), false);
+            }
+        } catch (_) {}
+
+        try {
+            const cache = window.require && (window.require.c || window.require.cache);
+            if (cache) {
+                const keys = Object.keys(cache);
+                const max = Math.min(keys.length, 2500);
+                for (let i = 0; i < max; i++) {
+                    const mod = cache[keys[i]];
+                    const exp = mod && (mod.exports || mod);
+                    if (!exp || typeof exp !== 'object') continue;
+                    const col =
+                        exp.ChatCollection ||
+                        exp.GroupMetadataCollection ||
+                        (exp.getModelsArray || exp.models ? exp : null);
+                    if (!col) continue;
+                    const looksGroup =
+                        !!(exp.GroupMetadataCollection || exp.GroupMetadata) ||
+                        (typeof exp.name === 'string' && /group/i.test(exp.name));
+                    ingestCollection(col, looksGroup);
+                }
+            }
+        } catch (_) {}
 
         return out;
     });
+}
+
+async function listWhatsAppGroupsFromStore() {
+    const all = await extractWhatsAppChatsInBrowser();
+    return (Array.isArray(all) ? all : [])
+        .filter((c) => c && (c.isGroup || String(c.id || '').endsWith('@g.us')))
+        .map((c) => ({ id: c.id, name: c.name || null }));
 }
 
 async function listWhatsAppGroups() {
@@ -1648,9 +1878,18 @@ async function listWhatsAppGroups() {
             ),
         ]);
         if (Array.isArray(fromStore) && fromStore.length > 0) {
-            lastGroupsCache = { at: Date.now(), groups: fromStore };
-            logger.info('WhatsApp groups listed from Store', { count: fromStore.length });
-            return fromStore;
+            const merged = rememberChatRows(
+                fromStore.map((g) => ({
+                    id: g.id,
+                    name: g.name,
+                    isGroup: true,
+                }))
+            );
+            const groups = merged
+                .filter((c) => c.isGroup)
+                .map((c) => ({ id: c.id, name: c.name }));
+            logger.info('WhatsApp groups listed from Store', { count: groups.length });
+            return groups;
         }
         if (Array.isArray(fromStore) && fromStore.length === 0) {
             logger.info('Store returned 0 groups — trying getChats fallback');
@@ -1752,138 +1991,7 @@ app.get('/api/chats/groups', async (req, res) => {
 
 /** همهٔ چت‌های واتساپ (خصوصی + گروه) از Store */
 async function listWhatsAppAllChatsFromStore() {
-    if (!client?.pupPage) throw new Error('pupPage_unavailable');
-    return client.pupPage.evaluate(() => {
-        // runs inside WhatsApp Web Chromium page
-        function resolveStore() {
-            // eslint-disable-next-line no-undef
-            if (window.Store && (window.Store.Chat || window.Store.GroupMetadata)) {
-                // eslint-disable-next-line no-undef
-                return window.Store;
-            }
-            try {
-                // eslint-disable-next-line no-undef
-                if (typeof window.require === 'function') {
-                    // eslint-disable-next-line no-undef
-                    const cols = window.require('WAWebCollections');
-                    if (cols) {
-                        return {
-                            Chat: cols.ChatCollection || cols.Chat,
-                            GroupMetadata: cols.GroupMetadataCollection || cols.GroupMetadata,
-                        };
-                    }
-                }
-            } catch (_) {}
-            // eslint-disable-next-line no-undef
-            return window.Store || null;
-        }
-        const store = resolveStore();
-        if (!store) return [];
-
-        function collectModels(collection) {
-            if (!collection) return [];
-            try {
-                if (typeof collection.getModelsArray === 'function') {
-                    return collection.getModelsArray() || [];
-                }
-            } catch (_) {}
-            try {
-                if (Array.isArray(collection.models)) return collection.models;
-            } catch (_) {}
-            try {
-                if (collection._models) return Object.values(collection._models);
-            } catch (_) {}
-            try {
-                if (typeof collection.map === 'function') {
-                    const arr = [];
-                    collection.map(function (m) {
-                        arr.push(m);
-                    });
-                    return arr;
-                }
-            } catch (_) {}
-            return [];
-        }
-
-        function jidOf(model) {
-            if (!model) return null;
-            const id = model.id;
-            if (!id) return null;
-            if (id._serialized) return String(id._serialized);
-            if (id.user && id.server) return String(id.user) + '@' + String(id.server);
-            return null;
-        }
-
-        const seen = Object.create(null);
-        const out = [];
-
-        function pushChat(ser, name, isGroup, preview, ts) {
-            if (!ser) return;
-            const s = String(ser);
-            if (!s.includes('@')) return;
-            // status / broadcast را رد کن
-            if (s === 'status@broadcast' || s.endsWith('@broadcast')) return;
-            if (seen[s]) {
-                if (name && !seen[s].name) seen[s].name = String(name);
-                return;
-            }
-            const row = {
-                id: s,
-                name: name ? String(name) : null,
-                isGroup: !!isGroup || s.endsWith('@g.us'),
-                lastPreview: preview ? String(preview).slice(0, 120) : null,
-                timestamp: ts || null,
-            };
-            seen[s] = row;
-            out.push(row);
-        }
-
-        const chats = collectModels(store.Chat);
-        for (let i = 0; i < chats.length; i++) {
-            const c = chats[i];
-            const ser = jidOf(c);
-            if (!ser) continue;
-            const isGroup = !!(c && (c.isGroup || String(ser).endsWith('@g.us')));
-            const name =
-                (c &&
-                    (c.name ||
-                        c.formattedTitle ||
-                        c.verifiedName ||
-                        (c.contact && (c.contact.name || c.contact.pushname)) ||
-                        (c.groupMetadata && c.groupMetadata.subject))) ||
-                null;
-            let preview = null;
-            let ts = null;
-            try {
-                const lm = c.lastReceivedKey || c.lastMessage || c.msgs;
-                if (c.lastMessage) {
-                    preview =
-                        c.lastMessage.body ||
-                        c.lastMessage.caption ||
-                        (c.lastMessage.type ? '[' + c.lastMessage.type + ']' : null);
-                    ts = c.lastMessage.t || c.lastMessage.timestamp || null;
-                } else if (typeof c.t === 'number') {
-                    ts = c.t;
-                }
-                if (!preview && c.previewMessage) {
-                    preview = c.previewMessage.body || c.previewMessage.caption || null;
-                }
-                void lm;
-            } catch (_) {}
-            pushChat(ser, name, isGroup, preview, ts);
-        }
-
-        // گروه‌هایی که در Chat نیستند ولی در GroupMetadata هستند
-        const metas = collectModels(store.GroupMetadata);
-        for (let i = 0; i < metas.length; i++) {
-            const m = metas[i];
-            const ser = jidOf(m);
-            const name = (m && (m.subject || m.name || m.formattedTitle)) || null;
-            pushChat(ser, name, true, null, null);
-        }
-
-        return out;
-    });
+    return extractWhatsAppChatsInBrowser();
 }
 
 async function listWhatsAppAllChats() {
@@ -1896,12 +2004,10 @@ async function listWhatsAppAllChats() {
         }
     }
 
-    const remember = (rows) => {
-        lastChatsCache = { at: Date.now(), chats: rows };
-        const groupsOnly = rows.filter((c) => c.isGroup);
-        if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
-        return rows;
-    };
+    await waitForWhatsAppStore(12000).catch(() => false);
+    await hookChatCollectionObserver().catch(() => {});
+
+    const remember = (rows) => rememberChatRows(rows);
 
     for (let attempt = 0; attempt < 4; attempt++) {
         try {
@@ -1912,12 +2018,14 @@ async function listWhatsAppAllChats() {
                 ),
             ]);
             if (Array.isArray(fromStore) && fromStore.length > 0) {
+                const merged = remember(fromStore);
                 logger.info('WhatsApp chats listed from Store', {
-                    count: fromStore.length,
-                    groups: fromStore.filter((c) => c.isGroup).length,
+                    count: merged.length,
+                    fromStore: fromStore.length,
+                    groups: merged.filter((c) => c.isGroup).length,
                     attempt: attempt + 1,
                 });
-                return remember(fromStore);
+                return merged;
             }
         } catch (storeErr) {
             logger.warn('Chat list via Store failed', {
@@ -2015,7 +2123,14 @@ app.get('/api/chats', async (req, res) => {
             }
         }
         const chats = await listWhatsAppAllChats();
-        return res.json({ success: true, chats, count: chats.length });
+        const groups = (chats || []).filter((c) => c && c.isGroup).length;
+        return res.json({
+            success: true,
+            chats,
+            count: chats.length,
+            groups,
+            incomplete: chats.length < 8,
+        });
     } catch (error) {
         const msg = formatGatewayError(error);
         logger.error('Get chats error', { error: msg });

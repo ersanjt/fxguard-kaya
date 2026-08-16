@@ -278,11 +278,13 @@ async function getLegacyLockdownAt() {
 async function sweepLeftoverLegacyVisibility(lockdownAt) {
     if (!lockdownAt) return { conversationsUpdated: 0, customersUpdated: 0 };
     const cutAt = new Date(lockdownAt);
+    // updatedAt بعد از همگام‌سازی/پیام زنده عوض می‌شود — آن‌ها را دوباره آرشیو نکن
     const [convResult] = await Conversation.update(
         { isHiddenFromStaff: true, status: 'archived' },
         {
             where: {
                 createdAt: { [Op.lt]: cutAt },
+                updatedAt: { [Op.lt]: cutAt },
                 [Op.or]: [{ isHiddenFromStaff: false }, { isHiddenFromStaff: null }],
             },
         }
@@ -291,7 +293,6 @@ async function sweepLeftoverLegacyVisibility(lockdownAt) {
         where: {
             isHiddenFromStaff: false,
             status: { [Op.ne]: 'archived' },
-            createdAt: { [Op.gte]: cutAt },
         },
         attributes: ['customerId'],
         raw: true,
@@ -428,10 +429,85 @@ async function getLockdownStats() {
     };
 }
 
+/**
+ * گروه‌های موجود در DB را به مکالمات فعال برگردان (وقتی لیست واتساپ نیاید).
+ */
+async function promoteExistingGroupConversations(gatewayNumber) {
+    const gw = normalizeLinkedNumber(gatewayNumber);
+    const convs = await Conversation.findAll({
+        where: { status: { [Op.ne]: 'closed' } },
+        include: [
+            {
+                model: Customer,
+                as: 'customer',
+                required: true,
+                attributes: ['id', 'phone', 'isRestrictedFromStaff'],
+            },
+        ],
+        attributes: ['id', 'status', 'isHiddenFromStaff', 'customerId', 'metadata'],
+        limit: 8000,
+    });
+
+    const openIds = [];
+    const unrestrictCust = new Set();
+    for (const conv of convs) {
+        const phone = String(conv.customer?.phone || '');
+        const meta = conv.metadata || {};
+        const isGroup = !!meta.isGroup || /@g\.us$/i.test(phone);
+        if (!isGroup) continue;
+        if (conv.status === 'archived' || conv.isHiddenFromStaff) {
+            openIds.push(conv.id);
+        }
+        if (conv.customer && conv.customer.isRestrictedFromStaff) {
+            unrestrictCust.add(conv.customer.id);
+        }
+        const nextMeta = {
+            ...meta,
+            isGroup: true,
+            groupName: meta.groupName || conv.customer?.name || null,
+            linkedGatewayNumber: gw || meta.linkedGatewayNumber || null,
+        };
+        const metaChanged = JSON.stringify(meta) !== JSON.stringify(nextMeta);
+        if (metaChanged) {
+            await conv.update({ metadata: nextMeta });
+        }
+    }
+
+    const chunked = async (Model, values, idList, size = 250) => {
+        for (let i = 0; i < idList.length; i += size) {
+            const slice = idList.slice(i, i + size);
+            await Model.update(values, { where: { id: { [Op.in]: slice } } });
+        }
+    };
+    if (openIds.length) {
+        await chunked(
+            Conversation,
+            { status: 'open', isHiddenFromStaff: false, closedAt: null },
+            openIds
+        );
+    }
+    if (unrestrictCust.size) {
+        await chunked(Customer, { isRestrictedFromStaff: false }, [...unrestrictCust]);
+    }
+
+    logger.info('Promoted existing WhatsApp group conversations', {
+        gatewayNumber: gw || null,
+        opened: openIds.length,
+        unrestricted: unrestrictCust.size,
+        scanned: convs.length,
+    });
+    return {
+        opened: openIds.length,
+        unrestricted: unrestrictCust.size,
+        scanned: convs.length,
+    };
+}
+
 module.exports = {
     lockdownExistingCrmData,
     restoreLegacyCrmVisibility,
     applyVisibilityForCurrentGatewayChats,
+    promoteExistingGroupConversations,
     ensureLegacyCutover,
     getLegacyLockdownAt,
     handleGatewayNumberReady,

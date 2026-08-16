@@ -614,24 +614,29 @@ async function runTests() {
         createdConversationId = r.body.id;
     });
 
-    await test('Agent cannot access unassigned conversation detail (403)', async () => {
+    await test('Agent can open unassigned live conversation (inbox)', async () => {
         const r = await req.get(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${agentToken}`);
-        assert.strictEqual(r.status, 403);
+        assert.strictEqual(r.status, 200, `inbox detail failed: ${JSON.stringify(r.body)}`);
+        assert.strictEqual(r.body.id, createdConversationId);
     });
 
-    await test('Agent cannot patch unassigned conversation (403)', async () => {
+    await test('Agent cannot change assignment/status of live conversation (403)', async () => {
         const r = await req.patch(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ status: 'pending' });
         assert.strictEqual(r.status, 403);
     });
 
-    await test('Agent cannot send message to unassigned conversation (403)', async () => {
+    await test('Agent can send to unassigned live conversation', async () => {
         const r = await req.post(`/api/conversations/${createdConversationId}/send`)
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ content: 'hello' });
-        assert.strictEqual(r.status, 403);
+        assert(
+            [200, 201, 400, 502, 503].includes(r.status),
+            `Expected inbox send or gateway error, got ${r.status}`
+        );
+        assert.notStrictEqual(r.status, 403, 'unassigned live chat must be sendable');
     });
 
     await test('Agent cannot delete conversation (403)', async () => {
@@ -665,10 +670,11 @@ async function runTests() {
         assert.strictEqual(r.body.ok, true);
     });
 
-    await test('Agent cannot mark unassigned conversation as read (403)', async () => {
+    await test('Agent can mark unassigned live conversation as read', async () => {
         const r = await req.post(`/api/conversations/${createdConversationId}/read`)
             .set('Authorization', `Bearer ${agentToken}`);
-        assert.strictEqual(r.status, 403);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.body.ok, true);
     });
 
     await test('GET /api/conversations/:id/stats returns stats shape (admin)', async () => {
@@ -681,10 +687,11 @@ async function runTests() {
         assert(Array.isArray(r.body.responders));
     });
 
-    await test('Agent cannot read stats of unassigned conversation (403)', async () => {
+    await test('Agent can read stats of unassigned live conversation', async () => {
         const r = await req.get(`/api/conversations/${createdConversationId}/stats`)
             .set('Authorization', `Bearer ${agentToken}`);
-        assert.strictEqual(r.status, 403);
+        assert.strictEqual(r.status, 200);
+        assert(typeof r.body.messageCount === 'number');
     });
 
     await test('PATCH /api/conversations/:id archive works for main admin', async () => {
@@ -787,6 +794,25 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.some(c => c.id === filterConversationId), 'Group conversation should appear in group filter');
+    });
+
+    await test('GET /api/conversations?isGroup=true includes @g.us chats without metadata.isGroup', async () => {
+        const groupId = '120363888000111555@g.us';
+        const customerRes = await req.post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Phone Group', phone: groupId, status: 'active' });
+        assert.strictEqual(customerRes.status, 201, `customer create failed: ${JSON.stringify(customerRes.body)}`);
+        const convRes = await req.post('/api/conversations')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerId: customerRes.body.id });
+        assert.strictEqual(convRes.status, 201);
+        const r = await req.get('/api/conversations?isGroup=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(
+            (r.body.data || []).some((c) => c.id === convRes.body.id),
+            'group JID conversation should appear in Groups tab even without metadata.isGroup'
+        );
     });
 
     section('Incoming WhatsApp groups');
@@ -1131,6 +1157,16 @@ async function runTests() {
             (all.body.data || []).some((c) => c.id === conv.id),
             'opened group must appear in All'
         );
+
+        const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
+        await ensureLegacyCutover(null, { reason: 'test_group_stay_visible' });
+        const allAfterSweep = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(allAfterSweep.status, 200);
+        assert(
+            (allAfterSweep.body.data || []).some((c) => c.id === conv.id),
+            'opened group must stay in All after leftover sweep'
+        );
     });
 
     await test('chatIdVariants and normalizeLinkedNumber', async () => {
@@ -1141,7 +1177,23 @@ async function runTests() {
         assert.strictEqual(normalizeLinkedNumber('+90 555 111 22 33'), '905551112233');
     });
 
-    await test('restricted customer conversation is denied to assigned agent', async () => {
+    await test('hidden restricted conversation is denied to assigned agent without grant', async () => {
+        const { canAccessConversation } = require('../lib/conversationAccess');
+        const agent = { role: 'agent', departmentId: 'd1' };
+        const conv = {
+            id: 'c1',
+            customerId: 'cust1',
+            assignedTo: 'u1',
+            departmentId: 'd1',
+            isHiddenFromStaff: true,
+            customer: { isRestrictedFromStaff: true },
+        };
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), false);
+        const grants = { customerIds: new Set(['cust1']), conversationIds: new Set() };
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, grants), true);
+    });
+
+    await test('live restricted conversation is readable by assigned agent', async () => {
         const { canAccessConversation } = require('../lib/conversationAccess');
         const agent = { role: 'agent', departmentId: 'd1' };
         const conv = {
@@ -1150,11 +1202,41 @@ async function runTests() {
             assignedTo: 'u1',
             departmentId: 'd1',
             isHiddenFromStaff: false,
+            status: 'open',
             customer: { isRestrictedFromStaff: true },
         };
-        assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), false);
-        const grants = { customerIds: new Set(['cust1']), conversationIds: new Set() };
-        assert.strictEqual(canAccessConversation(agent, 'u1', conv, grants), true);
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), true);
+    });
+
+    await test('supervisor can open unassigned live conversation', async () => {
+        const { canAccessConversation } = require('../lib/conversationAccess');
+        const conv = {
+            id: 'c1',
+            customerId: 'cust1',
+            assignedTo: null,
+            departmentId: null,
+            isHiddenFromStaff: false,
+            status: 'open',
+            customer: { isRestrictedFromStaff: false },
+        };
+        assert.strictEqual(
+            canAccessConversation({ role: 'supervisor', departmentId: 'd1' }, 'u9', conv, null),
+            true
+        );
+    });
+
+    await test('assigned agent matches userId after string coercion', async () => {
+        const { canAccessConversation } = require('../lib/conversationAccess');
+        const agent = { role: 'agent', departmentId: 'd1' };
+        const conv = {
+            id: 'c1',
+            customerId: 'cust1',
+            assignedTo: 'u1',
+            departmentId: 'd1',
+            isHiddenFromStaff: false,
+            customer: { isRestrictedFromStaff: false },
+        };
+        assert.strictEqual(canAccessConversation(agent, 'u1', conv, null), true);
     });
 
     await test('internal call signaling normalizes user and thread ids', async () => {
@@ -1184,11 +1266,15 @@ async function runTests() {
         const conv = await Conversation.findByPk(filterConversationId);
         assert(conv, 'filter conversation missing');
         const oldCreated = new Date(Date.now() - 86400000);
-        await conv.update({
-            createdAt: oldCreated,
-            isHiddenFromStaff: false,
-            status: 'open',
-        });
+        await conv.update(
+            {
+                createdAt: oldCreated,
+                updatedAt: oldCreated,
+                isHiddenFromStaff: false,
+                status: 'open',
+            },
+            { silent: true }
+        );
         const row = await WhatsappConnection.findByPk('default');
         if (row) {
             row.legacyLockdownAt = new Date();
