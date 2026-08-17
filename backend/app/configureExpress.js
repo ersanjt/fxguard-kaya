@@ -402,6 +402,16 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
         res.set('Cache-Control', 'public, max-age=300');
         res.sendFile(path.join(__dirname, '..', 'public', 'contact.html'));
     });
+    const sendPublicHtml = (file) => (req, res) => {
+        res.set('Cache-Control', 'public, max-age=300');
+        res.sendFile(path.join(__dirname, '..', 'public', file));
+    };
+    app.get('/privacy', sendPublicHtml('privacy.html'));
+    app.get('/privacy.html', (req, res) => res.redirect(301, '/privacy'));
+    app.get('/terms', sendPublicHtml('terms.html'));
+    app.get('/terms.html', (req, res) => res.redirect(301, '/terms'));
+    app.get('/account-deletion', sendPublicHtml('account-deletion.html'));
+    app.get('/account-deletion.html', (req, res) => res.redirect(301, '/account-deletion'));
     const publicDir = path.join(__dirname, '..', 'public');
     app.use(
         '/uploads',
