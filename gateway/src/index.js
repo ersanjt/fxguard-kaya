@@ -2040,86 +2040,31 @@ async function listWhatsAppAllChats() {
         }
     }
 
-    await waitForWhatsAppStore(12000).catch(() => false);
+    await waitForWhatsAppStore(8000).catch(() => false);
     await hookChatCollectionObserver().catch(() => {});
 
     const remember = (rows) => rememberChatRows(rows);
 
-    for (let attempt = 0; attempt < 4; attempt++) {
-        try {
-            const fromStore = await Promise.race([
-                listWhatsAppAllChatsFromStore(),
-                new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('getChats_store_timeout')), 12000)
-                ),
-            ]);
-            if (Array.isArray(fromStore) && fromStore.length > 0) {
-                const merged = remember(fromStore);
-                logger.info('WhatsApp chats listed from Store', {
-                    count: merged.length,
-                    fromStore: fromStore.length,
-                    groups: merged.filter((c) => c.isGroup).length,
-                    attempt: attempt + 1,
-                });
-                return merged;
-            }
-        } catch (storeErr) {
-            logger.warn('Chat list via Store failed', {
-                error: formatGatewayError(storeErr),
-                attempt: attempt + 1,
-            });
-        }
-        if (attempt < 3) await sleep(1800 * (attempt + 1));
-    }
-
     try {
-        const chats = await Promise.race([
-            client.getChats(),
+        const fromStore = await Promise.race([
+            listWhatsAppAllChatsFromStore(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getChats_timeout')), 20000)
+                setTimeout(() => reject(new Error('getChats_store_timeout')), 8000)
             ),
         ]);
-        const list = Array.isArray(chats) ? chats : [];
-        const mapped = list
-            .map((c) => {
-                const id = (c.id && (c.id._serialized || c.id)) || null;
-                if (!id) return null;
-                return {
-                    id: String(id),
-                    name: c.name || c.subject || c.formattedTitle || null,
-                    isGroup: !!c.isGroup || String(id).endsWith('@g.us'),
-                    lastPreview: c.lastMessage
-                        ? String(c.lastMessage.body || c.lastMessage.caption || '').slice(0, 120)
-                        : null,
-                    timestamp: c.timestamp || null,
-                };
-            })
-            .filter(Boolean);
-        if (mapped.length) {
-            logger.info('WhatsApp chats listed from getChats', { count: mapped.length });
-            return remember(mapped);
+        if (Array.isArray(fromStore) && fromStore.length > 0) {
+            const merged = remember(fromStore);
+            logger.info('WhatsApp chats listed from Store', {
+                count: merged.length,
+                fromStore: fromStore.length,
+                groups: merged.filter((c) => c.isGroup).length,
+            });
+            return merged;
         }
-    } catch (chatsErr) {
-        logger.warn('getChats failed — trying groups fallback', {
-            error: formatGatewayError(chatsErr),
+    } catch (storeErr) {
+        logger.warn('Chat list via Store failed', {
+            error: formatGatewayError(storeErr),
         });
-    }
-
-    try {
-        const groups = await listWhatsAppGroups();
-        if (Array.isArray(groups) && groups.length) {
-            const mapped = groups.map((g) => ({
-                id: g.id,
-                name: g.name || g.subject || null,
-                isGroup: true,
-                lastPreview: null,
-                timestamp: null,
-            }));
-            logger.info('WhatsApp chats listed from groups fallback', { count: mapped.length });
-            return remember(mapped);
-        }
-    } catch (gErr) {
-        logger.warn('Groups fallback failed', { error: formatGatewayError(gErr) });
     }
 
     if (lastChatsCache.chats?.length) {
@@ -2129,7 +2074,7 @@ async function listWhatsAppAllChats() {
         });
         return lastChatsCache.chats;
     }
-    throw new Error('chats_unavailable');
+    return [];
 }
 
 function resolveIdVariants(id) {
@@ -2150,16 +2095,74 @@ function resolveIdVariants(id) {
     return [...out];
 }
 
+function timeoutReject(ms, label) {
+    return new Promise((_, reject) => setTimeout(() => reject(new Error(label)), ms));
+}
+
+async function chatHasHistory(chat) {
+    if (!chat) return false;
+    if (chat.lastMessage) return true;
+    if (Number(chat.timestamp) > 0) return true;
+    try {
+        const msgs = await Promise.race([
+            chat.fetchMessages({ limit: 1 }),
+            timeoutReject(2500, 'history_timeout'),
+        ]);
+        return Array.isArray(msgs) && msgs.length > 0;
+    } catch (_) {
+        return false;
+    }
+}
+
+async function lookupChatOnSession(raw) {
+    const variants = resolveIdVariants(raw);
+    for (const id of variants) {
+        try {
+            const chat = await Promise.race([
+                client.getChatById(id),
+                timeoutReject(3000, 'resolve_timeout'),
+            ]);
+            if (chat && (await chatHasHistory(chat))) return chat;
+        } catch (_) {}
+    }
+    const digits = String(raw || '').replace(/\D/g, '');
+    const numberCandidates = [];
+    if (digits.length >= 10 && digits.length <= 15) numberCandidates.push(digits);
+    if (/^9\d{9}$/.test(digits)) numberCandidates.push('98' + digits);
+    if (/^0\d{10}$/.test(digits)) numberCandidates.push('98' + digits.slice(1));
+    if (/^5\d{9}$/.test(digits)) numberCandidates.push('90' + digits);
+    if (typeof client.getNumberId === 'function') {
+        for (const num of [...new Set(numberCandidates)]) {
+            try {
+                const wid = await Promise.race([
+                    client.getNumberId(num),
+                    timeoutReject(3000, 'numberid_timeout'),
+                ]);
+                const ser =
+                    (wid && (wid._serialized || (wid.id && wid.id._serialized))) ||
+                    (wid && wid.user && wid.server ? `${wid.user}@${wid.server}` : null);
+                if (!ser) continue;
+                const chat = await Promise.race([
+                    client.getChatById(ser),
+                    timeoutReject(3000, 'resolve_timeout'),
+                ]);
+                if (chat && (await chatHasHistory(chat))) return chat;
+            } catch (_) {}
+        }
+    }
+    return null;
+}
+
 /**
- * چت‌هایی که واقعاً روی همین نشست واتساپ هستند (last activity دارند).
- * getChatById برای شمارهٔ قبلی معمولاً چت خالی می‌سازد — آن‌ها را رد می‌کنیم.
+ * چت‌هایی که روی همین نشست واتساپ تاریخچه دارند.
+ * شمارهٔ قبلی معمولاً تاریخچه ندارد و وارد لیست عادی نمی‌شود.
  */
 async function resolveChatsOnCurrentSession(ids) {
     if (!client || !isWhatsAppUsable()) return [];
     const list = Array.isArray(ids) ? ids.map((id) => String(id || '').trim()).filter(Boolean) : [];
     const unique = [];
     const seenIn = new Set();
-    for (const id of list.slice(0, 400)) {
+    for (const id of list.slice(0, 120)) {
         const key = id.toLowerCase();
         if (seenIn.has(key)) continue;
         seenIn.add(key);
@@ -2167,52 +2170,46 @@ async function resolveChatsOnCurrentSession(ids) {
     }
     const found = [];
     const foundIds = new Set();
-    const deadline = Date.now() + 80000;
+    const deadline = Date.now() + 75000;
     let cursor = 0;
     const worker = async () => {
         while (cursor < unique.length && Date.now() < deadline) {
             const raw = unique[cursor++];
-            for (const id of resolveIdVariants(raw)) {
-                if (Date.now() >= deadline) return;
+            try {
+                const chat = await lookupChatOnSession(raw);
+                if (!chat) continue;
+                const ser = String((chat.id && (chat.id._serialized || chat.id)) || raw);
+                if (!ser.includes('@') || ser.endsWith('@broadcast')) continue;
+                if (foundIds.has(ser.toLowerCase())) continue;
+                foundIds.add(ser.toLowerCase());
+                let phone = String(raw).replace(/\D/g, '') || null;
                 try {
-                    const chat = await Promise.race([
-                        client.getChatById(id),
-                        new Promise((_, reject) =>
-                            setTimeout(() => reject(new Error('resolve_timeout')), 2500)
-                        ),
-                    ]);
-                    if (!chat) continue;
-                    const ser = String((chat.id && (chat.id._serialized || chat.id)) || id);
-                    if (!ser.includes('@') || ser.endsWith('@broadcast')) continue;
-                    const ts =
-                        Number(chat.timestamp) ||
-                        Number(
-                            chat.lastMessage &&
-                                (chat.lastMessage.timestamp || chat.lastMessage.t)
-                        ) ||
-                        0;
-                    if (!ts) continue;
-                    if (foundIds.has(ser.toLowerCase())) break;
-                    foundIds.add(ser.toLowerCase());
-                    const row = {
-                        id: ser,
-                        name: chat.name || chat.subject || chat.formattedTitle || null,
-                        isGroup: !!chat.isGroup || /@g\.us$/i.test(ser),
-                        lastPreview: chat.lastMessage
-                            ? String(
-                                  chat.lastMessage.body || chat.lastMessage.caption || ''
-                              ).slice(0, 120)
-                            : null,
-                        timestamp: ts,
-                    };
-                    found.push(row);
-                    rememberSeenChat(row.id, row.name, row.isGroup, row.lastPreview, row.timestamp);
-                    break;
+                    const contact = await chat.getContact();
+                    if (contact && contact.number) {
+                        phone = String(contact.number).replace(/\D/g, '') || phone;
+                    }
                 } catch (_) {}
-            }
+                const ts =
+                    Number(chat.timestamp) ||
+                    Number(chat.lastMessage && (chat.lastMessage.timestamp || chat.lastMessage.t)) ||
+                    null;
+                const row = {
+                    id: ser,
+                    requested: raw,
+                    phone: phone || null,
+                    name: chat.name || chat.subject || chat.formattedTitle || null,
+                    isGroup: !!chat.isGroup || /@g\.us$/i.test(ser),
+                    lastPreview: chat.lastMessage
+                        ? String(chat.lastMessage.body || chat.lastMessage.caption || '').slice(0, 120)
+                        : null,
+                    timestamp: ts,
+                };
+                found.push(row);
+                rememberSeenChat(row.id, row.name, row.isGroup, row.lastPreview, row.timestamp);
+            } catch (_) {}
         }
     };
-    const n = Math.min(8, Math.max(2, unique.length));
+    const n = Math.min(6, Math.max(2, unique.length));
     await Promise.all(Array.from({ length: n }, () => worker()));
     logger.info('Resolved chats on current WhatsApp session', {
         asked: unique.length,
@@ -2250,16 +2247,15 @@ app.get('/api/chats', async (req, res) => {
         const groups = (chats || []).filter((c) => c && c.isGroup).length;
         return res.json({
             success: true,
-            chats,
-            count: chats.length,
+            chats: chats || [],
+            count: (chats || []).length,
             groups,
-            incomplete: chats.length < 8,
+            incomplete: (chats || []).length < 8,
         });
     } catch (error) {
         const msg = formatGatewayError(error);
         logger.error('Get chats error', { error: msg });
-        const age = Date.now() - (lastChatsCache.at || 0);
-        if (lastChatsCache.chats?.length && age < 30 * 60 * 1000) {
+        if (lastChatsCache.chats?.length) {
             return res.json({
                 success: true,
                 chats: lastChatsCache.chats,
@@ -2267,7 +2263,7 @@ app.get('/api/chats', async (req, res) => {
                 stale: true,
             });
         }
-        return res.status(503).json({ error: msg, phase: connectionPhase || null });
+        return res.json({ success: true, chats: [], count: 0, groups: 0, incomplete: true });
     } finally {
         endWaOps();
     }

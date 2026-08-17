@@ -240,6 +240,17 @@ function normalizeChatIdList(payload) {
 }
 
 async function collectCandidateChatPhones() {
+    const seen = new Set();
+    const out = [];
+    const pushPhone = (phone) => {
+        const p = String(phone || '').trim();
+        if (!p || !isWhatsAppIdentity(p)) return;
+        const key = p.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push(p);
+    };
+
     const convs = await Conversation.findAll({
         include: [
             {
@@ -251,17 +262,17 @@ async function collectCandidateChatPhones() {
         ],
         attributes: ['id', 'lastMessageAt'],
         order: [['lastMessageAt', 'DESC']],
-        limit: 500,
+        limit: 200,
     });
-    const seen = new Set();
-    const out = [];
-    for (const conv of convs) {
-        const phone = String((conv.customer && conv.customer.phone) || '').trim();
-        if (!phone || !isWhatsAppIdentity(phone)) continue;
-        const key = phone.toLowerCase();
-        if (seen.has(key)) continue;
-        seen.add(key);
-        out.push(phone);
+    for (const conv of convs) pushPhone(conv.customer && conv.customer.phone);
+
+    if (out.length < 80) {
+        const customers = await Customer.findAll({
+            attributes: ['phone', 'lastContactAt'],
+            order: [['lastContactAt', 'DESC']],
+            limit: 150,
+        });
+        for (const cust of customers) pushPhone(cust.phone);
     }
     return out;
 }
@@ -280,20 +291,10 @@ async function loadGatewayChatIdsAndNumber() {
         }
         let chatIds = [];
         try {
-            const all = await gatewayGet('/api/chats', { timeout: 90000, cfg });
+            const all = await gatewayGet('/api/chats', { timeout: 12000, cfg });
             chatIds = normalizeChatIdList(all.data || {});
         } catch (e) {
             logger.warn('loadGatewayChatIdsAndNumber: /api/chats failed', { error: e?.message });
-        }
-        if (!chatIds.length) {
-            try {
-                const groups = await gatewayGet('/api/chats/groups', { timeout: 60000, cfg });
-                chatIds = normalizeChatIdList(groups.data || {});
-            } catch (e) {
-                logger.warn('loadGatewayChatIdsAndNumber: /api/chats/groups failed', {
-                    error: e?.message,
-                });
-            }
         }
         if (!chatIds.length) {
             try {
@@ -305,6 +306,12 @@ async function loadGatewayChatIdsAndNumber() {
                         { timeout: 100000, cfg }
                     );
                     chatIds = normalizeChatIdList(resolved.data || {});
+                    const extra = [];
+                    for (const row of resolved.data?.chats || []) {
+                        if (row && row.phone) extra.push(String(row.phone));
+                        if (row && row.requested) extra.push(String(row.requested));
+                    }
+                    chatIds = [...new Set([...chatIds, ...extra.filter(Boolean)])];
                     logger.info('loadGatewayChatIdsAndNumber: resolved from current session', {
                         asked: phones.length,
                         found: chatIds.length,

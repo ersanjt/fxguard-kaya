@@ -272,6 +272,8 @@ router.post('/sync-groups', async (req, res, next) => {
                 return chats
                     .map((c) => ({
                         id: (c.id || '').toString().trim(),
+                        phone: (c.phone || '').toString().trim() || null,
+                        requested: (c.requested || '').toString().trim() || null,
                         name: (c.name || c.subject || c.formattedTitle || '').toString().trim(),
                         isGroup: !!(c.isGroup || String(c.id || '').endsWith('@g.us')),
                         lastPreview: (c.lastPreview || '').toString().trim() || null,
@@ -283,6 +285,8 @@ router.post('/sync-groups', async (req, res, next) => {
             return (groups || [])
                 .map((g) => ({
                     id: (g.id || '').toString().trim(),
+                    phone: null,
+                    requested: null,
                     name: (g.name || g.subject || g.formattedTitle || '').toString().trim(),
                     isGroup: true,
                     lastPreview: null,
@@ -291,78 +295,45 @@ router.post('/sync-groups', async (req, res, next) => {
                 .filter((g) => g.id);
         };
 
-        const fetchGatewayChats = async () => {
-            let lastErr = null;
-            let lastEmpty = null;
-            for (let attempt = 0; attempt < 2; attempt++) {
-                try {
-                    if (attempt > 0) {
-                        await sleep(2000 * attempt);
-                    }
-                    try {
-                        const all = await gatewayGet('/api/chats', { timeout: 90000, cfg });
-                        const rows = normalizeChatRows(all.data || {});
-                        if (rows.length) {
-                            return { gwRes: all, chatRows: rows, source: 'chats' };
-                        }
-                        lastEmpty = { gwRes: all, chatRows: rows, source: 'chats' };
-                    } catch (eAll) {
-                        lastErr = eAll;
-                    }
-                    try {
-                        const groups = await gatewayGet('/api/chats/groups', { timeout: 60000, cfg });
-                        const rows = normalizeChatRows(groups.data || {});
-                        if (rows.length) {
-                            return { gwRes: groups, chatRows: rows, source: 'groups-only' };
-                        }
-                    } catch (eGroups) {
-                        lastErr = eGroups;
-                    }
-                } catch (e) {
-                    lastErr = e;
-                    const msg =
-                        (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
-                        e?.message ||
-                        '';
-                    const retryable =
-                        e?.response?.status === 503 ||
-                        /not ready|timeout|getChats|getGroups|Session closed|Target closed/i.test(
-                            String(msg)
-                        );
-                    if (!retryable) throw e;
-                }
+        const identityIds = (rows) => {
+            const ids = [];
+            for (const row of rows || []) {
+                if (row.id) ids.push(row.id);
+                if (row.phone) ids.push(row.phone);
+                if (row.requested) ids.push(row.requested);
             }
-            if (lastEmpty) return lastEmpty;
-            throw lastErr || new Error('chats_fetch_failed');
+            return ids;
         };
 
+        // لیست Store اغلب بعد از ریستارت خالی است — مستقیم چت‌های همین نشست را پیدا کن
         let fetched = null;
         let fetchErr = null;
         try {
-            fetched = await fetchGatewayChats();
+            const phones = await collectCandidateChatPhones();
+            if (phones.length) {
+                const resolved = await gatewayPost(
+                    '/api/chats/resolve',
+                    { ids: phones },
+                    { timeout: 100000, cfg }
+                );
+                const rows = normalizeChatRows(resolved.data || {});
+                if (rows.length) {
+                    fetched = { gwRes: resolved, chatRows: rows, source: 'resolve' };
+                }
+            }
         } catch (e) {
             fetchErr = e;
+            logger.warn('sync-groups: resolve current-session chats failed', {
+                error: e?.response?.data?.error || e?.message,
+            });
         }
-
-        // اگر لیست Store خالی بود، چت‌هایی را باز کن که روی همین نشست واتساپ واقعاً وجود دارند
-        if ((!fetched || !(fetched.chatRows || []).length) && isGwReady(readyGate.data || liveStatus)) {
+        if (!fetched) {
             try {
-                const phones = await collectCandidateChatPhones();
-                if (phones.length) {
-                    const resolved = await gatewayPost(
-                        '/api/chats/resolve',
-                        { ids: phones },
-                        { timeout: 100000, cfg }
-                    );
-                    const rows = normalizeChatRows(resolved.data || {});
-                    if (rows.length) {
-                        fetched = { gwRes: resolved, chatRows: rows, source: 'resolve' };
-                    }
-                }
-            } catch (resErr) {
-                logger.warn('sync-groups: resolve current-session chats failed', {
-                    error: resErr?.response?.data?.error || resErr?.message,
-                });
+                const all = await gatewayGet('/api/chats', { timeout: 15000, cfg });
+                const rows = normalizeChatRows(all.data || {});
+                if (rows.length) fetched = { gwRes: all, chatRows: rows, source: 'chats' };
+            } catch (e) {
+                fetchErr = fetchErr || e;
             }
         }
 
@@ -437,17 +408,23 @@ router.post('/sync-groups', async (req, res, next) => {
             const t = await sequelize.transaction();
             try {
                 let customer = null;
-                const variants = chatIdVariants(chatId);
+                const variants = [
+                    ...chatIdVariants(chatId),
+                    ...chatIdVariants(row.phone),
+                    ...chatIdVariants(row.requested),
+                ].filter(Boolean);
+                const uniqueVariants = [...new Set(variants)];
                 customer = await Customer.findOne({
-                    where: { phone: { [Op.in]: variants } },
+                    where: { phone: { [Op.in]: uniqueVariants } },
                     transaction: t,
                 });
                 if (!customer) {
+                    const createPhone = row.phone || row.requested || chatId;
                     try {
                         [customer] = await Customer.findOrCreate({
-                            where: { phone: chatId },
+                            where: { phone: createPhone },
                             defaults: {
-                                name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${chatId}`),
+                                name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${createPhone}`),
                                 source: 'whatsapp',
                                 isRestrictedFromStaff: false,
                             },
@@ -456,7 +433,7 @@ router.post('/sync-groups', async (req, res, next) => {
                     } catch (e) {
                         if (e.name === 'SequelizeUniqueConstraintError') {
                             customer = await Customer.findOne({
-                                where: { phone: { [Op.in]: variants } },
+                                where: { phone: { [Op.in]: uniqueVariants } },
                                 transaction: t,
                             });
                         } else throw e;
@@ -558,9 +535,9 @@ router.post('/sync-groups', async (req, res, next) => {
         let visibility = { archived: 0, opened: 0 };
         try {
             visibility = await applyVisibilityForCurrentGatewayChats(
-                chatRows.map((r) => r.id),
+                identityIds(chatRows),
                 gatewayNumber || liveStatus.number,
-                { archiveMissing: true, keepProtectedGroups: true }
+                { archiveMissing: chatRows.length >= 2, keepProtectedGroups: true }
             );
         } catch (visErr) {
             logger.warn('sync-groups: visibility filter failed', { error: visErr?.message });
