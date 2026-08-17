@@ -347,9 +347,9 @@ router.post('/sync-groups', async (req, res, next) => {
         const gwRes = fetched && fetched.gwRes;
         const chatSource = (fetched && fetched.source) || 'chats';
 
-        // اگر لیست موقتاً نیامد ولی Gateway ready است — گروه‌های موجود در DB را باز کن
+        // اگر لیست موقتاً نیامد ولی Gateway ready است — شمارهٔ قبلی را دوباره باز نکن
         if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
-            logger.warn('sync-groups: chats list failed while Gateway ready — promote stored groups', {
+            logger.warn('sync-groups: chats list failed while Gateway ready — keep previous archived', {
                 error: fetchErr?.response?.data?.error || fetchErr?.message || null,
                 gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
             });
@@ -359,7 +359,7 @@ router.post('/sync-groups', async (req, res, next) => {
                     gatewayNumber || liveStatus.number
                 );
             } catch (promErr) {
-                logger.warn('sync-groups: promote stored groups failed', {
+                logger.warn('sync-groups: keep-current-group fallback failed', {
                     error: promErr?.message,
                 });
             }
@@ -371,8 +371,8 @@ router.post('/sync-groups', async (req, res, next) => {
                 opened: promoted.opened || 0,
                 soft: true,
                 message: promoted.opened
-                    ? `${promoted.opened} گروه از سابقه در مکالمات فعال باز شد. ۲۰ ثانیه بعد دوباره همگام کنید تا لیست زنده واتساپ هم بیاید.`
-                    : 'Gateway متصل است اما الان لیست چت‌های همین شماره از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
+                    ? 'لیست زنده واتساپ نیامد؛ فقط گروه همین شماره در مکالمات فعال ماند. ۲۰ ثانیه بعد دوباره همگام کنید.'
+                    : 'Gateway متصل است اما الان لیست چت‌های همین شماره از واتساپ نیامد. چت‌های شمارهٔ قبلی آرشیو ماندند. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
             });
         }
 
@@ -532,35 +532,19 @@ router.post('/sync-groups', async (req, res, next) => {
             }
         }
 
-        // لیست ناقص (مثلاً فقط ۱ چت) بقیه را آرشیو نکند — گروه‌ها را قورت می‌دهد
-        const listingIncomplete =
-            chatSource === 'groups-only' ||
-            chatRows.length < 8 ||
-            !!gwRes?.data?.incomplete;
-        const archiveMissing = !listingIncomplete;
+        // هر چتی که روی واتساپ این شماره نیست (شمارهٔ قبلی) آرشیو می‌ماند — لیست ناقص هم آن‌ها را باز نمی‌کند
         let visibility = { archived: 0, opened: 0 };
         try {
             visibility = await applyVisibilityForCurrentGatewayChats(
                 chatRows.map((r) => r.id),
                 gatewayNumber || liveStatus.number,
-                { archiveMissing }
+                { archiveMissing: true, keepProtectedGroups: true }
             );
         } catch (visErr) {
             logger.warn('sync-groups: visibility filter failed', { error: visErr?.message });
         }
 
-        let promoted = { opened: 0 };
-        try {
-            promoted = await promoteExistingGroupConversations(
-                gatewayNumber || liveStatus.number
-            );
-        } catch (promErr) {
-            logger.warn('sync-groups: promote stored groups failed', {
-                error: promErr?.message,
-            });
-        }
-
-        const openedTotal = (visibility.opened || 0) + (promoted.opened || 0);
+        const openedTotal = visibility.opened || 0;
         res.json({
             ok: true,
             groupsCount: groupsSynced,
@@ -568,23 +552,21 @@ router.post('/sync-groups', async (req, res, next) => {
             synced,
             opened: openedTotal,
             archivedOther: visibility.archived || 0,
-            incomplete: listingIncomplete,
+            incomplete: false,
             gatewayNumber: gatewayNumber || null,
             source: chatSource,
             stale: !!gwRes?.data?.stale,
             message:
                 chatRows.length === 0
-                    ? 'هیچ چتی از واتساپ این شماره دریافت نشد. ۲۰ ثانیه بعد دوباره همگام کنید یا یک پیام داخل گروه بفرستید.'
-                    : listingIncomplete && groupsSynced === 0
-                      ? `واتساپ فعلاً فقط ${chatRows.length} چت داد و گروهی در لیست نبود. یک پیام داخل گروه بفرستید و ۲۰ ثانیه بعد دوباره «همگام‌سازی» را بزنید.`
-                      : `${synced} چت در مکالمات فعال همگام شد` +
-                        (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
-                        (openedTotal ? `؛ ${openedTotal} مکالمه از آرشیو باز شد` : '') +
-                        (visibility.archived
-                            ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
-                            : '') +
-                        (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
-                        (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
+                    ? 'هیچ چتی از واتساپ این شماره دریافت نشد. چت‌های شمارهٔ قبلی آرشیو ماندند. ۲۰ ثانیه بعد دوباره همگام کنید.'
+                    : `${synced} چت در مکالمات فعال همگام شد` +
+                      (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
+                      (openedTotal ? `؛ ${openedTotal} مکالمه از آرشیو باز شد` : '') +
+                      (visibility.archived
+                          ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
+                          : '') +
+                      (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
+                      (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
     } catch (err) {
         next(err);

@@ -20,4 +20,5 @@ jobs:
             set -e
             cd /var/www/kayaCRM-kaya/backend
             node scripts/restore-recent-archive.js --days=45
+            echo "Restored rows stay archived (previous numbers are not opened into All)"
             pm2 reload crm-backend-kaya --update-env || pm2 restart crm-backend-kaya --update-env

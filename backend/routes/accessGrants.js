@@ -16,7 +16,8 @@ const {
     restoreLegacyCrmVisibility,
     getLockdownStats,
     handleGatewayNumberReady,
-    ensureLegacyCutover,
+    enforceCurrentNumberInbox,
+    loadGatewayChatIdsAndNumber,
     normalizeLinkedNumber,
 } = require('../services/legacyCrmLockdown');
 const { logActivity } = require('../services/activityLog');
@@ -42,28 +43,20 @@ router.get('/stats', async (req, res, next) => {
 
 /**
  * POST /api/access-grants/lockdown-legacy
- * همهٔ مکالمات/مشتریان فعلی را آرشیو و محدود می‌کند (یک‌بار؛ چت زندهٔ بعدی لیست جدید می‌سازد).
+ * شمارهٔ قبلی را آرشیو می‌کند و فقط چت‌های شمارهٔ فعلی Gateway را در لیست عادی باز می‌گذارد.
  */
 router.post('/lockdown-legacy', async (req, res, next) => {
     try {
         if (!requireGrantAdmin(req, res)) return;
 
-        const { gatewayGet, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
-        let liveStatus = {};
-        try {
-            const cfg = await getWhatsappConnectionConfig();
-            const st = await gatewayGet('/api/status', { timeout: 8000, cfg });
-            liveStatus = st?.data || {};
-        } catch (_) {}
-
+        const live = await loadGatewayChatIdsAndNumber();
         const gatewayNumber =
-            normalizeLinkedNumber(liveStatus.number) ||
+            live.number ||
             normalizeLinkedNumber(req.body && req.body.number) ||
             '';
 
-        const result = await ensureLegacyCutover(gatewayNumber, {
+        const result = await enforceCurrentNumberInbox(live.chatIds, gatewayNumber, {
             reason: 'manual_lockdown_legacy',
-            force: true,
         });
         await logActivity({
             userId: req.userId,
@@ -71,22 +64,19 @@ router.post('/lockdown-legacy', async (req, res, next) => {
             departmentId: req.user.departmentId,
             action: 'legacy_crm_lockdown',
             entityType: 'system',
-            summary: result.changed
-                ? 'مکالمات و مشتریان قبلی آرشیو و محدود شدند'
-                : 'قفل دادهٔ قبلی از قبل اعمال شده بود',
-            metadata: { ...result, gatewayNumber },
+            summary: 'مکالمات و مشتریان شمارهٔ قبلی آرشیو شدند؛ فقط شمارهٔ فعلی در لیست عادی است',
+            metadata: { ...result, gatewayNumber, chatCount: live.chatIds.length },
         }).catch(() => {});
-        const stats = await getLockdownStats();
+        const stats = result.stats || (await getLockdownStats());
         res.json({
             ok: true,
             ...(result.lockdown || {}),
-            changed: !!result.changed,
-            alreadyApplied: !result.changed,
+            changed: true,
             gatewayNumber: gatewayNumber || result.number || null,
+            opened: (result.visibility && result.visibility.opened) || 0,
             stats,
-            message: result.changed
-                ? 'مکالمات و مشتریان قبلی آرشیو شدند. لیست عادی خالی است تا پیام زنده روی شمارهٔ جدید برسد.'
-                : 'قفل دادهٔ قبلی قبلاً اعمال شده. چت‌ها و مشتریان جدید شمارهٔ فعلی در لیست عادی می‌مانند.',
+            message:
+                'چت‌ها، گروه‌ها و مشتریان شمارهٔ قبلی آرشیو شدند و فقط ادمین می‌بیند. لیست عادی فقط شمارهٔ فعلی است.',
         });
     } catch (err) {
         next(err);
@@ -95,14 +85,13 @@ router.post('/lockdown-legacy', async (req, res, next) => {
 
 /**
  * POST /api/access-grants/restore-legacy
- * بازگردانی مکالمات/مشتریان قفل‌شده به لیست عادی (برای شمارهٔ فعلی Gateway)
+ * عمداً همه شماره‌ها را باز نمی‌کند — همان تفکیک شمارهٔ فعلی را اعمال می‌کند.
  */
 router.post('/restore-legacy', async (req, res, next) => {
     try {
         if (!requireGrantAdmin(req, res)) return;
         const result = await restoreLegacyCrmVisibility({
             reason: 'manual_admin_restore',
-            userId: req.userId,
         });
         await logActivity({
             userId: req.userId,
@@ -110,10 +99,15 @@ router.post('/restore-legacy', async (req, res, next) => {
             departmentId: req.user.departmentId,
             action: 'legacy_crm_restore',
             entityType: 'system',
-            summary: `بازگردانی دید مکالمات: ${result.conversationsUpdated} مکالمه، ${result.customersUpdated} مشتری`,
+            summary: 'درخواست نمایش همه رد شد؛ فقط شمارهٔ فعلی در لیست عادی ماند',
             metadata: result,
         }).catch(() => {});
-        res.json({ ok: true, ...result });
+        res.json({
+            ok: true,
+            ...result,
+            message:
+                'نمایش همهٔ شماره‌ها غیرفعال است. چت‌های شمارهٔ قبلی آرشیو ماندند؛ لیست عادی فقط شمارهٔ فعلی است.',
+        });
     } catch (err) {
         next(err);
     }

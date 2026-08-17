@@ -1169,6 +1169,72 @@ async function runTests() {
         );
     });
 
+    await test('enforceCurrentNumberInbox hides previous number from All', async () => {
+        const { Customer, Conversation } = require('../models');
+        const { enforceCurrentNumberInbox } = require('../services/legacyCrmLockdown');
+        const currentId = '120363888000111777@g.us';
+        const oldId = '120363111000222888@g.us';
+        const [currentCust] = await Customer.findOrCreate({
+            where: { phone: currentId },
+            defaults: {
+                name: 'گروه فروش کایا',
+                source: 'whatsapp',
+                isRestrictedFromStaff: false,
+            },
+        });
+        await currentCust.update({ name: 'گروه فروش کایا', isRestrictedFromStaff: false });
+        const [oldCust] = await Customer.findOrCreate({
+            where: { phone: oldId },
+            defaults: {
+                name: 'DUBAI KAYA OLD',
+                source: 'whatsapp',
+                isRestrictedFromStaff: false,
+            },
+        });
+        await oldCust.update({ name: 'DUBAI KAYA OLD', isRestrictedFromStaff: false });
+        const currentConv = await Conversation.create({
+            customerId: currentCust.id,
+            status: 'open',
+            isHiddenFromStaff: false,
+            source: 'whatsapp',
+            metadata: { isGroup: true, groupName: 'گروه فروش کایا' },
+        });
+        const oldConv = await Conversation.create({
+            customerId: oldCust.id,
+            status: 'open',
+            isHiddenFromStaff: false,
+            source: 'whatsapp',
+            metadata: { isGroup: true, groupName: 'DUBAI KAYA OLD' },
+        });
+
+        await enforceCurrentNumberInbox([currentId], '905339470880', { reason: 'test_enforce' });
+        await currentConv.reload();
+        await oldConv.reload();
+        await currentCust.reload();
+        await oldCust.reload();
+        assert.strictEqual(currentConv.status, 'open');
+        assert.strictEqual(currentConv.isHiddenFromStaff, false);
+        assert.strictEqual(currentCust.isRestrictedFromStaff, false);
+        assert.strictEqual(oldConv.status, 'archived');
+        assert.strictEqual(oldConv.isHiddenFromStaff, true);
+        assert.strictEqual(oldCust.isRestrictedFromStaff, true);
+
+        const all = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(all.status, 200);
+        const ids = (all.body.data || []).map((c) => c.id);
+        assert(ids.includes(currentConv.id), 'current number chat must appear in All');
+        assert(!ids.includes(oldConv.id), 'previous number chat must not appear in All');
+
+        const archived = await req.get('/api/conversations?status=archived&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(archived.status, 200);
+        assert(
+            (archived.body.data || []).some((c) => c.id === oldConv.id),
+            'previous number chat must be in admin archive'
+        );
+    });
+
     await test('chatIdVariants and normalizeLinkedNumber', async () => {
         const { chatIdVariants, normalizeLinkedNumber } = require('../services/legacyCrmLockdown');
         const v = chatIdVariants('905551112233@c.us');

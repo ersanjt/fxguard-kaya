@@ -21,6 +21,14 @@ function isWhatsAppIdentity(phone) {
     return digits.length >= 10 && digits.length <= 15;
 }
 
+/** گروه زندهٔ شمارهٔ فعلی که حتی اگر لیست Gateway ناقص باشد نباید قفل بماند */
+const KEEP_CURRENT_GROUP_RE = /فروش\s*کایا|kaya\s*sales/i;
+
+function isKeepCurrentGroup(conv) {
+    const name = `${(conv.customer && conv.customer.name) || ''} ${(conv.metadata && conv.metadata.groupName) || ''}`;
+    return KEEP_CURRENT_GROUP_RE.test(name);
+}
+
 /** انواع معادل یک chat id برای تطبیق با Customer.phone */
 function chatIdVariants(id) {
     const s = String(id || '').trim();
@@ -88,63 +96,31 @@ async function lockdownExistingCrmData({ reason, before } = {}) {
 }
 
 /**
- * بازگردانی دیده‌شدن همهٔ مکالمات/مشتریان قفل‌شده (فقط دستی از پنل — همه شماره‌ها).
+ * «نمایش همه شماره‌ها» عمداً حذف شد. این تابع همان تفکیک شمارهٔ فعلی است
+ * تا دکمهٔ قدیمی پنل هم دادهٔ شمارهٔ قبلی را دوباره به لیست عادی نیاورد.
  */
 async function restoreLegacyCrmVisibility({ reason } = {}) {
-    const [convHidden, custResult] = await Promise.all([
-        Conversation.update(
-            {
-                isHiddenFromStaff: false,
-                status: 'open',
-                closedAt: null,
-            },
-            { where: { isHiddenFromStaff: true } }
-        ),
-        Customer.update(
-            { isRestrictedFromStaff: false },
-            { where: { isRestrictedFromStaff: true } }
-        ),
-    ]);
-
-    const [convArchived] = await Conversation.update(
-        { status: 'open', closedAt: null, isHiddenFromStaff: false },
-        { where: { status: 'archived' } }
-    );
-
-    const conversationsUpdated =
-        (Array.isArray(convHidden) ? convHidden[0] : convHidden) +
-        (typeof convArchived === 'number' ? convArchived : 0);
-    const customersUpdated = Array.isArray(custResult) ? custResult[0] : custResult;
-    try {
-        const row = await WhatsappConnection.findByPk('default');
-        if (row) {
-            row.legacyLockdownAt = null;
-            await row.save();
-        }
-    } catch (_) {}
-
-    const stats = await getLockdownStats();
-    logger.info('Legacy CRM visibility restored', {
+    logger.warn('restoreLegacyCrmVisibility refused — enforcing current-number inbox instead', {
         reason: reason || 'manual',
-        conversationsUpdated,
-        customersUpdated,
-        remainingHidden: stats.hiddenConversations,
     });
-    return { conversationsUpdated, customersUpdated, stats };
+    const live = await loadGatewayChatIdsAndNumber();
+    return enforceCurrentNumberInbox(live.chatIds, live.number, {
+        reason: reason || 'restore_legacy_redirected_to_enforce',
+    });
 }
 
 /**
  * چت‌های روی لیست فعلی Gateway را در مکالمات فعال باز می‌کند.
  * مکالمات واتساپیِ خارج از آن لیست (شمارهٔ قبلی) آرشیو/محدود می‌مانند.
- * اگر لیست ناقص باشد (مثلاً فقط گروه)، بقیه را آرشیو نکن.
  */
 async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opts = {}) {
     const gw = normalizeLinkedNumber(gatewayNumber);
     const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
     const archiveMissing = opts.archiveMissing !== false;
+    const keepProtectedGroups = opts.keepProtectedGroups !== false;
 
-    // بدون لیست واقعی واتساپ، هیچ‌چیز را آرشیو نکن (جلوگیری از «همه آرشیو / هیچ‌کدام»)
-    if (ids.length === 0) {
+    // بدون لیست واقعی، فقط گروه محافظت‌شده را باز کن — بقیه را از آرشیو درنیاور
+    if (ids.length === 0 && !keepProtectedGroups) {
         logger.warn('applyVisibility skipped — empty Gateway chat list', {
             gatewayNumber: gw || null,
         });
@@ -170,10 +146,10 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opt
                 model: Customer,
                 as: 'customer',
                 required: true,
-                attributes: ['id', 'phone', 'isRestrictedFromStaff'],
+                attributes: ['id', 'phone', 'name', 'isRestrictedFromStaff'],
             },
         ],
-        attributes: ['id', 'status', 'isHiddenFromStaff', 'customerId'],
+        attributes: ['id', 'status', 'isHiddenFromStaff', 'customerId', 'metadata'],
         limit: 8000,
     });
 
@@ -187,7 +163,8 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opt
         if (!isWhatsAppIdentity(phone)) continue;
 
         const variants = chatIdVariants(phone);
-        const onCurrent = variants.some((v) => allowed.has(String(v).toLowerCase()));
+        const onList = variants.some((v) => allowed.has(String(v).toLowerCase()));
+        const onCurrent = onList || (keepProtectedGroups && isKeepCurrentGroup(conv));
 
         if (onCurrent) {
             if (conv.status === 'archived' || conv.isHiddenFromStaff) {
@@ -250,6 +227,94 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opt
         unrestricted: unrestrictCust.size,
         restricted: restrictCust.size,
         allowedCount: ids.length,
+    };
+}
+
+function normalizeChatIdList(payload) {
+    const chats = payload?.chats || payload?.data?.chats || null;
+    if (Array.isArray(chats) && chats.length) {
+        return chats.map((c) => (c.id || '').toString().trim()).filter(Boolean);
+    }
+    const groups = payload?.groups || payload?.data?.groups || [];
+    return (groups || []).map((g) => (g.id || '').toString().trim()).filter(Boolean);
+}
+
+/** لیست چت زندهٔ Gateway و شمارهٔ متصل */
+async function loadGatewayChatIdsAndNumber() {
+    try {
+        const { gatewayGet, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+        const cfg = await getWhatsappConnectionConfig();
+        let number = '';
+        try {
+            const st = await gatewayGet('/api/status', { timeout: 10000, cfg });
+            number = normalizeLinkedNumber(st?.data?.number);
+        } catch (e) {
+            logger.warn('loadGatewayChatIdsAndNumber: status failed', { error: e?.message });
+        }
+        let chatIds = [];
+        try {
+            const all = await gatewayGet('/api/chats', { timeout: 90000, cfg });
+            chatIds = normalizeChatIdList(all.data || {});
+        } catch (e) {
+            logger.warn('loadGatewayChatIdsAndNumber: /api/chats failed', { error: e?.message });
+        }
+        if (!chatIds.length) {
+            try {
+                const groups = await gatewayGet('/api/chats/groups', { timeout: 60000, cfg });
+                chatIds = normalizeChatIdList(groups.data || {});
+            } catch (e) {
+                logger.warn('loadGatewayChatIdsAndNumber: /api/chats/groups failed', {
+                    error: e?.message,
+                });
+            }
+        }
+        return { number, chatIds };
+    } catch (e) {
+        logger.warn('loadGatewayChatIdsAndNumber failed', { error: e?.message });
+        return { number: '', chatIds: [] };
+    }
+}
+
+/**
+ * همه را آرشیو/محدود کن، بعد فقط چت‌های شمارهٔ فعلی Gateway را به لیست عادی برگردان.
+ * مشتریان و مکالمات شمارهٔ قبلی فقط در آرشیو (ادمین) می‌مانند.
+ */
+async function enforceCurrentNumberInbox(chatIds, gatewayNumber, opts = {}) {
+    const gw = normalizeLinkedNumber(gatewayNumber);
+    const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
+    const lockdown = await lockdownExistingCrmData({
+        reason: opts.reason || 'enforce_current_number',
+    });
+
+    const row = await getOrCreateConnectionRow();
+    if (gw) row.lastLinkedGatewayNumber = gw;
+    row.legacyLockdownAt = new Date();
+    await row.save();
+
+    const visibility = await applyVisibilityForCurrentGatewayChats(ids, gw, {
+        archiveMissing: false,
+        keepProtectedGroups: true,
+    });
+    const stats = await getLockdownStats();
+    logger.warn('Enforced current-number inbox — previous WhatsApp data archived', {
+        reason: opts.reason || 'enforce_current_number',
+        number: gw || null,
+        chatCount: ids.length,
+        ...lockdown,
+        opened: visibility.opened,
+        unrestricted: visibility.unrestricted,
+        hidden: stats.hiddenConversations,
+        restrictedCustomers: stats.restrictedCustomers,
+    });
+    return {
+        changed: true,
+        number: gw || null,
+        chatCount: ids.length,
+        lockdown,
+        visibility,
+        stats,
+        conversationsUpdated: lockdown.conversationsUpdated,
+        customersUpdated: lockdown.customersUpdated,
     };
 }
 
@@ -403,7 +468,23 @@ async function handleGatewayNumberReady(linkedNumber, meta = {}) {
     if (!normalizeLinkedNumber(linkedNumber)) {
         return { changed: false, lockdown: null };
     }
-    return ensureLegacyCutover(linkedNumber, meta);
+    const result = await ensureLegacyCutover(linkedNumber, meta);
+    if (result.changed) {
+        try {
+            const live = await loadGatewayChatIdsAndNumber();
+            const visibility = await applyVisibilityForCurrentGatewayChats(
+                live.chatIds,
+                normalizeLinkedNumber(linkedNumber) || live.number,
+                { archiveMissing: false, keepProtectedGroups: true }
+            );
+            result.visibility = visibility;
+        } catch (e) {
+            logger.warn('handleGatewayNumberReady: could not reopen current-number chats', {
+                error: e?.message,
+            });
+        }
+    }
+    return result;
 }
 
 async function getLockdownStats() {
@@ -430,7 +511,7 @@ async function getLockdownStats() {
 }
 
 /**
- * گروه‌های موجود در DB را به مکالمات فعال برگردان (وقتی لیست واتساپ نیاید).
+ * فقط گروه محافظت‌شدهٔ شمارهٔ فعلی را باز کن — هرگز همهٔ @g.us (شمارهٔ قبلی) را به All نیاور.
  */
 async function promoteExistingGroupConversations(gatewayNumber) {
     const gw = normalizeLinkedNumber(gatewayNumber);
@@ -441,7 +522,7 @@ async function promoteExistingGroupConversations(gatewayNumber) {
                 model: Customer,
                 as: 'customer',
                 required: true,
-                attributes: ['id', 'phone', 'isRestrictedFromStaff'],
+                attributes: ['id', 'phone', 'name', 'isRestrictedFromStaff'],
             },
         ],
         attributes: ['id', 'status', 'isHiddenFromStaff', 'customerId', 'metadata'],
@@ -454,7 +535,7 @@ async function promoteExistingGroupConversations(gatewayNumber) {
         const phone = String(conv.customer?.phone || '');
         const meta = conv.metadata || {};
         const isGroup = !!meta.isGroup || /@g\.us$/i.test(phone);
-        if (!isGroup) continue;
+        if (!isGroup || !isKeepCurrentGroup(conv)) continue;
         if (conv.status === 'archived' || conv.isHiddenFromStaff) {
             openIds.push(conv.id);
         }
@@ -508,6 +589,8 @@ module.exports = {
     restoreLegacyCrmVisibility,
     applyVisibilityForCurrentGatewayChats,
     promoteExistingGroupConversations,
+    enforceCurrentNumberInbox,
+    loadGatewayChatIdsAndNumber,
     ensureLegacyCutover,
     getLegacyLockdownAt,
     handleGatewayNumberReady,

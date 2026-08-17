@@ -2588,17 +2588,16 @@
                     .replace('{restricted}', String(res.data.restrictedCustomers || 0))
                     .replace('{total}', String(res.data.totalCustomers || 0));
             }
+            if (btnRestore) btnRestore.style.display = 'none';
             if (btnRestore && !btnRestore._restoreBound) {
                 btnRestore._restoreBound = true;
                 btnRestore.addEventListener('click', async function() {
-                    if (!confirm(t('whatsapp_legacy_restore_confirm') || 'Restore all locked chats to the normal list?')) return;
+                    if (!confirm(t('whatsapp_legacy_restore_confirm') || 'Show-all numbers is disabled. Keep only the current number?')) return;
                     btnRestore.disabled = true;
-                    const r = await apiFetch('/api/access-grants/restore-legacy', { method: 'POST', body: '{}' });
+                    const r = await apiFetch('/api/access-grants/restore-legacy', { method: 'POST', body: '{}', timeoutMs: 120000 });
                     btnRestore.disabled = false;
                     if (r.ok) {
-                        const n = (r.data && r.data.conversationsUpdated) || 0;
-                        const c = (r.data && r.data.customersUpdated) || 0;
-                        toast((t('whatsapp_legacy_restore_done') || 'Restored') + ' (' + n + '/' + c + ')');
+                        toast((r.data && r.data.message) || t('whatsapp_legacy_restore_done') || 'Current number only');
                         loadLegacyLockdownCard();
                         if (typeof setConvQuickTab === 'function') setConvQuickTab('all');
                         if (typeof loadConversations === 'function') loadConversations();

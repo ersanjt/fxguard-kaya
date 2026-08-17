@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * برگرداندن مکالمات آرشیوِ ۳۰ روز اخیر از backups/archive-latest.json.gz
- * گروه‌های قدیمی (مثل ۵۲ روز) را برنمی‌گرداند.
+ * مکالمات آرشیو را از بکاپ برمی‌گرداند ولی در لیست عادی باز نمی‌کند.
+ * شمارهٔ قبلی فقط در آرشیو (ادمین) می‌ماند.
  *
  *   node scripts/restore-recent-archive.js
  *   node scripts/restore-recent-archive.js --days 45
@@ -43,11 +43,11 @@ async function upsertCustomer(row) {
         email: row.email && String(row.email).includes('@') ? row.email : null,
         source: row.source || 'whatsapp',
         profilePic: row.profilePic || null,
-        isRestrictedFromStaff: false,
+        isRestrictedFromStaff: true,
         status: row.status || 'active',
     };
     if (existing) {
-        const patch = { isRestrictedFromStaff: false };
+        const patch = { isRestrictedFromStaff: true };
         if (row.name && !looksLikeJidName(row.name) && existing.name !== row.name) patch.name = row.name;
         if (row.profilePic && !existing.profilePic) patch.profilePic = row.profilePic;
         await existing.update(patch);
@@ -77,16 +77,14 @@ async function upsertConversation(row, open) {
         metadata: meta,
     };
     if (existing) {
-        if (open) {
-            await existing.update({
-                status: 'open',
-                isHiddenFromStaff: false,
-                closedAt: null,
-                lastMessageAt: existing.lastMessageAt || row.lastMessageAt || existing.lastMessageAt,
-                lastMessagePreview: existing.lastMessagePreview || row.lastMessagePreview,
-                metadata: { ...(existing.metadata || {}), ...meta, isHiddenFromStaff: undefined },
-            });
-        }
+        await existing.update({
+            status: open ? 'open' : 'archived',
+            isHiddenFromStaff: !open,
+            closedAt: open ? null : existing.closedAt,
+            lastMessageAt: existing.lastMessageAt || row.lastMessageAt || existing.lastMessageAt,
+            lastMessagePreview: existing.lastMessagePreview || row.lastMessagePreview,
+            metadata: { ...(existing.metadata || {}), ...meta },
+        });
         return existing;
     }
     return Conversation.create({ id: row.id, ...payload });
@@ -160,7 +158,7 @@ async function main() {
             await upsertCustomer(custRow);
             customersUpserted++;
         }
-        await upsertConversation(conv, true);
+        await upsertConversation(conv, false);
         convsUpserted++;
     }
 

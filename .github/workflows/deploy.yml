@@ -241,6 +241,12 @@ jobs:
               exit 1
             fi
 
+            echo "🔒 آرشیو شمارهٔ قبلی / فقط شمارهٔ فعلی واتساپ ..."
+            cd backend
+            node scripts/enforce-current-number.js
+            cd ..
+            echo "  ✅ تفکیک شمارهٔ فعلی اعمال شد"
+
       - name: Summary (success)
         if: success()
         run: |
