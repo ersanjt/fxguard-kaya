@@ -348,6 +348,235 @@ async function cleanupTempMedia(tmpPath) {
     } catch (_) {}
 }
 
+function defaultMediaMeta(type) {
+    const t = String(type || '').toLowerCase();
+    if (t === 'ptt' || t === 'audio') {
+        return { mimetype: 'audio/ogg; codecs=opus', filename: 'voice.ogg' };
+    }
+    if (t === 'sticker') return { mimetype: 'image/webp', filename: 'sticker.webp' };
+    if (t === 'image') return { mimetype: 'image/jpeg', filename: 'image.jpg' };
+    if (t === 'video') return { mimetype: 'video/mp4', filename: 'video.mp4' };
+    return { mimetype: 'application/octet-stream', filename: 'file.bin' };
+}
+
+function isMediaMessageType(type, hasMedia) {
+    const t = String(type || '').toLowerCase();
+    return (
+        !!hasMedia ||
+        t === 'ptt' ||
+        t === 'audio' ||
+        t === 'sticker' ||
+        t === 'image' ||
+        t === 'video' ||
+        t === 'document'
+    );
+}
+
+async function downloadMediaViaStore(waClient, msg) {
+    if (!waClient?.pupPage || !msg) return null;
+    const serializedId =
+        (msg.id && (msg.id._serialized || serializedJid(msg.id))) ||
+        (typeof msg.id === 'string' ? msg.id : '') ||
+        '';
+    const shortId = (msg.id && msg.id.id) || '';
+    const msgType = String(msg.type || '').toLowerCase();
+    if (!serializedId && !shortId) return null;
+    try {
+        const result = await Promise.race([
+            waClient.pupPage.evaluate(
+                async (serializedId, shortId, msgType) => {
+                    function toB64(input) {
+                        if (!input) return '';
+                        if (typeof input === 'string') return input;
+                        let bytes;
+                        if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
+                        else if (input.buffer && input.byteLength != null) {
+                            bytes = new Uint8Array(
+                                input.buffer,
+                                input.byteOffset,
+                                input.byteLength
+                            );
+                        } else if (Array.isArray(input)) bytes = new Uint8Array(input);
+                        else return '';
+                        const chunk = 0x8000;
+                        let bin = '';
+                        for (let i = 0; i < bytes.length; i += chunk) {
+                            bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+                        }
+                        return btoa(bin);
+                    }
+                    function guessMime(type, given) {
+                        if (given && typeof given === 'string') return given;
+                        if (type === 'ptt' || type === 'audio') return 'audio/ogg; codecs=opus';
+                        if (type === 'sticker') return 'image/webp';
+                        if (type === 'image') return 'image/jpeg';
+                        if (type === 'video') return 'video/mp4';
+                        return 'application/octet-stream';
+                    }
+                    function findMsg() {
+                        const store = window.Store;
+                        if (!store || !store.Msg) return null;
+                        try {
+                            if (typeof store.Msg.get === 'function') {
+                                const hit =
+                                    store.Msg.get(serializedId) ||
+                                    (shortId ? store.Msg.get(shortId) : null);
+                                if (hit) return hit;
+                            }
+                        } catch (_) {}
+                        try {
+                            const models =
+                                typeof store.Msg.getModelsArray === 'function'
+                                    ? store.Msg.getModelsArray()
+                                    : store.Msg.models || [];
+                            for (let i = 0; i < models.length; i++) {
+                                const id = models[i] && models[i].id;
+                                if (!id) continue;
+                                if (id._serialized === serializedId || id.id === shortId)
+                                    return models[i];
+                            }
+                        } catch (_) {}
+                        return null;
+                    }
+
+                    if (window.WWebJS && typeof window.WWebJS.downloadMedia === 'function') {
+                        try {
+                            const viaLib = await window.WWebJS.downloadMedia(serializedId);
+                            if (viaLib && (viaLib.data || viaLib.body)) {
+                                return {
+                                    data: viaLib.data || viaLib.body,
+                                    mimetype: viaLib.mimetype || guessMime(msgType),
+                                    filename: viaLib.filename || null,
+                                };
+                            }
+                        } catch (_) {}
+                    }
+
+                    const storeMsg = findMsg();
+                    if (!storeMsg) return { error: 'msg_not_found' };
+                    const mediaData = storeMsg.mediaData || {};
+                    const type = String(storeMsg.type || msgType || '').toLowerCase();
+
+                    try {
+                        const blob =
+                            (mediaData.mediaBlob &&
+                                (mediaData.mediaBlob._blob || mediaData.mediaBlob)) ||
+                            mediaData.previewBlob;
+                        if (blob && typeof blob.arrayBuffer === 'function') {
+                            const buf = await blob.arrayBuffer();
+                            if (buf && buf.byteLength > 32) {
+                                return {
+                                    data: toB64(buf),
+                                    mimetype: guessMime(
+                                        type,
+                                        storeMsg.mimetype || mediaData.mimetype
+                                    ),
+                                    filename: storeMsg.filename || mediaData.filename || null,
+                                };
+                            }
+                        }
+                    } catch (_) {}
+
+                    const dm = window.Store && window.Store.DownloadManager;
+                    const directPath = storeMsg.directPath || mediaData.directPath;
+                    const mediaKey = storeMsg.mediaKey || mediaData.mediaKey;
+                    if (
+                        dm &&
+                        typeof dm.downloadAndMaybeDecrypt === 'function' &&
+                        directPath &&
+                        mediaKey
+                    ) {
+                        const downloaded = await dm.downloadAndMaybeDecrypt({
+                            directPath,
+                            encFilehash: storeMsg.encFilehash || mediaData.encFilehash,
+                            filehash: storeMsg.filehash || mediaData.filehash,
+                            mediaKey,
+                            mediaKeyTimestamp:
+                                storeMsg.mediaKeyTimestamp || mediaData.mediaKeyTimestamp,
+                            type: type === 'ptt' ? 'audio' : type,
+                            signal: new AbortController().signal,
+                        });
+                        if (downloaded) {
+                            let buf = downloaded;
+                            if (downloaded.arrayBuffer) buf = await downloaded.arrayBuffer();
+                            else if (downloaded.buffer) buf = downloaded.buffer;
+                            const data = toB64(buf);
+                            if (data) {
+                                return {
+                                    data,
+                                    mimetype: guessMime(
+                                        type,
+                                        storeMsg.mimetype || mediaData.mimetype
+                                    ),
+                                    filename: storeMsg.filename || mediaData.filename || null,
+                                };
+                            }
+                        }
+                    }
+                    return { error: 'download_failed' };
+                },
+                serializedId,
+                shortId,
+                msgType
+            ),
+            timeoutReject(12000, 'store_media_timeout'),
+        ]);
+        if (result && result.data) {
+            const fallback = defaultMediaMeta(msgType);
+            return {
+                mimetype: result.mimetype || fallback.mimetype,
+                filename: result.filename || fallback.filename,
+                data: result.data,
+            };
+        }
+        if (result && result.error) {
+            logger.warn('Store media download missed', {
+                error: result.error,
+                type: msgType,
+            });
+        }
+    } catch (err) {
+        logger.warn('Store media download failed', {
+            error: formatGatewayError(err),
+            type: msgType,
+        });
+    }
+    return null;
+}
+
+async function attachMediaToMessageData(messageData, msg) {
+    if (!isMediaMessageType(msg && msg.type, msg && msg.hasMedia)) return;
+    let media = null;
+    if (msg && typeof msg.downloadMedia === 'function') {
+        try {
+            media = await Promise.race([
+                msg.downloadMedia(),
+                timeoutReject(8000, 'downloadMedia_timeout'),
+            ]);
+        } catch (error) {
+            logger.warn('downloadMedia failed — trying Store', {
+                error: formatGatewayError(error),
+                type: msg && msg.type,
+            });
+        }
+    }
+    if (!media || !media.data) {
+        media = await downloadMediaViaStore(
+            client,
+            msg || { id: messageData.id, type: messageData.type }
+        );
+    }
+    if (media && media.data) {
+        const fallback = defaultMediaMeta(messageData.type || (msg && msg.type));
+        messageData.hasMedia = true;
+        messageData.media = {
+            mimetype: media.mimetype || fallback.mimetype,
+            filename: media.filename || fallback.filename,
+            data: media.data,
+        };
+    }
+}
+
 // ==================== Logger ====================
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
@@ -493,6 +722,9 @@ let isClientStarting = false;
 let lastReadyAt = 0;
 /** عملیات سنگین روی صفحهٔ واتساپ (لیست گروه/…) — health check را موقتاً آرام کن */
 let waOpsBusy = 0;
+/** وقتی رویداد message/message_create شلیک نشود، Store و unread را می‌خوانیم */
+let inboundPollTimer = null;
+let inboundPollBusy = false;
 
 let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
@@ -749,6 +981,7 @@ function attachClientEvents(c) {
             setTimeout(() => {
                 hookChatCollectionObserver()
                     .catch(() => {})
+                    .then(() => hookIncomingMessageObserver().catch(() => {}))
                     .finally(() => {
                         listWhatsAppAllChats()
                             .then((chats) => {
@@ -769,6 +1002,7 @@ function attachClientEvents(c) {
                     });
             }, delayMs);
         };
+        startInboundPoll();
         warmChats(4000);
         warmChats(15000);
         warmChats(40000);
@@ -781,6 +1015,7 @@ function attachClientEvents(c) {
         isClientReady = false;
         isClientStarting = false;
         connectionPhase = null;
+        stopInboundPoll();
         client = null;
 
         io.emit('disconnected', { reason: reasonStr });
@@ -960,23 +1195,7 @@ function attachClientEvents(c) {
             authorName: authorName,
         };
 
-        if (msg.hasMedia) {
-            try {
-                const media = await msg.downloadMedia();
-                if (media) {
-                    messageData.media = {
-                        mimetype: media.mimetype,
-                        filename: media.filename || null,
-                        data: media.data,
-                    };
-                }
-            } catch (error) {
-                logger.error('Media download/save error', {
-                    error: formatGatewayError(error),
-                    fromMe: isFromMe,
-                });
-            }
-        }
+        await attachMediaToMessageData(messageData, msg);
 
         if (await isDuplicateIncomingGatewayMessage(waMsgId)) return;
 
@@ -1695,6 +1914,50 @@ function usableProfilePicUrl(u) {
     return null;
 }
 
+function lidDigitsOf(val) {
+    const s = String(val || '').trim();
+    if (!s) return '';
+    if (/@lid$/i.test(s)) return s.replace(/\D/g, '');
+    const d = s.replace(/\D/g, '');
+    if (d && d === s.replace(/\D/g, '') && !/@/.test(s) && d.length >= 14) return d;
+    return '';
+}
+
+function realPhoneDigitsOf(id, phone) {
+    const jid = String(id || '').trim();
+    const raw = String(phone || '').trim();
+    const fromPhone = raw.replace(/\D/g, '');
+    const fromId = jid.replace(/\D/g, '');
+    if (/@g\.us$/i.test(jid) || /@lid$/i.test(jid)) {
+        if (fromPhone.length >= 8 && fromPhone !== fromId) return fromPhone;
+        return '';
+    }
+    if (fromPhone.length >= 8 && fromPhone !== lidDigitsOf(jid)) return fromPhone;
+    if (fromId.length >= 8 && !/@lid$/i.test(jid)) return fromId;
+    return '';
+}
+
+function mergeTwoChatRows(prev, next) {
+    const leftIsPhone = /@(c\.us|s\.whatsapp\.net)$/i.test(String(prev.id || ''));
+    const rightIsPhone = /@(c\.us|s\.whatsapp\.net)$/i.test(String(next.id || ''));
+    const id =
+        leftIsPhone && !rightIsPhone
+            ? prev.id
+            : rightIsPhone && !leftIsPhone
+              ? next.id
+              : next.id || prev.id;
+    return {
+        id,
+        name: next.name || prev.name,
+        isGroup: !!(next.isGroup || prev.isGroup),
+        lastPreview: next.lastPreview || prev.lastPreview,
+        timestamp: next.timestamp || prev.timestamp,
+        profilePicUrl: next.profilePicUrl || prev.profilePicUrl || null,
+        phone: next.phone || prev.phone || null,
+        lid: next.lid || prev.lid || null,
+    };
+}
+
 function mergeChatRows(a, b) {
     const map = new Map();
     for (const row of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
@@ -1703,7 +1966,8 @@ function mergeChatRows(a, b) {
         if (!id || !id.includes('@') || id.endsWith('@broadcast') || id === 'status@broadcast') {
             continue;
         }
-        const phoneDigits = row.phone ? String(row.phone).replace(/\D/g, '') : '';
+        const phoneDigits = realPhoneDigitsOf(id, row.phone);
+        const lidDigits = lidDigitsOf(row.lid) || (/@lid$/i.test(id) ? id.replace(/\D/g, '') : '');
         const next = {
             id,
             name: row.name ? String(row.name) : null,
@@ -1712,23 +1976,57 @@ function mergeChatRows(a, b) {
             timestamp: row.timestamp || null,
             profilePicUrl: usableProfilePicUrl(row.profilePicUrl),
             phone: phoneDigits && phoneDigits.length >= 8 ? phoneDigits : null,
+            lid: lidDigits && lidDigits.length >= 8 ? lidDigits : null,
         };
         const prev = map.get(id);
-        if (!prev) {
-            map.set(id, next);
+        map.set(id, prev ? mergeTwoChatRows(prev, next) : next);
+    }
+    const byId = [...map.values()];
+    const groups = [];
+    const keyToGroup = new Map();
+    const rowKeys = (row) => {
+        const keys = [`id:${String(row.id).toLowerCase()}`];
+        if (row.phone) keys.push(`p:${row.phone}`);
+        if (row.lid) keys.push(`l:${row.lid}`);
+        return keys;
+    };
+    const addKeys = (group, row) => {
+        for (const key of rowKeys(row)) keyToGroup.set(key, group);
+    };
+    const dropGroup = (group) => {
+        group.dropped = true;
+        for (const [key, mapped] of keyToGroup) {
+            if (mapped === group) keyToGroup.delete(key);
+        }
+    };
+    for (const row of byId) {
+        if (row.isGroup || /@g\.us$/i.test(String(row.id))) {
+            groups.push(row);
             continue;
         }
-        map.set(id, {
-            id,
-            name: next.name || prev.name,
-            isGroup: !!(next.isGroup || prev.isGroup),
-            lastPreview: next.lastPreview || prev.lastPreview,
-            timestamp: next.timestamp || prev.timestamp,
-            profilePicUrl: next.profilePicUrl || prev.profilePicUrl || null,
-            phone: next.phone || prev.phone || null,
-        });
+        const matched = [];
+        const seenGroups = new Set();
+        for (const key of rowKeys(row)) {
+            const hit = keyToGroup.get(key);
+            if (hit && !hit.dropped && !seenGroups.has(hit)) {
+                seenGroups.add(hit);
+                matched.push(hit);
+            }
+        }
+        let group = matched[0] || null;
+        if (!group) {
+            group = { row, dropped: false };
+            groups.push(group);
+        } else {
+            group.row = mergeTwoChatRows(group.row, row);
+            for (let i = 1; i < matched.length; i++) {
+                group.row = mergeTwoChatRows(group.row, matched[i].row);
+                dropGroup(matched[i]);
+            }
+        }
+        addKeys(group, group.row);
     }
-    return [...map.values()];
+    return groups.filter((g) => !g.dropped).map((g) => (g.row ? g.row : g));
 }
 
 function seenChatsFilePath() {
@@ -1783,7 +2081,7 @@ function rememberChatRows(rows) {
     return merged;
 }
 
-function rememberSeenChat(id, name, isGroup, preview, ts, profilePicUrl, phone) {
+function rememberSeenChat(id, name, isGroup, preview, ts, profilePicUrl, phone, lid) {
     rememberChatRows([
         {
             id,
@@ -1793,6 +2091,7 @@ function rememberSeenChat(id, name, isGroup, preview, ts, profilePicUrl, phone) 
             timestamp: ts,
             profilePicUrl: profilePicUrl || null,
             phone: phone || null,
+            lid: lid || null,
         },
     ]);
 }
@@ -1891,6 +2190,330 @@ async function hookChatCollectionObserver() {
         });
     } catch (e) {
         logger.warn('Chat collection observer hook failed', { error: formatGatewayError(e) });
+    }
+}
+
+function startInboundPoll() {
+    stopInboundPoll();
+    inboundPollTimer = setInterval(() => {
+        pollUnreadIncomingMessages().catch((e) =>
+            logger.warn('Inbound poll failed', { error: formatGatewayError(e) })
+        );
+    }, 12000);
+    setTimeout(() => {
+        pollUnreadIncomingMessages().catch(() => {});
+    }, 8000);
+}
+
+function stopInboundPoll() {
+    if (inboundPollTimer) {
+        clearInterval(inboundPollTimer);
+        inboundPollTimer = null;
+    }
+    inboundPollBusy = false;
+}
+
+async function ingestStoreInboundMessage(raw, via) {
+    if (!raw || raw.fromMe) return false;
+    const waMsgId = raw.id ? String(raw.id).trim() : '';
+    if (!waMsgId) return false;
+    if (await isDuplicateIncomingGatewayMessage(waMsgId)) return false;
+
+    const from = serializedJid(raw.from);
+    const to = serializedJid(raw.to);
+    const chatId = serializedJid(raw.chatId) || from;
+    const isGroup = /@g\.us$/i.test(chatId) || /@g\.us$/i.test(from);
+    const contactLid = serializedJid(raw.contactLid) || (/@lid$/i.test(from) ? from : '') || '';
+    let contactNumber = raw.contactNumber ? digitsOnly(raw.contactNumber) : '';
+    if (contactNumber && isOwnAccountJid(contactNumber)) contactNumber = '';
+    if (!contactNumber && contactLid) {
+        const mapped = await tryResolvePhoneFromLid(client, contactLid);
+        if (mapped && !isOwnAccountJid(mapped)) contactNumber = mapped;
+    }
+
+    const messageData = {
+        id: waMsgId,
+        from: from || chatId,
+        to: to || '',
+        body: raw.body || '',
+        timestamp: raw.timestamp || Math.floor(Date.now() / 1000),
+        hasMedia: !!raw.hasMedia,
+        type: raw.type || 'chat',
+        fromMe: false,
+        contact: {
+            number: contactNumber || null,
+            lid: contactLid || null,
+            name: raw.notifyName || raw.chatName || null,
+        },
+        chat: {
+            id: chatId || from,
+            name: raw.chatName || raw.notifyName || null,
+            isGroup,
+        },
+        author: raw.author || null,
+        authorName: raw.authorName || raw.notifyName || null,
+    };
+
+    if (isMediaMessageType(raw.type, raw.hasMedia)) {
+        let waMsg = null;
+        if (raw.serializedId && client && typeof client.getMessageById === 'function') {
+            try {
+                waMsg = await Promise.race([
+                    client.getMessageById(raw.serializedId),
+                    timeoutReject(4000, 'getMessageById_timeout'),
+                ]);
+            } catch (_) {}
+        }
+        await attachMediaToMessageData(
+            messageData,
+            waMsg || { id: raw.serializedId || raw.id, type: raw.type }
+        );
+    }
+
+    try {
+        await deliverIncomingMessage(messageData);
+    } catch (err) {
+        await clearIncomingGatewayDedupe(waMsgId);
+        throw err;
+    }
+    logger.info('📨 Message received', {
+        from: contactNumber || contactLid || from,
+        lid: contactLid || null,
+        to: to || null,
+        via: via || 'store',
+    });
+    return true;
+}
+
+async function hookIncomingMessageObserver() {
+    if (!client?.pupPage) return;
+    try {
+        await client.pupPage.exposeFunction('__kayaInboundMessage', (raw) => {
+            ingestStoreInboundMessage(raw, 'store_hook').catch((e) =>
+                logger.warn('Store inbound ingest failed', { error: formatGatewayError(e) })
+            );
+        });
+    } catch (_) {
+        /* already exposed for this page */
+    }
+    try {
+        const hooked = await client.pupPage.evaluate(() => {
+            function jidOf(v) {
+                if (!v) return '';
+                if (typeof v === 'string') return v;
+                if (v._serialized) return String(v._serialized);
+                if (v.user && v.server) return `${v.user}@${v.server}`;
+                return '';
+            }
+            function packMsg(m) {
+                if (!m) return null;
+                const idObj = m.id || {};
+                if (idObj.fromMe || m.fromMe) return null;
+                const type = String(m.type || 'chat');
+                if (m.isStatusV3 || m.broadcast) return null;
+                if (
+                    type === 'e2e_notification' ||
+                    type === 'protocol' ||
+                    type === 'ciphertext' ||
+                    type === 'notification_template'
+                ) {
+                    return null;
+                }
+                const from = jidOf(m.from) || jidOf(idObj.remote);
+                const to = jidOf(m.to);
+                const chatId = jidOf(idObj.remote) || from;
+                const lid = /@lid$/i.test(from) ? from : /@lid$/i.test(chatId) ? chatId : '';
+                let contactNumber = '';
+                try {
+                    const c = m.senderObj || m.contact;
+                    const n = c && (c.number || c.phoneNumber);
+                    const d = n ? String(n).replace(/\D/g, '') : '';
+                    if (d.length >= 8 && d.length <= 15) contactNumber = d;
+                } catch (_) {}
+                return {
+                    id: idObj.id || '',
+                    serializedId: idObj._serialized || '',
+                    from,
+                    to,
+                    chatId,
+                    body: m.body || m.caption || '',
+                    timestamp: m.t || 0,
+                    type,
+                    hasMedia: !!(
+                        m.hasMedia ||
+                        ['image', 'video', 'ptt', 'audio', 'document', 'sticker'].indexOf(type) >= 0
+                    ),
+                    notifyName: m.notifyName || m.verifiedName || '',
+                    chatName: '',
+                    contactNumber,
+                    contactLid: lid,
+                    author: jidOf(m.author) || jidOf(idObj.participant) || '',
+                    fromMe: false,
+                };
+            }
+            function attach(Msg) {
+                if (!Msg || typeof Msg.on !== 'function') return false;
+                if (Msg.__kayaInboundHooked) return true;
+                Msg.__kayaInboundHooked = true;
+                Msg.on('add', (m) => {
+                    try {
+                        const packed = packMsg(m);
+                        if (
+                            packed &&
+                            packed.id &&
+                            typeof window.__kayaInboundMessage === 'function'
+                        ) {
+                            window.__kayaInboundMessage(packed);
+                        }
+                    } catch (_) {}
+                });
+                return true;
+            }
+            if (attach(window.Store && window.Store.Msg)) return true;
+            try {
+                if (typeof window.require === 'function') {
+                    const cols = window.require('WAWebCollections');
+                    if (attach(cols && (cols.MsgCollection || cols.Msg))) return true;
+                    const msgCol = window.require('WAWebMsgCollection');
+                    if (attach(msgCol && (msgCol.MsgCollection || msgCol.default || msgCol))) {
+                        return true;
+                    }
+                }
+            } catch (_) {}
+            return false;
+        });
+        if (hooked) logger.info('Store inbound message hook attached');
+        else logger.warn('Store inbound message hook not attached — poller remains active');
+    } catch (e) {
+        logger.warn('Incoming message observer hook failed', { error: formatGatewayError(e) });
+    }
+}
+
+async function pollUnreadIncomingMessages() {
+    if (inboundPollBusy || !client?.pupPage || !isWhatsAppUsable()) return;
+    inboundPollBusy = true;
+    beginWaOps();
+    try {
+        const rows = await Promise.race([
+            client.pupPage.evaluate(() => {
+                function collectModels(collection) {
+                    if (!collection) return [];
+                    try {
+                        if (typeof collection.getModelsArray === 'function') {
+                            return collection.getModelsArray() || [];
+                        }
+                    } catch (_) {}
+                    try {
+                        if (Array.isArray(collection.models)) return collection.models;
+                    } catch (_) {}
+                    return [];
+                }
+                function jidOf(v) {
+                    if (!v) return '';
+                    if (typeof v === 'string') return v;
+                    if (v._serialized) return String(v._serialized);
+                    if (v.user && v.server) return `${v.user}@${v.server}`;
+                    return '';
+                }
+                function packMsg(m) {
+                    if (!m) return null;
+                    const idObj = m.id || {};
+                    if (idObj.fromMe || m.fromMe) return null;
+                    const type = String(m.type || 'chat');
+                    if (m.isStatusV3 || m.broadcast) return null;
+                    if (
+                        type === 'e2e_notification' ||
+                        type === 'protocol' ||
+                        type === 'ciphertext' ||
+                        type === 'notification_template'
+                    ) {
+                        return null;
+                    }
+                    const from = jidOf(m.from) || jidOf(idObj.remote);
+                    const to = jidOf(m.to);
+                    const chatId = jidOf(idObj.remote) || from;
+                    const lid = /@lid$/i.test(from) ? from : /@lid$/i.test(chatId) ? chatId : '';
+                    let contactNumber = '';
+                    try {
+                        const c = m.senderObj || m.contact;
+                        const n = c && (c.number || c.phoneNumber);
+                        const d = n ? String(n).replace(/\D/g, '') : '';
+                        if (d.length >= 8 && d.length <= 15) contactNumber = d;
+                    } catch (_) {}
+                    return {
+                        id: idObj.id || '',
+                        serializedId: idObj._serialized || '',
+                        from,
+                        to,
+                        chatId,
+                        body: m.body || m.caption || '',
+                        timestamp: m.t || 0,
+                        type,
+                        hasMedia: !!(
+                            m.hasMedia ||
+                            ['image', 'video', 'ptt', 'audio', 'document', 'sticker'].indexOf(
+                                type
+                            ) >= 0
+                        ),
+                        notifyName: m.notifyName || m.verifiedName || '',
+                        chatName: '',
+                        contactNumber,
+                        contactLid: lid,
+                        author: jidOf(m.author) || jidOf(idObj.participant) || '',
+                        fromMe: false,
+                    };
+                }
+                const now = Math.floor(Date.now() / 1000);
+                const out = [];
+                const seen = Object.create(null);
+                const store = window.Store || {};
+                const models = collectModels(store.Msg);
+                for (let i = 0; i < models.length; i++) {
+                    const packed = packMsg(models[i]);
+                    if (!packed || !packed.id || seen[packed.id]) continue;
+                    if (packed.timestamp && packed.timestamp < now - 180) continue;
+                    seen[packed.id] = true;
+                    out.push(packed);
+                    if (out.length >= 40) break;
+                }
+                const chats = collectModels(store.Chat);
+                for (let i = 0; i < chats.length; i++) {
+                    const chat = chats[i];
+                    if (!chat || !(Number(chat.unreadCount) > 0)) continue;
+                    const msgs = collectModels(chat.msgs);
+                    const start = Math.max(0, msgs.length - 8);
+                    for (let j = start; j < msgs.length; j++) {
+                        const packed = packMsg(msgs[j]);
+                        if (!packed || !packed.id || seen[packed.id]) continue;
+                        if (packed.timestamp && packed.timestamp < now - 600) continue;
+                        seen[packed.id] = true;
+                        packed.chatName = chat.name || chat.formattedTitle || chat.subject || '';
+                        out.push(packed);
+                    }
+                }
+                return out;
+            }),
+            timeoutReject(5000, 'inbound_poll_timeout'),
+        ]);
+        if (!Array.isArray(rows) || !rows.length) return;
+        let accepted = 0;
+        for (const raw of rows) {
+            try {
+                if (await ingestStoreInboundMessage(raw, 'store_poll')) accepted += 1;
+            } catch (e) {
+                logger.warn('Inbound poll item failed', { error: formatGatewayError(e) });
+            }
+        }
+        if (accepted) {
+            logger.info('Inbound poll delivered messages', { accepted, scanned: rows.length });
+        }
+    } catch (e) {
+        if (String(e && e.message) !== 'inbound_poll_timeout') {
+            logger.warn('Inbound poll evaluate failed', { error: formatGatewayError(e) });
+        }
+    } finally {
+        endWaOps();
+        inboundPollBusy = false;
     }
 }
 
@@ -2103,13 +2726,17 @@ async function extractWhatsAppChatsInBrowser() {
         const seen = Object.create(null);
         const out = [];
 
-        function pushChat(ser, name, isGroup, preview, ts, profilePicUrl, phone) {
+        function pushChat(ser, name, isGroup, preview, ts, profilePicUrl, phone, lid) {
             if (!ser) return;
             const s = String(ser);
             if (!s.includes('@')) return;
             if (s === 'status@broadcast' || s.endsWith('@broadcast')) return;
             const pic = usablePic(profilePicUrl);
-            const phoneDigits = phone ? String(phone).replace(/\D/g, '') : '';
+            const idDigits = s.replace(/\D/g, '');
+            let phoneDigits = phone ? String(phone).replace(/\D/g, '') : '';
+            if (s.indexOf('@lid') !== -1 && phoneDigits === idDigits) phoneDigits = '';
+            let lidDigits = lid ? String(lid).replace(/\D/g, '') : '';
+            if (!lidDigits && s.indexOf('@lid') !== -1) lidDigits = idDigits;
             if (seen[s]) {
                 if (name && !seen[s].name) seen[s].name = String(name);
                 if (isGroup) seen[s].isGroup = true;
@@ -2118,6 +2745,7 @@ async function extractWhatsAppChatsInBrowser() {
                 if (ts && !seen[s].timestamp) seen[s].timestamp = ts;
                 if (pic && !seen[s].profilePicUrl) seen[s].profilePicUrl = pic;
                 if (phoneDigits.length >= 8 && !seen[s].phone) seen[s].phone = phoneDigits;
+                if (lidDigits.length >= 8 && !seen[s].lid) seen[s].lid = lidDigits;
                 return;
             }
             const row = {
@@ -2128,6 +2756,7 @@ async function extractWhatsAppChatsInBrowser() {
                 timestamp: ts || null,
                 profilePicUrl: pic,
                 phone: phoneDigits.length >= 8 ? phoneDigits : null,
+                lid: lidDigits.length >= 8 ? lidDigits : null,
             };
             seen[s] = row;
             out.push(row);
@@ -2167,18 +2796,33 @@ async function extractWhatsAppChatsInBrowser() {
                 } catch (_) {}
                 const pic = picOf(c) || picFromStoreByJid(ser);
                 let phoneDigits = null;
+                let lidDigits = null;
                 if (!isGroup) {
                     try {
+                        const contact = c && c.contact;
+                        const rawLid =
+                            (contact && (contact.lid || contact.lidUser || contact.lidJid)) || null;
+                        if (rawLid) {
+                            const lidSer =
+                                rawLid._serialized ||
+                                (rawLid.user && rawLid.server
+                                    ? String(rawLid.user) + '@' + String(rawLid.server)
+                                    : rawLid);
+                            const ld = String(lidSer || '').replace(/\D/g, '');
+                            if (ld.length >= 8) lidDigits = ld;
+                        }
                         const num =
-                            (c &&
-                                c.contact &&
-                                (c.contact.number || c.contact.phoneNumber || c.contact.userid)) ||
+                            (contact &&
+                                (contact.number || contact.phoneNumber || contact.userid)) ||
                             (c && c.formattedNumber);
-                        const d = num ? String(num).replace(/\D/g, '') : '';
-                        if (d.length >= 8) phoneDigits = d;
+                        const numStr = num ? String(num) : '';
+                        const d = numStr.replace(/\D/g, '');
+                        if (d.length >= 8 && numStr.indexOf('@lid') === -1 && d !== lidDigits) {
+                            phoneDigits = d;
+                        }
                     } catch (_) {}
                 }
-                pushChat(ser, name, isGroup, preview, ts, pic, phoneDigits);
+                pushChat(ser, name, isGroup, preview, ts, pic, phoneDigits, lidDigits);
             }
         }
 
@@ -2832,7 +3476,8 @@ async function resolveChatsOnCurrentSession(ids) {
         found.push({
             id: ser,
             requested: raw,
-            phone: String(ser).replace(/\D/g, '') || String(raw).replace(/\D/g, '') || null,
+            phone: realPhoneDigitsOf(ser, hit.phone || raw) || null,
+            lid: hit.lid || lidDigitsOf(ser) || null,
             name: hit.name || null,
             isGroup: !!hit.isGroup || /@g\.us$/i.test(ser),
             lastPreview: hit.lastPreview || null,
@@ -2851,11 +3496,23 @@ async function resolveChatsOnCurrentSession(ids) {
                 if (!ser.includes('@') || ser.endsWith('@broadcast')) continue;
                 if (foundIds.has(ser.toLowerCase())) continue;
                 foundIds.add(ser.toLowerCase());
-                let phone = String(raw).replace(/\D/g, '') || null;
+                let phone = realPhoneDigitsOf(ser, raw) || null;
+                let lid = /@lid$/i.test(ser) ? ser.replace(/\D/g, '') : null;
                 try {
                     const contact = await chat.getContact();
-                    if (contact && contact.number) {
-                        phone = String(contact.number).replace(/\D/g, '') || phone;
+                    if (
+                        contact &&
+                        contact.number &&
+                        String(contact.number).indexOf('@lid') === -1
+                    ) {
+                        const d = String(contact.number).replace(/\D/g, '');
+                        if (d.length >= 8 && d !== lid) phone = d;
+                    }
+                    const rawLid = contact && (contact.lid || contact.lidUser);
+                    if (rawLid) {
+                        const lidSer = rawLid._serialized || rawLid;
+                        const ld = String(lidSer || '').replace(/\D/g, '');
+                        if (ld.length >= 8) lid = ld;
                     }
                 } catch (_) {}
                 const ts =
@@ -2868,6 +3525,7 @@ async function resolveChatsOnCurrentSession(ids) {
                     id: ser,
                     requested: raw,
                     phone: phone || null,
+                    lid: lid || null,
                     name: chat.name || chat.subject || chat.formattedTitle || null,
                     isGroup: !!chat.isGroup || /@g\.us$/i.test(ser),
                     lastPreview: chat.lastMessage
@@ -2879,7 +3537,16 @@ async function resolveChatsOnCurrentSession(ids) {
                     timestamp: ts,
                 };
                 found.push(row);
-                rememberSeenChat(row.id, row.name, row.isGroup, row.lastPreview, row.timestamp);
+                rememberSeenChat(
+                    row.id,
+                    row.name,
+                    row.isGroup,
+                    row.lastPreview,
+                    row.timestamp,
+                    null,
+                    row.phone,
+                    row.lid
+                );
             } catch (_) {}
         }
     };
@@ -2895,7 +3562,8 @@ async function resolveChatsOnCurrentSession(ids) {
         found.push({
             id: ser,
             requested: null,
-            phone: hit.phone || String(ser).replace(/\D/g, '') || null,
+            phone: realPhoneDigitsOf(ser, hit.phone) || null,
+            lid: hit.lid || lidDigitsOf(ser) || null,
             name: hit.name || null,
             isGroup: !!hit.isGroup || /@g\.us$/i.test(ser),
             lastPreview: hit.lastPreview || null,

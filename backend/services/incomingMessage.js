@@ -213,6 +213,55 @@ function isSameWaDigits(a, b) {
     return x === y || x.endsWith(y) || y.endsWith(x);
 }
 
+function placeholderForIncomingMedia(rawType) {
+    const t = String(rawType || '').toLowerCase();
+    if (t === 'image') return '📷 تصویر';
+    if (t === 'video') return '🎬 ویدیو';
+    if (t === 'ptt' || t === 'audio') return '🎤 پیام صوتی';
+    if (t === 'document') return '📄 فایل';
+    if (t === 'sticker') return '🌟 استیکر';
+    return 'پیام رسانه‌ای';
+}
+
+function isIncomingMediaType(rawType, hasMedia) {
+    const t = String(rawType || '').toLowerCase();
+    return (
+        !!hasMedia ||
+        t === 'image' ||
+        t === 'video' ||
+        t === 'ptt' ||
+        t === 'audio' ||
+        t === 'document' ||
+        t === 'sticker'
+    );
+}
+
+async function pickPreferredIncomingCustomer(candidates) {
+    const list = [];
+    const seen = new Set();
+    for (const c of candidates || []) {
+        if (!c || !c.id || seen.has(c.id)) continue;
+        seen.add(c.id);
+        list.push(c);
+    }
+    if (!list.length) return null;
+    if (list.length === 1) return list[0];
+    const convs = await Conversation.findAll({
+        where: {
+            customerId: { [Op.in]: list.map((c) => c.id) },
+            status: { [Op.ne]: 'closed' },
+        },
+        order: [
+            ['lastMessageAt', 'DESC'],
+            ['updatedAt', 'DESC'],
+        ],
+        limit: 8,
+    });
+    const best = convs.find((c) => !c.isHiddenFromStaff) || convs[0];
+    if (best) return list.find((c) => c.id === best.customerId) || list[0];
+    return list[0];
+}
+
 async function findCustomerByStoredLid(lidDigits) {
     if (!lidDigits) return null;
     const lid = String(lidDigits);
@@ -395,7 +444,8 @@ function inferMessageTypeFromMedia(media) {
     if (!media) return 'text';
     const mime = (media.mimetype || '').toLowerCase();
     const name = (media.filename || media.caption || '').toLowerCase();
-    if (mime.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)) return 'image';
+    if (mime.startsWith('image/') || mime === 'image/webp' || /\.(jpe?g|png|gif|webp|bmp)$/i.test(name))
+        return 'image';
     if (mime.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(name)) return 'video';
     if (mime.startsWith('audio/') || /\.(mp3|ogg|wav|m4a|opus|oga)$/i.test(name)) return 'audio';
     if (mime || name) return 'document';
@@ -764,11 +814,19 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 rawType === 'notification_template' ||
                 rawType === 'groups_v4_invite');
         if (!hasText && !hasUsableMedia) {
-            if (!isGroupSystemEvent) return;
-            const joinName = ((chat && (chat.name || chat.subject || chat.formattedTitle)) || '')
-                .toString()
-                .trim();
-            body = joinName ? `فعالیت در گروه «${joinName}»` : 'فعالیت در گروه واتساپ';
+            if (isIncomingMediaType(rawType, hasMedia)) {
+                body = placeholderForIncomingMedia(rawType);
+            } else if (!isGroupSystemEvent) {
+                return;
+            } else {
+                const joinName = (
+                    (chat && (chat.name || chat.subject || chat.formattedTitle)) ||
+                    ''
+                )
+                    .toString()
+                    .trim();
+                body = joinName ? `فعالیت در گروه «${joinName}»` : 'فعالیت در گروه واتساپ';
+            }
         }
 
         const waMsgId = messageData.id ? String(messageData.id).trim() : null;
@@ -796,6 +854,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         let resolvedMedia = media || null;
         let msgType = (messageData.type || 'text').toLowerCase();
         if (msgType === 'ptt') msgType = 'audio';
+        if (msgType === 'sticker') msgType = 'image';
         if (hasMedia && media) {
             if (
                 media.url &&
@@ -815,6 +874,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
         if (msgType === 'ptt') msgType = 'audio';
+        if (msgType === 'sticker') msgType = 'image';
 
         const groupNameFromChat = isGroup
             ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim()
@@ -841,10 +901,16 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         let customerCreated = false;
         try {
             if (!isGroup && incomingLid) {
-                customer = await findCustomerByStoredLid(incomingLid);
-                if (customer && customer.phone) {
-                    phone = customer.phone;
-                }
+                const lidCustomer = await findCustomerByStoredLid(incomingLid);
+                const realPhone =
+                    phone && !isLikelyWhatsAppLid(phone) && !/@lid$/i.test(String(phone))
+                        ? phone
+                        : '';
+                const phoneCustomer = realPhone
+                    ? await Customer.findOne({ where: { phone: realPhone } })
+                    : null;
+                customer = await pickPreferredIncomingCustomer([lidCustomer, phoneCustomer]);
+                if (customer && customer.phone) phone = customer.phone;
             }
             if (!customer) {
                 [customer, customerCreated] = await Customer.findOrCreate({

@@ -36,4 +36,5 @@
 
 1. رویداد `message` گاهی برای پیام ورودی شلیک نمی‌شود (مالتی‌دیوایس / LID). Gateway باید همان پیام را از `message_create` هم به بک‌اند بفرستد.
 2. اگر `getChat()` برای LID خطا بدهد، پیام نباید دور ریخته شود؛ با `from` / `id.remote` ادامه می‌دهد. شمارهٔ خودِ خط (`to`) را مشتری حساب نکن؛ جواب `@lid` باید به همان مکالمهٔ شمارهٔ واقعی بچسبد.
-3. روی سرور: `pm2 logs crm-gateway-kaya --lines 80` را برای `📨 Message received` یا `getChat failed` ببینید. بعد از به‌روزرسانی کد، Gateway را **یک‌بار** با stop → خواب ۳ ثانیه → حذف Singleton* → start بالا بیاورید و تا `WhatsApp Client Ready` صبر کنید.
+3. اگر هر دو رویداد واتساپ ساکت بمانند، Gateway از `Store.Msg` و خواندن دوره‌ای unread همان پیام را برمی‌دارد. در لاگ باید `Store inbound message hook attached` یا `via: store_poll` دیده شود.
+4. روی سرور: `pm2 logs crm-gateway-kaya --lines 80` را برای `📨 Message received` یا `getChat failed` ببینید. بعد از به‌روزرسانی کد، Gateway را **یک‌بار** با stop → خواب ۳ ثانیه → حذف Singleton* → start بالا بیاورید و تا `WhatsApp Client Ready` صبر کنید.
