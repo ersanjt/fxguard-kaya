@@ -211,9 +211,7 @@ async function tryResolvePhoneFromLid(waClient, lidJid) {
                 timeoutReject(2000, 'lid_map_timeout'),
             ]);
             const row = Array.isArray(mapped) ? mapped[0] : mapped;
-            const pn =
-                (row && (row.pn || row.phone || row.number || row._serialized)) ||
-                null;
+            const pn = (row && (row.pn || row.phone || row.number || row._serialized)) || null;
             const digits = String(pn || '')
                 .replace(/@(c\.us|s\.whatsapp\.net)$/i, '')
                 .replace(/\D/g, '');
@@ -841,9 +839,7 @@ function attachClientEvents(c) {
                 msg._data?.participant ||
                 msg._data?.key?.participant ||
                 (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from)) ||
-                (msg._data?.key &&
-                    typeof msg._data.key === 'object' &&
-                    msg._data.key.participant);
+                (msg._data?.key && typeof msg._data.key === 'object' && msg._data.key.participant);
             if (!rawAuthor && msg.id && typeof msg.id === 'object' && msg.id._serialized) {
                 const parts = String(msg.id._serialized).split('_');
                 const jidPart = [...parts]
@@ -877,12 +873,7 @@ function attachClientEvents(c) {
             }
         }
 
-        const { contactNumber, contactLid } = await resolveInboundContactIds(
-            c,
-            msg,
-            contact,
-            chat
-        );
+        const { contactNumber, contactLid } = await resolveInboundContactIds(c, msg, contact, chat);
         const chatId =
             serializedJid(chat && chat.id) ||
             (isGroup
@@ -907,9 +898,7 @@ function attachClientEvents(c) {
                 lid: contactLid,
                 name: contact?.name || contact?.pushname || null,
                 isMyContact: contact?.isMyContact,
-                profilePicUrl: contact
-                    ? await contact.getProfilePicUrl().catch(() => null)
-                    : null,
+                profilePicUrl: contact ? await contact.getProfilePicUrl().catch(() => null) : null,
             },
             chat: {
                 id: chatId || (isGroup ? serializedJid(msg.from) : null),
@@ -1036,9 +1025,7 @@ function attachClientEvents(c) {
                 null;
             if (!groupId || !/@g\.us$/i.test(String(groupId))) return;
             const joinId =
-                notification?.id?.id ||
-                (notification?.id && notification.id._serialized) ||
-                null;
+                notification?.id?.id || (notification?.id && notification.id._serialized) || null;
             if (joinId && (await isDuplicateIncomingGatewayMessage(joinId))) return;
             const groupName =
                 (chat && (chat.name || chat.subject || chat.formattedTitle)) ||
@@ -1062,7 +1049,13 @@ function attachClientEvents(c) {
                     isGroup: true,
                 },
             };
-            rememberSeenChat(String(groupId), groupName, true, messageData.body, messageData.timestamp);
+            rememberSeenChat(
+                String(groupId),
+                groupName,
+                true,
+                messageData.body,
+                messageData.timestamp
+            );
             await deliverIncomingMessage(messageData);
             io.emit('new_message', messageData);
             logger.info('👥 Group join captured', { groupId: String(groupId), name: groupName });
@@ -1737,7 +1730,10 @@ async function waitForWhatsAppStore(maxMs = 18000) {
                 try {
                     if (typeof window.require === 'function') {
                         const cols = window.require('WAWebCollections');
-                        if (cols && (cols.ChatCollection || cols.Chat || cols.GroupMetadataCollection)) {
+                        if (
+                            cols &&
+                            (cols.ChatCollection || cols.Chat || cols.GroupMetadataCollection)
+                        ) {
                             return true;
                         }
                     }
@@ -1754,9 +1750,12 @@ async function waitForWhatsAppStore(maxMs = 18000) {
 async function hookChatCollectionObserver() {
     if (!client?.pupPage) return;
     try {
-        await client.pupPage.exposeFunction('__kayaRememberChat', (id, name, isGroup, preview, ts) => {
-            rememberSeenChat(id, name, isGroup, preview, ts);
-        });
+        await client.pupPage.exposeFunction(
+            '__kayaRememberChat',
+            (id, name, isGroup, preview, ts) => {
+                rememberSeenChat(id, name, isGroup, preview, ts);
+            }
+        );
     } catch (_) {
         /* already exposed for this page */
     }
@@ -1919,10 +1918,7 @@ async function extractWhatsAppChatsInBrowser() {
                     if (!mod) continue;
                     ingestStore(mod);
                     ingestCollection(mod.ChatCollection || mod.Chat || mod.default, false);
-                    ingestCollection(
-                        mod.GroupMetadataCollection || mod.GroupMetadata,
-                        true
-                    );
+                    ingestCollection(mod.GroupMetadataCollection || mod.GroupMetadata, true);
                 } catch (_) {}
             }
         }
@@ -1995,7 +1991,9 @@ async function extractWhatsAppChatsInBrowser() {
             const pane =
                 document.querySelector('#pane-side') ||
                 document.querySelector('[data-testid="chat-list"]');
-            const html = pane ? String(pane.innerHTML || '') : String(document.body.innerHTML || '');
+            const html = pane
+                ? String(pane.innerHTML || '')
+                : String(document.body.innerHTML || '');
             const re = /([0-9]+(?:-[0-9]+)?@(?:c\.us|g\.us|lid|s\.whatsapp\.net))/gi;
             let m;
             while ((m = re.exec(html))) {
@@ -2070,9 +2068,7 @@ async function listWhatsAppGroups() {
                     isGroup: true,
                 }))
             );
-            const groups = merged
-                .filter((c) => c.isGroup)
-                .map((c) => ({ id: c.id, name: c.name }));
+            const groups = merged.filter((c) => c.isGroup).map((c) => ({ id: c.id, name: c.name }));
             logger.info('WhatsApp groups listed from Store', { count: groups.length });
             return groups;
         }
@@ -2343,12 +2339,15 @@ async function lookupChatOnSession(raw) {
 
 function listedChatMatchesRequest(row, raw) {
     const id = String((row && row.id) || '').toLowerCase();
-    const req = String(raw || '').trim().toLowerCase();
+    const req = String(raw || '')
+        .trim()
+        .toLowerCase();
     if (!id || !req) return false;
     if (id === req) return true;
     const a = id.replace(/\D/g, '');
     const b = req.replace(/\D/g, '');
-    if (b.length >= 10 && a.length >= 10 && (a === b || a.endsWith(b) || b.endsWith(a))) return true;
+    if (b.length >= 10 && a.length >= 10 && (a === b || a.endsWith(b) || b.endsWith(a)))
+        return true;
     return false;
 }
 
@@ -2422,7 +2421,9 @@ async function resolveChatsOnCurrentSession(ids) {
                 } catch (_) {}
                 const ts =
                     Number(chat.timestamp) ||
-                    Number(chat.lastMessage && (chat.lastMessage.timestamp || chat.lastMessage.t)) ||
+                    Number(
+                        chat.lastMessage && (chat.lastMessage.timestamp || chat.lastMessage.t)
+                    ) ||
                     null;
                 const row = {
                     id: ser,
@@ -2431,7 +2432,10 @@ async function resolveChatsOnCurrentSession(ids) {
                     name: chat.name || chat.subject || chat.formattedTitle || null,
                     isGroup: !!chat.isGroup || /@g\.us$/i.test(ser),
                     lastPreview: chat.lastMessage
-                        ? String(chat.lastMessage.body || chat.lastMessage.caption || '').slice(0, 120)
+                        ? String(chat.lastMessage.body || chat.lastMessage.caption || '').slice(
+                              0,
+                              120
+                          )
                         : null,
                     timestamp: ts,
                 };
