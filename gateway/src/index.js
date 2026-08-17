@@ -539,17 +539,12 @@ function killOrphanChromeSync(sessionPath) {
     const root = sessionPath || getWhatsAppSessionPath();
     const userDataDir = path.join(root, 'session');
     if (process.platform !== 'linux') return;
-    const patterns = [
-        `--user-data-dir=${userDataDir}`,
-        userDataDir,
-        'kayaCRM-kaya/gateway/sessions',
-    ];
-    for (const pattern of patterns) {
-        try {
-            execFileSync('pkill', ['-9', '-f', pattern], { stdio: 'ignore', timeout: 5000 });
-        } catch (_) {
-            /* exit 1 = هیچ پروسه‌ای نبود */
-        }
+    // فقط Chrome با همین user-data-dir — الگوی مسیر sessions اسکریپت SSH/دیپلوی را هم match می‌کند
+    const chromeFlag = `--user-data-dir=${userDataDir}`;
+    try {
+        execFileSync('pkill', ['-9', '-f', chromeFlag], { stdio: 'ignore', timeout: 5000 });
+    } catch (_) {
+        /* exit 1 = هیچ پروسه‌ای نبود */
     }
     try {
         execFileSync('fuser', ['-k', '-9', path.join(userDataDir, 'SingletonLock')], {
