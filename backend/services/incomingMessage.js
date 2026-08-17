@@ -72,15 +72,20 @@ const AVATAR_LOOKUP_TTL_MS = 5 * 60 * 1000;
 const _avatarLookupCache = new Map();
 
 async function tryFetchProfilePicFromGateway(phone, logger) {
-    const p = digitsOnlyChatPhone(phone);
-    if (!p || p.length < 8) return null;
+    const raw = String(phone || '').trim();
+    const p = /@g\.us$/i.test(raw) ? raw : digitsOnlyChatPhone(raw);
+    if (!p) return null;
+    if (!/@g\.us$/i.test(p) && p.length < 8) return null;
     const now = Date.now();
     const cached = _avatarLookupCache.get(p);
     if (cached && (now - cached.at) < AVATAR_LOOKUP_TTL_MS) {
         return cached.url || null;
     }
     try {
-        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(p), { timeout: 4500 });
+        const qs = /@g\.us$/i.test(p)
+            ? 'chatId=' + encodeURIComponent(p)
+            : 'phone=' + encodeURIComponent(p);
+        const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 4500 });
         const url = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
         _avatarLookupCache.set(p, { at: now, url: url || null });
         return url || null;
@@ -520,9 +525,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         if (msgType === 'ptt') msgType = 'audio';
 
         const groupNameFromChat = isGroup ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim() : '';
-        const contactName = isGroup ? (groupNameFromChat || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
-        let profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
-        if (!isGroup && !profilePic) {
+        const contactName = isGroup
+            ? (groupNameFromChat || 'گروه واتساپ')
+            : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
+        let profilePic = (contact && contact.profilePicUrl) || null;
+        if (!profilePic) {
             profilePic = await tryFetchProfilePicFromGateway(phone, logger);
         }
 
@@ -543,7 +550,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         if (customerCreated) {
             logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
-            if (!isGroup && profilePic) {
+            if (profilePic) {
                 try {
                     const persisted = await persistRemoteAvatarIfNeeded(customer.id, profilePic);
                     if (persisted && persisted !== customer.profilePic) await customer.update({ profilePic: persisted });
@@ -556,7 +563,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             const updatedContactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
             if (updatedContactName && String(updatedContactName).trim() && String(customer.name || '').trim() !== String(updatedContactName).trim()) updates.name = String(updatedContactName).trim();
-            if (!isGroup && profilePic && profilePic !== customer.profilePic) updates.profilePic = profilePic;
+            if (profilePic && profilePic !== customer.profilePic) updates.profilePic = profilePic;
             if (updates.profilePic) {
                 try {
                     const persisted = await persistRemoteAvatarIfNeeded(customer.id, updates.profilePic);

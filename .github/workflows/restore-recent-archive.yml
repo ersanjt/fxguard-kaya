@@ -1,0 +1,23 @@
+name: Restore recent archive chats
+
+on:
+  workflow_dispatch:
+
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Restore last 45 days from archive backup
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 3m
+          command_timeout: 20m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            node scripts/restore-recent-archive.js --days=45
+            pm2 reload crm-backend-kaya --update-env || pm2 restart crm-backend-kaya --update-env

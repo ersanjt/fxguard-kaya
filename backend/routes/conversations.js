@@ -444,8 +444,12 @@ router.post('/sync-groups', async (req, res, next) => {
                     await t.rollback();
                     continue;
                 }
+                const looksLikeJidName = (s) =>
+                    /@g\.us$/i.test(String(s || '')) || /^گروه\s+\d/i.test(String(s || ''));
                 const custUpdates = {};
-                if (chatName && customer.name !== chatName) custUpdates.name = chatName;
+                if (chatName && !looksLikeJidName(chatName) && customer.name !== chatName) {
+                    custUpdates.name = chatName;
+                }
                 if (customer.isRestrictedFromStaff) custUpdates.isRestrictedFromStaff = false;
                 if (Object.keys(custUpdates).length) {
                     await customer.update(custUpdates, { transaction: t });
@@ -516,6 +520,10 @@ router.post('/sync-groups', async (req, res, next) => {
                 await t.commit();
                 synced++;
                 if (isGroup) groupsSynced++;
+                try {
+                    const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
+                    maybeRefreshWhatsappCustomerAvatar(customer).catch(() => {});
+                } catch (_) {}
             } catch (loopErr) {
                 try {
                     await t.rollback();

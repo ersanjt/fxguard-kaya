@@ -8,7 +8,8 @@ const axios = require('axios');
 /** شمارهٔ فقط رقمی برای API گیت‌وی (بدون +، فاصله، پسوند @c.us) */
 function digitsOnlyChatPhone(raw) {
     const s = String(raw || '').trim();
-    if (!s || s.includes('@g.us')) return '';
+    if (!s) return '';
+    if (/@g\.us$/i.test(s)) return s;
     return s.replace(/@c\.us$/i, '').replace(/\D/g, '').trim();
 }
 
@@ -162,7 +163,8 @@ function isAllowedProfilePicCdnHost(hostname) {
 async function maybeRefreshWhatsappCustomerAvatar(customer) {
     if (!customer || !customer.id) return null;
     const phoneDigits = digitsOnlyChatPhone(customer.phone);
-    if (!phoneDigits || phoneDigits.length < 8) return null;
+    if (!phoneDigits) return null;
+    if (!/@g\.us$/i.test(phoneDigits) && phoneDigits.length < 8) return null;
     const src = String(customer.source || '').toLowerCase();
     /* web: معمولاً شمارهٔ واتساپ نیست — واکشی پروفایل WA بی‌معنی */
     if (src === 'web') return null;
@@ -183,7 +185,10 @@ async function maybeRefreshWhatsappCustomerAvatar(customer) {
     let remoteUrl = '';
     try {
         const { gatewayGet } = require('./gatewayClient');
-        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(phoneDigits), { timeout: 5000 });
+        const qs = /@g\.us$/i.test(phoneDigits)
+            ? 'chatId=' + encodeURIComponent(phoneDigits)
+            : 'phone=' + encodeURIComponent(phoneDigits);
+        const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 5000 });
         remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
     } catch (_) {
         return null;

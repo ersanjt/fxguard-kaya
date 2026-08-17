@@ -1046,15 +1046,32 @@
                 const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
                 const rawPhone = cust.phone || '';
                 const phone = canSeePhone ? rawPhone : '';
-                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || (canSeePhone ? rawPhone : '') || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
+                let metaObj = c.metadata;
+                if (typeof metaObj === 'string') {
+                    try { metaObj = JSON.parse(metaObj); } catch (e) { metaObj = {}; }
+                }
+                metaObj = metaObj || {};
+                const looksLikeJid = function(s) {
+                    return !s || /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
+                };
+                const groupName = String(metaObj.groupName || metaObj.name || '').trim();
+                const custName = String(cust.name || '').trim();
+                let name = '';
+                if (isGroup) {
+                    if (groupName && !looksLikeJid(groupName)) name = groupName;
+                    else if (custName && !looksLikeJid(custName)) name = custName;
+                    else name = (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp group');
+                } else {
+                    name = custName || (canSeePhone ? rawPhone : '') || t('customer');
+                }
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
-                const picSrc = !isGroup ? customerAvatarDisplaySrc(cust) : '';
-                const canShowImg = !isGroup && customerAvatarShowsImage(cust);
+                const picSrc = customerAvatarDisplaySrc(cust);
+                const canShowImg = customerAvatarShowsImage(cust);
                 const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '');
-                const convAvatarClass = 'conv-item-avatar' + (!isGroup && !canShowImg ? ' conv-avatar-wa-default' : '');
+                const convAvatarClass = 'conv-item-avatar' + (!canShowImg ? ' conv-avatar-wa-default' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
