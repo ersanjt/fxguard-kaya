@@ -3082,6 +3082,9 @@
                 var p = img.parentElement;
                 if (p) {
                     p.classList.add('avatar-img-failed');
+                    if (p.classList.contains('conv-item-avatar') || p.classList.contains('chat-header-avatar')) {
+                        p.classList.add('conv-avatar-wa-default');
+                    }
                     var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
                     if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; fb.style.opacity = '1'; }
                 }
@@ -5456,7 +5459,7 @@
                 const looksLikeJid = function(s) {
                     return !s || /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
                 };
-                const groupName = String(metaObj.groupName || metaObj.name || '').trim();
+                const groupName = String(metaObj.groupName || metaObj.name || metaObj.subject || metaObj.formattedTitle || '').trim();
                 const custName = String(cust.name || '').trim();
                 let name = '';
                 if (isGroup) {
@@ -5600,12 +5603,15 @@
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
                 const custForAv = customerId ? { id: customerId, profilePic: rawOpenPic } : { profilePic: rawOpenPic };
-                let pic = !currentConvIsGroup ? customerAvatarDisplaySrc(custForAv) : '';
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (visiblePhone && visiblePhone[0]) ? visiblePhone[0] : '?';
-                if (pic && !currentConvIsGroup && customerAvatarShowsImage(custForAv)) {
+                let pic = customerAvatarDisplaySrc(custForAv);
+                const initial = currentConvIsGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (visiblePhone && visiblePhone[0]) ? visiblePhone[0] : '?');
+                avatarEl.classList.toggle('is-group-avatar', !!currentConvIsGroup);
+                avatarEl.classList.remove('avatar-img-failed', 'conv-avatar-wa-default');
+                if (pic && customerAvatarShowsImage(custForAv)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                    avatarEl.classList.add('conv-avatar-wa-default');
+                    avatarEl.innerHTML = '<span class="avatar-fallback' + (currentConvIsGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>';
                 }
             }
             const chatArea = document.getElementById('chatArea');
@@ -5651,11 +5657,16 @@
                         headerSubEl.textContent = detailPhone || (typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp');
                     }
                 }
-                if (avatarEl && d.customer && !currentConvIsGroup) {
+                if (avatarEl && d.customer) {
                     const picDisp = customerAvatarDisplaySrc(d.customer);
-                    if (picDisp) {
-                        const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                    const initialH = currentConvIsGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
+                    avatarEl.classList.toggle('is-group-avatar', !!currentConvIsGroup);
+                    avatarEl.classList.remove('avatar-img-failed', 'conv-avatar-wa-default');
+                    if (picDisp && customerAvatarShowsImage(d.customer)) {
                         avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
+                    } else {
+                        avatarEl.classList.add('conv-avatar-wa-default');
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span>';
                     }
                 }
                 if (!barEl || !badgesEl) {

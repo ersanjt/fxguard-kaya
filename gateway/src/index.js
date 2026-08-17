@@ -915,11 +915,21 @@ function attachClientEvents(c) {
             isFromMe
         );
         const peerJid = serializedJid(isFromMe ? msg.to : msg.from);
-        const chatId =
+        let chatId =
             serializedJid(chat && chat.id) ||
             (isGroup
                 ? serializedJid(msg.from) || serializedJid(msg.to)
                 : serializedJid(msg.id && msg.id.remote) || peerJid);
+        let chatName = chat?.name || chat?.subject || chat?.formattedTitle || null;
+        const cachedChat =
+            lookupCachedChat(chatId) ||
+            lookupCachedChat(peerJid) ||
+            lookupCachedChat(contactLid) ||
+            lookupCachedChat(contactNumber);
+        if (cachedChat) {
+            if (!chatId) chatId = serializedJid(cachedChat.id) || chatId;
+            if (!chatName) chatName = cachedChat.name || null;
+        }
 
         const messageData = {
             id: waMsgId,
@@ -938,12 +948,17 @@ function attachClientEvents(c) {
                 lid: contactLid,
                 name: contact?.name || contact?.pushname || null,
                 isMyContact: contact?.isMyContact,
-                profilePicUrl: contact ? await contact.getProfilePicUrl().catch(() => null) : null,
+                profilePicUrl: contact
+                    ? await Promise.race([
+                          contact.getProfilePicUrl(),
+                          timeoutReject(2000, 'profile_pic_timeout'),
+                      ]).catch(() => null)
+                    : null,
             },
             chat: {
                 id: chatId || (isGroup ? serializedJid(msg.from) : null),
-                name: chat?.name || chat?.subject || chat?.formattedTitle || null,
-                isGroup,
+                name: chatName,
+                isGroup: isGroup || !!(cachedChat && cachedChat.isGroup),
             },
             author: authorId,
             authorName: authorName,
@@ -2380,6 +2395,13 @@ async function lookupChatOnSession(raw) {
     return null;
 }
 
+function lookupCachedChat(raw) {
+    const key = String(raw || '').trim();
+    if (!key) return null;
+    const rows = lastChatsCache.chats || [];
+    return rows.find((row) => listedChatMatchesRequest(row, key)) || null;
+}
+
 function listedChatMatchesRequest(row, raw) {
     const id = String((row && row.id) || '').toLowerCase();
     const req = String(raw || '')
@@ -2629,21 +2651,52 @@ app.get('/api/contacts/profile-pic', async (req, res) => {
         if (!client) return res.status(503).json({ error: 'WhatsApp client not initialized' });
         const q = String(req.query.phone || req.query.chatId || req.query.jid || '').trim();
         const chatId = normalizePhoneToChatId(q);
-        if (!chatId) return res.status(400).json({ error: 'phone/chatId/jid is required' });
+        if (!chatId && !q) return res.status(400).json({ error: 'phone/chatId/jid is required' });
+
+        const candidates = [];
+        const addId = (id) => {
+            const s = serializedJid(id) || String(id || '').trim();
+            if (!s) return;
+            if (!candidates.includes(s)) candidates.push(s);
+        };
+        addId(q);
+        addId(chatId);
+        if (/@lid$/i.test(q) === false && /^\d{8,20}$/.test(q.replace(/\D/g, ''))) {
+            addId(`${String(q).replace(/\D/g, '')}@lid`);
+        }
+        const cached = lookupCachedChat(q) || lookupCachedChat(chatId);
+        if (cached) addId(cached.id);
 
         let profilePicUrl = null;
-        try {
-            profilePicUrl = await client.getProfilePicUrl(chatId);
-        } catch (_) {}
-        if (!profilePicUrl) {
+        let usedId = chatId || q;
+        for (const id of candidates) {
+            usedId = id;
             try {
-                const c = await client.getContactById(chatId);
+                profilePicUrl = await Promise.race([
+                    client.getProfilePicUrl(id),
+                    timeoutReject(2500, 'profile_pic_timeout'),
+                ]);
+            } catch (_) {
+                profilePicUrl = null;
+            }
+            if (profilePicUrl) break;
+            try {
+                const c = await Promise.race([
+                    client.getContactById(id),
+                    timeoutReject(2000, 'contact_timeout'),
+                ]);
                 if (c && typeof c.getProfilePicUrl === 'function') {
-                    profilePicUrl = await c.getProfilePicUrl().catch(() => null);
+                    profilePicUrl = await Promise.race([
+                        c.getProfilePicUrl(),
+                        timeoutReject(2000, 'profile_pic_timeout'),
+                    ]);
                 }
-            } catch (_) {}
+            } catch (_) {
+                profilePicUrl = null;
+            }
+            if (profilePicUrl) break;
         }
-        return res.json({ ok: true, chatId, profilePicUrl: profilePicUrl || null });
+        return res.json({ ok: true, chatId: usedId, profilePicUrl: profilePicUrl || null });
     } catch (error) {
         logger.error('Get contact profile pic error', { error: error?.message });
         return res.status(500).json({ error: error?.message || 'get_profile_pic_failed' });

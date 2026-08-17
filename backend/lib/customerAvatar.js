@@ -183,13 +183,23 @@ async function maybeRefreshWhatsappCustomerAvatar(customer) {
     _waAvatarRefreshAt.set(customer.id, now);
 
     let remoteUrl = '';
+    const lidRaw =
+        customer.customFields && typeof customer.customFields === 'object'
+            ? String(customer.customFields.whatsappLid || customer.customFields.whatsappChatId || '').trim()
+            : '';
+    const queryIds = [phoneDigits];
+    if (lidRaw) queryIds.push(/@/.test(lidRaw) ? lidRaw : `${lidRaw.replace(/\D/g, '')}@lid`);
+
     try {
         const { gatewayGet } = require('./gatewayClient');
-        const qs = /@g\.us$/i.test(phoneDigits)
-            ? 'chatId=' + encodeURIComponent(phoneDigits)
-            : 'phone=' + encodeURIComponent(phoneDigits);
-        const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 5000 });
-        remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
+        for (const id of queryIds) {
+            const qs = /@g\.us$/i.test(id) || /@lid$/i.test(id)
+                ? 'chatId=' + encodeURIComponent(id)
+                : 'phone=' + encodeURIComponent(id);
+            const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 5000 });
+            remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
+            if (remoteUrl) break;
+        }
     } catch (_) {
         return null;
     }

@@ -880,6 +880,9 @@
                 var p = img.parentElement;
                 if (p) {
                     p.classList.add('avatar-img-failed');
+                    if (p.classList.contains('conv-item-avatar') || p.classList.contains('chat-header-avatar')) {
+                        p.classList.add('conv-avatar-wa-default');
+                    }
                     var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
                     if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; fb.style.opacity = '1'; }
                 }
