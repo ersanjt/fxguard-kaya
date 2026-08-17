@@ -984,6 +984,48 @@ async function runTests() {
         assert.strictEqual(stray && stray.id !== cust.id ? stray.id : null, null, 'must not create a second customer for the LID');
     });
 
+    await test('incoming LID with to=business phone attaches to stored LID customer', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const phone = '989305880135';
+        const lid = '201206702071837';
+        const business = '905339470880';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'KAYA Customer', source: 'whatsapp' },
+        });
+        await cust.update({ customFields: { ...(cust.customFields || {}), whatsappLid: lid } });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            metadata: { whatsappLid: lid, whatsappChatId: `${lid}@lid` },
+            lastMessageAt: new Date(),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-lid-business-to-1',
+            from: `${lid}@lid`,
+            to: `${business}@c.us`,
+            body: 'جواب مشتری از LID',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'chat',
+            contact: { number: business, lid: `${lid}@lid`, name: 'Customer' },
+            chat: { id: `${lid}@lid`, isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        const msgs = await Message.findAll({ where: { conversationId: conv.id } });
+        assert(
+            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('جواب مشتری از LID')),
+            'inbound LID must land on the phone conversation even when to=business JID'
+        );
+        const businessCust = await Customer.findOne({ where: { phone: business } });
+        assert.strictEqual(
+            businessCust && businessCust.id !== cust.id ? businessCust.id : null,
+            null,
+            'must not attach inbound LID to the WhatsApp business number'
+        );
+    });
+
     // ── Security: Auth Boundaries ────────────────────────────────────────────
     section('Security — Auth Boundaries');
 

@@ -133,11 +133,11 @@ function lidDigitsFromValue(raw) {
 function collectIncomingIdentityHints(messageData, isFromMe) {
     const contact = messageData.contact || {};
     const chat = messageData.chat || {};
+    // فقط طرف مقابل — to/from خودِ خط را مشتری حساب نکن
+    const peer = isFromMe ? messageData.to : messageData.from;
     const hints = [
-        contact.number,
         chat.id,
-        isFromMe ? messageData.to : messageData.from,
-        isFromMe ? messageData.from : messageData.to,
+        peer,
         contact.lid,
     ];
     let phone = '';
@@ -147,7 +147,16 @@ function collectIncomingIdentityHints(messageData, isFromMe) {
         if (!lid) lid = lidDigitsFromValue(hint);
         if (phone && lid) break;
     }
+    // contact.number را وقتی LID داریم نادیده بگیر — اغلب شمارهٔ خودِ خط است نه مشتری
+    if (!phone && !lid) phone = realPhoneFromValue(contact.number);
     return { phone, lid };
+}
+
+function isSameWaDigits(a, b) {
+    const x = extractDigits(a);
+    const y = extractDigits(b);
+    if (!x || !y || x.length < 8 || y.length < 8) return false;
+    return x === y || x.endsWith(y) || y.endsWith(x);
 }
 
 async function findCustomerByStoredLid(lidDigits) {
@@ -563,7 +572,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         } else {
             const identity = collectIncomingIdentityHints(messageData, isFromMe);
             incomingLid = identity.lid || '';
-            rawPhone = identity.phone || identity.lid || (contact && contact.number) || (isFromMe ? to : from);
+            rawPhone = identity.phone || identity.lid || (isFromMe ? to : from);
         }
         if (rawPhone == null || rawPhone === '') return;
         let phone;
@@ -577,6 +586,20 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             phone = normalizePhone(rawPhone) || normalizePhone(isFromMe ? to : from);
         }
         if (!phone) return;
+
+        let linkedGw = null;
+        let lockdownAt = null;
+        try {
+            const { WhatsappConnection } = require('../models');
+            const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
+            const row = await WhatsappConnection.findByPk('default');
+            linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
+            lockdownAt = row?.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
+        } catch (_) {}
+
+        if (!isGroup && incomingLid && linkedGw && isSameWaDigits(phone, linkedGw)) {
+            phone = incomingLid;
+        }
         const rawType = (messageData.type || '').toLowerCase();
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
         const hasText = body != null && String(body).trim().length > 0;
@@ -634,23 +657,20 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             profilePic = await tryFetchProfilePicFromGateway(phone, logger);
         }
 
-        const phoneIsLidOnly = !isGroup && (
-            isLikelyWhatsAppLid(phone) || /@lid$/i.test(String(rawPhone)) || (!!incomingLid && phone === incomingLid)
-        );
-
         let customer;
         let customerCreated = false;
         try {
-            if (phoneIsLidOnly && incomingLid) {
+            if (!isGroup && incomingLid) {
                 customer = await findCustomerByStoredLid(incomingLid);
+                if (customer && customer.phone) {
+                    phone = customer.phone;
+                }
             }
             if (!customer) {
                 [customer, customerCreated] = await Customer.findOrCreate({
                     where: { phone },
                     defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
                 });
-            } else if (customer.phone && customer.phone !== phone) {
-                phone = customer.phone;
             }
         } catch (e) {
             if (e.name === 'SequelizeUniqueConstraintError') {
@@ -699,16 +719,6 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             },
             order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
         });
-
-        let linkedGw = null;
-        let lockdownAt = null;
-        try {
-            const { WhatsappConnection } = require('../models');
-            const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
-            const row = await WhatsappConnection.findByPk('default');
-            linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
-            lockdownAt = row?.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
-        } catch (_) {}
 
         const incomingTs = timestamp
             ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)

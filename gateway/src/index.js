@@ -188,17 +188,31 @@ function isWhatsAppGroupChat(chat, msg) {
     });
 }
 
-function collectMessageJids(msg, chat, contact) {
+function digitsOnly(val) {
+    return String(val || '').replace(/\D/g, '');
+}
+
+function isOwnAccountJid(ser) {
+    const own = digitsOnly(lastAccountInfo && lastAccountInfo.number);
+    const got = digitsOnly(ser);
+    if (!own || !got || got.length < 8) return false;
+    return own === got || own.endsWith(got) || got.endsWith(own);
+}
+
+/** فقط طرف مقابل — from/to خودِ خط کایا را مشتری حساب نکن */
+function collectPeerJids(msg, chat, contact, isFromMe) {
+    const peer = isFromMe ? msg && msg.to : msg && msg.from;
+    const dataPeer = isFromMe
+        ? msg && msg._data && msg._data.to
+        : msg && msg._data && msg._data.from;
     return [
         serializedJid(contact && contact.id),
         serializedJid(chat && chat.id),
-        serializedJid(msg && msg.from),
-        serializedJid(msg && msg.to),
+        serializedJid(peer),
         serializedJid(msg && msg.id && msg.id.remote),
-        serializedJid(msg && msg._data && msg._data.from),
-        serializedJid(msg && msg._data && msg._data.to),
+        serializedJid(dataPeer),
         serializedJid(msg && msg._data && msg._data.key && msg._data.key.remoteJid),
-    ].filter(Boolean);
+    ].filter((ser) => ser && !isOwnAccountJid(ser));
 }
 
 async function tryResolvePhoneFromLid(waClient, lidJid) {
@@ -251,18 +265,31 @@ async function tryResolvePhoneFromLid(waClient, lidJid) {
     }
 }
 
-async function resolveInboundContactIds(waClient, msg, contact, chat) {
-    let contactNumber = (contact && contact.number) || null;
+async function resolveInboundContactIds(waClient, msg, contact, chat, isFromMe) {
+    let contactNumber = null;
     let contactLid = null;
-    const ids = collectMessageJids(msg, chat, contact);
+    const contactId = serializedJid(contact && contact.id);
+    const ids = collectPeerJids(msg, chat, contact, isFromMe);
     for (const ser of ids) {
         if (/@lid$/i.test(ser) && !contactLid) contactLid = ser;
         if (!contactNumber && /@(c\.us|s\.whatsapp\.net)$/i.test(ser)) {
             contactNumber = String(ser).replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
         }
     }
+    if (
+        !contactNumber &&
+        contact &&
+        contact.number &&
+        !/@lid$/i.test(contactId) &&
+        !isOwnAccountJid(contact.number)
+    ) {
+        const n = digitsOnly(contact.number);
+        if (n.length >= 8) contactNumber = n;
+    }
+    if (contactNumber && isOwnAccountJid(contactNumber)) contactNumber = null;
     if (!contactNumber && contactLid) {
-        contactNumber = await tryResolvePhoneFromLid(waClient, contactLid);
+        const mapped = await tryResolvePhoneFromLid(waClient, contactLid);
+        if (mapped && !isOwnAccountJid(mapped)) contactNumber = mapped;
     }
     return { contactNumber: contactNumber || null, contactLid };
 }
@@ -811,7 +838,7 @@ function attachClientEvents(c) {
 
         let chat = null;
         try {
-            chat = await msg.getChat();
+            chat = await Promise.race([msg.getChat(), timeoutReject(2500, 'getChat_timeout')]);
         } catch (err) {
             logger.warn('getChat failed — continuing with message JIDs', {
                 error: formatGatewayError(err),
@@ -822,10 +849,17 @@ function attachClientEvents(c) {
         const isGroup = isWhatsAppGroupChat(chat, msg);
         let contact = null;
         try {
-            if (isFromMe && !isGroup && chat && typeof chat.getContact === 'function') {
-                contact = await chat.getContact();
-            } else if (!isFromMe) {
-                contact = await msg.getContact();
+            const contactPromise =
+                isFromMe && !isGroup && chat && typeof chat.getContact === 'function'
+                    ? chat.getContact()
+                    : !isFromMe
+                      ? msg.getContact()
+                      : null;
+            if (contactPromise) {
+                contact = await Promise.race([
+                    contactPromise,
+                    timeoutReject(2500, 'getContact_timeout'),
+                ]);
             }
         } catch (_) {
             /* گروه / LID: getContact گاهی fail می‌کند */
@@ -873,18 +907,24 @@ function attachClientEvents(c) {
             }
         }
 
-        const { contactNumber, contactLid } = await resolveInboundContactIds(c, msg, contact, chat);
+        const { contactNumber, contactLid } = await resolveInboundContactIds(
+            c,
+            msg,
+            contact,
+            chat,
+            isFromMe
+        );
+        const peerJid = serializedJid(isFromMe ? msg.to : msg.from);
         const chatId =
             serializedJid(chat && chat.id) ||
             (isGroup
                 ? serializedJid(msg.from) || serializedJid(msg.to)
-                : serializedJid(msg.id && msg.id.remote) ||
-                  serializedJid(isFromMe ? msg.to : msg.from));
+                : serializedJid(msg.id && msg.id.remote) || peerJid);
 
         const messageData = {
             id: waMsgId,
-            from: serializedJid(msg.from) || msg.from,
-            to: serializedJid(msg.to) || msg.to,
+            from: serializedJid(msg.from) || (typeof msg.from === 'string' ? msg.from : '') || '',
+            to: serializedJid(msg.to) || (typeof msg.to === 'string' ? msg.to : '') || '',
             body: msg.body,
             timestamp: msg.timestamp,
             hasMedia: msg.hasMedia,
@@ -961,6 +1001,8 @@ function attachClientEvents(c) {
         } else {
             logger.info('📨 Message received', {
                 from: contactNumber || contactLid || msg.from,
+                lid: contactLid || null,
+                to: serializedJid(msg.to) || null,
             });
         }
     }
@@ -1102,6 +1144,7 @@ async function sendToBackendWithRetry(messageData) {
     logger.error('Backend webhook failed after retries – message may be lost', {
         from: messageData?.from,
     });
+    throw new Error('backend_webhook_failed');
 }
 
 /**
