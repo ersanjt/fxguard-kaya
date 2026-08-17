@@ -34,6 +34,20 @@ const sequelize = isSqlite
             }
         );
 
+// SQLite DATE به شکل «2026-08-17 21:03:35.000 +00:00» ذخیره می‌شود؛ moment آن را ISO نمی‌داند و stderr را پر می‌کند
+if (isSqlite) {
+    const origApplyTimezone = Sequelize.DATE.prototype._applyTimezone;
+    Sequelize.DATE.prototype._applyTimezone = function applyTimezone(date, options) {
+        if (typeof date === 'string') {
+            const m = date.match(
+                /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?) ([\+\-]\d{2}:\d{2})$/
+            );
+            if (m) date = `${m[1]}T${m[2]}${m[3]}`;
+        }
+        return origApplyTimezone.call(this, date, options);
+    };
+}
+
 const convModels = require('./Conversation');
 const models = {
     Branch: require('./Branch')(sequelize),
