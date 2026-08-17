@@ -105,6 +105,113 @@ async function getCachedWhatsappConfig() {
     return wc;
 }
 
+function asJidString(val) {
+    if (val == null || val === '') return '';
+    if (typeof val === 'string') return val.trim();
+    if (typeof val === 'object') {
+        if (val._serialized) return String(val._serialized).trim();
+        if (val.user && val.server) return `${val.user}@${val.server}`;
+        if (val.id) return asJidString(val.id);
+    }
+    return String(val).trim();
+}
+
+function realPhoneFromValue(raw) {
+    const s = asJidString(raw);
+    if (!s || isGroupJid(s)) return '';
+    if (isLikelyWhatsAppLid(s) || /@lid$/i.test(s)) return '';
+    return normalizePhone(s) || '';
+}
+
+function lidDigitsFromValue(raw) {
+    const s = asJidString(raw);
+    if (!s || isGroupJid(s)) return '';
+    if (isLikelyWhatsAppLid(s) || /@lid$/i.test(s)) return extractDigits(s) || '';
+    return '';
+}
+
+function collectIncomingIdentityHints(messageData, isFromMe) {
+    const contact = messageData.contact || {};
+    const chat = messageData.chat || {};
+    const hints = [
+        contact.number,
+        chat.id,
+        isFromMe ? messageData.to : messageData.from,
+        isFromMe ? messageData.from : messageData.to,
+        contact.lid,
+    ];
+    let phone = '';
+    let lid = '';
+    for (const hint of hints) {
+        if (!phone) phone = realPhoneFromValue(hint);
+        if (!lid) lid = lidDigitsFromValue(hint);
+        if (phone && lid) break;
+    }
+    return { phone, lid };
+}
+
+async function findCustomerByStoredLid(lidDigits) {
+    if (!lidDigits) return null;
+    const lid = String(lidDigits);
+    const byPhone = await Customer.findOne({ where: { phone: lid } });
+    if (byPhone) return byPhone;
+    let rows = [];
+    try {
+        const dialect = sequelize.getDialect();
+        if (dialect === 'postgres') {
+            rows = await Customer.findAll({
+                where: sequelize.where(sequelize.json('customFields.whatsappLid'), lid),
+                limit: 8,
+            });
+        } else {
+            rows = await Customer.findAll({
+                where: sequelize.where(
+                    sequelize.literal(`json_extract("customFields", '$.whatsappLid')`),
+                    lid
+                ),
+                limit: 8,
+            });
+        }
+    } catch (_) {
+        rows = [];
+    }
+    const hit = rows.find((c) => String((c.customFields || {}).whatsappLid || '') === lid);
+    if (hit) return hit;
+    try {
+        const conv = await Conversation.findOne({
+            where: sequelize.where(
+                sequelize.cast(sequelize.col('metadata'), 'CHAR'),
+                { [Op.like]: `%"whatsappLid":"${lid}"%` }
+            ),
+            include: [{ model: Customer, as: 'customer', required: true }],
+            order: [['lastMessageAt', 'DESC']],
+        });
+        if (conv && conv.customer && String((conv.metadata || {}).whatsappLid || '') === lid) {
+            return conv.customer;
+        }
+    } catch (_) {}
+    return null;
+}
+
+async function rememberCustomerLid(customer, lidDigits, conversation) {
+    if (!customer || !lidDigits) return;
+    const lid = String(lidDigits);
+    const cf = { ...(customer.customFields || {}) };
+    if (String(cf.whatsappLid || '') !== lid) {
+        cf.whatsappLid = lid;
+        await customer.update({ customFields: cf }).catch(() => {});
+        customer.customFields = cf;
+    }
+    if (conversation) {
+        const meta = { ...(conversation.metadata || {}) };
+        if (String(meta.whatsappLid || '') !== lid) {
+            meta.whatsappLid = lid;
+            await conversation.update({ metadata: meta }).catch(() => {});
+            conversation.metadata = meta;
+        }
+    }
+}
+
 async function resolveIncomingMedia(media, logger) {
     if (!media || !media.url) return media;
     const url = (media.url || '').trim();
@@ -450,20 +557,13 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         // گروه: همیشه شناسهٔ گروه — حتی اگر پیام fromMe باشد (شمارهٔ خودِ خط را به‌جای گروه نگذار)
         let rawPhone;
+        let incomingLid = '';
         if (isGroup) {
             rawPhone = groupChatId || (chat && chat.id) || (isFromMe ? to : from);
-        } else if (isFromMe) {
-            rawPhone = (contact && contact.number != null && String(contact.number).trim() !== '')
-                ? contact.number
-                : to;
         } else {
-            rawPhone = (contact && contact.number != null && String(contact.number).trim() !== '')
-                ? contact.number
-                : from;
-        }
-        // اگر فقط LID داریم، همان را نگه دار (ارسال بعدی با @lid انجام می‌شود)
-        if (!isGroup && !rawPhone && contact && contact.lid) {
-            rawPhone = contact.lid;
+            const identity = collectIncomingIdentityHints(messageData, isFromMe);
+            incomingLid = identity.lid || '';
+            rawPhone = identity.phone || identity.lid || (contact && contact.number) || (isFromMe ? to : from);
         }
         if (rawPhone == null || rawPhone === '') return;
         let phone;
@@ -472,6 +572,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         } else if (isLikelyWhatsAppLid(rawPhone) || /@lid$/i.test(String(rawPhone))) {
             const lidDigits = extractDigits(rawPhone);
             phone = lidDigits || String(rawPhone).trim();
+            if (!incomingLid) incomingLid = lidDigits || '';
         } else {
             phone = normalizePhone(rawPhone) || normalizePhone(isFromMe ? to : from);
         }
@@ -533,19 +634,34 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             profilePic = await tryFetchProfilePicFromGateway(phone, logger);
         }
 
+        const phoneIsLidOnly = !isGroup && (
+            isLikelyWhatsAppLid(phone) || /@lid$/i.test(String(rawPhone)) || (!!incomingLid && phone === incomingLid)
+        );
+
         let customer;
         let customerCreated = false;
         try {
-            [customer, customerCreated] = await Customer.findOrCreate({
-                where: { phone },
-                defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
-            });
+            if (phoneIsLidOnly && incomingLid) {
+                customer = await findCustomerByStoredLid(incomingLid);
+            }
+            if (!customer) {
+                [customer, customerCreated] = await Customer.findOrCreate({
+                    where: { phone },
+                    defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
+                });
+            } else if (customer.phone && customer.phone !== phone) {
+                phone = customer.phone;
+            }
         } catch (e) {
             if (e.name === 'SequelizeUniqueConstraintError') {
                 customer = await Customer.findOne({ where: { phone } });
                 customerCreated = false;
                 if (!customer) throw e;
             } else throw e;
+        }
+
+        if (!isGroup && incomingLid) {
+            await rememberCustomerLid(customer, incomingLid, null);
         }
 
         if (customerCreated) {
@@ -685,6 +801,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (meta.groupName !== groupNameFromChat) {
                 await conversation.update({ metadata: { ...meta, isGroup: true, groupName: groupNameFromChat } });
             }
+        }
+
+        if (!isGroup && incomingLid) {
+            await rememberCustomerLid(customer, incomingLid, conversation);
         }
 
         const ts = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();

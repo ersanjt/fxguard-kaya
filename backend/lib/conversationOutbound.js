@@ -400,6 +400,32 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             };
         }
         await msg.update(updateFields);
+
+        const returnedChatId = gwRes?.data?.chatId;
+        if (returnedChatId && conversation.customer) {
+            try {
+                const { isLikelyWhatsAppLid, extractDigits } = require('../lib/phoneUtils');
+                if (isLikelyWhatsAppLid(returnedChatId) || /@lid$/i.test(String(returnedChatId))) {
+                    const lidDigits = extractDigits(returnedChatId);
+                    if (lidDigits) {
+                        const cf = { ...(conversation.customer.customFields || {}), whatsappLid: lidDigits };
+                        await conversation.customer.update({ customFields: cf });
+                        conversation.customer.customFields = cf;
+                        const meta = {
+                            ...(conversation.metadata || {}),
+                            whatsappLid: lidDigits,
+                            whatsappChatId: String(returnedChatId),
+                        };
+                        await conversation.update({ metadata: meta });
+                        conversation.metadata = meta;
+                    }
+                } else {
+                    const meta = { ...(conversation.metadata || {}), whatsappChatId: String(returnedChatId) };
+                    await conversation.update({ metadata: meta });
+                    conversation.metadata = meta;
+                }
+            } catch (_) {}
+        }
     } catch (gwErr) {
         let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
         if (typeof errMsg !== 'string') errMsg = String(errMsg?.message || errMsg || 'خطا در ارسال به واتساپ');

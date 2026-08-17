@@ -155,14 +155,118 @@ async function isDuplicateIncomingGatewayMessage(msgId) {
     }
 }
 
+async function clearIncomingGatewayDedupe(msgId) {
+    if (!msgId || !redisClient?.isReady) return;
+    try {
+        await redisClient.del(`gateway:incoming:${String(msgId)}`);
+    } catch (_) {}
+}
+
+function serializedJid(val) {
+    if (val == null || val === '') return '';
+    if (typeof val === 'string') return val.trim();
+    if (typeof val === 'object') {
+        if (val._serialized) return String(val._serialized).trim();
+        if (val.user && val.server) return `${val.user}@${val.server}`;
+        if (val.id) return serializedJid(val.id);
+    }
+    return '';
+}
+
 function isWhatsAppGroupChat(chat, msg) {
     if (chat && chat.isGroup) return true;
     const ids = [
         chat && chat.id && (chat.id._serialized || chat.id),
         msg && msg.from,
         msg && msg.to,
+        msg && msg.id && msg.id.remote,
+        msg && msg._data && msg._data.key && msg._data.key.remoteJid,
     ];
-    return ids.some((v) => typeof v === 'string' && /@g\.us$/i.test(v));
+    return ids.some((v) => {
+        const s = serializedJid(v) || (typeof v === 'string' ? v : '');
+        return /@g\.us$/i.test(s);
+    });
+}
+
+function collectMessageJids(msg, chat, contact) {
+    return [
+        serializedJid(contact && contact.id),
+        serializedJid(chat && chat.id),
+        serializedJid(msg && msg.from),
+        serializedJid(msg && msg.to),
+        serializedJid(msg && msg.id && msg.id.remote),
+        serializedJid(msg && msg._data && msg._data.from),
+        serializedJid(msg && msg._data && msg._data.to),
+        serializedJid(msg && msg._data && msg._data.key && msg._data.key.remoteJid),
+    ].filter(Boolean);
+}
+
+async function tryResolvePhoneFromLid(waClient, lidJid) {
+    const jid = serializedJid(lidJid);
+    if (!jid || !/@lid$/i.test(jid) || !waClient) return null;
+    if (typeof waClient.getContactLidAndPhone === 'function') {
+        try {
+            const mapped = await Promise.race([
+                waClient.getContactLidAndPhone([jid]),
+                timeoutReject(2000, 'lid_map_timeout'),
+            ]);
+            const row = Array.isArray(mapped) ? mapped[0] : mapped;
+            const pn =
+                (row && (row.pn || row.phone || row.number || row._serialized)) ||
+                null;
+            const digits = String(pn || '')
+                .replace(/@(c\.us|s\.whatsapp\.net)$/i, '')
+                .replace(/\D/g, '');
+            if (digits.length >= 8) return digits;
+        } catch (_) {}
+    }
+    if (!waClient.pupPage) return null;
+    try {
+        const phone = await Promise.race([
+            waClient.pupPage.evaluate(async (rawJid) => {
+                const store = window.Store;
+                if (!store) return null;
+                try {
+                    const wid =
+                        store.WidFactory && store.WidFactory.createWid
+                            ? store.WidFactory.createWid(rawJid)
+                            : rawJid;
+                    if (store.LidUtils && typeof store.LidUtils.getPhoneNumber === 'function') {
+                        const pn = await store.LidUtils.getPhoneNumber(wid);
+                        return (pn && (pn.user || pn._serialized)) || null;
+                    }
+                    if (store.lidChange && typeof store.lidChange.findPNForLID === 'function') {
+                        const pn = store.lidChange.findPNForLID(wid);
+                        return (pn && (pn.user || pn._serialized)) || null;
+                    }
+                } catch (_) {}
+                return null;
+            }, jid),
+            timeoutReject(2000, 'lid_store_timeout'),
+        ]);
+        const digits = String(phone || '')
+            .replace(/@(c\.us|s\.whatsapp\.net)$/i, '')
+            .replace(/\D/g, '');
+        return digits.length >= 8 ? digits : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+async function resolveInboundContactIds(waClient, msg, contact, chat) {
+    let contactNumber = (contact && contact.number) || null;
+    let contactLid = null;
+    const ids = collectMessageJids(msg, chat, contact);
+    for (const ser of ids) {
+        if (/@lid$/i.test(ser) && !contactLid) contactLid = ser;
+        if (!contactNumber && /@(c\.us|s\.whatsapp\.net)$/i.test(ser)) {
+            contactNumber = String(ser).replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
+        }
+    }
+    if (!contactNumber && contactLid) {
+        contactNumber = await tryResolvePhoneFromLid(waClient, contactLid);
+    }
+    return { contactNumber: contactNumber || null, contactLid };
 }
 
 function isGatewaySentEcho(waMsgId) {
@@ -701,153 +805,188 @@ function attachClientEvents(c) {
         }
     });
 
-    c.on('message', async (msg) => {
-        healthCheckFailCount = 0;
+    async function forwardWhatsAppEventToBackend(msg) {
+        const isFromMe = !!msg.fromMe;
+        const waMsgId = msg?.id?.id;
+        if (isFromMe) {
+            if (outboundApiSendDepth > 0) {
+                markGatewaySentMessage(waMsgId);
+                return;
+            }
+            if (isGatewaySentEcho(waMsgId)) return;
+        }
+
+        let chat = null;
         try {
-            // پیام خروجی (fromMe) فقط از message_create می‌آید — قبل از dedupe برگرد
-            if (msg.fromMe) return;
-            const waIncomingId = msg?.id?.id;
-            if (await isDuplicateIncomingGatewayMessage(waIncomingId)) return;
-            const chat = await msg.getChat();
-            const isGroup = isWhatsAppGroupChat(chat, msg);
-            // برای گروه: getContact() با author فرستنده را برمی‌گرداند؛ برای چت مستقیم: contact فرستنده است
-            let contact = null;
-            try {
+            chat = await msg.getChat();
+        } catch (err) {
+            logger.warn('getChat failed — continuing with message JIDs', {
+                error: formatGatewayError(err),
+                from: serializedJid(msg?.from),
+                fromMe: isFromMe,
+            });
+        }
+        const isGroup = isWhatsAppGroupChat(chat, msg);
+        let contact = null;
+        try {
+            if (isFromMe && !isGroup && chat && typeof chat.getContact === 'function') {
+                contact = await chat.getContact();
+            } else if (!isFromMe) {
                 contact = await msg.getContact();
-            } catch (_) {
-                /* گروه / LID: getContact گاهی fail می‌کند */
             }
-            let authorId = null;
-            let authorName = null;
-            if (isGroup && !msg.fromMe) {
-                // چند منبع برای شناسه فرستنده (وابسته به نسخه whatsapp-web.js و پروتکل)
-                let rawAuthor =
-                    msg.author ||
-                    msg._data?.participant ||
-                    msg._data?.key?.participant ||
-                    (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from)) ||
-                    (msg._data?.key &&
-                        typeof msg._data.key === 'object' &&
-                        msg._data.key.participant);
-                // fallback: استخراج participant از _serialized (مثلاً false_groupId@g.us_msgId_98xxx@c.us)
-                if (!rawAuthor && msg.id && typeof msg.id === 'object' && msg.id._serialized) {
-                    const parts = String(msg.id._serialized).split('_');
-                    // آخرین بخشی که شبیه JID کاربر است (نه گروه @g.us)
-                    const jidPart = [...parts]
-                        .reverse()
-                        .find((p) => /@(c\.us|s\.whatsapp\.net|lid)$/.test(p));
-                    if (jidPart) rawAuthor = jidPart;
-                }
-                authorId = rawAuthor
-                    ? typeof rawAuthor === 'string'
-                        ? rawAuthor
-                        : rawAuthor?._serialized || rawAuthor?.id || rawAuthor
-                    : null;
-                if (authorId) {
-                    try {
-                        const authorContact = await client.getContactById(authorId);
-                        authorName =
-                            authorContact?.name ||
-                            authorContact?.pushname ||
-                            authorContact?.shortName ||
-                            null;
-                    } catch (_) {}
-                }
-                // fallback: نام فرستنده از پروتکل واتساپ
-                if (!authorName && msg._data) {
-                    authorName =
-                        msg._data.notify ||
-                        msg._data.pushName ||
-                        msg._data.pushname ||
-                        msg._data.senderName ||
-                        null;
-                    if (authorName) authorName = String(authorName).trim() || null;
-                }
+        } catch (_) {
+            /* گروه / LID: getContact گاهی fail می‌کند */
+        }
+
+        let authorId = null;
+        let authorName = null;
+        if (isGroup && !isFromMe) {
+            let rawAuthor =
+                msg.author ||
+                msg._data?.participant ||
+                msg._data?.key?.participant ||
+                (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from)) ||
+                (msg._data?.key &&
+                    typeof msg._data.key === 'object' &&
+                    msg._data.key.participant);
+            if (!rawAuthor && msg.id && typeof msg.id === 'object' && msg.id._serialized) {
+                const parts = String(msg.id._serialized).split('_');
+                const jidPart = [...parts]
+                    .reverse()
+                    .find((p) => /@(c\.us|s\.whatsapp\.net|lid)$/.test(p));
+                if (jidPart) rawAuthor = jidPart;
             }
-
-            let contactNumber = contact?.number || null;
-            let contactLid = null;
-            try {
-                const ser = contact?.id?._serialized || contact?.id || '';
-                if (typeof ser === 'string' && /@lid$/i.test(ser)) {
-                    contactLid = ser;
-                    if (!contactNumber) contactNumber = null;
-                } else if (
-                    !contactNumber &&
-                    typeof ser === 'string' &&
-                    /@(c\.us|s\.whatsapp\.net)$/i.test(ser)
-                ) {
-                    contactNumber = String(ser).replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
-                }
-            } catch (_) {}
-
-            const messageData = {
-                id: msg?.id?.id,
-                from: msg.from,
-                to: msg.to,
-                body: msg.body,
-                timestamp: msg.timestamp,
-                hasMedia: msg.hasMedia,
-                type: msg.type,
-                isForwarded: msg.isForwarded,
-                isStatus: msg.isStatus,
-                isStarred: msg.isStarred,
-                fromMe: msg.fromMe,
-                contact: {
-                    number: contactNumber,
-                    lid: contactLid,
-                    name: contact?.name || contact?.pushname || null,
-                    isMyContact: contact?.isMyContact,
-                    profilePicUrl: contact
-                        ? await contact.getProfilePicUrl().catch(() => null)
-                        : null,
-                },
-                chat: {
-                    id: chat?.id?._serialized || (isGroup ? msg.from : null),
-                    name: chat?.name || chat?.subject || chat?.formattedTitle || null,
-                    isGroup,
-                },
-                author: authorId,
-                authorName: authorName,
-            };
-
-            if (msg.hasMedia) {
+            authorId = rawAuthor
+                ? typeof rawAuthor === 'string'
+                    ? rawAuthor
+                    : rawAuthor?._serialized || rawAuthor?.id || rawAuthor
+                : null;
+            if (authorId) {
                 try {
-                    const media = await msg.downloadMedia();
-                    if (media) {
-                        // برای نمایش در پنل: بک‌اند باید فایل را داشته باشد. ارسال data (base64) تا بک‌اند در uploads ذخیره و mediaData.url بگذارد.
-                        messageData.media = {
-                            mimetype: media.mimetype,
-                            filename: media.filename || null,
-                            data: media.data,
-                        };
-                    }
-                } catch (error) {
-                    logger.error('Media download/save error', { error: error?.message });
-                }
+                    const authorContact = await c.getContactById(authorId);
+                    authorName =
+                        authorContact?.name ||
+                        authorContact?.pushname ||
+                        authorContact?.shortName ||
+                        null;
+                } catch (_) {}
             }
+            if (!authorName && msg._data) {
+                authorName =
+                    msg._data.notify ||
+                    msg._data.pushName ||
+                    msg._data.pushname ||
+                    msg._data.senderName ||
+                    null;
+                if (authorName) authorName = String(authorName).trim() || null;
+            }
+        }
 
-            rememberSeenChat(
-                messageData.chat && messageData.chat.id,
-                messageData.chat && messageData.chat.name,
-                messageData.chat && messageData.chat.isGroup,
-                messageData.body,
-                messageData.timestamp
-            );
+        const { contactNumber, contactLid } = await resolveInboundContactIds(
+            c,
+            msg,
+            contact,
+            chat
+        );
+        const chatId =
+            serializedJid(chat && chat.id) ||
+            (isGroup
+                ? serializedJid(msg.from) || serializedJid(msg.to)
+                : serializedJid(msg.id && msg.id.remote) ||
+                  serializedJid(isFromMe ? msg.to : msg.from));
 
-            // Send to backend (HTTP by default — see deliverIncomingMessage)
+        const messageData = {
+            id: waMsgId,
+            from: serializedJid(msg.from) || msg.from,
+            to: serializedJid(msg.to) || msg.to,
+            body: msg.body,
+            timestamp: msg.timestamp,
+            hasMedia: msg.hasMedia,
+            type: msg.type,
+            isForwarded: msg.isForwarded,
+            isStatus: msg.isStatus,
+            isStarred: msg.isStarred,
+            fromMe: isFromMe,
+            contact: {
+                number: contactNumber,
+                lid: contactLid,
+                name: contact?.name || contact?.pushname || null,
+                isMyContact: contact?.isMyContact,
+                profilePicUrl: contact
+                    ? await contact.getProfilePicUrl().catch(() => null)
+                    : null,
+            },
+            chat: {
+                id: chatId || (isGroup ? serializedJid(msg.from) : null),
+                name: chat?.name || chat?.subject || chat?.formattedTitle || null,
+                isGroup,
+            },
+            author: authorId,
+            authorName: authorName,
+        };
+
+        if (msg.hasMedia) {
+            try {
+                const media = await msg.downloadMedia();
+                if (media) {
+                    messageData.media = {
+                        mimetype: media.mimetype,
+                        filename: media.filename || null,
+                        data: media.data,
+                    };
+                }
+            } catch (error) {
+                logger.error('Media download/save error', {
+                    error: formatGatewayError(error),
+                    fromMe: isFromMe,
+                });
+            }
+        }
+
+        if (await isDuplicateIncomingGatewayMessage(waMsgId)) return;
+
+        rememberSeenChat(
+            messageData.chat && messageData.chat.id,
+            messageData.chat && messageData.chat.name,
+            messageData.chat && messageData.chat.isGroup,
+            messageData.body,
+            messageData.timestamp
+        );
+
+        try {
             await deliverIncomingMessage(messageData);
+        } catch (deliverErr) {
+            await clearIncomingGatewayDedupe(waMsgId);
+            throw deliverErr;
+        }
 
-            // realtime dashboard
-            io.emit('new_message', messageData);
-
-            // short cache
+        io.emit('new_message', messageData);
+        if (messageData.id) {
             redisClient
                 .hSet(`message:${messageData.id}`, 'data', JSON.stringify(messageData))
                 .catch(() => {});
             redisClient.expire(`message:${messageData.id}`, 86400).catch(() => {});
+        }
+        if (isFromMe) {
+            logger.info('📤 Outgoing message from mobile captured', {
+                to: isGroup
+                    ? messageData.chat.id || msg.to || null
+                    : contactNumber || msg.to || null,
+                isGroup,
+            });
+        } else {
+            logger.info('📨 Message received', {
+                from: contactNumber || contactLid || msg.from,
+            });
+        }
+    }
 
-            logger.info('📨 Message received', { from: contact?.number });
+    c.on('message', async (msg) => {
+        healthCheckFailCount = 0;
+        try {
+            // پیام خروجی (fromMe) فقط از message_create می‌آید
+            if (msg.fromMe) return;
+            await forwardWhatsAppEventToBackend(msg);
         } catch (error) {
             logger.error('Error processing message', {
                 error: formatGatewayError(error),
@@ -879,91 +1018,10 @@ function attachClientEvents(c) {
             .catch(() => {});
     });
 
-    // پیام‌هایی که از موبایل یا دستگاه دیگر ارسال می‌شوند (fromMe)
+    // پیام‌های خروجی موبایل (fromMe) و ورودی وقتی رویداد message شلیک نشود
     c.on('message_create', async (msg) => {
         try {
-            if (!msg.fromMe) return; // فقط پیام‌های ارسالی خودمان
-            const waEchoId = msg?.id?.id;
-            // ارسال از API: echo قبل از markGatewaySentMessage می‌آید — فقط id را ثبت کن
-            if (outboundApiSendDepth > 0) {
-                markGatewaySentMessage(waEchoId);
-                return;
-            }
-            if (isGatewaySentEcho(waEchoId)) {
-                return;
-            }
-            if (await isDuplicateIncomingGatewayMessage(waEchoId)) return;
-            const chat = await msg.getChat();
-            const isGroup = isWhatsAppGroupChat(chat, msg);
-            let contact = null;
-            if (!isGroup) {
-                try {
-                    contact = await chat.getContact();
-                } catch (_) {
-                    /* LID / privacy: getContact گاهی fail می‌کند */
-                }
-            }
-
-            const messageData = {
-                id: msg?.id?.id,
-                from: msg.from,
-                to: msg.to,
-                body: msg.body,
-                timestamp: msg.timestamp,
-                hasMedia: msg.hasMedia,
-                type: msg.type,
-                isForwarded: msg.isForwarded,
-                isStatus: msg.isStatus,
-                fromMe: true,
-                contact: {
-                    number: contact?.number || null,
-                    name: contact?.name || contact?.pushname || null,
-                    isMyContact: contact?.isMyContact,
-                    profilePicUrl: contact
-                        ? await contact.getProfilePicUrl().catch(() => null)
-                        : null,
-                },
-                chat: {
-                    id: chat?.id?._serialized || (isGroup ? msg.to || msg.from : null),
-                    name: chat?.name || chat?.subject || chat?.formattedTitle || null,
-                    isGroup,
-                },
-            };
-
-            if (msg.hasMedia) {
-                try {
-                    const media = await msg.downloadMedia();
-                    if (media) {
-                        messageData.media = {
-                            mimetype: media.mimetype,
-                            filename: media.filename || null,
-                            data: media.data,
-                        };
-                    }
-                } catch (error) {
-                    logger.error('message_create media download error', {
-                        error: formatGatewayError(error),
-                    });
-                }
-            }
-
-            rememberSeenChat(
-                messageData.chat && messageData.chat.id,
-                messageData.chat && messageData.chat.name,
-                isGroup,
-                messageData.body,
-                messageData.timestamp
-            );
-
-            await deliverIncomingMessage(messageData);
-
-            io.emit('new_message', messageData);
-            logger.info('📤 Outgoing message from mobile captured', {
-                to: isGroup
-                    ? chat?.id?._serialized || msg.to || null
-                    : contact?.number || msg.to || null,
-                isGroup,
-            });
+            await forwardWhatsAppEventToBackend(msg);
         } catch (error) {
             logger.error('Error processing message_create', {
                 error: formatGatewayError(error),

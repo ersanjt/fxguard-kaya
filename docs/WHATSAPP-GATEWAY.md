@@ -29,3 +29,11 @@
 ## لاگ بک‌اند: **413** روی `POST /api/webhook/incoming-message` (`PayloadTooLargeError`)
 
 پیام با رسانهٔ بزرگ (base64) از سقف بدنه عبور می‌کند. در بک‌اند ابتدا **`X-Webhook-Secret`** بررسی می‌شود، سپس بدنه با **`WEBHOOK_BODY_LIMIT`** (پیش‌فرض **25mb**، حداکثر **50mb**) پارس می‌شود. بعد از `git pull`: `pm2 reload crm-backend`. اگر 413 از **nginx** است، `client_max_body_size` را (مثلاً در `server` یا `location /api`) بالا ببرید.
+
+## پیام از پنل ارسال می‌شود ولی جواب مشتری در CRM نمی‌آید
+
+ارسال از CRM یعنی Gateway وصل است. دریافت جداست:
+
+1. رویداد `message` گاهی برای پیام ورودی شلیک نمی‌شود (مالتی‌دیوایس / LID). Gateway باید همان پیام را از `message_create` هم به بک‌اند بفرستد.
+2. اگر `getChat()` برای LID خطا بدهد، پیام نباید دور ریخته شود؛ با `from` / `id.remote` ادامه می‌دهد.
+3. روی سرور: `pm2 logs crm-gateway --lines 80` را برای `📨 Message received` یا `getChat failed` ببینید، بعد `pm2 reload crm-gateway` و `pm2 reload crm-backend`.

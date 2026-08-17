@@ -910,6 +910,80 @@ async function runTests() {
         );
     });
 
+    await test('incoming LID with chat @c.us attaches to existing phone conversation', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const phone = '989305880135';
+        const lid = '277012345678901';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'LID Merge Phone', source: 'whatsapp' },
+        });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            lastMessageAt: new Date(),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-lid-chatid-1',
+            from: `${lid}@lid`,
+            body: 'تست ورودی LID',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'chat',
+            contact: { number: null, lid: `${lid}@lid`, name: 'Customer' },
+            chat: { id: `${phone}@c.us`, name: 'Customer', isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        const msgs = await Message.findAll({ where: { conversationId: conv.id } });
+        assert(
+            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('تست ورودی LID')),
+            'incoming LID message must land on the phone-number conversation'
+        );
+        await cust.reload();
+        assert.strictEqual(String((cust.customFields || {}).whatsappLid || ''), lid);
+    });
+
+    await test('incoming LID matches customer stored whatsappLid custom field', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const phone = '989121234567';
+        const lid = '188812345678901';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: {
+                name: 'Stored LID Customer',
+                source: 'whatsapp',
+                customFields: { whatsappLid: lid },
+            },
+        });
+        await cust.update({ customFields: { ...(cust.customFields || {}), whatsappLid: lid } });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            metadata: { whatsappLid: lid },
+            lastMessageAt: new Date(),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-lid-stored-1',
+            from: `${lid}@lid`,
+            body: 'جواب مشتری',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'chat',
+            contact: { number: null, lid: `${lid}@lid` },
+            chat: { id: `${lid}@lid`, isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        const msgs = await Message.findAll({ where: { conversationId: conv.id } });
+        assert(
+            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('جواب مشتری')),
+            'incoming LID-only payload must reuse the customer that already has this LID'
+        );
+        const stray = await Customer.findOne({ where: { phone: lid } });
+        assert.strictEqual(stray && stray.id !== cust.id ? stray.id : null, null, 'must not create a second customer for the LID');
+    });
+
     // ── Security: Auth Boundaries ────────────────────────────────────────────
     section('Security — Auth Boundaries');
 
