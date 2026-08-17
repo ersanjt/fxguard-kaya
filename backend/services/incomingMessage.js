@@ -7,24 +7,54 @@ const fsPromises = require('fs').promises;
 const axios = require('axios');
 const mongoose = require('mongoose');
 const models = require('../models');
-const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
+const {
+    sequelize,
+    Customer,
+    Conversation,
+    Message,
+    User,
+    Department,
+    AutoResponse,
+    WhatsappConfig,
+} = models;
 const { Op } = require('sequelize');
-const { normalizePhone, getSendTarget, isLikelyWhatsAppLid, extractDigits, isGroupJid } = require('../lib/phoneUtils');
+const {
+    normalizePhone,
+    getSendTarget,
+    isLikelyWhatsAppLid,
+    extractDigits,
+    isGroupJid,
+} = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
-const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
+const {
+    persistRemoteAvatarIfNeeded,
+    digitsOnlyChatPhone,
+    maybeRefreshWhatsappCustomerAvatar,
+} = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
-const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, parseMsgMetadata } = require('../lib/resolveMobileWhatsappUser');
+const {
+    resolveMobileWhatsappUser,
+    isCrmPanelOutboundMessage,
+    loadMobileWhatsappUser,
+    applyMobileWhatsappSenderToMessages,
+    parseMsgMetadata,
+} = require('../lib/resolveMobileWhatsappUser');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
+if (!fs.existsSync(uploadsDir))
+    try {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch (_) {}
 
 function buildSafeUploadName(suggestedName, ext) {
-    let stem = String(suggestedName || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+    let stem = String(suggestedName || 'file')
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .slice(0, 100);
     const normalizedExt = ext && ext.startsWith('.') ? ext : ext ? '.' + ext : '';
     if (normalizedExt && !stem.toLowerCase().endsWith(normalizedExt.toLowerCase())) {
         stem += normalizedExt;
@@ -44,14 +74,21 @@ async function normalizeVoiceUploadForPlayback(filePath, mimetype, filename, log
             mimetype: 'audio/ogg',
         };
     } catch (err) {
-        if (logger) logger.warn('Voice normalize for CRM playback failed', { error: err.message, file: path.basename(filePath) });
+        if (logger)
+            logger.warn('Voice normalize for CRM playback failed', {
+                error: err.message,
+                file: path.basename(filePath),
+            });
         return null;
     }
 }
 
 function isVoiceLikeMedia(media, isPtt) {
     if (isPtt) return true;
-    const mime = String(media?.mimetype || '').split(';')[0].trim().toLowerCase();
+    const mime = String(media?.mimetype || '')
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
     const name = String(media?.filename || media?.caption || '').toLowerCase();
     return mime.startsWith('audio/') || /\.(ogg|opus|oga|webm|m4a|mp3|wav|aac)$/i.test(name);
 }
@@ -71,26 +108,44 @@ const WC_CACHE_TTL_MS = 30 * 1000;
 const AVATAR_LOOKUP_TTL_MS = 5 * 60 * 1000;
 const _avatarLookupCache = new Map();
 
-async function tryFetchProfilePicFromGateway(phone, logger) {
+async function tryFetchProfilePicFromGateway(phone, logger, extraIds) {
     const raw = String(phone || '').trim();
     const p = /@g\.us$/i.test(raw) ? raw : digitsOnlyChatPhone(raw);
     if (!p) return null;
     if (!/@g\.us$/i.test(p) && p.length < 8) return null;
     const now = Date.now();
     const cached = _avatarLookupCache.get(p);
-    if (cached && (now - cached.at) < AVATAR_LOOKUP_TTL_MS) {
+    if (cached && now - cached.at < AVATAR_LOOKUP_TTL_MS) {
         return cached.url || null;
     }
+    const ids = [p];
+    if (Array.isArray(extraIds)) {
+        for (const x of extraIds) {
+            const s = String(x || '').trim();
+            if (s && !ids.includes(s)) ids.push(s);
+        }
+    }
+    let url = '';
     try {
-        const qs = /@g\.us$/i.test(p)
-            ? 'chatId=' + encodeURIComponent(p)
-            : 'phone=' + encodeURIComponent(p);
-        const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 4500 });
-        const url = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
-        _avatarLookupCache.set(p, { at: now, url: url || null });
+        for (const id of ids) {
+            const qs =
+                /@g\.us$/i.test(id) || /@lid$/i.test(id) || /@/.test(id)
+                    ? 'chatId=' + encodeURIComponent(id)
+                    : 'phone=' + encodeURIComponent(id);
+            const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 4500 });
+            url =
+                res && res.data && res.data.profilePicUrl
+                    ? String(res.data.profilePicUrl).trim()
+                    : '';
+            if (url) break;
+        }
+        _avatarLookupCache.set(p, {
+            at: url ? now : now - AVATAR_LOOKUP_TTL_MS + 10000,
+            url: url || null,
+        });
         return url || null;
     } catch (err) {
-        _avatarLookupCache.set(p, { at: now, url: null });
+        _avatarLookupCache.set(p, { at: now - AVATAR_LOOKUP_TTL_MS + 10000, url: null });
         logger.warn('profile pic lookup failed', { phone: p.slice(-6), error: err?.message });
         return null;
     }
@@ -98,8 +153,11 @@ async function tryFetchProfilePicFromGateway(phone, logger) {
 
 async function getCachedWhatsappConfig() {
     const now = Date.now();
-    if (_wcCache && (now - _wcCacheAt) < WC_CACHE_TTL_MS) return _wcCache;
-    const [wc] = await WhatsappConfig.findOrCreate({ where: { id: 'default' }, defaults: { aiAnswerEnabled: true } });
+    if (_wcCache && now - _wcCacheAt < WC_CACHE_TTL_MS) return _wcCache;
+    const [wc] = await WhatsappConfig.findOrCreate({
+        where: { id: 'default' },
+        defaults: { aiAnswerEnabled: true },
+    });
     _wcCache = wc;
     _wcCacheAt = now;
     return wc;
@@ -135,11 +193,7 @@ function collectIncomingIdentityHints(messageData, isFromMe) {
     const chat = messageData.chat || {};
     // فقط طرف مقابل — to/from خودِ خط را مشتری حساب نکن
     const peer = isFromMe ? messageData.to : messageData.from;
-    const hints = [
-        chat.id,
-        peer,
-        contact.lid,
-    ];
+    const hints = [chat.id, peer, contact.lid];
     let phone = '';
     let lid = '';
     for (const hint of hints) {
@@ -188,10 +242,9 @@ async function findCustomerByStoredLid(lidDigits) {
     if (hit) return hit;
     try {
         const conv = await Conversation.findOne({
-            where: sequelize.where(
-                sequelize.cast(sequelize.col('metadata'), 'CHAR'),
-                { [Op.like]: `%"whatsappLid":"${lid}"%` }
-            ),
+            where: sequelize.where(sequelize.cast(sequelize.col('metadata'), 'CHAR'), {
+                [Op.like]: `%"whatsappLid":"${lid}"%`,
+            }),
             include: [{ model: Customer, as: 'customer', required: true }],
             order: [['lastMessageAt', 'DESC']],
         });
@@ -226,7 +279,11 @@ async function resolveIncomingMedia(media, logger) {
     const url = (media.url || '').trim();
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
         if (url.startsWith('/') && (url.startsWith('/uploads/') || url.includes('uploads')))
-            return { url: url, filename: media.filename || media.caption, mimetype: media.mimetype };
+            return {
+                url: url,
+                filename: media.filename || media.caption,
+                mimetype: media.mimetype,
+            };
         return media;
     }
     try {
@@ -235,9 +292,13 @@ async function resolveIncomingMedia(media, logger) {
             timeout: 30000,
             maxContentLength: 20 * 1024 * 1024,
             maxRedirects: 5,
-            headers: { 'User-Agent': 'fxguard-kaya-backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
+            headers: {
+                'User-Agent': 'fxguard-kaya-backend/1.0',
+                Accept: 'image/*,video/*,audio/*,*/*',
+            },
         });
-        if (!res.data || (res.status !== 200 && res.status !== 206)) throw new Error('Bad response ' + res.status);
+        if (!res.data || (res.status !== 200 && res.status !== 206))
+            throw new Error('Bad response ' + res.status);
         const buf = Buffer.from(res.data);
         const ct = (res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
         const suggestedName = media.filename || media.caption || 'file';
@@ -256,14 +317,28 @@ async function resolveIncomingMedia(media, logger) {
         const safeName = buildSafeUploadName(suggestedName, ext);
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
-        if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
+        if (
+            !filePath.startsWith(normalizedUploadsDir + path.sep) &&
+            filePath !== normalizedUploadsDir
+        ) {
             throw new Error('Path traversal detected in media filename');
         }
         await fsPromises.writeFile(filePath, buf);
-        return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
+        return {
+            url: '/uploads/' + safeName,
+            filename: media.filename || suggestedName,
+            mimetype: media.mimetype || ct || null,
+        };
     } catch (err) {
-        logger.warn('resolveIncomingMedia download failed', { url: url.slice(0, 80), error: err.message });
-        return { url: null, filename: media.filename || media.caption || 'file', mimetype: media.mimetype };
+        logger.warn('resolveIncomingMedia download failed', {
+            url: url.slice(0, 80),
+            error: err.message,
+        });
+        return {
+            url: null,
+            filename: media.filename || media.caption || 'file',
+            mimetype: media.mimetype,
+        };
     }
 }
 
@@ -289,15 +364,27 @@ async function resolveIncomingMediaFromBase64(media, logger, options = {}) {
         const safeName = buildSafeUploadName(suggestedName, ext);
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
-        if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
+        if (
+            !filePath.startsWith(normalizedUploadsDir + path.sep) &&
+            filePath !== normalizedUploadsDir
+        ) {
             throw new Error('Path traversal detected in media filename');
         }
         await fsPromises.writeFile(filePath, buf);
         if (isVoiceLikeMedia(media, options.isPtt)) {
-            const normalized = await normalizeVoiceUploadForPlayback(filePath, media.mimetype || ct, suggestedName, logger);
+            const normalized = await normalizeVoiceUploadForPlayback(
+                filePath,
+                media.mimetype || ct,
+                suggestedName,
+                logger
+            );
             if (normalized) return normalized;
         }
-        return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
+        return {
+            url: '/uploads/' + safeName,
+            filename: media.filename || suggestedName,
+            mimetype: media.mimetype || ct || null,
+        };
     } catch (err) {
         logger.warn('resolveIncomingMediaFromBase64 failed', { error: err.message });
         return media;
@@ -351,11 +438,16 @@ async function getActiveAutoResponses(redisClient) {
     } catch (_) {}
     const responses = await AutoResponse.findAll({
         where: { isActive: true },
-        order: [['priority', 'DESC'], ['createdAt', 'ASC']]
+        order: [
+            ['priority', 'DESC'],
+            ['createdAt', 'ASC'],
+        ],
     });
     try {
         if (redisClient && typeof redisClient.setEx === 'function') {
-            await redisClient.setEx(AUTO_RESPONSE_CACHE_KEY, AUTO_RESPONSE_CACHE_TTL, JSON.stringify(responses)).catch(() => {});
+            await redisClient
+                .setEx(AUTO_RESPONSE_CACHE_KEY, AUTO_RESPONSE_CACHE_TTL, JSON.stringify(responses))
+                .catch(() => {});
         }
     } catch (_) {}
     return responses;
@@ -365,9 +457,10 @@ async function sendFirstMessageWelcome(conversation, customer, rabbitChannel, lo
     try {
         const [cfg] = await WhatsappConfig.findOrCreate({
             where: { id: 'default' },
-            defaults: { welcomeMessage: null, welcomeEnabled: true }
+            defaults: { welcomeMessage: null, welcomeEnabled: true },
         });
-        if (!cfg.welcomeEnabled || !cfg.welcomeMessage || !String(cfg.welcomeMessage).trim()) return;
+        if (!cfg.welcomeEnabled || !cfg.welcomeMessage || !String(cfg.welcomeMessage).trim())
+            return;
         await sendAutoReply(conversation, String(cfg.welcomeMessage).trim(), rabbitChannel, logger);
         logger.info(`👋 Welcome message sent to ${customer.phone} (first contact)`);
     } catch (error) {
@@ -381,8 +474,11 @@ async function checkAutoResponse(conversation, message, redisClient, rabbitChann
         const messageText = (message.content || '').toLowerCase();
         const now = new Date();
         for (const rule of responses) {
-            const keywords = (rule.keywords || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
-            if (keywords.length && keywords.some(keyword => messageText.includes(keyword))) {
+            const keywords = (rule.keywords || '')
+                .split(',')
+                .map((k) => k.trim().toLowerCase())
+                .filter(Boolean);
+            if (keywords.length && keywords.some((keyword) => messageText.includes(keyword))) {
                 if (!matchesAutoResponseConditions(rule, conversation, now)) continue;
                 await sendAutoReply(conversation, rule.response, rabbitChannel, logger);
                 return true;
@@ -413,15 +509,27 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
             type: 'text',
             isAutoReply: true,
             status: 'pending',
-            timestamp: new Date()
+            timestamp: new Date(),
         });
         if (rabbitChannel && !isCloudApiConfigured()) {
-            rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                to: toPhone, message: customerMessage, conversationId: conversation.id, messageId: autoMsg.id
-            })), { persistent: true });
+            rabbitChannel.sendToQueue(
+                'outgoing_messages',
+                Buffer.from(
+                    JSON.stringify({
+                        to: toPhone,
+                        message: customerMessage,
+                        conversationId: conversation.id,
+                        messageId: autoMsg.id,
+                    })
+                ),
+                { persistent: true }
+            );
         } else {
             try {
-                await sendWhatsAppMessage({ to: toPhone, message: customerMessage }, { timeout: 10000 });
+                await sendWhatsAppMessage(
+                    { to: toPhone, message: customerMessage },
+                    { timeout: 10000 }
+                );
                 await autoMsg.update({ status: 'sent' });
             } catch (err) {
                 logger.error('Gateway send error', { error: err.message });
@@ -430,7 +538,14 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
         }
         const preview = (responseText || '').slice(0, 120);
         const now = new Date();
-        const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview + ((responseText || '').length > 120 ? '…' : ''), unansweredAlertSentAt: null, escalatedAt: null, lastOutgoingIsAutoReply: true };
+        const upd = {
+            lastMessageAt: now,
+            lastOutgoingMessageAt: now,
+            lastMessagePreview: preview + ((responseText || '').length > 120 ? '…' : ''),
+            unansweredAlertSentAt: null,
+            escalatedAt: null,
+            lastOutgoingIsAutoReply: true,
+        };
         if (!conversation.firstReplyAt) upd.firstReplyAt = now;
         await conversation.update(upd);
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
@@ -462,25 +577,45 @@ async function tryRerouteIfTopicChanged(conversation, messageContent, customerId
         let previousAssigneeId = null;
         if (customerId) {
             const prevConv = await Conversation.findOne({
-                where: { customerId, id: { [Op.ne]: conversation.id }, assignedTo: { [Op.ne]: null } },
+                where: {
+                    customerId,
+                    id: { [Op.ne]: conversation.id },
+                    assignedTo: { [Op.ne]: null },
+                },
                 order: [['assignedAt', 'DESC']],
-                attributes: ['assignedTo']
+                attributes: ['assignedTo'],
             });
             if (prevConv) previousAssigneeId = prevConv.assignedTo;
         }
         const users = await User.findAll({
-            where: { departmentId: smartDept.id, isActive: true, role: { [Op.in]: ['agent', 'supervisor'] } },
+            where: {
+                departmentId: smartDept.id,
+                isActive: true,
+                role: { [Op.in]: ['agent', 'supervisor'] },
+            },
             attributes: { include: ['status', 'settings'] },
-            include: [{ model: Conversation, as: 'conversations', where: { status: { [Op.ne]: 'closed' } }, required: false }]
+            include: [
+                {
+                    model: Conversation,
+                    as: 'conversations',
+                    where: { status: { [Op.ne]: 'closed' } },
+                    required: false,
+                },
+            ],
         });
-        const selectedUser = selectBestUser(users, messageContent || '', { customerId, previousAssigneeId });
+        const selectedUser = selectBestUser(users, messageContent || '', {
+            customerId,
+            previousAssigneeId,
+        });
         if (selectedUser) {
             await conversation.update({
                 departmentId: smartDept.id,
                 assignedTo: selectedUser.id,
-                assignedAt: new Date()
+                assignedAt: new Date(),
             });
-            logger.info(`🔄 Re-routed to ${selectedUser.name} (${smartDept.name}) — topic change, confidence: ${confidence}%`);
+            logger.info(
+                `🔄 Re-routed to ${selectedUser.name} (${smartDept.name}) — topic change, confidence: ${confidence}%`
+            );
             await sendDeptAssignedMessage(conversation, smartDept);
         }
     } catch (error) {
@@ -491,17 +626,19 @@ async function tryRerouteIfTopicChanged(conversation, messageContent, customerId
 async function autoAssignment(conversation, messageContent, customerId, logger) {
     try {
         const departments = await Department.findAll({ where: { isActive: true } });
-        const { department: smartDept, method, confidence } = await selectBestDepartment(
-            departments,
-            messageContent || '',
-            { useAI: true }
-        );
+        const {
+            department: smartDept,
+            method,
+            confidence,
+        } = await selectBestDepartment(departments, messageContent || '', { useAI: true });
         let assignedDepartment = smartDept;
         if (!assignedDepartment) {
             assignedDepartment = await Department.findOne({ where: { isDefault: true } });
         }
         if (assignedDepartment && method !== 'none') {
-            logger.info(`🧠 Smart routing: ${assignedDepartment.name} (${method}, confidence: ${confidence}%)`);
+            logger.info(
+                `🧠 Smart routing: ${assignedDepartment.name} (${method}, confidence: ${confidence}%)`
+            );
         }
         if (assignedDepartment) {
             let previousAssigneeId = null;
@@ -510,10 +647,10 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
                     where: {
                         customerId,
                         id: { [Op.ne]: conversation.id },
-                        assignedTo: { [Op.ne]: null }
+                        assignedTo: { [Op.ne]: null },
                     },
                     order: [['assignedAt', 'DESC']],
-                    attributes: ['assignedTo']
+                    attributes: ['assignedTo'],
                 });
                 if (prevConv) previousAssigneeId = prevConv.assignedTo;
             }
@@ -521,25 +658,27 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
                 where: {
                     departmentId: assignedDepartment.id,
                     isActive: true,
-                    role: { [Op.in]: ['agent', 'supervisor'] }
+                    role: { [Op.in]: ['agent', 'supervisor'] },
                 },
                 attributes: { include: ['status', 'settings'] },
-                include: [{
-                    model: Conversation,
-                    as: 'conversations',
-                    where: { status: { [Op.ne]: 'closed' } },
-                    required: false
-                }]
+                include: [
+                    {
+                        model: Conversation,
+                        as: 'conversations',
+                        where: { status: { [Op.ne]: 'closed' } },
+                        required: false,
+                    },
+                ],
             });
             const selectedUser = selectBestUser(users, messageContent || '', {
                 customerId,
-                previousAssigneeId
+                previousAssigneeId,
             });
             if (selectedUser) {
                 await conversation.update({
                     departmentId: assignedDepartment.id,
                     assignedTo: selectedUser.id,
-                    assignedAt: new Date()
+                    assignedAt: new Date(),
                 });
                 logger.info(`👤 Assigned to ${selectedUser.name} (${assignedDepartment.name})`);
                 await sendDeptAssignedMessage(conversation, assignedDepartment);
@@ -559,9 +698,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const { contact, from, to, timestamp, hasMedia, media, chat } = messageData;
         let { body } = messageData;
         const isFromMe = !!messageData.fromMe;
-        const groupChatId = [chat && chat.id, from, to]
-            .map((v) => (v == null ? '' : String(v).trim()))
-            .find((v) => isGroupJid(v)) || '';
+        const groupChatId =
+            [chat && chat.id, from, to]
+                .map((v) => (v == null ? '' : String(v).trim()))
+                .find((v) => isGroupJid(v)) || '';
         const isGroup = !!(chat && chat.isGroup) || !!groupChatId;
 
         // گروه: همیشه شناسهٔ گروه — حتی اگر پیام fromMe باشد (شمارهٔ خودِ خط را به‌جای گروه نگذار)
@@ -601,19 +741,33 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             phone = incomingLid;
         }
         const rawType = (messageData.type || '').toLowerCase();
-        if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
+        if (
+            rawType === 'reaction' ||
+            rawType === 'read_receipt' ||
+            rawType === 'delivery' ||
+            rawType === 'update'
+        )
+            return;
         const hasText = body != null && String(body).trim().length > 0;
-        const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()) || media.data);
-        const isGroupSystemEvent = isGroup && (
-            rawType === 'gp2' ||
-            rawType === 'group_notification' ||
-            rawType === 'notification' ||
-            rawType === 'notification_template' ||
-            rawType === 'groups_v4_invite'
-        );
+        const hasUsableMedia =
+            hasMedia &&
+            media &&
+            (media.url ||
+                (media.filename && String(media.filename).trim()) ||
+                (media.caption && String(media.caption).trim()) ||
+                media.data);
+        const isGroupSystemEvent =
+            isGroup &&
+            (rawType === 'gp2' ||
+                rawType === 'group_notification' ||
+                rawType === 'notification' ||
+                rawType === 'notification_template' ||
+                rawType === 'groups_v4_invite');
         if (!hasText && !hasUsableMedia) {
             if (!isGroupSystemEvent) return;
-            const joinName = (chat && (chat.name || chat.subject || chat.formattedTitle) || '').toString().trim();
+            const joinName = ((chat && (chat.name || chat.subject || chat.formattedTitle)) || '')
+                .toString()
+                .trim();
             body = joinName ? `فعالیت در گروه «${joinName}»` : 'فعالیت در گروه واتساپ';
         }
 
@@ -622,14 +776,20 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (redisClient && !redisClient.isStub) {
                 try {
                     const dedupeKey = `wa:incoming:${waMsgId}`;
-                    const acquired = await redisClient.set(dedupeKey, '1', { NX: true, EX: 172800 });
+                    const acquired = await redisClient.set(dedupeKey, '1', {
+                        NX: true,
+                        EX: 172800,
+                    });
                     if (!acquired) {
                         logger.debug('Duplicate whatsapp message (redis)', { waMsgId });
                         return;
                     }
                 } catch (_) {}
             }
-            const existingEarly = await Message.findOne({ where: { whatsappId: waMsgId }, attributes: ['id'] });
+            const existingEarly = await Message.findOne({
+                where: { whatsappId: waMsgId },
+                attributes: ['id'],
+            });
             if (existingEarly) return;
         }
 
@@ -637,24 +797,44 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         let msgType = (messageData.type || 'text').toLowerCase();
         if (msgType === 'ptt') msgType = 'audio';
         if (hasMedia && media) {
-            if (media.url && (String(media.url).trim().startsWith('http://') || String(media.url).trim().startsWith('https://'))) {
+            if (
+                media.url &&
+                (String(media.url).trim().startsWith('http://') ||
+                    String(media.url).trim().startsWith('https://'))
+            ) {
                 resolvedMedia = await resolveIncomingMedia(media, logger);
             } else if (media.data) {
                 resolvedMedia = await resolveIncomingMediaFromBase64(media, logger, {
                     isPtt: (messageData.type || '').toLowerCase() === 'ptt',
                 });
             }
-            if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename || resolvedMedia.data)) msgType = inferMessageTypeFromMedia(resolvedMedia);
+            if (
+                resolvedMedia &&
+                (resolvedMedia.url || resolvedMedia.filename || resolvedMedia.data)
+            )
+                msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
         if (msgType === 'ptt') msgType = 'audio';
 
-        const groupNameFromChat = isGroup ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim() : '';
+        const groupNameFromChat = isGroup
+            ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim()
+            : '';
         const contactName = isGroup
-            ? (groupNameFromChat || 'گروه واتساپ')
-            : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
-        let profilePic = (contact && contact.profilePicUrl) || null;
+            ? groupNameFromChat || 'گروه واتساپ'
+            : (contact && (contact.name || contact.pushname)) || `مشتری ${phone}`;
+        let profilePic = (contact && contact.profilePicUrl) || (chat && chat.profilePicUrl) || null;
         if (!profilePic) {
-            profilePic = await tryFetchProfilePicFromGateway(phone, logger);
+            const extraIds = [];
+            if (incomingLid) {
+                extraIds.push(incomingLid);
+                extraIds.push(
+                    /@lid$/i.test(incomingLid)
+                        ? incomingLid
+                        : `${String(incomingLid).replace(/\D/g, '')}@lid`
+                );
+            }
+            if (chat && chat.id) extraIds.push(chat.id);
+            profilePic = await tryFetchProfilePicFromGateway(phone, logger, extraIds);
         }
 
         let customer;
@@ -669,7 +849,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (!customer) {
                 [customer, customerCreated] = await Customer.findOrCreate({
                     where: { phone },
-                    defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
+                    defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' },
                 });
             }
         } catch (e) {
@@ -685,24 +865,43 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         if (customerCreated) {
-            logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
+            logger.info(
+                isGroup
+                    ? `✨ New group conversation: ${groupNameFromChat || phone}`
+                    : `✨ New customer created: ${phone}`
+            );
             if (profilePic) {
                 try {
                     const persisted = await persistRemoteAvatarIfNeeded(customer.id, profilePic);
-                    if (persisted && persisted !== customer.profilePic) await customer.update({ profilePic: persisted });
+                    if (persisted && persisted !== customer.profilePic)
+                        await customer.update({ profilePic: persisted });
                 } catch (e) {
-                    logger.warn('Avatar persist (new customer)', { err: String(e && e.message ? e.message : e) });
+                    logger.warn('Avatar persist (new customer)', {
+                        err: String(e && e.message ? e.message : e),
+                    });
                 }
             }
         } else {
-            const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-            const updatedContactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
+            const tsContact = timestamp
+                ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)
+                : new Date();
+            const updatedContactName = isGroup
+                ? groupNameFromChat
+                : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
-            if (updatedContactName && String(updatedContactName).trim() && String(customer.name || '').trim() !== String(updatedContactName).trim()) updates.name = String(updatedContactName).trim();
+            if (
+                updatedContactName &&
+                String(updatedContactName).trim() &&
+                String(customer.name || '').trim() !== String(updatedContactName).trim()
+            )
+                updates.name = String(updatedContactName).trim();
             if (profilePic && profilePic !== customer.profilePic) updates.profilePic = profilePic;
             if (updates.profilePic) {
                 try {
-                    const persisted = await persistRemoteAvatarIfNeeded(customer.id, updates.profilePic);
+                    const persisted = await persistRemoteAvatarIfNeeded(
+                        customer.id,
+                        updates.profilePic
+                    );
                     if (persisted) updates.profilePic = persisted;
                 } catch (e) {
                     logger.warn('Avatar persist', { err: String(e && e.message ? e.message : e) });
@@ -717,7 +916,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 status: { [Op.notIn]: ['closed', 'archived'] },
                 isHiddenFromStaff: false,
             },
-            order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
+            order: [
+                ['lastMessageAt', 'DESC'],
+                ['updatedAt', 'DESC'],
+            ],
         });
 
         const incomingTs = timestamp
@@ -730,7 +932,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             isRecentLive || !lockdownAt || incomingTsMs >= lockdownAt.getTime() - 5000;
 
         // آرشیو شمارهٔ قبلی را باز نکن — برای پیام زنده مکالمهٔ جدید بساز
-        if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
+        if (
+            conversation &&
+            (conversation.isHiddenFromStaff || conversation.status === 'archived')
+        ) {
             conversation = null;
         }
 
@@ -764,7 +969,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                             customerId: customer.id,
                             status: { [Op.ne]: 'closed' },
                         },
-                        order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
+                        order: [
+                            ['lastMessageAt', 'DESC'],
+                            ['updatedAt', 'DESC'],
+                        ],
                         transaction: t,
                         lock: t.LOCK.UPDATE,
                     });
@@ -785,14 +993,17 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                         ? { isGroup: true, groupName: groupNameFromChat || null }
                         : {};
                     if (linkedGw) meta.linkedGatewayNumber = linkedGw;
-                    conversation = await Conversation.create({
-                        customerId: customer.id,
-                        status: 'open',
-                        priority: 'normal',
-                        source: 'whatsapp',
-                        isHiddenFromStaff: false,
-                        metadata: meta,
-                    }, { transaction: t });
+                    conversation = await Conversation.create(
+                        {
+                            customerId: customer.id,
+                            status: 'open',
+                            priority: 'normal',
+                            source: 'whatsapp',
+                            isHiddenFromStaff: false,
+                            metadata: meta,
+                        },
+                        { transaction: t }
+                    );
                 }
                 await t.commit();
             } catch (txErr) {
@@ -809,7 +1020,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         } else if (isGroup && groupNameFromChat) {
             const meta = conversation.metadata || {};
             if (meta.groupName !== groupNameFromChat) {
-                await conversation.update({ metadata: { ...meta, isGroup: true, groupName: groupNameFromChat } });
+                await conversation.update({
+                    metadata: { ...meta, isGroup: true, groupName: groupNameFromChat },
+                });
             }
         }
 
@@ -817,12 +1030,18 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             await rememberCustomerLid(customer, incomingLid, conversation);
         }
 
-        const ts = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-        const previewText = body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '';
+        const ts = timestamp
+            ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)
+            : new Date();
+        const previewText =
+            body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '';
         let preview = previewText.slice(0, 120);
         if (previewText.length > 120) preview += '…';
 
-        const prevLastIncoming = !isFromMe && conversation.lastIncomingMessageAt ? new Date(conversation.lastIncomingMessageAt) : null;
+        const prevLastIncoming =
+            !isFromMe && conversation.lastIncomingMessageAt
+                ? new Date(conversation.lastIncomingMessageAt)
+                : null;
         const convUpdate = { lastMessageAt: ts, lastMessagePreview: preview };
         if (isFromMe) {
             convUpdate.lastOutgoingMessageAt = ts;
@@ -833,31 +1052,45 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
         await conversation.update(convUpdate);
 
-        const msgMetadata = isGroup && (messageData.author || messageData.authorName)
-            ? { senderId: messageData.author || null, senderName: messageData.authorName || (messageData.author && contact && (contact.name || contact.pushname)) || null }
-            : {};
+        const msgMetadata =
+            isGroup && (messageData.author || messageData.authorName)
+                ? {
+                      senderId: messageData.author || null,
+                      senderName:
+                          messageData.authorName ||
+                          (messageData.author && contact && (contact.name || contact.pushname)) ||
+                          null,
+                  }
+                : {};
 
         if (isFromMe) {
             const bodyStr = String(body || '').trim();
             const contentToMatch = bodyStr.startsWith(AI_MESSAGE_PREFIX)
                 ? bodyStr.slice(AI_MESSAGE_PREFIX.length).trim()
-                : (bodyStr.startsWith('AI KAYA: ') ? bodyStr.slice(9).trim() : bodyStr);
+                : bodyStr.startsWith('AI KAYA: ')
+                  ? bodyStr.slice(9).trim()
+                  : bodyStr;
 
             if (bodyStr) {
                 const recentAuto = await Message.findOne({
                     where: {
                         conversationId: conversation.id,
                         direction: 'outgoing',
-                        isAutoReply: true
+                        isAutoReply: true,
                     },
-                    order: [['createdAt', 'DESC']]
+                    order: [['createdAt', 'DESC']],
                 });
-                const autoAgeMs = recentAuto ? (Date.now() - new Date(recentAuto.createdAt).getTime()) : Infinity;
+                const autoAgeMs = recentAuto
+                    ? Date.now() - new Date(recentAuto.createdAt).getTime()
+                    : Infinity;
                 if (recentAuto && autoAgeMs < 120000) {
                     const storedContent = String(recentAuto.content || '').trim();
-                    const match = storedContent === contentToMatch || bodyStr === storedContent
-                        || (bodyStr.startsWith(AI_MESSAGE_PREFIX) && storedContent === contentToMatch)
-                        || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
+                    const match =
+                        storedContent === contentToMatch ||
+                        bodyStr === storedContent ||
+                        (bodyStr.startsWith(AI_MESSAGE_PREFIX) &&
+                            storedContent === contentToMatch) ||
+                        (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
                     if (match) {
                         await recentAuto.update({ whatsappId: waMsgId, status: 'sent' });
                         return;
@@ -870,33 +1103,45 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     conversationId: conversation.id,
                     direction: 'outgoing',
                     userId: { [Op.ne]: null },
-                    timestamp: { [Op.gte]: new Date(Date.now() - 120000) }
+                    timestamp: { [Op.gte]: new Date(Date.now() - 120000) },
                 },
                 order: [['timestamp', 'DESC']],
-                limit: 8
+                limit: 8,
             });
             for (const cand of recentStaff) {
                 // echo فقط برای پیام واقعاً ارسال‌شده از پنل CRM — نه ویس/متن موبایل که به assignee چسبیده
                 if (!isCrmPanelOutboundMessage(cand)) continue;
                 const stored = String(cand.content || '').trim();
                 const candMeta = parseMsgMetadata(cand.metadata);
-                const storedWa = candMeta.customerWaText ? String(candMeta.customerWaText).trim() : '';
+                const storedWa = candMeta.customerWaText
+                    ? String(candMeta.customerWaText).trim()
+                    : '';
                 if (bodyStr && stored) {
-                    let echoMatchesStored = bodyStr === stored || stored === contentToMatch
-                        || (storedWa && bodyStr === storedWa);
+                    let echoMatchesStored =
+                        bodyStr === stored ||
+                        stored === contentToMatch ||
+                        (storedWa && bodyStr === storedWa);
                     if (!echoMatchesStored && stored.length >= 3) {
                         const sigMatch = bodyStr.match(/^[^:]+:\s+([\s\S]+)$/);
                         if (sigMatch && sigMatch[1].trim() === stored) echoMatchesStored = true;
                     }
                     if (echoMatchesStored && stored.length >= 3) {
-                        if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
+                        if (waMsgId && !cand.whatsappId)
+                            await cand.update({ whatsappId: waMsgId, status: 'sent' });
                         return;
                     }
                 }
-                if (!bodyStr && !stored && cand.hasMedia && hasMedia && (msgType === 'audio' || rawType === 'ptt')) {
+                if (
+                    !bodyStr &&
+                    !stored &&
+                    cand.hasMedia &&
+                    hasMedia &&
+                    (msgType === 'audio' || rawType === 'ptt')
+                ) {
                     const ageMs = Date.now() - new Date(cand.timestamp).getTime();
                     if (ageMs < 90000) {
-                        if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
+                        if (waMsgId && !cand.whatsappId)
+                            await cand.update({ whatsappId: waMsgId, status: 'sent' });
                         return;
                     }
                 }
@@ -920,12 +1165,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 userId: isFromMe ? outboundUserId : null,
                 whatsappId: messageData.id || null,
                 direction: isFromMe ? 'outgoing' : 'incoming',
-                content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
+                content:
+                    body ||
+                    (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) ||
+                    '',
                 type: msgType,
                 hasMedia: !!(hasMedia && resolvedMedia),
                 mediaData: resolvedMedia || null,
                 timestamp: ts,
-                metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
+                metadata: Object.keys(msgMetadata).length ? msgMetadata : {},
             });
         } catch (createErr) {
             if (createErr.name === 'SequelizeUniqueConstraintError' && waMsgId) return;
@@ -933,7 +1181,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         if (isFromMe && outboundUserId) {
-            const activeMeta = { ...(conversation.metadata || {}), lastActiveOutgoingUserId: String(outboundUserId) };
+            const activeMeta = {
+                ...(conversation.metadata || {}),
+                lastActiveOutgoingUserId: String(outboundUserId),
+            };
             await conversation.update({ metadata: activeMeta }).catch(() => {});
             conversation.metadata = activeMeta;
             if (newMessage.userId !== outboundUserId) {
@@ -942,7 +1193,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             try {
                 const { User } = require('../models');
                 const mobileUser = await User.findByPk(outboundUserId, {
-                    attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'],
+                    attributes: [
+                        'id',
+                        'name',
+                        'username',
+                        'avatar',
+                        'firstName',
+                        'lastName',
+                        'whatsappSenderName',
+                    ],
                 });
                 if (mobileUser) newMessage.dataValues.user = mobileUser;
             } catch (_) {}
@@ -958,7 +1217,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     if (mime.startsWith('image/')) fType = 'image';
                     else if (mime.startsWith('video/')) fType = 'video';
                     else if (mime.startsWith('audio/')) fType = 'audio';
-                    else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fType = 'document';
+                    else if (
+                        mime.includes('pdf') ||
+                        mime.includes('word') ||
+                        mime.includes('excel') ||
+                        mime.includes('text') ||
+                        mime.includes('spreadsheet') ||
+                        mime.includes('presentation')
+                    )
+                        fType = 'document';
                     await CustomerDocument.create({
                         customerId: customer.id,
                         title: resolvedMedia.filename || resolvedMedia.caption || 'فایل دریافتی',
@@ -969,7 +1236,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                         fileType: fType,
                         source: 'conversation',
                         messageId: newMessage.id,
-                        conversationId: conversation.id
+                        conversationId: conversation.id,
                     });
                 }
             } catch (_) {}
@@ -985,15 +1252,31 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             } else {
                 await tryRerouteIfTopicChanged(conversation, body || '', customer.id, logger);
             }
-            await conversation.reload({ include: [{ model: Department, as: 'department', required: false }] });
+            await conversation.reload({
+                include: [{ model: Department, as: 'department', required: false }],
+            });
         }
 
-        const autoResponseSent = (isGroup || isFromMe) ? false : await checkAutoResponse(conversation, newMessage, redisClient, rabbitChannel, logger);
+        const autoResponseSent =
+            isGroup || isFromMe
+                ? false
+                : await checkAutoResponse(
+                      conversation,
+                      newMessage,
+                      redisClient,
+                      rabbitChannel,
+                      logger
+                  );
 
         if (!isGroup && !isFromMe && !autoResponseSent && hasText) {
-            const { generateAIResponse, isAIAnswerEnabled, isSimpleFactualQuestion } = require('./aiResponseService');
+            const {
+                generateAIResponse,
+                isAIAnswerEnabled,
+                isSimpleFactualQuestion,
+            } = require('./aiResponseService');
             let aiEnabled = await isAIAnswerEnabled();
-            if (!aiEnabled) logger.info('AI skipped: کلید OpenAI تنظیم نشده یا AI_ANSWER_ENABLED=false');
+            if (!aiEnabled)
+                logger.info('AI skipped: کلید OpenAI تنظیم نشده یا AI_ANSWER_ENABLED=false');
             try {
                 const wc = await getCachedWhatsappConfig();
                 if (wc && wc.aiAnswerEnabled === false) {
@@ -1002,24 +1285,38 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 }
                 if (aiEnabled && conversation.assignedTo) {
                     const lastHuman = await Message.findOne({
-                        where: { conversationId: conversation.id, direction: 'outgoing', userId: { [Op.ne]: null } },
+                        where: {
+                            conversationId: conversation.id,
+                            direction: 'outgoing',
+                            userId: { [Op.ne]: null },
+                        },
                         order: [['timestamp', 'DESC']],
-                        attributes: ['timestamp']
+                        attributes: ['timestamp'],
                     });
                     const alertMin = (wc && (wc.alertUnansweredAfterMinutes ?? 5)) || 5;
                     const now = new Date();
-                    const humanRepliedAfterLastIncoming = lastHuman && prevLastIncoming && lastHuman.timestamp >= prevLastIncoming;
-                    const withinWaitWindow = prevLastIncoming && (now - prevLastIncoming) < alertMin * 60000;
+                    const humanRepliedAfterLastIncoming =
+                        lastHuman && prevLastIncoming && lastHuman.timestamp >= prevLastIncoming;
+                    const withinWaitWindow =
+                        prevLastIncoming && now - prevLastIncoming < alertMin * 60000;
                     const isSimpleQuestion = isSimpleFactualQuestion(body || '');
 
                     if (humanRepliedAfterLastIncoming) {
                         aiEnabled = false;
-                        logger.info('AI skipped: human already replied to customer, assigned conversation');
+                        logger.info(
+                            'AI skipped: human already replied to customer, assigned conversation'
+                        );
                     } else if (withinWaitWindow && !isSimpleQuestion) {
                         aiEnabled = false;
-                        logger.info('AI skipped: assigned, waiting for human (re-enter after ' + alertMin + ' min)');
+                        logger.info(
+                            'AI skipped: assigned, waiting for human (re-enter after ' +
+                                alertMin +
+                                ' min)'
+                        );
                     } else if (withinWaitWindow && isSimpleQuestion) {
-                        logger.info('AI allowed: simple factual question (price/address/docs) while assigned');
+                        logger.info(
+                            'AI allowed: simple factual question (price/address/docs) while assigned'
+                        );
                     }
                 }
             } catch (e) {
@@ -1027,50 +1324,71 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             }
             if (aiEnabled) {
                 const lastAutoReply = await Message.findOne({
-                    where: { conversationId: conversation.id, direction: 'outgoing', isAutoReply: true },
+                    where: {
+                        conversationId: conversation.id,
+                        direction: 'outgoing',
+                        isAutoReply: true,
+                    },
                     order: [['timestamp', 'DESC']],
-                    attributes: ['timestamp']
+                    attributes: ['timestamp'],
                 });
                 const AI_THROTTLE_MIN = 2;
                 if (lastAutoReply && lastAutoReply.timestamp) {
-                    const minsSince = (Date.now() - new Date(lastAutoReply.timestamp).getTime()) / 60000;
+                    const minsSince =
+                        (Date.now() - new Date(lastAutoReply.timestamp).getTime()) / 60000;
                     if (minsSince < AI_THROTTLE_MIN) {
                         aiEnabled = false;
-                        logger.info('AI skipped: throttle — auto-reply sent ' + minsSince.toFixed(1) + ' min ago');
+                        logger.info(
+                            'AI skipped: throttle — auto-reply sent ' +
+                                minsSince.toFixed(1) +
+                                ' min ago'
+                        );
                     }
                 }
             }
             if (aiEnabled) {
-                const convWithDept = conversation.department !== undefined ? conversation : await Conversation.findByPk(conversation.id, {
-                    include: [{ model: Department, as: 'department', required: false }]
-                });
+                const convWithDept =
+                    conversation.department !== undefined
+                        ? conversation
+                        : await Conversation.findByPk(conversation.id, {
+                              include: [{ model: Department, as: 'department', required: false }],
+                          });
                 const history = await Message.findAll({
                     where: { conversationId: conversation.id },
                     order: [['timestamp', 'ASC']],
                     limit: 12,
-                    attributes: ['direction', 'content']
+                    attributes: ['direction', 'content'],
                 });
                 const aiReply = await generateAIResponse({
                     conversation: convWithDept,
                     customer,
                     incomingMessage: body || '',
                     messageHistory: history,
-                    department: convWithDept?.department || null
+                    department: convWithDept?.department || null,
                 });
                 if (aiReply) {
-                    const autoMsg = await sendAutoReply(conversation, aiReply, rabbitChannel, logger, { isAI: true });
+                    const autoMsg = await sendAutoReply(
+                        conversation,
+                        aiReply,
+                        rabbitChannel,
+                        logger,
+                        { isAI: true }
+                    );
                     if (autoMsg) {
                         await emitNewMessageToAuthorized(io, conversation, {
                             conversationId: conversation.id,
                             customerId: customer.id,
                             message: autoMsg,
                             isHiddenFromStaff: !!conversation.isHiddenFromStaff,
-                            customer: publicCustomerSocketPayload(customer)
+                            customer: publicCustomerSocketPayload(customer),
                         });
                     }
                     logger.info(`🤖 AI reply sent to ${customer.phone}`);
                 } else {
-                    logger.warn('AI returned no reply', { phone: customer.phone, incomingPreview: (body || '').slice(0, 50) });
+                    logger.warn('AI returned no reply', {
+                        phone: customer.phone,
+                        incomingPreview: (body || '').slice(0, 50),
+                    });
                 }
             }
         }
@@ -1081,7 +1399,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 await maybeRefreshWhatsappCustomerAvatar(customer);
             } catch (_av) {}
         }
-        await customer.reload({ attributes: ['id', 'name', 'phone', 'profilePic', 'source'] }).catch(() => {});
+        await customer
+            .reload({ attributes: ['id', 'name', 'phone', 'profilePic', 'source'] })
+            .catch(() => {});
 
         if (isFromMe) {
             const mobileOwner = await loadMobileWhatsappUser(logger);
@@ -1094,7 +1414,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             customerId: customer.id,
             message: newMessage,
             isHiddenFromStaff: !!conversation.isHiddenFromStaff,
-            customer: publicCustomerSocketPayload(customer)
+            customer: publicCustomerSocketPayload(customer),
         });
 
         if (conversation.assignedTo) {
@@ -1106,14 +1426,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         if (mongoose.connection.readyState === 1 && mongoose.models.MessageLog) {
-            const tsLog = timestamp != null ? (timestamp < 1e12 ? timestamp * 1000 : timestamp) : Date.now();
+            const tsLog =
+                timestamp != null ? (timestamp < 1e12 ? timestamp * 1000 : timestamp) : Date.now();
             await mongoose.model('MessageLog').create({
                 conversationId: conversation.id,
                 customerId: customer.id,
                 messageId: newMessage.id,
                 content: body,
                 timestamp: new Date(tsLog),
-                metadata: messageData
+                metadata: messageData,
             });
         }
 
@@ -1123,12 +1444,12 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             error: error.message,
             stack: error.stack,
             from: messageData?.from,
-            type: messageData?.type
+            type: messageData?.type,
         });
         notifySystemEvent('error', 'Incoming Message Error', {
             from: messageData?.from || null,
             type: messageData?.type || null,
-            error: error.message || String(error)
+            error: error.message || String(error),
         }).catch(() => {});
         throw error;
     }

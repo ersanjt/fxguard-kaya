@@ -47,6 +47,7 @@
 | HTML پنل | `backend/public/partials/dashboard/html-part-NN.html` | `backend/public/dashboard.html` | همان |
 | استایل پنل | `backend/public/css/dashboard.css` | — | bump `?v=` در partial-01 و partial-06 |
 | صفحه ورود حرفه‌ای | `backend/public/login.html` + `css/login.css` + `js/login.js` | — | bump `?v=` در login.html |
+| حریم خصوصی / شرایط / حذف حساب | `backend/public/privacy.html` · `terms.html` · `account-deletion.html` + `css/legal.css` + `js/legal.js` | مسیرهای `/privacy` `/terms` `/account-deletion` | بعد از دیپلوی برای ریویو استور |
 | ترجمه فارسی/انگلیسی/ترکی | `backend/public/js/i18n-fa.js` و … | — | bump `?v=` در html-part-06 |
 | ماژول‌های مشترک JS | `backend/public/js/modules/*.js` | — | bump `?v=` |
 
@@ -73,7 +74,9 @@
 | لاگین / رفرش / نشست | `chunk-02.js` + `chunk-06.js` | کوکی `crm_token` + `restoreSessionFromServer` |
 | استایل صفحه مکالمات | `css/dashboard.css` (بلاک `#conversations`) | additive CSS، specificity |
 | لیست چت / حباب پیام | `chunk-03.js` + `html-part-02/03` | `#conversations`, `#chatMessages` |
+| آواتار مخاطب واتساپ | `chunk-02.js` (`customerAvatarDisplaySrc`) + `routes/customerAvatar.js` + gateway `GET /api/contacts/profile-pic` | Store `eurl`؛ placeholder یعنی واکشی شکست |
 | ارسال ویس/فایل | `chunk-03.js` + `backend/lib/conversationOutbound.js` + `lib/audioConverter.js` | |
+| چت داخلی (صفحه) | `chunk-05.js` + `html-part-02/03` + `routes/internal.js` | `#internal-chat`, `#internalChatPane`, مودال گفتگوی جدید |
 | پیوست چت داخلی | `chunk-02.js` → `renderInternalAttachment` | تصویر/ویدیو اینلاین؛ ذخیره فقط با `allowDownload` |
 | پیام خودکار «کارشناس X» | `backend/services/autoMessages.js` + `routes/conversations.js` | |
 | کاربران / کارت کاربر | `chunk-05.js` + `html-part-04` | `#users`, `renderUserList` |
@@ -97,7 +100,7 @@ backend/
 ├── lib/                   ← توابع کمکی مشترک
 ├── models/                ← Sequelize (جدول DB)
 ├── middleware/            ← auth, webhook, socket
-├── jobs/                  ← cron (نرخ، مکالمات بی‌پاسخ)
+├── jobs/                  ← cron (نرخ، مکالمات بی‌پاسخ، انقضای حضور)
 ├── socket/                ← Socket.IO handlers
 ├── public/                ← داشبورد استاتیک
 └── tests/                 ← تست‌ها
@@ -112,7 +115,9 @@ backend/
 | `/api/auth/*` | `routes/auth.js` | ورود، me، TOTP، کوکی `crm_token` |
 | `/api/conversations/*` | `routes/conversations.js` | `lib/conversationOutbound.js`, `services/autoMessages.js` |
 | `/api/customers/*` | `routes/customers.js` | مدل `Customer` |
+| `/api/customers/:id/avatar` | `routes/customerAvatar.js` | `lib/customerAvatar.js` — محلی یا Store واتساپ |
 | `/api/tickets/*` | `routes/tickets.js` | |
+| `/api/internal/*` | `routes/internal.js` | چت داخلی: ترد، پیام، کاربران، حضور زنده |
 | `/api/tasks/*` | `routes/tasks.js` | |
 | `/api/users/*` | `routes/users.js` | `lib/permissions.js` |
 | `/api/departments/*` | `routes/departments.js` | |
@@ -120,6 +125,7 @@ backend/
 | `/api/panel-settings/*` | `routes/panelSettings.js` | `services/config/panelSettingsLoader.js` |
 | `/api/rates/*` | `routes/rates.js` | `jobs/dailyRates.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |
+| `/api/supervision/*` | `routes/supervision.js` | آنلاین زنده: `lib/staffPresence.js` |
 | Webhook واتساپ Cloud | `routes/api.js` | `services/incomingMessage.js` |
 
 ### ۴.۲ مدل‌های دادهٔ مهم
@@ -128,7 +134,7 @@ backend/
 |---------|----------|----------------|
 | مکالمه | `models/Conversation.js` | `assignedTo`, `departmentId`, `status` |
 | پیام | همان فایل (Message) | `userId`, `direction`, `isAutoReply` |
-| کاربر | `models/User.js` | `role`, `departmentId`, `permissions` |
+| کاربر | `models/User.js` | `role`, `departmentId`, `permissions`, `status`, `lastSeenAt` |
 | تنظیمات واتساپ | `models/WhatsappConfig.js` | پیام‌های خودکار، AI |
 | تنظیمات پنل | `models/PanelSetting.js` | برندینگ، SMTP، زبان |
 
@@ -160,6 +166,8 @@ gateway/
 |------|------|
 | ارسال پیام/مدیا | `src/index.js` → `POST /api/send-message` |
 | QR / وضعیت اتصال | `src/index.js` |
+| لیست چت/گروه از Store | `src/index.js` → `GET /api/chats` (نه `getChats()` / `getChat`) |
+| عکس پروفایل مخاطب | `src/index.js` → `GET /api/contacts/profile-pic` (Store `eurl`، نه `getProfilePicUrl`) |
 | تماس | `src/waCalls.js` |
 | فرمت Prettier | `npm run format` در `gateway/` |
 
@@ -210,6 +218,7 @@ gateway/
 | `backend/services/README.md` | پوشه‌های services |
 | `AGENTS.md` | راهنمای Cursor / AI |
 | `docs/MOBILE-APP.md` | اپ کارکنان iOS + Android |
+| `docs/STORE-RELEASE.md` | انتشار Google Play + App Store |
 
 ---
 

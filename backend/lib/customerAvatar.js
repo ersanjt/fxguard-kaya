@@ -10,7 +10,10 @@ function digitsOnlyChatPhone(raw) {
     const s = String(raw || '').trim();
     if (!s) return '';
     if (/@g\.us$/i.test(s)) return s;
-    return s.replace(/@c\.us$/i, '').replace(/\D/g, '').trim();
+    return s
+        .replace(/@c\.us$/i, '')
+        .replace(/\D/g, '')
+        .trim();
 }
 
 function isAlreadyLocalPath(s) {
@@ -26,7 +29,11 @@ function isSafeRemoteUrl(urlStr) {
         const host = u.hostname.toLowerCase();
         if (host === 'localhost' || host === '127.0.0.1' || host === '::1') return false;
         const parts = host.split('.');
-        if (parts[0] === '10' || (parts[0] === '172' && parseInt(parts[1], 10) >= 16 && parseInt(parts[1], 10) <= 31)) return false;
+        if (
+            parts[0] === '10' ||
+            (parts[0] === '172' && parseInt(parts[1], 10) >= 16 && parseInt(parts[1], 10) <= 31)
+        )
+            return false;
         if (parts[0] === '192' && parts[1] === '168') return false;
         return true;
     } catch {
@@ -58,7 +65,8 @@ function ensureAvatarFetchUrl(raw) {
     const host = slash >= 0 ? u.slice(0, slash) : u;
     if (host.indexOf('.') > 0) {
         try {
-            if (/^[a-z0-9.-]+$/i.test(host) && host.split('.').length >= 2) return 'https://' + u.replace(/^\/+/, '');
+            if (/^[a-z0-9.-]+$/i.test(host) && host.split('.').length >= 2)
+                return 'https://' + u.replace(/^\/+/, '');
         } catch (_) {}
     }
     return u;
@@ -82,7 +90,10 @@ async function downloadAvatarToUploads(customerId, sourceUrl) {
             validateStatus: (s) => s >= 200 && s < 400,
             headers: {
                 Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                'User-Agent': 'Mozilla/5.0 (compatible; fxguard-kaya/1.0; +https://github.com/ersanjt/fxguard-kaya)',
+                'User-Agent':
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+                Referer: 'https://web.whatsapp.com/',
+                Origin: 'https://web.whatsapp.com',
             },
         });
         const ct = (res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
@@ -112,15 +123,48 @@ async function downloadAvatarToUploads(customerId, sourceUrl) {
     }
 }
 
+function saveDataUrlToUploads(customerId, dataUrl) {
+    if (!customerId || !dataUrl) return null;
+    const m = String(dataUrl).match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/);
+    if (!m) return null;
+    try {
+        const buf = Buffer.from(m[2].replace(/\s/g, ''), 'base64');
+        if (buf.length < 32 || buf.length > 5 * 1024 * 1024) return null;
+        const ext = extFromContentType(m[1]);
+        const dir = path.join(__dirname, '..', 'uploads', 'customers', customerId);
+        fs.mkdirSync(dir, { recursive: true });
+        const filename = 'avatar' + ext;
+        const fullPath = path.join(dir, filename);
+        try {
+            const prev = fs.readdirSync(dir);
+            for (const f of prev) {
+                if (f.startsWith('avatar.') && f !== filename) {
+                    try {
+                        fs.unlinkSync(path.join(dir, f));
+                    } catch (_) {}
+                }
+            }
+        } catch (_) {}
+        fs.writeFileSync(fullPath, buf);
+        return '/uploads/customers/' + customerId + '/' + filename;
+    } catch {
+        return null;
+    }
+}
+
 /**
  * اگر URL راه‌دور است، در پس‌زمینه ذخیره محلی می‌کند و URL نهایی را برمی‌گرداند؛ در غیر این صورت همان ورودی.
  */
 async function persistRemoteAvatarIfNeeded(customerId, profilePicValue) {
-    if (!customerId || !profilePicValue || typeof profilePicValue !== 'string') return profilePicValue || null;
+    if (!customerId || !profilePicValue || typeof profilePicValue !== 'string')
+        return profilePicValue || null;
     const t = profilePicValue.trim();
     if (!t) return null;
     if (isAlreadyLocalPath(t)) return t.startsWith('/') ? t : '/' + t;
-    if (t.startsWith('data:')) return t;
+    if (t.startsWith('data:')) {
+        const saved = saveDataUrlToUploads(customerId, t);
+        return saved || t;
+    }
     const local = await downloadAvatarToUploads(customerId, t);
     return local || t;
 }
@@ -152,7 +196,9 @@ const PROFILE_PIC_PROXY_HOST_SUFFIXES = [
 function isAllowedProfilePicCdnHost(hostname) {
     if (!hostname || typeof hostname !== 'string') return false;
     const h = hostname.toLowerCase();
-    return PROFILE_PIC_PROXY_HOST_SUFFIXES.some((suffix) => h === suffix || h.endsWith('.' + suffix));
+    return PROFILE_PIC_PROXY_HOST_SUFFIXES.some(
+        (suffix) => h === suffix || h.endsWith('.' + suffix)
+    );
 }
 
 /**
@@ -177,15 +223,19 @@ async function maybeRefreshWhatsappCustomerAvatar(customer) {
     const now = Date.now();
     const last = _waAvatarRefreshAt.get(customer.id) || 0;
     const minGap = pic
-        ? (looksLikeExpiringCdnProfilePic(pic) ? 90 * 1000 : 10 * 60 * 1000)
-        : 45 * 1000;
+        ? looksLikeExpiringCdnProfilePic(pic)
+            ? 90 * 1000
+            : 10 * 60 * 1000
+        : 8 * 1000;
     if (last && now - last < minGap) return null;
     _waAvatarRefreshAt.set(customer.id, now);
 
     let remoteUrl = '';
     const lidRaw =
         customer.customFields && typeof customer.customFields === 'object'
-            ? String(customer.customFields.whatsappLid || customer.customFields.whatsappChatId || '').trim()
+            ? String(
+                  customer.customFields.whatsappLid || customer.customFields.whatsappChatId || ''
+              ).trim()
             : '';
     const queryIds = [phoneDigits];
     if (lidRaw) queryIds.push(/@/.test(lidRaw) ? lidRaw : `${lidRaw.replace(/\D/g, '')}@lid`);
@@ -193,11 +243,15 @@ async function maybeRefreshWhatsappCustomerAvatar(customer) {
     try {
         const { gatewayGet } = require('./gatewayClient');
         for (const id of queryIds) {
-            const qs = /@g\.us$/i.test(id) || /@lid$/i.test(id)
-                ? 'chatId=' + encodeURIComponent(id)
-                : 'phone=' + encodeURIComponent(id);
+            const qs =
+                /@g\.us$/i.test(id) || /@lid$/i.test(id)
+                    ? 'chatId=' + encodeURIComponent(id)
+                    : 'phone=' + encodeURIComponent(id);
             const res = await gatewayGet('/api/contacts/profile-pic?' + qs, { timeout: 5000 });
-            remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
+            remoteUrl =
+                res && res.data && res.data.profilePicUrl
+                    ? String(res.data.profilePicUrl).trim()
+                    : '';
             if (remoteUrl) break;
         }
     } catch (_) {

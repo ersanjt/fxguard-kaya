@@ -948,17 +948,13 @@ function attachClientEvents(c) {
                 lid: contactLid,
                 name: contact?.name || contact?.pushname || null,
                 isMyContact: contact?.isMyContact,
-                profilePicUrl: contact
-                    ? await Promise.race([
-                          contact.getProfilePicUrl(),
-                          timeoutReject(2000, 'profile_pic_timeout'),
-                      ]).catch(() => null)
-                    : null,
+                profilePicUrl: usableProfilePicUrl(cachedChat && cachedChat.profilePicUrl) || null,
             },
             chat: {
                 id: chatId || (isGroup ? serializedJid(msg.from) : null),
                 name: chatName,
                 isGroup: isGroup || !!(cachedChat && cachedChat.isGroup),
+                profilePicUrl: usableProfilePicUrl(cachedChat && cachedChat.profilePicUrl) || null,
             },
             author: authorId,
             authorName: authorName,
@@ -1689,6 +1685,16 @@ let lastGroupsCache = { at: 0, groups: [] };
 /** آخرین لیست موفق همهٔ چت‌ها (خصوصی + گروه) */
 let lastChatsCache = { at: 0, chats: [] };
 
+function usableProfilePicUrl(u) {
+    if (!u || typeof u !== 'string') return null;
+    const s = String(u).trim();
+    if (!s || /nopicture/i.test(s)) return null;
+    if (/^https?:\/\//i.test(s)) return s;
+    if (s.startsWith('//') && /whatsapp\.net/i.test(s)) return `https:${s}`;
+    if (/^data:image\//i.test(s) && s.length >= 64 && s.length < 900000) return s;
+    return null;
+}
+
 function mergeChatRows(a, b) {
     const map = new Map();
     for (const row of [...(Array.isArray(a) ? a : []), ...(Array.isArray(b) ? b : [])]) {
@@ -1697,12 +1703,15 @@ function mergeChatRows(a, b) {
         if (!id || !id.includes('@') || id.endsWith('@broadcast') || id === 'status@broadcast') {
             continue;
         }
+        const phoneDigits = row.phone ? String(row.phone).replace(/\D/g, '') : '';
         const next = {
             id,
             name: row.name ? String(row.name) : null,
             isGroup: !!row.isGroup || /@g\.us$/i.test(id),
             lastPreview: row.lastPreview ? String(row.lastPreview).slice(0, 120) : null,
             timestamp: row.timestamp || null,
+            profilePicUrl: usableProfilePicUrl(row.profilePicUrl),
+            phone: phoneDigits && phoneDigits.length >= 8 ? phoneDigits : null,
         };
         const prev = map.get(id);
         if (!prev) {
@@ -1715,6 +1724,8 @@ function mergeChatRows(a, b) {
             isGroup: !!(next.isGroup || prev.isGroup),
             lastPreview: next.lastPreview || prev.lastPreview,
             timestamp: next.timestamp || prev.timestamp,
+            profilePicUrl: next.profilePicUrl || prev.profilePicUrl || null,
+            phone: next.phone || prev.phone || null,
         });
     }
     return [...map.values()];
@@ -1731,7 +1742,13 @@ function persistSeenChatsSoon() {
         persistSeenTimer = null;
         const payload = JSON.stringify({
             at: lastChatsCache.at || Date.now(),
-            chats: (lastChatsCache.chats || []).slice(0, 2000),
+            chats: (lastChatsCache.chats || []).slice(0, 2000).map((c) => ({
+                ...c,
+                profilePicUrl:
+                    c && c.profilePicUrl && String(c.profilePicUrl).startsWith('data:')
+                        ? null
+                        : c.profilePicUrl || null,
+            })),
         });
         fs.writeFile(seenChatsFilePath(), payload, 'utf8').catch(() => {});
     }, 400);
@@ -1766,7 +1783,7 @@ function rememberChatRows(rows) {
     return merged;
 }
 
-function rememberSeenChat(id, name, isGroup, preview, ts) {
+function rememberSeenChat(id, name, isGroup, preview, ts, profilePicUrl, phone) {
     rememberChatRows([
         {
             id,
@@ -1774,6 +1791,8 @@ function rememberSeenChat(id, name, isGroup, preview, ts) {
             isGroup,
             lastPreview: preview,
             timestamp: ts,
+            profilePicUrl: profilePicUrl || null,
+            phone: phone || null,
         },
     ]);
 }
@@ -1810,8 +1829,8 @@ async function hookChatCollectionObserver() {
     try {
         await client.pupPage.exposeFunction(
             '__kayaRememberChat',
-            (id, name, isGroup, preview, ts) => {
-                rememberSeenChat(id, name, isGroup, preview, ts);
+            (id, name, isGroup, preview, ts, profilePicUrl, phone) => {
+                rememberSeenChat(id, name, isGroup, preview, ts, profilePicUrl, phone);
             }
         );
     } catch (_) {
@@ -1827,12 +1846,31 @@ async function hookChatCollectionObserver() {
                     try {
                         const id = c && c.id && (c.id._serialized || c.id);
                         if (!id || typeof window.__kayaRememberChat !== 'function') return;
+                        let pic = null;
+                        try {
+                            const t =
+                                (c && c.profilePicThumb) ||
+                                (c && c.contact && c.contact.profilePicThumb);
+                            const u = t && (t.eurl || t.imgFull || t.img);
+                            if (u && typeof u === 'string' && !/nopicture/i.test(u)) pic = u;
+                        } catch (_) {}
+                        let phone = null;
+                        try {
+                            const num =
+                                c &&
+                                c.contact &&
+                                (c.contact.number || c.contact.phoneNumber || c.contact.userid);
+                            const d = num ? String(num).replace(/\D/g, '') : '';
+                            if (d.length >= 8) phone = d;
+                        } catch (_) {}
                         window.__kayaRememberChat(
                             String(id),
                             c.name || c.formattedTitle || c.subject || null,
                             !!(c.isGroup || String(id).endsWith('@g.us')),
                             null,
-                            c.t || null
+                            c.t || null,
+                            pic,
+                            phone
                         );
                     } catch (_) {}
                 });
@@ -1857,9 +1895,98 @@ async function hookChatCollectionObserver() {
 }
 
 /** استخراج چت/گروه از صفحهٔ واتساپ وب (Store + ماژول‌های جدید + WWebJS) */
+async function attachPaneAvatars(rows) {
+    if (!client?.pupPage || !Array.isArray(rows)) return rows || [];
+    try {
+        const extras = await Promise.race([
+            client.pupPage.evaluate(async () => {
+                function jidFrom(raw) {
+                    const m = String(raw || '').match(
+                        /([0-9]+(?:-[0-9]+)?@(?:c\.us|g\.us|lid|s\.whatsapp\.net))/i
+                    );
+                    return m ? m[1] : null;
+                }
+                function toDataUrl(buf, ct) {
+                    const bytes = new Uint8Array(buf);
+                    const chunk = 0x8000;
+                    let bin = '';
+                    for (let i = 0; i < bytes.length; i += chunk) {
+                        bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+                    }
+                    return 'data:' + (ct || 'image/jpeg') + ';base64,' + btoa(bin);
+                }
+                const nodes = document.querySelectorAll(
+                    '#pane-side [data-id], [data-testid="cell-phone-wrapper"][data-id], #pane-side [role="listitem"] [data-id], #pane-side [role="row"]'
+                );
+                const out = [];
+                const seen = Object.create(null);
+                for (let i = 0; i < nodes.length; i++) {
+                    const el = nodes[i];
+                    const raw =
+                        el.getAttribute('data-id') ||
+                        (el.querySelector && el.querySelector('[data-id]')
+                            ? el.querySelector('[data-id]').getAttribute('data-id')
+                            : '');
+                    const id = jidFrom(raw);
+                    if (!id || seen[id]) continue;
+                    const img = el.querySelector && el.querySelector('img');
+                    if (!img) continue;
+                    const src = String(img.currentSrc || img.src || img.getAttribute('src') || '');
+                    if (/^https?:\/\//i.test(src) && !/nopicture/i.test(src)) {
+                        seen[id] = true;
+                        out.push({ id, url: src });
+                        continue;
+                    }
+                    if (!/^blob:/i.test(src)) continue;
+                    try {
+                        const res = await fetch(src);
+                        const buf = await res.arrayBuffer();
+                        if (!buf || buf.byteLength < 32 || buf.byteLength > 400000) continue;
+                        const headerCt =
+                            (res.headers && res.headers.get && res.headers.get('content-type')) ||
+                            'image/jpeg';
+                        seen[id] = true;
+                        out.push({ id, url: toDataUrl(buf, String(headerCt).split(';')[0]) });
+                    } catch (_) {}
+                }
+                return out;
+            }),
+            timeoutReject(4000, 'pane_avatar_timeout'),
+        ]);
+        if (!Array.isArray(extras) || !extras.length) return rows;
+        const map = new Map();
+        for (const x of extras) {
+            if (x && x.id && x.url) map.set(String(x.id), x.url);
+        }
+        const seenId = new Set();
+        const merged = rows.map((r) => {
+            if (!r || !r.id) return r;
+            seenId.add(String(r.id));
+            if (r.profilePicUrl) return r;
+            const u = map.get(String(r.id));
+            return u ? { ...r, profilePicUrl: u } : r;
+        });
+        map.forEach((url, id) => {
+            if (seenId.has(id)) return;
+            merged.push({
+                id,
+                name: null,
+                isGroup: /@g\.us$/i.test(id),
+                lastPreview: null,
+                timestamp: null,
+                profilePicUrl: url,
+                phone: null,
+            });
+        });
+        return merged;
+    } catch (_) {
+        return rows;
+    }
+}
+
 async function extractWhatsAppChatsInBrowser() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
-    return client.pupPage.evaluate(() => {
+    const out = await client.pupPage.evaluate(() => {
         function collectModels(collection) {
             if (!collection) return [];
             try {
@@ -1895,17 +2022,102 @@ async function extractWhatsAppChatsInBrowser() {
             return null;
         }
 
+        function usablePic(u) {
+            if (!u || typeof u !== 'string') return null;
+            const s = String(u).trim();
+            if (!s || /nopicture/i.test(s)) return null;
+            if (/^https?:\/\//i.test(s)) return s;
+            if (s.indexOf('//') === 0 && /whatsapp\.net/i.test(s)) return 'https:' + s;
+            if (/^data:image\//i.test(s) && s.length >= 64 && s.length < 900000) return s;
+            return null;
+        }
+        function fromThumb(t) {
+            if (!t) return null;
+            try {
+                if (typeof t === 'string') return usablePic(t);
+                const named =
+                    usablePic(t.eurl) ||
+                    usablePic(t.__x_eurl) ||
+                    usablePic(t.imgFull) ||
+                    usablePic(t.__x_imgFull) ||
+                    usablePic(t.img) ||
+                    usablePic(t.__x_img) ||
+                    usablePic(t.previewEurl) ||
+                    usablePic(t.__x_previewEurl) ||
+                    usablePic(t.preview) ||
+                    usablePic(t.__x_preview) ||
+                    (t.attributes ? fromThumb(t.attributes) : null);
+                if (named) return named;
+                const keys = Object.keys(t);
+                for (let i = 0; i < Math.min(keys.length, 40); i++) {
+                    const p = usablePic(t[keys[i]]);
+                    if (p) return p;
+                }
+            } catch (_) {}
+            return null;
+        }
+        function picOf(model) {
+            if (!model) return null;
+            return (
+                fromThumb(model.profilePicThumb) ||
+                usablePic(model.profilePicUrl) ||
+                usablePic(model.imgUrl) ||
+                (model.contact &&
+                    (fromThumb(model.contact.profilePicThumb) ||
+                        usablePic(model.contact.profilePicUrl))) ||
+                (model.groupMetadata && fromThumb(model.groupMetadata.profilePicThumb))
+            );
+        }
+        function picFromStoreByJid(jid) {
+            const store = window.Store;
+            if (!store || !jid) return null;
+            let wid = jid;
+            try {
+                if (store.WidFactory && typeof store.WidFactory.createWid === 'function') {
+                    wid = store.WidFactory.createWid(jid);
+                }
+            } catch (_) {}
+            const cols = [store.ProfilePicThumb, store.ProfilePic];
+            for (let i = 0; i < cols.length; i++) {
+                const col = cols[i];
+                if (!col) continue;
+                try {
+                    if (typeof col.get === 'function') {
+                        const m = col.get(wid) || col.get(jid);
+                        const p = fromThumb(m);
+                        if (p) return p;
+                    }
+                } catch (_) {}
+                try {
+                    if (col._index) {
+                        const m =
+                            col._index[jid] || col._index[String(jid)] || col._index[String(wid)];
+                        const p = fromThumb(m);
+                        if (p) return p;
+                    }
+                } catch (_) {}
+            }
+            return null;
+        }
+
         const seen = Object.create(null);
         const out = [];
 
-        function pushChat(ser, name, isGroup, preview, ts) {
+        function pushChat(ser, name, isGroup, preview, ts, profilePicUrl, phone) {
             if (!ser) return;
             const s = String(ser);
             if (!s.includes('@')) return;
             if (s === 'status@broadcast' || s.endsWith('@broadcast')) return;
+            const pic = usablePic(profilePicUrl);
+            const phoneDigits = phone ? String(phone).replace(/\D/g, '') : '';
             if (seen[s]) {
                 if (name && !seen[s].name) seen[s].name = String(name);
                 if (isGroup) seen[s].isGroup = true;
+                if (preview && !seen[s].lastPreview)
+                    seen[s].lastPreview = String(preview).slice(0, 120);
+                if (ts && !seen[s].timestamp) seen[s].timestamp = ts;
+                if (pic && !seen[s].profilePicUrl) seen[s].profilePicUrl = pic;
+                if (phoneDigits.length >= 8 && !seen[s].phone) seen[s].phone = phoneDigits;
                 return;
             }
             const row = {
@@ -1914,6 +2126,8 @@ async function extractWhatsAppChatsInBrowser() {
                 isGroup: !!isGroup || s.endsWith('@g.us'),
                 lastPreview: preview ? String(preview).slice(0, 120) : null,
                 timestamp: ts || null,
+                profilePicUrl: pic,
+                phone: phoneDigits.length >= 8 ? phoneDigits : null,
             };
             seen[s] = row;
             out.push(row);
@@ -1951,7 +2165,20 @@ async function extractWhatsAppChatsInBrowser() {
                         preview = c.previewMessage.body || c.previewMessage.caption || null;
                     }
                 } catch (_) {}
-                pushChat(ser, name, isGroup, preview, ts);
+                const pic = picOf(c) || picFromStoreByJid(ser);
+                let phoneDigits = null;
+                if (!isGroup) {
+                    try {
+                        const num =
+                            (c &&
+                                c.contact &&
+                                (c.contact.number || c.contact.phoneNumber || c.contact.userid)) ||
+                            (c && c.formattedNumber);
+                        const d = num ? String(num).replace(/\D/g, '') : '';
+                        if (d.length >= 8) phoneDigits = d;
+                    } catch (_) {}
+                }
+                pushChat(ser, name, isGroup, preview, ts, pic, phoneDigits);
             }
         }
 
@@ -2041,7 +2268,13 @@ async function extractWhatsAppChatsInBrowser() {
                 let name = '';
                 const t = el.querySelector && el.querySelector('span[title], [title]');
                 if (t) name = t.getAttribute('title') || t.textContent || '';
-                pushChat(id, String(name).trim() || null, /@g\.us$/i.test(id), null, null);
+                let pic = null;
+                try {
+                    const img = el.querySelector && el.querySelector('img');
+                    const src = img && (img.currentSrc || img.src || img.getAttribute('src'));
+                    pic = usablePic(src);
+                } catch (_) {}
+                pushChat(id, String(name).trim() || null, /@g\.us$/i.test(id), null, null, pic);
             });
         } catch (_) {}
 
@@ -2059,8 +2292,29 @@ async function extractWhatsAppChatsInBrowser() {
             }
         } catch (_) {}
 
+        try {
+            const thumbs =
+                (window.Store && (window.Store.ProfilePicThumb || window.Store.ProfilePic)) || null;
+            const thumbModels = collectModels(thumbs);
+            for (let i = 0; i < thumbModels.length; i++) {
+                const m = thumbModels[i];
+                const ser = jidOf(m);
+                const pic = fromThumb(m);
+                if (ser && pic) pushChat(ser, null, /@g\.us$/i.test(ser), null, null, pic, null);
+            }
+            if (thumbs && thumbs._index) {
+                Object.keys(thumbs._index).forEach((id) => {
+                    const pic = fromThumb(thumbs._index[id]);
+                    if (pic && String(id).includes('@')) {
+                        pushChat(id, null, /@g\.us$/i.test(String(id)), null, null, pic, null);
+                    }
+                });
+            }
+        } catch (_) {}
+
         return out;
     });
+    return attachPaneAvatars(Array.isArray(out) ? out : []);
 }
 
 async function hydrateWhatsAppChatList() {
@@ -2262,6 +2516,7 @@ async function listWhatsAppAllChats() {
                 count: merged.length,
                 fromStore: fromStore.length,
                 groups: merged.filter((c) => c.isGroup).length,
+                withPic: merged.filter((c) => c.profilePicUrl).length,
             });
             return merged;
         }
@@ -2413,7 +2668,126 @@ function listedChatMatchesRequest(row, raw) {
     const b = req.replace(/\D/g, '');
     if (b.length >= 10 && a.length >= 10 && (a === b || a.endsWith(b) || b.endsWith(a)))
         return true;
+    const rowPhone = String((row && row.phone) || '').replace(/\D/g, '');
+    if (
+        b.length >= 10 &&
+        rowPhone.length >= 10 &&
+        (rowPhone === b || rowPhone.endsWith(b) || b.endsWith(rowPhone))
+    ) {
+        return true;
+    }
     return false;
+}
+
+let lastStorePicRefreshAt = 0;
+let storePicRefreshInflight = null;
+
+async function refreshStoreProfilePicsOnce() {
+    if (storePicRefreshInflight) return storePicRefreshInflight;
+    if (Date.now() - lastStorePicRefreshAt < 15000 && (lastChatsCache.chats || []).length) {
+        return;
+    }
+    lastStorePicRefreshAt = Date.now();
+    storePicRefreshInflight = Promise.race([
+        listWhatsAppAllChatsFromStore(),
+        timeoutReject(8000, 'store_pic_list_timeout'),
+    ])
+        .then((rows) => {
+            if (Array.isArray(rows) && rows.length) rememberChatRows(rows);
+        })
+        .catch(() => {})
+        .finally(() => {
+            storePicRefreshInflight = null;
+        });
+    return storePicRefreshInflight;
+}
+
+async function tryStoreProfilePicUrl(jid) {
+    if (!client?.pupPage || !jid) return null;
+    try {
+        const url = await Promise.race([
+            client.pupPage.evaluate((rawJid) => {
+                function usable(u) {
+                    if (!u || typeof u !== 'string') return null;
+                    const s = String(u).trim();
+                    if (!s || /nopicture/i.test(s)) return null;
+                    if (/^https?:\/\//i.test(s)) return s;
+                    if (s.indexOf('//') === 0 && /whatsapp\.net/i.test(s)) return 'https:' + s;
+                    if (/^data:image\//i.test(s) && s.length >= 64 && s.length < 900000) return s;
+                    return null;
+                }
+                function fromThumb(t) {
+                    if (!t) return null;
+                    try {
+                        if (typeof t === 'string') return usable(t);
+                        const named =
+                            usable(t.eurl) ||
+                            usable(t.__x_eurl) ||
+                            usable(t.imgFull) ||
+                            usable(t.__x_imgFull) ||
+                            usable(t.img) ||
+                            usable(t.__x_img) ||
+                            usable(t.previewEurl) ||
+                            usable(t.preview);
+                        if (named) return named;
+                        const keys = Object.keys(t);
+                        for (let i = 0; i < Math.min(keys.length, 40); i++) {
+                            const p = usable(t[keys[i]]);
+                            if (p) return p;
+                        }
+                    } catch (_) {}
+                    return null;
+                }
+                const store = window.Store;
+                let wid = rawJid;
+                try {
+                    if (
+                        store &&
+                        store.WidFactory &&
+                        typeof store.WidFactory.createWid === 'function'
+                    ) {
+                        wid = store.WidFactory.createWid(rawJid);
+                    }
+                } catch (_) {}
+                const getFrom = (col) => {
+                    if (!col) return null;
+                    try {
+                        if (typeof col.get === 'function') {
+                            return col.get(wid) || col.get(rawJid) || null;
+                        }
+                    } catch (_) {}
+                    try {
+                        if (col._index) {
+                            return col._index[rawJid] || (wid && col._index[String(wid)]) || null;
+                        }
+                    } catch (_) {}
+                    return null;
+                };
+                let pic = fromThumb(getFrom(store && store.ProfilePicThumb));
+                if (pic) return pic;
+                pic = fromThumb(getFrom(store && store.ProfilePic));
+                if (pic) return pic;
+                const chat = getFrom(store && (store.Chat || store.ChatCollection));
+                if (chat) {
+                    pic =
+                        fromThumb(chat.profilePicThumb) ||
+                        fromThumb(chat.contact && chat.contact.profilePicThumb) ||
+                        fromThumb(chat.groupMetadata && chat.groupMetadata.profilePicThumb);
+                    if (pic) return pic;
+                }
+                const contact = getFrom(store && store.Contact);
+                if (contact) {
+                    pic = fromThumb(contact.profilePicThumb) || usable(contact.profilePicUrl);
+                    if (pic) return pic;
+                }
+                return null;
+            }, String(jid)),
+            timeoutReject(2500, 'store_pic_timeout'),
+        ]);
+        return usableProfilePicUrl(url);
+    } catch (_) {
+        return null;
+    }
 }
 
 /**
@@ -2521,11 +2895,12 @@ async function resolveChatsOnCurrentSession(ids) {
         found.push({
             id: ser,
             requested: null,
-            phone: String(ser).replace(/\D/g, '') || null,
+            phone: hit.phone || String(ser).replace(/\D/g, '') || null,
             name: hit.name || null,
             isGroup: !!hit.isGroup || /@g\.us$/i.test(ser),
             lastPreview: hit.lastPreview || null,
             timestamp: hit.timestamp || null,
+            profilePicUrl: hit.profilePicUrl || null,
         });
     }
     logger.info('Resolved chats on current WhatsApp session', {
@@ -2664,37 +3039,59 @@ app.get('/api/contacts/profile-pic', async (req, res) => {
         if (/@lid$/i.test(q) === false && /^\d{8,20}$/.test(q.replace(/\D/g, ''))) {
             addId(`${String(q).replace(/\D/g, '')}@lid`);
         }
-        const cached = lookupCachedChat(q) || lookupCachedChat(chatId);
+        const cachedEarly = lookupCachedChat(q) || lookupCachedChat(chatId);
+        if (cachedEarly) addId(cachedEarly.id);
+        if (cachedEarly && cachedEarly.profilePicUrl) {
+            return res.json({
+                ok: true,
+                chatId: cachedEarly.id,
+                profilePicUrl: cachedEarly.profilePicUrl,
+            });
+        }
+
+        await Promise.race([
+            refreshStoreProfilePicsOnce(),
+            new Promise((resolve) => setTimeout(resolve, 3200)),
+        ]);
+        const cached = lookupCachedChat(q) || lookupCachedChat(chatId) || cachedEarly;
         if (cached) addId(cached.id);
+        if (cached && cached.profilePicUrl) {
+            return res.json({
+                ok: true,
+                chatId: cached.id,
+                profilePicUrl: cached.profilePicUrl,
+            });
+        }
 
         let profilePicUrl = null;
         let usedId = chatId || q;
         for (const id of candidates) {
             usedId = id;
+            profilePicUrl = await tryStoreProfilePicUrl(id);
+            if (profilePicUrl) {
+                rememberSeenChat(
+                    id,
+                    cached && cached.name,
+                    /@g\.us$/i.test(id),
+                    null,
+                    null,
+                    profilePicUrl
+                );
+                break;
+            }
+        }
+        if (!profilePicUrl && candidates.length) {
+            const id = candidates[0];
+            usedId = id;
             try {
                 profilePicUrl = await Promise.race([
                     client.getProfilePicUrl(id),
-                    timeoutReject(2500, 'profile_pic_timeout'),
+                    timeoutReject(2000, 'profile_pic_timeout'),
                 ]);
+                profilePicUrl = usableProfilePicUrl(profilePicUrl);
             } catch (_) {
                 profilePicUrl = null;
             }
-            if (profilePicUrl) break;
-            try {
-                const c = await Promise.race([
-                    client.getContactById(id),
-                    timeoutReject(2000, 'contact_timeout'),
-                ]);
-                if (c && typeof c.getProfilePicUrl === 'function') {
-                    profilePicUrl = await Promise.race([
-                        c.getProfilePicUrl(),
-                        timeoutReject(2000, 'profile_pic_timeout'),
-                    ]);
-                }
-            } catch (_) {
-                profilePicUrl = null;
-            }
-            if (profilePicUrl) break;
         }
         return res.json({ ok: true, chatId: usedId, profilePicUrl: profilePicUrl || null });
     } catch (error) {

@@ -25,7 +25,10 @@ const {
 const { getUserGrantSets, grantedCustomerIdList } = require('../lib/staffResourceGrants');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
-const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
+const {
+    maybeRefreshWhatsappCustomerAvatar,
+    persistRemoteAvatarIfNeeded,
+} = require('../lib/customerAvatar');
 const { deliverOutboundConversationMessage } = require('../lib/conversationOutbound');
 const { getUserWhatsAppSenderName } = require('../lib/outboundMessagePrefix');
 const {
@@ -182,7 +185,10 @@ router.post('/sync-groups', async (req, res, next) => {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
         const isGwReady = (data) =>
-            !!(data && (data.whatsapp || data.usable || data.status === 'ready' || data.phase === 'ready'));
+            !!(
+                data &&
+                (data.whatsapp || data.usable || data.status === 'ready' || data.phase === 'ready')
+            );
 
         /** وضعیت Gateway؛ در صورت نیاز /api/start و انتظار تا ready */
         const ensureGatewayWhatsappReady = async (cfg, opts = {}) => {
@@ -261,7 +267,9 @@ router.post('/sync-groups', async (req, res, next) => {
             '';
 
         try {
-            await ensureLegacyCutover(gatewayNumber || liveStatus.number, { reason: 'sync_groups' });
+            await ensureLegacyCutover(gatewayNumber || liveStatus.number, {
+                reason: 'sync_groups',
+            });
         } catch (cutErr) {
             logger.warn('sync-groups: cutover failed', { error: cutErr?.message });
         }
@@ -353,10 +361,13 @@ router.post('/sync-groups', async (req, res, next) => {
 
         // اگر لیست موقتاً نیامد ولی Gateway ready است — شمارهٔ قبلی را دوباره باز نکن
         if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
-            logger.warn('sync-groups: chats list failed while Gateway ready — keep previous archived', {
-                error: fetchErr?.response?.data?.error || fetchErr?.message || null,
-                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
-            });
+            logger.warn(
+                'sync-groups: chats list failed while Gateway ready — keep previous archived',
+                {
+                    error: fetchErr?.response?.data?.error || fetchErr?.message || null,
+                    gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+                }
+            );
             let promoted = { opened: 0 };
             try {
                 promoted = await promoteExistingGroupConversations(
@@ -403,8 +414,7 @@ router.post('/sync-groups', async (req, res, next) => {
                 });
             }
             return res.status(503).json({
-                error:
-                    'همگام‌سازی چت‌ها الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید. اگر ادامه داشت در تنظیمات واتساپ وضعیت Gateway را به‌روز کنید.',
+                error: 'همگام‌سازی چت‌ها الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید. اگر ادامه داشت در تنظیمات واتساپ وضعیت Gateway را به‌روز کنید.',
                 gatewayStatus: (liveStatus && (liveStatus.phase || liveStatus.status)) || null,
             });
         }
@@ -435,7 +445,9 @@ router.post('/sync-groups', async (req, res, next) => {
                         [customer] = await Customer.findOrCreate({
                             where: { phone: createPhone },
                             defaults: {
-                                name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${createPhone}`),
+                                name:
+                                    chatName ||
+                                    (isGroup ? `گروه ${chatId}` : `مشتری ${createPhone}`),
                                 source: 'whatsapp',
                                 isRestrictedFromStaff: false,
                             },
@@ -471,7 +483,8 @@ router.post('/sync-groups', async (req, res, next) => {
                     groupName: isGroup
                         ? chatName || (meta && meta.groupName) || null
                         : meta && meta.groupName,
-                    linkedGatewayNumber: gatewayNumber || (meta && meta.linkedGatewayNumber) || null,
+                    linkedGatewayNumber:
+                        gatewayNumber || (meta && meta.linkedGatewayNumber) || null,
                     historicalImport: true,
                 });
 
@@ -531,8 +544,18 @@ router.post('/sync-groups', async (req, res, next) => {
                 synced++;
                 if (isGroup) groupsSynced++;
                 try {
-                    const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
-                    maybeRefreshWhatsappCustomerAvatar(customer).catch(() => {});
+                    if (row.profilePicUrl) {
+                        persistRemoteAvatarIfNeeded(customer.id, row.profilePicUrl)
+                            .then(async (persisted) => {
+                                const finalPic = persisted || row.profilePicUrl;
+                                if (finalPic && finalPic !== customer.profilePic) {
+                                    await customer.update({ profilePic: finalPic });
+                                }
+                            })
+                            .catch(() => {});
+                    } else {
+                        maybeRefreshWhatsappCustomerAvatar(customer).catch(() => {});
+                    }
                 } catch (_) {}
             } catch (loopErr) {
                 try {
@@ -585,14 +608,19 @@ router.post('/sync-groups', async (req, res, next) => {
 });
 
 function canExportOrPurgeArchive(req) {
-    return !!(isMainAdmin(req.user) || (req.canManageConversations && req.canManageConversations()));
+    return !!(
+        isMainAdmin(req.user) ||
+        (req.canManageConversations && req.canManageConversations())
+    );
 }
 
 // ——— دانلود بکاپ آرشیو (فقط ادمین اصلی / مالک)
 router.get('/archive-backup', async (req, res, next) => {
     try {
         if (!canExportOrPurgeArchive(req)) {
-            return res.status(403).json({ error: 'فقط ادمین اصلی می‌تواند بکاپ آرشیو را دانلود کند' });
+            return res
+                .status(403)
+                .json({ error: 'فقط ادمین اصلی می‌تواند بکاپ آرشیو را دانلود کند' });
         }
         const { exportArchiveToFile } = require('../services/archiveExport');
         const exported = await exportArchiveToFile();
@@ -720,8 +748,7 @@ router.get('/', async (req, res, next) => {
 
         // سیاست دسترسی لیست + مخفی‌سازی از کارکنان (+ اعطای دسترسی)
         // پیش‌فرض: مکالمات قفل‌شده در لیست نیستند؛ آرشیو/محدود برای ادمین جداست
-        const viewingArchived =
-            status === 'archived' || archived === '1' || archived === 'true';
+        const viewingArchived = status === 'archived' || archived === '1' || archived === 'true';
         const includeHidden =
             req.query.includeHidden === '1' ||
             req.query.includeHidden === 'true' ||

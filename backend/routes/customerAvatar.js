@@ -28,7 +28,9 @@ function mimeFromExt(ext) {
 }
 
 function resolveUploadPath(publicPath) {
-    const rel = String(publicPath || '').replace(/^\/uploads\/?/, '').replace(/^\/+/, '');
+    const rel = String(publicPath || '')
+        .replace(/^\/uploads\/?/, '')
+        .replace(/^\/+/, '');
     if (!rel || rel.includes('..')) return null;
     const root = path.resolve(uploadsDir) + path.sep;
     const full = path.resolve(uploadsDir, rel);
@@ -98,6 +100,21 @@ async function getCustomerAvatar(req, res) {
                 }
             }
         } catch (_) {}
+    }
+
+    if (pic.startsWith('data:image/')) {
+        const m = pic.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=\s]+)$/);
+        if (m) {
+            try {
+                const buf = Buffer.from(m[2].replace(/\s/g, ''), 'base64');
+                if (buf.length >= 32 && buf.length <= MAX_BYTES) {
+                    res.setHeader('Cache-Control', 'private, max-age=300');
+                    res.setHeader('X-Content-Type-Options', 'nosniff');
+                    res.type(m[1]);
+                    return res.send(buf);
+                }
+            } catch (_) {}
+        }
     }
 
     return sendPlaceholderPng(res);
