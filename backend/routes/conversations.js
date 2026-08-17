@@ -242,6 +242,7 @@ router.post('/sync-groups', async (req, res, next) => {
             chatIdVariants,
             normalizeLinkedNumber,
             ensureLegacyCutover,
+            collectCandidateChatPhones,
         } = require('../services/legacyCrmLockdown');
 
         // حتی اگر ensure کوتاه شکست خورد، یک وضعیت زنده بگیر — UI ممکن است «متصل» باشد
@@ -293,12 +294,10 @@ router.post('/sync-groups', async (req, res, next) => {
         const fetchGatewayChats = async () => {
             let lastErr = null;
             let lastEmpty = null;
-            for (let attempt = 0; attempt < 5; attempt++) {
+            for (let attempt = 0; attempt < 2; attempt++) {
                 try {
                     if (attempt > 0) {
-                        await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
-                        await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 15000 });
-                        await sleep(1500 * attempt);
+                        await sleep(2000 * attempt);
                     }
                     try {
                         const all = await gatewayGet('/api/chats', { timeout: 90000, cfg });
@@ -344,6 +343,29 @@ router.post('/sync-groups', async (req, res, next) => {
         } catch (e) {
             fetchErr = e;
         }
+
+        // اگر لیست Store خالی بود، چت‌هایی را باز کن که روی همین نشست واتساپ واقعاً وجود دارند
+        if ((!fetched || !(fetched.chatRows || []).length) && isGwReady(readyGate.data || liveStatus)) {
+            try {
+                const phones = await collectCandidateChatPhones();
+                if (phones.length) {
+                    const resolved = await gatewayPost(
+                        '/api/chats/resolve',
+                        { ids: phones },
+                        { timeout: 100000, cfg }
+                    );
+                    const rows = normalizeChatRows(resolved.data || {});
+                    if (rows.length) {
+                        fetched = { gwRes: resolved, chatRows: rows, source: 'resolve' };
+                    }
+                }
+            } catch (resErr) {
+                logger.warn('sync-groups: resolve current-session chats failed', {
+                    error: resErr?.response?.data?.error || resErr?.message,
+                });
+            }
+        }
+
         const gwRes = fetched && fetched.gwRes;
         const chatSource = (fetched && fetched.source) || 'chats';
 
@@ -566,6 +588,7 @@ router.post('/sync-groups', async (req, res, next) => {
                           ? `؛ ${visibility.archived} مکالمهٔ شمارهٔ قبلی آرشیو ماند`
                           : '') +
                       (chatSource === 'groups-only' ? ' (فعلاً فقط گروه‌ها)' : '') +
+                      (chatSource === 'resolve' ? ' (از نشست زنده واتساپ همین شماره)' : '') +
                       (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
     } catch (err) {

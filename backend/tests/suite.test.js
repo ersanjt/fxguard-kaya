@@ -866,6 +866,50 @@ async function runTests() {
         );
     });
 
+    await test('live message reopens archived current-number chat into All', async () => {
+        const { Customer, Conversation } = require('../models');
+        const phone = '905010676486';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: {
+                name: 'Current Number DM',
+                source: 'whatsapp',
+                isRestrictedFromStaff: true,
+            },
+        });
+        await cust.update({ isRestrictedFromStaff: true });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'archived',
+            isHiddenFromStaff: true,
+            source: 'whatsapp',
+            lastMessageAt: new Date(Date.now() - 3600000),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-reopen-live-1',
+            from: `${phone}@c.us`,
+            body: 'سلام',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'chat',
+            contact: { number: phone, name: 'Current Number DM' },
+            chat: { id: `${phone}@c.us`, name: 'Current Number DM', isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        await conv.reload();
+        await cust.reload();
+        assert.strictEqual(conv.status, 'open');
+        assert.strictEqual(conv.isHiddenFromStaff, false);
+        assert.strictEqual(cust.isRestrictedFromStaff, false);
+        const list = await req.get('/api/conversations?limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(list.status, 200);
+        assert(
+            (list.body.data || []).some((c) => c.id === conv.id),
+            'live message on current number must bring the archived chat back to All'
+        );
+    });
+
     // ── Security: Auth Boundaries ────────────────────────────────────────────
     section('Security — Auth Boundaries');
 

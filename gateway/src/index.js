@@ -1597,6 +1597,41 @@ function mergeChatRows(a, b) {
     return [...map.values()];
 }
 
+function seenChatsFilePath() {
+    return path.join(getWhatsAppSessionPath(), 'kaya-seen-chats.json');
+}
+
+let persistSeenTimer = null;
+function persistSeenChatsSoon() {
+    if (persistSeenTimer) return;
+    persistSeenTimer = setTimeout(() => {
+        persistSeenTimer = null;
+        const payload = JSON.stringify({
+            at: lastChatsCache.at || Date.now(),
+            chats: (lastChatsCache.chats || []).slice(0, 2000),
+        });
+        fs.writeFile(seenChatsFilePath(), payload, 'utf8').catch(() => {});
+    }, 400);
+}
+
+async function loadPersistedSeenChats() {
+    try {
+        const raw = await fs.readFile(seenChatsFilePath(), 'utf8');
+        const data = JSON.parse(raw);
+        if (Array.isArray(data.chats) && data.chats.length) {
+            lastChatsCache = {
+                at: Number(data.at) || Date.now(),
+                chats: data.chats,
+            };
+            const groupsOnly = data.chats
+                .filter((c) => c && c.isGroup)
+                .map((c) => ({ id: c.id, name: c.name }));
+            if (groupsOnly.length) lastGroupsCache = { at: lastChatsCache.at, groups: groupsOnly };
+            logger.info('Loaded persisted WhatsApp chat cache', { count: data.chats.length });
+        }
+    } catch (_) {}
+}
+
 function rememberChatRows(rows) {
     const merged = mergeChatRows(lastChatsCache.chats, rows);
     lastChatsCache = { at: Date.now(), chats: merged };
@@ -1604,6 +1639,7 @@ function rememberChatRows(rows) {
         .filter((c) => c && c.isGroup)
         .map((c) => ({ id: c.id, name: c.name }));
     if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
+    persistSeenChatsSoon();
     return merged;
 }
 
@@ -2086,15 +2122,103 @@ async function listWhatsAppAllChats() {
         logger.warn('Groups fallback failed', { error: formatGatewayError(gErr) });
     }
 
-    const age = Date.now() - (lastChatsCache.at || 0);
-    if (lastChatsCache.chats?.length && age < 2 * 60 * 60 * 1000) {
+    if (lastChatsCache.chats?.length) {
         logger.warn('Serving cached WhatsApp chats', {
             cached: lastChatsCache.chats.length,
-            ageMs: age,
+            ageMs: Date.now() - (lastChatsCache.at || 0),
         });
         return lastChatsCache.chats;
     }
     throw new Error('chats_unavailable');
+}
+
+function resolveIdVariants(id) {
+    const s = String(id || '').trim();
+    if (!s) return [];
+    const out = new Set([s]);
+    const digits = s.replace(/\D/g, '');
+    if (/@g\.us$/i.test(s)) {
+        out.add(s.toLowerCase());
+        return [...out];
+    }
+    if (digits.length >= 10 && digits.length <= 15) {
+        out.add(digits);
+        out.add(`${digits}@c.us`);
+        out.add(`${digits}@s.whatsapp.net`);
+    }
+    if (/@lid$/i.test(s)) out.add(s);
+    return [...out];
+}
+
+/**
+ * چت‌هایی که واقعاً روی همین نشست واتساپ هستند (last activity دارند).
+ * getChatById برای شمارهٔ قبلی معمولاً چت خالی می‌سازد — آن‌ها را رد می‌کنیم.
+ */
+async function resolveChatsOnCurrentSession(ids) {
+    if (!client || !isWhatsAppUsable()) return [];
+    const list = Array.isArray(ids) ? ids.map((id) => String(id || '').trim()).filter(Boolean) : [];
+    const unique = [];
+    const seenIn = new Set();
+    for (const id of list.slice(0, 400)) {
+        const key = id.toLowerCase();
+        if (seenIn.has(key)) continue;
+        seenIn.add(key);
+        unique.push(id);
+    }
+    const found = [];
+    const foundIds = new Set();
+    const deadline = Date.now() + 80000;
+    let cursor = 0;
+    const worker = async () => {
+        while (cursor < unique.length && Date.now() < deadline) {
+            const raw = unique[cursor++];
+            for (const id of resolveIdVariants(raw)) {
+                if (Date.now() >= deadline) return;
+                try {
+                    const chat = await Promise.race([
+                        client.getChatById(id),
+                        new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('resolve_timeout')), 2500)
+                        ),
+                    ]);
+                    if (!chat) continue;
+                    const ser = String((chat.id && (chat.id._serialized || chat.id)) || id);
+                    if (!ser.includes('@') || ser.endsWith('@broadcast')) continue;
+                    const ts =
+                        Number(chat.timestamp) ||
+                        Number(
+                            chat.lastMessage &&
+                                (chat.lastMessage.timestamp || chat.lastMessage.t)
+                        ) ||
+                        0;
+                    if (!ts) continue;
+                    if (foundIds.has(ser.toLowerCase())) break;
+                    foundIds.add(ser.toLowerCase());
+                    const row = {
+                        id: ser,
+                        name: chat.name || chat.subject || chat.formattedTitle || null,
+                        isGroup: !!chat.isGroup || /@g\.us$/i.test(ser),
+                        lastPreview: chat.lastMessage
+                            ? String(
+                                  chat.lastMessage.body || chat.lastMessage.caption || ''
+                              ).slice(0, 120)
+                            : null,
+                        timestamp: ts,
+                    };
+                    found.push(row);
+                    rememberSeenChat(row.id, row.name, row.isGroup, row.lastPreview, row.timestamp);
+                    break;
+                } catch (_) {}
+            }
+        }
+    };
+    const n = Math.min(8, Math.max(2, unique.length));
+    await Promise.all(Array.from({ length: n }, () => worker()));
+    logger.info('Resolved chats on current WhatsApp session', {
+        asked: unique.length,
+        found: found.length,
+    });
+    return found;
 }
 
 app.get('/api/chats', async (req, res) => {
@@ -2149,8 +2273,38 @@ app.get('/api/chats', async (req, res) => {
     }
 });
 
-// اعضای گروه — برای نمایش نام فرستنده‌ها در چت گروهی (وقتی senderName ذخیره نشده)
+// تطبیق شناسه چت با نشست فعلی واتساپ
+app.post('/api/chats/resolve', async (req, res) => {
+    beginWaOps();
+    try {
+        if (!isWhatsAppUsable()) {
+            const restored = await tryRestoreWhatsAppReady();
+            if (!restored) {
+                return res.status(503).json({
+                    error: 'WhatsApp not ready',
+                    phase: connectionPhase || (isClientStarting ? 'starting' : 'disconnected'),
+                });
+            }
+        }
+        const ids = (req.body && (req.body.ids || req.body.chatIds)) || [];
+        const chats = await resolveChatsOnCurrentSession(ids);
+        return res.json({
+            success: true,
+            chats,
+            count: chats.length,
+            source: 'resolve',
+        });
+    } catch (error) {
+        const msg = formatGatewayError(error);
+        logger.error('Resolve chats error', { error: msg });
+        return res.status(503).json({ error: msg, phase: connectionPhase || null });
+    } finally {
+        endWaOps();
+    }
+});
+
 app.get('/api/chats/groups/:groupId/participants', async (req, res) => {
+    // اعضای گروه — برای نمایش نام فرستنده‌ها در چت گروهی (وقتی senderName ذخیره نشده)
     try {
         if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
         const groupId = (req.params.groupId || '').trim();
@@ -2313,6 +2467,7 @@ function startServer() {
             } catch (_) {}
 
             connectRabbitMQ().catch(() => {});
+            loadPersistedSeenChats().catch(() => {});
             // auto-start WhatsApp (optional)
             startWhatsApp().catch(() => {});
         }, 300);

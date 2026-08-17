@@ -239,10 +239,37 @@ function normalizeChatIdList(payload) {
     return (groups || []).map((g) => (g.id || '').toString().trim()).filter(Boolean);
 }
 
+async function collectCandidateChatPhones() {
+    const convs = await Conversation.findAll({
+        include: [
+            {
+                model: Customer,
+                as: 'customer',
+                required: true,
+                attributes: ['phone'],
+            },
+        ],
+        attributes: ['id', 'lastMessageAt'],
+        order: [['lastMessageAt', 'DESC']],
+        limit: 500,
+    });
+    const seen = new Set();
+    const out = [];
+    for (const conv of convs) {
+        const phone = String((conv.customer && conv.customer.phone) || '').trim();
+        if (!phone || !isWhatsAppIdentity(phone)) continue;
+        const key = phone.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(phone);
+    }
+    return out;
+}
+
 /** لیست چت زندهٔ Gateway و شمارهٔ متصل */
 async function loadGatewayChatIdsAndNumber() {
     try {
-        const { gatewayGet, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+        const { gatewayGet, gatewayPost, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
         const cfg = await getWhatsappConnectionConfig();
         let number = '';
         try {
@@ -266,6 +293,25 @@ async function loadGatewayChatIdsAndNumber() {
                 logger.warn('loadGatewayChatIdsAndNumber: /api/chats/groups failed', {
                     error: e?.message,
                 });
+            }
+        }
+        if (!chatIds.length) {
+            try {
+                const phones = await collectCandidateChatPhones();
+                if (phones.length) {
+                    const resolved = await gatewayPost(
+                        '/api/chats/resolve',
+                        { ids: phones },
+                        { timeout: 100000, cfg }
+                    );
+                    chatIds = normalizeChatIdList(resolved.data || {});
+                    logger.info('loadGatewayChatIdsAndNumber: resolved from current session', {
+                        asked: phones.length,
+                        found: chatIds.length,
+                    });
+                }
+            } catch (e) {
+                logger.warn('loadGatewayChatIdsAndNumber: resolve failed', { error: e?.message });
             }
         }
         return { number, chatIds };
@@ -591,6 +637,7 @@ module.exports = {
     promoteExistingGroupConversations,
     enforceCurrentNumberInbox,
     loadGatewayChatIdsAndNumber,
+    collectCandidateChatPhones,
     ensureLegacyCutover,
     getLegacyLockdownAt,
     handleGatewayNumberReady,

@@ -778,7 +778,7 @@
                 else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
             }
             try {
-                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST', timeoutMs: 120000 });
+                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST', timeoutMs: 180000 });
                 if (res.needLogin) return;
                 if (res.ok) {
                     toast((res.data && res.data.message) || (LANG === 'fa' ? 'چت‌ها و گروه‌ها همگام شدند' : 'Chats & groups synced'));

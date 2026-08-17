@@ -633,6 +633,28 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     lock: t.LOCK.UPDATE,
                 });
                 if (!conversation) {
+                    const existingAny = await Conversation.findOne({
+                        where: {
+                            customerId: customer.id,
+                            status: { [Op.ne]: 'closed' },
+                        },
+                        order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
+                        transaction: t,
+                        lock: t.LOCK.UPDATE,
+                    });
+                    if (existingAny) {
+                        await existingAny.update(
+                            {
+                                status: 'open',
+                                isHiddenFromStaff: false,
+                                closedAt: null,
+                            },
+                            { transaction: t }
+                        );
+                        conversation = existingAny;
+                    }
+                }
+                if (!conversation) {
                     const meta = isGroup
                         ? { isGroup: true, groupName: groupNameFromChat || null }
                         : {};
