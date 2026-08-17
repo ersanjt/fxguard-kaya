@@ -14,7 +14,7 @@ module.exports = {
   ignorePatterns: ['node_modules/', 'sessions/'],
   overrides: [
     {
-      files: ['src/waCalls.js'],
+      files: ['src/waCalls.js', 'src/index.js'],
       env: { node: true, browser: true },
     },
   ],

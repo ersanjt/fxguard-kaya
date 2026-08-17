@@ -291,7 +291,7 @@ function isVoiceMediaPayload(media) {
     return !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
 }
 
-async function buildOutboundMessageMedia(media, message) {
+async function buildOutboundMessageMedia(media, _message) {
     if (!media?.data) return null;
     const mime = media.mimetype || 'application/octet-stream';
     const asVoice = isVoiceMediaPayload(media);
