@@ -57,6 +57,7 @@ router.post('/lockdown-legacy', async (req, res, next) => {
 
         const result = await enforceCurrentNumberInbox(live.chatIds, gatewayNumber, {
             reason: 'manual_lockdown_legacy',
+            forceEmptyLockdown: true,
         });
         await logActivity({
             userId: req.userId,

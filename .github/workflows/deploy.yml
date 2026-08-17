@@ -242,6 +242,8 @@ jobs:
             fi
 
             echo "🔒 آرشیو شمارهٔ قبلی / فقط شمارهٔ فعلی واتساپ ..."
+            echo "⏳ چند ثانیه برای آماده شدن نشست واتساپ Gateway ..."
+            sleep 25
             cd backend
             node scripts/enforce-current-number.js
             cd ..

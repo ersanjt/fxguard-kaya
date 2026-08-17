@@ -328,6 +328,24 @@ async function loadGatewayChatIdsAndNumber() {
 async function enforceCurrentNumberInbox(chatIds, gatewayNumber, opts = {}) {
     const gw = normalizeLinkedNumber(gatewayNumber);
     const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
+    if (!ids.length && !opts.forceEmptyLockdown) {
+        logger.warn('enforceCurrentNumberInbox skipped — no current-session chats yet', {
+            reason: opts.reason || 'enforce_current_number',
+            number: gw || null,
+        });
+        const stats = await getLockdownStats();
+        return {
+            changed: false,
+            skipped: true,
+            number: gw || null,
+            chatCount: 0,
+            lockdown: null,
+            visibility: { opened: 0, skipped: true },
+            stats,
+            conversationsUpdated: 0,
+            customersUpdated: 0,
+        };
+    }
     const lockdown = await lockdownExistingCrmData({
         reason: opts.reason || 'enforce_current_number',
     });
