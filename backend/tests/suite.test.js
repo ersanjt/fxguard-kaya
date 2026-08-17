@@ -1251,7 +1251,10 @@ async function runTests() {
             metadata: { isGroup: true, groupName: 'DUBAI KAYA OLD' },
         });
 
-        await enforceCurrentNumberInbox([currentId], '905339470880', { reason: 'test_enforce' });
+        await enforceCurrentNumberInbox([currentId], '905339470880', {
+            reason: 'test_enforce',
+            minLiveChats: 1,
+        });
         await currentConv.reload();
         await oldConv.reload();
         await currentCust.reload();

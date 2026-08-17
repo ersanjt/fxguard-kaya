@@ -291,7 +291,7 @@ async function loadGatewayChatIdsAndNumber() {
         }
         let chatIds = [];
         try {
-            const all = await gatewayGet('/api/chats', { timeout: 12000, cfg });
+            const all = await gatewayGet('/api/chats', { timeout: 70000, cfg });
             chatIds = normalizeChatIdList(all.data || {});
         } catch (e) {
             logger.warn('loadGatewayChatIdsAndNumber: /api/chats failed', { error: e?.message });
@@ -335,17 +335,21 @@ async function loadGatewayChatIdsAndNumber() {
 async function enforceCurrentNumberInbox(chatIds, gatewayNumber, opts = {}) {
     const gw = normalizeLinkedNumber(gatewayNumber);
     const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
-    if (!ids.length && !opts.forceEmptyLockdown) {
-        logger.warn('enforceCurrentNumberInbox skipped — no current-session chats yet', {
+    const minLive = Number(opts.minLiveChats);
+    const required = Number.isFinite(minLive) && minLive >= 0 ? minLive : 3;
+    if (ids.length < required && !opts.forceEmptyLockdown) {
+        logger.warn('enforceCurrentNumberInbox skipped — live WhatsApp list incomplete', {
             reason: opts.reason || 'enforce_current_number',
             number: gw || null,
+            found: ids.length,
+            required,
         });
         const stats = await getLockdownStats();
         return {
             changed: false,
             skipped: true,
             number: gw || null,
-            chatCount: 0,
+            chatCount: ids.length,
             lockdown: null,
             visibility: { opened: 0, skipped: true },
             stats,

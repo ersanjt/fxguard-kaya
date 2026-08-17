@@ -1884,8 +1884,85 @@ async function extractWhatsAppChatsInBrowser() {
             }
         } catch (_) {}
 
+        try {
+            const chatStore = window.Store && window.Store.Chat;
+            if (chatStore && chatStore._index) {
+                Object.keys(chatStore._index).forEach((id) => {
+                    const model = chatStore._index[id];
+                    if (model) ingestCollection([model], false);
+                    else if (String(id).includes('@')) {
+                        pushChat(id, null, /@g\.us$/i.test(String(id)), null, null);
+                    }
+                });
+            }
+        } catch (_) {}
+
+        try {
+            const nodes = document.querySelectorAll(
+                '#pane-side [data-id], [data-testid="cell-phone-wrapper"][data-id], #pane-side [role="listitem"] [data-id], #pane-side [role="row"]'
+            );
+            nodes.forEach((el) => {
+                const raw = String(
+                    el.getAttribute('data-id') ||
+                        (el.querySelector && el.querySelector('[data-id]')
+                            ? el.querySelector('[data-id]').getAttribute('data-id')
+                            : '') ||
+                        ''
+                );
+                const m = raw.match(/([0-9]+(?:-[0-9]+)?@(?:c\.us|g\.us|lid|s\.whatsapp\.net))/i);
+                if (!m) return;
+                const id = m[1];
+                let name = '';
+                const t = el.querySelector && el.querySelector('span[title], [title]');
+                if (t) name = t.getAttribute('title') || t.textContent || '';
+                pushChat(id, String(name).trim() || null, /@g\.us$/i.test(id), null, null);
+            });
+        } catch (_) {}
+
+        try {
+            const pane =
+                document.querySelector('#pane-side') ||
+                document.querySelector('[data-testid="chat-list"]');
+            const html = pane ? String(pane.innerHTML || '') : String(document.body.innerHTML || '');
+            const re = /([0-9]+(?:-[0-9]+)?@(?:c\.us|g\.us|lid|s\.whatsapp\.net))/gi;
+            let m;
+            while ((m = re.exec(html))) {
+                pushChat(m[1], null, /@g\.us$/i.test(m[1]), null, null);
+            }
+        } catch (_) {}
+
         return out;
     });
+}
+
+async function hydrateWhatsAppChatList() {
+    if (!client?.pupPage) return;
+    try {
+        await client.pupPage
+            .waitForSelector('#pane-side, [data-testid="chat-list"], [data-testid="chatlist"]', {
+                timeout: 8000,
+            })
+            .catch(() => null);
+        const n = await client.pupPage.evaluate(async () => {
+            const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+            const pane =
+                document.querySelector('#pane-side') ||
+                document.querySelector('[data-testid="chat-list"]') ||
+                document.querySelector('[data-testid="chatlist"]');
+            if (!pane) return 0;
+            const max = Math.max(Number(pane.scrollHeight) || 0, 4000);
+            for (let i = 0; i <= 10; i++) {
+                pane.scrollTop = (max * i) / 10;
+                await sleep(250);
+            }
+            pane.scrollTop = 0;
+            await sleep(400);
+            return pane.querySelectorAll('[data-id], [role="listitem"], [role="row"]').length;
+        });
+        logger.info('hydrated WhatsApp chat list pane', { nodes: n });
+    } catch (e) {
+        logger.warn('hydrate WhatsApp chat list failed', { error: e.message });
+    }
 }
 
 async function listWhatsAppGroupsFromStore() {
@@ -2040,8 +2117,9 @@ async function listWhatsAppAllChats() {
         }
     }
 
-    await waitForWhatsAppStore(8000).catch(() => false);
+    await waitForWhatsAppStore(12000).catch(() => false);
     await hookChatCollectionObserver().catch(() => {});
+    await hydrateWhatsAppChatList();
 
     const remember = (rows) => rememberChatRows(rows);
 
@@ -2049,7 +2127,7 @@ async function listWhatsAppAllChats() {
         const fromStore = await Promise.race([
             listWhatsAppAllChatsFromStore(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getChats_store_timeout')), 8000)
+                setTimeout(() => reject(new Error('getChats_store_timeout')), 12000)
             ),
         ]);
         if (Array.isArray(fromStore) && fromStore.length > 0) {
@@ -2067,6 +2145,43 @@ async function listWhatsAppAllChats() {
         });
     }
 
+    try {
+        const chats = await Promise.race([
+            client.getChats(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('getChats_timeout')), 20000)
+            ),
+        ]);
+        const list = Array.isArray(chats) ? chats : [];
+        const mapped = list
+            .map((c) => {
+                const id = (c && c.id && (c.id._serialized || c.id)) || null;
+                if (!id) return null;
+                return {
+                    id: String(id),
+                    name: c.name || c.subject || c.formattedTitle || null,
+                    isGroup: !!c.isGroup || /@g\.us$/i.test(String(id)),
+                    lastPreview: c.lastMessage
+                        ? String(c.lastMessage.body || c.lastMessage.caption || '').slice(0, 120)
+                        : null,
+                    timestamp: Number(c.timestamp) || null,
+                };
+            })
+            .filter(Boolean);
+        if (mapped.length) {
+            const merged = remember(mapped);
+            logger.info('WhatsApp chats listed via getChats', {
+                count: merged.length,
+                groups: merged.filter((c) => c.isGroup).length,
+            });
+            return merged;
+        }
+    } catch (chatsErr) {
+        logger.warn('getChats fallback failed', {
+            error: formatGatewayError(chatsErr),
+        });
+    }
+
     if (lastChatsCache.chats?.length) {
         logger.warn('Serving cached WhatsApp chats', {
             cached: lastChatsCache.chats.length,
@@ -2074,6 +2189,7 @@ async function listWhatsAppAllChats() {
         });
         return lastChatsCache.chats;
     }
+    logger.warn('WhatsApp chat list empty after hydrate + store + getChats');
     return [];
 }
 
@@ -2153,9 +2269,21 @@ async function lookupChatOnSession(raw) {
     return null;
 }
 
+function listedChatMatchesRequest(row, raw) {
+    const id = String((row && row.id) || '').toLowerCase();
+    const req = String(raw || '').trim().toLowerCase();
+    if (!id || !req) return false;
+    if (id === req) return true;
+    const a = id.replace(/\D/g, '');
+    const b = req.replace(/\D/g, '');
+    if (b.length >= 10 && a.length >= 10 && (a === b || a.endsWith(b) || b.endsWith(a))) return true;
+    return false;
+}
+
 /**
- * چت‌هایی که روی همین نشست واتساپ تاریخچه دارند.
- * شمارهٔ قبلی معمولاً تاریخچه ندارد و وارد لیست عادی نمی‌شود.
+ * چت‌هایی که روی همین نشست واتساپ دیده می‌شوند.
+ * بودن در لیست زندهٔ همین شماره کافی است؛ fetchMessages اجباری نیست.
+ * شمارهٔ قبلی معمولاً در سایدبار این نشست نیست و وارد لیست عادی نمی‌شود.
  */
 async function resolveChatsOnCurrentSession(ids) {
     if (!client || !isWhatsAppUsable()) return [];
@@ -2168,13 +2296,44 @@ async function resolveChatsOnCurrentSession(ids) {
         seenIn.add(key);
         unique.push(id);
     }
+    let listed = [];
+    try {
+        const cacheAge = Date.now() - (lastChatsCache.at || 0);
+        if (lastChatsCache.chats?.length && cacheAge < 60000) {
+            listed = lastChatsCache.chats;
+        } else {
+            listed = await listWhatsAppAllChats();
+        }
+    } catch (_) {
+        listed = lastChatsCache.chats || [];
+    }
     const found = [];
     const foundIds = new Set();
-    const deadline = Date.now() + 75000;
+    const remaining = [];
+    for (const raw of unique) {
+        const hit = (listed || []).find((row) => listedChatMatchesRequest(row, raw));
+        if (!hit) {
+            remaining.push(raw);
+            continue;
+        }
+        const ser = String(hit.id);
+        if (foundIds.has(ser.toLowerCase())) continue;
+        foundIds.add(ser.toLowerCase());
+        found.push({
+            id: ser,
+            requested: raw,
+            phone: String(ser).replace(/\D/g, '') || String(raw).replace(/\D/g, '') || null,
+            name: hit.name || null,
+            isGroup: !!hit.isGroup || /@g\.us$/i.test(ser),
+            lastPreview: hit.lastPreview || null,
+            timestamp: hit.timestamp || null,
+        });
+    }
+    const deadline = Date.now() + 45000;
     let cursor = 0;
     const worker = async () => {
-        while (cursor < unique.length && Date.now() < deadline) {
-            const raw = unique[cursor++];
+        while (cursor < remaining.length && Date.now() < deadline) {
+            const raw = remaining[cursor++];
             try {
                 const chat = await lookupChatOnSession(raw);
                 if (!chat) continue;
@@ -2209,11 +2368,29 @@ async function resolveChatsOnCurrentSession(ids) {
             } catch (_) {}
         }
     };
-    const n = Math.min(6, Math.max(2, unique.length));
-    await Promise.all(Array.from({ length: n }, () => worker()));
+    if (remaining.length) {
+        const n = Math.min(6, Math.max(1, remaining.length));
+        await Promise.all(Array.from({ length: n }, () => worker()));
+    }
+    for (const hit of listed || []) {
+        const ser = String((hit && hit.id) || '');
+        if (!ser.includes('@') || ser.endsWith('@broadcast')) continue;
+        if (foundIds.has(ser.toLowerCase())) continue;
+        foundIds.add(ser.toLowerCase());
+        found.push({
+            id: ser,
+            requested: null,
+            phone: String(ser).replace(/\D/g, '') || null,
+            name: hit.name || null,
+            isGroup: !!hit.isGroup || /@g\.us$/i.test(ser),
+            lastPreview: hit.lastPreview || null,
+            timestamp: hit.timestamp || null,
+        });
+    }
     logger.info('Resolved chats on current WhatsApp session', {
         asked: unique.length,
         found: found.length,
+        fromList: (listed || []).length,
     });
     return found;
 }

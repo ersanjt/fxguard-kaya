@@ -305,35 +305,46 @@ router.post('/sync-groups', async (req, res, next) => {
             return ids;
         };
 
-        // لیست Store اغلب بعد از ریستارت خالی است — مستقیم چت‌های همین نشست را پیدا کن
+        // اول لیست زندهٔ همین شماره از واتساپ وب (hydrate + Store + DOM)، بعد resolve تکمیلی
         let fetched = null;
         let fetchErr = null;
-        try {
-            const phones = await collectCandidateChatPhones();
-            if (phones.length) {
-                const resolved = await gatewayPost(
-                    '/api/chats/resolve',
-                    { ids: phones },
-                    { timeout: 100000, cfg }
-                );
-                const rows = normalizeChatRows(resolved.data || {});
-                if (rows.length) {
-                    fetched = { gwRes: resolved, chatRows: rows, source: 'resolve' };
-                }
+        const mergeFetched = (gwRes, rows, source) => {
+            if (!rows.length) return;
+            if (!fetched) {
+                fetched = { gwRes, chatRows: rows, source };
+                return;
             }
+            const seen = new Set(fetched.chatRows.map((r) => String(r.id).toLowerCase()));
+            const extra = rows.filter((r) => r.id && !seen.has(String(r.id).toLowerCase()));
+            if (!extra.length) return;
+            fetched.chatRows = fetched.chatRows.concat(extra);
+            fetched.source = fetched.source === source ? source : `${fetched.source}+${source}`;
+        };
+        try {
+            const all = await gatewayGet('/api/chats', { timeout: 70000, cfg });
+            mergeFetched(all, normalizeChatRows(all.data || {}), 'chats');
         } catch (e) {
             fetchErr = e;
-            logger.warn('sync-groups: resolve current-session chats failed', {
+            logger.warn('sync-groups: /api/chats failed', {
                 error: e?.response?.data?.error || e?.message,
             });
         }
-        if (!fetched) {
+        if (!fetched || fetched.chatRows.length < 8) {
             try {
-                const all = await gatewayGet('/api/chats', { timeout: 15000, cfg });
-                const rows = normalizeChatRows(all.data || {});
-                if (rows.length) fetched = { gwRes: all, chatRows: rows, source: 'chats' };
+                const phones = await collectCandidateChatPhones();
+                if (phones.length) {
+                    const resolved = await gatewayPost(
+                        '/api/chats/resolve',
+                        { ids: phones },
+                        { timeout: 100000, cfg }
+                    );
+                    mergeFetched(resolved, normalizeChatRows(resolved.data || {}), 'resolve');
+                }
             } catch (e) {
                 fetchErr = fetchErr || e;
+                logger.warn('sync-groups: resolve current-session chats failed', {
+                    error: e?.response?.data?.error || e?.message,
+                });
             }
         }
 
@@ -537,7 +548,7 @@ router.post('/sync-groups', async (req, res, next) => {
             visibility = await applyVisibilityForCurrentGatewayChats(
                 identityIds(chatRows),
                 gatewayNumber || liveStatus.number,
-                { archiveMissing: chatRows.length >= 2, keepProtectedGroups: true }
+                { archiveMissing: chatRows.length >= 8, keepProtectedGroups: true }
             );
         } catch (visErr) {
             logger.warn('sync-groups: visibility filter failed', { error: visErr?.message });
