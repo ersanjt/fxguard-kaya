@@ -25,6 +25,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { startOutgoingCall } = require('./waCalls');
 const { createSendRateLimiter } = require('./sendRateLimiter');
+const { downloadAndDecryptWhatsAppMedia } = require('./waMediaDecrypt');
 require('dotenv').config();
 
 // ==================== Config ====================
@@ -452,6 +453,50 @@ async function downloadMediaViaStore(waClient, msg) {
                         } catch (_) {}
                     }
 
+                    function keyToB64(v) {
+                        if (!v) return '';
+                        if (typeof v === 'string') return v;
+                        if (v._b64) return String(v._b64);
+                        try {
+                            if (v instanceof ArrayBuffer) return toB64(v);
+                            if (v.buffer) return toB64(v);
+                        } catch (_) {}
+                        return '';
+                    }
+                    function packMediaMeta(storeMsg, type, mediaData) {
+                        const mediaKey = keyToB64(storeMsg.mediaKey || mediaData.mediaKey);
+                        const directPath = storeMsg.directPath || mediaData.directPath || '';
+                        const url =
+                            storeMsg.deprecatedMms3Url ||
+                            mediaData.deprecatedMms3Url ||
+                            storeMsg.mediaUrl ||
+                            mediaData.mediaUrl ||
+                            '';
+                        if (!mediaKey && !directPath && !url) return null;
+                        return {
+                            type,
+                            mediaKey,
+                            directPath,
+                            url,
+                            deprecatedMms3Url:
+                                storeMsg.deprecatedMms3Url || mediaData.deprecatedMms3Url || '',
+                            mimetype: storeMsg.mimetype || mediaData.mimetype || '',
+                            filename: storeMsg.filename || mediaData.filename || null,
+                        };
+                    }
+                    async function blobToMedia(blob, type, mime, filename) {
+                        if (!blob) return null;
+                        const raw = blob._blob || blob;
+                        if (!raw || typeof raw.arrayBuffer !== 'function') return null;
+                        const buf = await raw.arrayBuffer();
+                        if (!buf || buf.byteLength < 32) return null;
+                        return {
+                            data: toB64(buf),
+                            mimetype: guessMime(type, mime),
+                            filename: filename || null,
+                        };
+                    }
+
                     let storeMsg = findMsg();
                     if (!storeMsg) {
                         await new Promise((r) => setTimeout(r, 800));
@@ -460,25 +505,71 @@ async function downloadMediaViaStore(waClient, msg) {
                     if (!storeMsg) return { error: 'msg_not_found' };
                     const mediaData = storeMsg.mediaData || {};
                     const type = String(storeMsg.type || msgType || '').toLowerCase();
+                    const mediaMeta = packMediaMeta(storeMsg, type, mediaData);
+
+                    try {
+                        if (typeof storeMsg.downloadMedia === 'function') {
+                            await storeMsg.downloadMedia({
+                                downloadEvenIfExpensive: true,
+                                rmrReason: 1,
+                                isUserInitiated: true,
+                            });
+                        } else if (typeof mediaData.downloadMedia === 'function') {
+                            await mediaData.downloadMedia({
+                                downloadEvenIfExpensive: true,
+                                rmrReason: 1,
+                                isUserInitiated: true,
+                            });
+                        }
+                    } catch (_) {}
+
+                    try {
+                        const cacheMod =
+                            typeof window.require === 'function'
+                                ? window.require('WAWebMediaInMemoryBlobCache')
+                                : null;
+                        const cache = cacheMod && cacheMod.InMemoryMediaBlobCache;
+                        const hash =
+                            (storeMsg.mediaObject && storeMsg.mediaObject.filehash) ||
+                            storeMsg.filehash;
+                        if (cache && hash && typeof cache.get === 'function') {
+                            const got = await blobToMedia(
+                                cache.get(hash),
+                                type,
+                                storeMsg.mimetype || mediaData.mimetype,
+                                storeMsg.filename || mediaData.filename
+                            );
+                            if (got) return got;
+                        }
+                    } catch (_) {}
+
+                    try {
+                        const objBlob = storeMsg.mediaObject && storeMsg.mediaObject.mediaBlob;
+                        const forced =
+                            objBlob && typeof objBlob.forceToBlob === 'function'
+                                ? objBlob.forceToBlob()
+                                : objBlob;
+                        const got = await blobToMedia(
+                            forced,
+                            type,
+                            storeMsg.mimetype || mediaData.mimetype,
+                            storeMsg.filename || mediaData.filename
+                        );
+                        if (got) return got;
+                    } catch (_) {}
 
                     try {
                         const blob =
                             (mediaData.mediaBlob &&
                                 (mediaData.mediaBlob._blob || mediaData.mediaBlob)) ||
                             mediaData.previewBlob;
-                        if (blob && typeof blob.arrayBuffer === 'function') {
-                            const buf = await blob.arrayBuffer();
-                            if (buf && buf.byteLength > 32) {
-                                return {
-                                    data: toB64(buf),
-                                    mimetype: guessMime(
-                                        type,
-                                        storeMsg.mimetype || mediaData.mimetype
-                                    ),
-                                    filename: storeMsg.filename || mediaData.filename || null,
-                                };
-                            }
-                        }
+                        const got = await blobToMedia(
+                            blob,
+                            type,
+                            storeMsg.mimetype || mediaData.mimetype,
+                            storeMsg.filename || mediaData.filename
+                        );
+                        if (got) return got;
                     } catch (_) {}
 
                     const dm = window.Store && window.Store.DownloadManager;
@@ -517,7 +608,7 @@ async function downloadMediaViaStore(waClient, msg) {
                             }
                         }
                     }
-                    return { error: 'download_failed' };
+                    return { error: 'download_failed', mediaMeta };
                 },
                 serializedId,
                 shortId,
@@ -537,7 +628,15 @@ async function downloadMediaViaStore(waClient, msg) {
             logger.warn('Store media download missed', {
                 error: result.error,
                 type: msgType,
+                hasMediaMeta: !!(result.mediaMeta && result.mediaMeta.mediaKey),
             });
+            if (result.mediaMeta && result.mediaMeta.mediaKey) {
+                const decrypted = await downloadAndDecryptWhatsAppMedia({
+                    ...result.mediaMeta,
+                    type: msgType || result.mediaMeta.type,
+                });
+                if (decrypted && decrypted.data) return decrypted;
+            }
         }
     } catch (err) {
         logger.warn('Store media download failed', {
@@ -2266,7 +2365,37 @@ async function ingestStoreInboundMessage(raw, via) {
             filename: raw.media.filename || fallback.filename,
             data: raw.media.data,
         };
-    } else if (isMediaMessageType(raw.type, raw.hasMedia)) {
+    }
+    if (!messageData.media && raw.mediaMeta && raw.mediaMeta.mediaKey) {
+        try {
+            const decrypted = await downloadAndDecryptWhatsAppMedia({
+                ...raw.mediaMeta,
+                type: raw.type || raw.mediaMeta.type,
+            });
+            if (decrypted && decrypted.data) {
+                const fallback = defaultMediaMeta(raw.type);
+                messageData.hasMedia = true;
+                messageData.media = {
+                    mimetype: decrypted.mimetype || fallback.mimetype,
+                    filename: decrypted.filename || fallback.filename,
+                    data: decrypted.data,
+                };
+                logger.info('Inbound media decrypted from CDN', { type: raw.type || null });
+            } else {
+                logger.warn('CDN media decrypt missed', {
+                    type: raw.type || null,
+                    error: (decrypted && decrypted.error) || 'unknown',
+                    attempts: (decrypted && decrypted.attempts) || [],
+                });
+            }
+        } catch (err) {
+            logger.warn('CDN media decrypt failed', {
+                error: formatGatewayError(err),
+                type: raw.type || null,
+            });
+        }
+    }
+    if (!messageData.media && isMediaMessageType(raw.type, raw.hasMedia)) {
         let waMsg = null;
         if (raw.serializedId && client && typeof client.getMessageById === 'function') {
             try {
@@ -2283,6 +2412,13 @@ async function ingestStoreInboundMessage(raw, via) {
                 type: raw.type,
             }
         );
+    }
+    if (!messageData.media && isMediaMessageType(raw.type, raw.hasMedia)) {
+        logger.warn('Inbound media still missing bytes', {
+            type: raw.type || null,
+            hasKey: !!(raw.mediaMeta && raw.mediaMeta.mediaKey),
+            hasPath: !!(raw.mediaMeta && (raw.mediaMeta.directPath || raw.mediaMeta.url)),
+        });
     }
 
     try {
@@ -2346,61 +2482,118 @@ async function hookIncomingMessageObserver() {
                 if (type === 'video') return 'video/mp4';
                 return 'application/octet-stream';
             }
+            function keyToB64(v) {
+                if (!v) return '';
+                if (typeof v === 'string') return v;
+                if (v._b64) return String(v._b64);
+                try {
+                    if (v instanceof ArrayBuffer) return toB64(v);
+                    if (v.buffer) return toB64(v);
+                    if (typeof v === 'object') {
+                        const keys = Object.keys(v).filter((k) => /^\d+$/.test(k));
+                        if (keys.length >= 16) {
+                            const arr = new Uint8Array(keys.length);
+                            for (let i = 0; i < keys.length; i++) arr[i] = v[i] & 255;
+                            return toB64(arr);
+                        }
+                    }
+                } catch (_) {}
+                return '';
+            }
+            function packMediaMeta(m, type) {
+                const mediaData = (m && m.mediaData) || {};
+                const mediaKey = keyToB64(m.mediaKey || mediaData.mediaKey);
+                const directPath = m.directPath || mediaData.directPath || '';
+                const url =
+                    m.deprecatedMms3Url ||
+                    mediaData.deprecatedMms3Url ||
+                    m.mediaUrl ||
+                    mediaData.mediaUrl ||
+                    '';
+                if (!mediaKey && !directPath && !url) return null;
+                return {
+                    type,
+                    mediaKey,
+                    directPath,
+                    url,
+                    deprecatedMms3Url: m.deprecatedMms3Url || mediaData.deprecatedMms3Url || '',
+                    mimetype: m.mimetype || mediaData.mimetype || '',
+                    filename: m.filename || mediaData.filename || null,
+                };
+            }
+            async function blobToMedia(blob, type, mime, filename) {
+                if (!blob) return null;
+                const raw = blob._blob || blob;
+                if (!raw || typeof raw.arrayBuffer !== 'function') return null;
+                const buf = await raw.arrayBuffer();
+                if (!buf || buf.byteLength < 32) return null;
+                return {
+                    data: toB64(buf),
+                    mimetype: guessMime(type, mime),
+                    filename: filename || null,
+                };
+            }
             async function extractMediaFromStoreMsg(m, type) {
                 if (!m) return null;
                 const mediaData = m.mediaData || {};
-                const blobOf = (b) => (b && (b._blob || b)) || null;
-                for (let i = 0; i < 8; i++) {
-                    try {
-                        const blob = blobOf(mediaData.mediaBlob) || blobOf(mediaData.previewBlob);
-                        if (blob && typeof blob.arrayBuffer === 'function') {
-                            const buf = await blob.arrayBuffer();
-                            if (buf && buf.byteLength > 32) {
-                                return {
-                                    data: toB64(buf),
-                                    mimetype: guessMime(type, m.mimetype || mediaData.mimetype),
-                                    filename: m.filename || mediaData.filename || null,
-                                };
-                            }
-                        }
-                    } catch (_) {}
-                    if (typeof mediaData.downloadMedia === 'function') {
-                        try {
-                            await mediaData.downloadMedia();
-                        } catch (_) {}
-                    }
-                    if (i < 7) await new Promise((r) => setTimeout(r, 250));
-                }
-                const dm = window.Store && window.Store.DownloadManager;
-                const directPath = m.directPath || mediaData.directPath;
-                const mediaKey = m.mediaKey || mediaData.mediaKey;
-                const decrypt =
-                    dm && (dm.downloadAndMaybeDecrypt || dm.downloadAndDecrypt || dm.downloadMedia);
-                if (decrypt && directPath && mediaKey) {
-                    try {
-                        const downloaded = await decrypt.call(dm, {
-                            directPath,
-                            encFilehash: m.encFilehash || mediaData.encFilehash,
-                            filehash: m.filehash || mediaData.filehash,
-                            mediaKey,
-                            mediaKeyTimestamp: m.mediaKeyTimestamp || mediaData.mediaKeyTimestamp,
-                            type: type === 'ptt' ? 'audio' : type,
-                            signal: new AbortController().signal,
+                try {
+                    if (typeof m.downloadMedia === 'function') {
+                        await m.downloadMedia({
+                            downloadEvenIfExpensive: true,
+                            rmrReason: 1,
+                            isUserInitiated: true,
                         });
-                        if (downloaded) {
-                            let buf = downloaded;
-                            if (downloaded.arrayBuffer) buf = await downloaded.arrayBuffer();
-                            else if (downloaded.buffer) buf = downloaded.buffer;
-                            const data = toB64(buf);
-                            if (data) {
-                                return {
-                                    data,
-                                    mimetype: guessMime(type, m.mimetype || mediaData.mimetype),
-                                    filename: m.filename || mediaData.filename || null,
-                                };
-                            }
-                        }
+                    } else if (typeof mediaData.downloadMedia === 'function') {
+                        await mediaData.downloadMedia({
+                            downloadEvenIfExpensive: true,
+                            rmrReason: 1,
+                            isUserInitiated: true,
+                        });
+                    }
+                } catch (_) {}
+                try {
+                    const cacheMod =
+                        typeof window.require === 'function'
+                            ? window.require('WAWebMediaInMemoryBlobCache')
+                            : null;
+                    const cache = cacheMod && cacheMod.InMemoryMediaBlobCache;
+                    const hash = (m.mediaObject && m.mediaObject.filehash) || m.filehash;
+                    if (cache && hash && typeof cache.get === 'function') {
+                        const got = await blobToMedia(
+                            cache.get(hash),
+                            type,
+                            m.mimetype || mediaData.mimetype,
+                            m.filename || mediaData.filename
+                        );
+                        if (got) return got;
+                    }
+                } catch (_) {}
+                try {
+                    const objBlob = m.mediaObject && m.mediaObject.mediaBlob;
+                    const forced =
+                        objBlob && typeof objBlob.forceToBlob === 'function'
+                            ? objBlob.forceToBlob()
+                            : objBlob;
+                    const got = await blobToMedia(
+                        forced,
+                        type,
+                        m.mimetype || mediaData.mimetype,
+                        m.filename || mediaData.filename
+                    );
+                    if (got) return got;
+                } catch (_) {}
+                for (let i = 0; i < 6; i++) {
+                    try {
+                        const blob = mediaData.mediaBlob || mediaData.previewBlob;
+                        const got = await blobToMedia(
+                            blob,
+                            type,
+                            m.mimetype || mediaData.mimetype,
+                            m.filename || mediaData.filename
+                        );
+                        if (got) return got;
                     } catch (_) {}
+                    if (i < 5) await new Promise((r) => setTimeout(r, 300));
                 }
                 return null;
             }
@@ -2448,6 +2641,7 @@ async function hookIncomingMessageObserver() {
                     contactLid: lid,
                     author: jidOf(m.author) || jidOf(idObj.participant) || '',
                     fromMe: false,
+                    mediaMeta: packMediaMeta(m, type),
                 };
             }
             function attach(Msg) {
@@ -2543,6 +2737,31 @@ async function pollUnreadIncomingMessages() {
                         const d = n ? String(n).replace(/\D/g, '') : '';
                         if (d.length >= 8 && d.length <= 15) contactNumber = d;
                     } catch (_) {}
+                    const mediaData = m.mediaData || {};
+                    const mediaKeyRaw = m.mediaKey || mediaData.mediaKey;
+                    let mediaKey = '';
+                    if (typeof mediaKeyRaw === 'string') mediaKey = mediaKeyRaw;
+                    else if (mediaKeyRaw && mediaKeyRaw._b64) mediaKey = String(mediaKeyRaw._b64);
+                    else if (mediaKeyRaw && mediaKeyRaw.buffer) {
+                        try {
+                            const bytes = new Uint8Array(
+                                mediaKeyRaw.buffer,
+                                mediaKeyRaw.byteOffset || 0,
+                                mediaKeyRaw.byteLength || mediaKeyRaw.length
+                            );
+                            let bin = '';
+                            for (let i = 0; i < bytes.length; i++)
+                                bin += String.fromCharCode(bytes[i]);
+                            mediaKey = btoa(bin);
+                        } catch (_) {}
+                    }
+                    const directPath = m.directPath || mediaData.directPath || '';
+                    const mediaUrl =
+                        m.deprecatedMms3Url ||
+                        mediaData.deprecatedMms3Url ||
+                        m.mediaUrl ||
+                        mediaData.mediaUrl ||
+                        '';
                     return {
                         id: idObj.id || '',
                         serializedId: idObj._serialized || '',
@@ -2564,6 +2783,19 @@ async function pollUnreadIncomingMessages() {
                         contactLid: lid,
                         author: jidOf(m.author) || jidOf(idObj.participant) || '',
                         fromMe: false,
+                        mediaMeta:
+                            mediaKey || directPath || mediaUrl
+                                ? {
+                                      type,
+                                      mediaKey,
+                                      directPath,
+                                      url: mediaUrl,
+                                      deprecatedMms3Url:
+                                          m.deprecatedMms3Url || mediaData.deprecatedMms3Url || '',
+                                      mimetype: m.mimetype || mediaData.mimetype || '',
+                                      filename: m.filename || mediaData.filename || null,
+                                  }
+                                : null,
                     };
                 }
                 const now = Math.floor(Date.now() / 1000);
