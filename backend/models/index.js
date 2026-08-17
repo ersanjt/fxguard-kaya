@@ -40,7 +40,7 @@ if (isSqlite) {
     Sequelize.DATE.prototype._applyTimezone = function applyTimezone(date, options) {
         if (typeof date === 'string') {
             const m = date.match(
-                /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?) ([\+\-]\d{2}:\d{2})$/
+                /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}:\d{2}(?:\.\d+)?) ([+-]\d{2}:\d{2})$/
             );
             if (m) date = `${m[1]}T${m[2]}${m[3]}`;
         }
