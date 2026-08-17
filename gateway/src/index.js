@@ -452,7 +452,11 @@ async function downloadMediaViaStore(waClient, msg) {
                         } catch (_) {}
                     }
 
-                    const storeMsg = findMsg();
+                    let storeMsg = findMsg();
+                    if (!storeMsg) {
+                        await new Promise((r) => setTimeout(r, 800));
+                        storeMsg = findMsg();
+                    }
                     if (!storeMsg) return { error: 'msg_not_found' };
                     const mediaData = storeMsg.mediaData || {};
                     const type = String(storeMsg.type || msgType || '').toLowerCase();
@@ -2254,7 +2258,15 @@ async function ingestStoreInboundMessage(raw, via) {
         authorName: raw.authorName || raw.notifyName || null,
     };
 
-    if (isMediaMessageType(raw.type, raw.hasMedia)) {
+    if (raw.media && raw.media.data) {
+        const fallback = defaultMediaMeta(raw.type);
+        messageData.hasMedia = true;
+        messageData.media = {
+            mimetype: raw.media.mimetype || fallback.mimetype,
+            filename: raw.media.filename || fallback.filename,
+            data: raw.media.data,
+        };
+    } else if (isMediaMessageType(raw.type, raw.hasMedia)) {
         let waMsg = null;
         if (raw.serializedId && client && typeof client.getMessageById === 'function') {
             try {
@@ -2266,7 +2278,10 @@ async function ingestStoreInboundMessage(raw, via) {
         }
         await attachMediaToMessageData(
             messageData,
-            waMsg || { id: raw.serializedId || raw.id, type: raw.type }
+            waMsg || {
+                id: { _serialized: raw.serializedId || '', id: raw.id },
+                type: raw.type,
+            }
         );
     }
 
@@ -2281,6 +2296,8 @@ async function ingestStoreInboundMessage(raw, via) {
         lid: contactLid || null,
         to: to || null,
         via: via || 'store',
+        type: messageData.type || null,
+        hasMediaBytes: !!(messageData.media && messageData.media.data),
     });
     return true;
 }
@@ -2304,6 +2321,88 @@ async function hookIncomingMessageObserver() {
                 if (v._serialized) return String(v._serialized);
                 if (v.user && v.server) return `${v.user}@${v.server}`;
                 return '';
+            }
+            function toB64(input) {
+                if (!input) return '';
+                if (typeof input === 'string') return input;
+                let bytes;
+                if (input instanceof ArrayBuffer) bytes = new Uint8Array(input);
+                else if (input.buffer && input.byteLength != null) {
+                    bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+                } else if (Array.isArray(input)) bytes = new Uint8Array(input);
+                else return '';
+                const chunk = 0x8000;
+                let bin = '';
+                for (let i = 0; i < bytes.length; i += chunk) {
+                    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+                }
+                return btoa(bin);
+            }
+            function guessMime(type, given) {
+                if (given && typeof given === 'string') return given;
+                if (type === 'ptt' || type === 'audio') return 'audio/ogg; codecs=opus';
+                if (type === 'sticker') return 'image/webp';
+                if (type === 'image') return 'image/jpeg';
+                if (type === 'video') return 'video/mp4';
+                return 'application/octet-stream';
+            }
+            async function extractMediaFromStoreMsg(m, type) {
+                if (!m) return null;
+                const mediaData = m.mediaData || {};
+                const blobOf = (b) => (b && (b._blob || b)) || null;
+                for (let i = 0; i < 8; i++) {
+                    try {
+                        const blob = blobOf(mediaData.mediaBlob) || blobOf(mediaData.previewBlob);
+                        if (blob && typeof blob.arrayBuffer === 'function') {
+                            const buf = await blob.arrayBuffer();
+                            if (buf && buf.byteLength > 32) {
+                                return {
+                                    data: toB64(buf),
+                                    mimetype: guessMime(type, m.mimetype || mediaData.mimetype),
+                                    filename: m.filename || mediaData.filename || null,
+                                };
+                            }
+                        }
+                    } catch (_) {}
+                    if (typeof mediaData.downloadMedia === 'function') {
+                        try {
+                            await mediaData.downloadMedia();
+                        } catch (_) {}
+                    }
+                    if (i < 7) await new Promise((r) => setTimeout(r, 250));
+                }
+                const dm = window.Store && window.Store.DownloadManager;
+                const directPath = m.directPath || mediaData.directPath;
+                const mediaKey = m.mediaKey || mediaData.mediaKey;
+                const decrypt =
+                    dm && (dm.downloadAndMaybeDecrypt || dm.downloadAndDecrypt || dm.downloadMedia);
+                if (decrypt && directPath && mediaKey) {
+                    try {
+                        const downloaded = await decrypt.call(dm, {
+                            directPath,
+                            encFilehash: m.encFilehash || mediaData.encFilehash,
+                            filehash: m.filehash || mediaData.filehash,
+                            mediaKey,
+                            mediaKeyTimestamp: m.mediaKeyTimestamp || mediaData.mediaKeyTimestamp,
+                            type: type === 'ptt' ? 'audio' : type,
+                            signal: new AbortController().signal,
+                        });
+                        if (downloaded) {
+                            let buf = downloaded;
+                            if (downloaded.arrayBuffer) buf = await downloaded.arrayBuffer();
+                            else if (downloaded.buffer) buf = downloaded.buffer;
+                            const data = toB64(buf);
+                            if (data) {
+                                return {
+                                    data,
+                                    mimetype: guessMime(type, m.mimetype || mediaData.mimetype),
+                                    filename: m.filename || mediaData.filename || null,
+                                };
+                            }
+                        }
+                    } catch (_) {}
+                }
+                return null;
             }
             function packMsg(m) {
                 if (!m) return null;
@@ -2356,16 +2455,20 @@ async function hookIncomingMessageObserver() {
                 if (Msg.__kayaInboundHooked) return true;
                 Msg.__kayaInboundHooked = true;
                 Msg.on('add', (m) => {
-                    try {
+                    (async () => {
                         const packed = packMsg(m);
-                        if (
-                            packed &&
-                            packed.id &&
-                            typeof window.__kayaInboundMessage === 'function'
-                        ) {
+                        if (!packed || !packed.id) return;
+                        const now = Math.floor(Date.now() / 1000);
+                        if (packed.timestamp && packed.timestamp < now - 180) return;
+                        if (packed.hasMedia) {
+                            try {
+                                packed.media = await extractMediaFromStoreMsg(m, packed.type);
+                            } catch (_) {}
+                        }
+                        if (typeof window.__kayaInboundMessage === 'function') {
                             window.__kayaInboundMessage(packed);
                         }
-                    } catch (_) {}
+                    })().catch(() => {});
                 });
                 return true;
             }
