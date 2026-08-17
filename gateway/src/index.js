@@ -424,6 +424,42 @@ function getWhatsAppSessionPath() {
     );
 }
 
+function chromeLockFiles(userDataDir) {
+    return ['SingletonLock', 'SingletonCookie', 'SingletonSocket'].map((name) =>
+        path.join(userDataDir, name)
+    );
+}
+
+/** pkill همگام — PM2 بعد از ~۱٫۶ثانیه SIGKILL می‌دهد؛ destroy واتساپ برای آن دیر است. */
+function killOrphanChromeSync(sessionPath) {
+    const root = sessionPath || getWhatsAppSessionPath();
+    const userDataDir = path.join(root, 'session');
+    if (process.platform !== 'linux') return;
+    const patterns = [
+        `--user-data-dir=${userDataDir}`,
+        userDataDir,
+        'kayaCRM-kaya/gateway/sessions',
+    ];
+    for (const pattern of patterns) {
+        try {
+            execFileSync('pkill', ['-9', '-f', pattern], { stdio: 'ignore', timeout: 5000 });
+        } catch (_) {
+            /* exit 1 = هیچ پروسه‌ای نبود */
+        }
+    }
+    try {
+        execFileSync('fuser', ['-k', '-9', path.join(userDataDir, 'SingletonLock')], {
+            stdio: 'ignore',
+            timeout: 5000,
+        });
+    } catch (_) {}
+    for (const lockFile of chromeLockFiles(userDataDir)) {
+        try {
+            execFileSync('rm', ['-f', lockFile], { stdio: 'ignore', timeout: 3000 });
+        } catch (_) {}
+    }
+}
+
 /**
  * بعد از pm2 restart گاهی Chromium یتیم می‌ماند و userDataDir را قفل می‌کند
  * → حلقهٔ کرش «browser is already running». قفل و پروسهٔ یتیم را پاک کن.
@@ -431,38 +467,21 @@ function getWhatsAppSessionPath() {
 async function prepareChromeUserDataDir(sessionPath) {
     const root = sessionPath || getWhatsAppSessionPath();
     const userDataDir = path.join(root, 'session');
-    const lockNames = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
 
     async function unlinkLocks() {
-        for (const name of lockNames) {
+        for (const lockFile of chromeLockFiles(userDataDir)) {
             try {
-                await fs.unlink(path.join(userDataDir, name));
+                await fs.unlink(lockFile);
             } catch (_) {
                 /* ignore */
             }
         }
     }
 
+    killOrphanChromeSync(root);
     await unlinkLocks();
-
-    if (process.platform === 'linux') {
-        const patterns = [
-            userDataDir,
-            root,
-            // مسیر نسبی/مطلق در cmdline کروم
-            'kayaCRM-kaya/gateway/sessions',
-        ];
-        for (const pattern of patterns) {
-            try {
-                execFileSync('pkill', ['-9', '-f', pattern], { stdio: 'ignore', timeout: 8000 });
-                logger.warn('Killed orphan Chromium holding WhatsApp session profile', { pattern });
-            } catch (_) {
-                // pkill exit 1 = هیچ پروسه‌ای نبود
-            }
-        }
-        await new Promise((r) => setTimeout(r, 1500));
-        await unlinkLocks();
-    }
+    await new Promise((r) => setTimeout(r, 2500));
+    await unlinkLocks();
 }
 
 function formatGatewayError(err) {
@@ -2791,11 +2810,14 @@ process.on('unhandledRejection', (reason) => {
 
 async function gracefulShutdown(signal) {
     logger.info('Shutting down gracefully...', { signal });
+    // اول Chromium را بکش — PM2 معمولاً قبل از اتمام client.destroy سیگنال SIGKILL می‌دهد
     try {
-        await stopWhatsApp();
+        killOrphanChromeSync(getWhatsAppSessionPath());
     } catch (_) {}
     try {
-        await prepareChromeUserDataDir(getWhatsAppSessionPath());
+        isClientReady = false;
+        isClientStarting = false;
+        client = null;
     } catch (_) {}
     redisClient.quit().catch(() => {});
     process.exit(0);

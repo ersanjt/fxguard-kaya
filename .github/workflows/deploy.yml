@@ -209,14 +209,17 @@ jobs:
 
             # ---- reload با PM2 (نام‌های واقعی روی سرور کایا) ----
             echo "🔄 reload سرویس‌ها ..."
-            if pm2 reload crm-backend-kaya crm-gateway-kaya --update-env; then
-              echo "  ✅ pm2 reload موفق"
-            elif pm2 reload ecosystem.config.js --update-env; then
-              echo "  ✅ pm2 reload ecosystem موفق"
-            else
-              echo "  ⚠️ reload شکست خورد، stop/start می‌کنیم..."
-              pm2 restart crm-backend-kaya crm-gateway-kaya --update-env 2>/dev/null || pm2 start ecosystem.config.js --update-env
-            fi
+            pm2 reload crm-backend-kaya --update-env || pm2 restart crm-backend-kaya --update-env
+            echo "  ✅ backend reload شد"
+            echo "🧹 Gateway: stop + کشتن Chromium یتیم (قفل نشست واتساپ) ..."
+            pm2 stop crm-gateway-kaya || true
+            pkill -9 -f '/var/www/kayaCRM-kaya/gateway/sessions' || true
+            sleep 2
+            rm -f /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonLock \
+                  /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonCookie \
+                  /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonSocket || true
+            pm2 start crm-gateway-kaya --update-env || pm2 restart crm-gateway-kaya --kill-timeout 12000 --update-env
+            echo "  ✅ gateway با Chromium تمیز استارت شد"
             pm2 save
 
             # ---- بررسی سلامت بعد از deploy ----
