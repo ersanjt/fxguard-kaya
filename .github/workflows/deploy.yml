@@ -213,7 +213,8 @@ jobs:
             echo "  ✅ backend reload شد"
             echo "🧹 Gateway: stop + کشتن Chromium یتیم (قفل نشست واتساپ) ..."
             pm2 stop crm-gateway-kaya || true
-            pkill -9 -f '/var/www/kayaCRM-kaya/gateway/sessions' || true
+            # فقط Chrome با user-data-dir نشست؛ pkill -f روی خودِ مسیر sessions اسکریپت SSH را هم می‌کشد (exit 137)
+            pkill -9 -f 'user-data-dir=/var/www/kayaCRM-kaya/gateway/sessions' || true
             sleep 2
             rm -f /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonLock \
                   /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonCookie \
