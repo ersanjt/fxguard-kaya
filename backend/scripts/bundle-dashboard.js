@@ -75,6 +75,13 @@ function bundleJs() {
     }
     const outPath = path.join(root, 'public/js/dashboard.js');
     fs.writeFileSync(outPath, out, 'utf8');
+    try {
+        // eslint-disable-next-line no-new-func
+        new Function(out);
+    } catch (e) {
+        console.error('[bundle-dashboard] dashboard.js syntax error:', e && e.message);
+        process.exit(1);
+    }
     console.log('[bundle-dashboard] Wrote', outPath, '(' + files.length + ' chunks)');
 }
 

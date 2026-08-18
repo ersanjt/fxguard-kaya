@@ -3914,7 +3914,7 @@
 
         var currentCustomerId = null;
         let currentCustomerData = null;
-        async function showCustomerHistory(custId, name) {
+        async function showCustomerHistory(custId, fallbackName) {
             currentCustomerId = custId;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const detailPage = document.getElementById('pageCustomerDetail');
@@ -3941,7 +3941,7 @@
             if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + escapeHtml(resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
             currentCustomerData = resDetail.data;
             const c = currentCustomerData;
-            const name = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || t('customer'));
+            const name = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || fallbackName || t('customer'));
             const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
             const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
             const firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';

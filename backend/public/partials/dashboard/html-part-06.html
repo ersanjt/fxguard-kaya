@@ -621,6 +621,21 @@
     <script src="/js/modules/dashboard-i18n.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/dashboard.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script>
+    (function () {
+        if (typeof window.showPage === 'function') return;
+        document.documentElement.classList.remove('auth-verifying');
+        var app = document.getElementById('app');
+        if (app) app.classList.remove('show', 'app-loading', 'app-ready');
+        if (document.getElementById('dashboardBootFail')) return;
+        var msg = document.createElement('div');
+        msg.id = 'dashboardBootFail';
+        msg.setAttribute('role', 'alert');
+        msg.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:#0c1222;color:#e8eefc;font-family:Vazirmatn,Tahoma,sans-serif;padding:24px;text-align:center;';
+        msg.innerHTML = '<div><p style="font-size:1.1rem;margin:0 0 12px">پنل بارگذاری نشد. صفحه را رفرش کنید.</p><p style="opacity:.75;margin:0 0 16px">The staff panel failed to load. Please refresh.</p><button type="button" onclick="location.reload()" style="padding:10px 18px;border:0;border-radius:8px;background:#10b981;color:#fff;font-weight:600;cursor:pointer">Retry</button></div>';
+        document.body.appendChild(msg);
+    })();
+    </script>
+    <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');
         var pageBuild = meta && meta.getAttribute('content');
