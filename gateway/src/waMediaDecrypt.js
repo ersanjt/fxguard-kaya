@@ -99,7 +99,7 @@ async function downloadAndDecryptWhatsAppMedia(meta) {
             }
             try {
                 const plain = decryptWhatsAppEnc(enc, meta.mediaKey, type);
-                if (!plain || plain.length < 16) {
+                if (!plain || !plain.length) {
                     attempts.push({ status: res.status, error: 'plain_too_small' });
                     continue;
                 }

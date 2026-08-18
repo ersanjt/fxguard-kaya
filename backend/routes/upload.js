@@ -24,10 +24,20 @@ const ALLOWED_MIME_TYPES = new Set([
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'text/plain', 'text/csv',
     // فشرده
-    'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/x-rar-compressed',
+    'application/vnd.rar',
+    'application/x-7z-compressed',
 ]);
 
 const IMAGE_LIKE_EXT = new Set(['.ico', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
+const ALLOWED_EXT = new Set([
+    ...IMAGE_LIKE_EXT,
+    '.mp4', '.webm', '.ogg', '.mov', '.mp3', '.wav', '.aac', '.m4a',
+    '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+    '.txt', '.csv', '.zip', '.rar', '.7z',
+]);
 
 const BLOCKED_EXTENSIONS = new Set([
     '.php', '.php3', '.php4', '.php5', '.phtml',
@@ -69,12 +79,15 @@ const upload = multer({
         }
         // MIME type can include codec params like "audio/webm;codecs=opus" — check base type
         const baseMime = (file.mimetype || '').split(';')[0].trim().toLowerCase();
-        if (
-            !ALLOWED_MIME_TYPES.has(baseMime) &&
-            !ALLOWED_MIME_TYPES.has(file.mimetype) &&
-            !(baseMime === 'application/octet-stream' && IMAGE_LIKE_EXT.has(ext))
-        ) {
-            return cb(new Error(`نوع فایل پشتیبانی نمی‌شود: ${file.mimetype}`));
+        const mimeOk =
+            ALLOWED_MIME_TYPES.has(baseMime) || ALLOWED_MIME_TYPES.has(file.mimetype);
+        const extOk =
+            ALLOWED_EXT.has(ext) &&
+            (baseMime === 'application/octet-stream' ||
+                baseMime === 'binary/octet-stream' ||
+                !baseMime);
+        if (!mimeOk && !extOk) {
+            return cb(new Error(`نوع فایل پشتیبانی نمی‌شود: ${file.mimetype || ext || 'unknown'}`));
         }
         cb(null, true);
     }

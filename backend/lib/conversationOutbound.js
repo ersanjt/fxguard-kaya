@@ -22,6 +22,42 @@ const {
     WHATSAPP_VOICE_FILENAME,
 } = require('../lib/audioConverter');
 
+const MIME_FROM_EXT = {
+    '.pdf': 'application/pdf',
+    '.doc': 'application/msword',
+    '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    '.xls': 'application/vnd.ms-excel',
+    '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    '.ppt': 'application/vnd.ms-powerpoint',
+    '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    '.txt': 'text/plain',
+    '.csv': 'text/csv',
+    '.zip': 'application/zip',
+    '.rar': 'application/x-rar-compressed',
+    '.7z': 'application/x-7z-compressed',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+    '.mp3': 'audio/mpeg',
+    '.ogg': 'audio/ogg',
+    '.wav': 'audio/wav',
+    '.m4a': 'audio/mp4',
+};
+
+function inferMimeFromFilename(filename, given) {
+    const g = String(given || '')
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
+    if (g && g !== 'application/octet-stream' && g !== 'binary/octet-stream') return given;
+    const ext = path.extname(String(filename || '')).toLowerCase();
+    return MIME_FROM_EXT[ext] || given || 'application/octet-stream';
+}
+
 function resolveUploadFilePath(uploadsDir, relUnderUploads) {
     let rel = String(relUnderUploads || '').replace(/^\/+/, '');
     if (!rel || rel.includes('..')) return null;
@@ -138,13 +174,13 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             const root = (process.env.BACKEND_PUBLIC_URL && process.env.BACKEND_PUBLIC_URL.replace(/\/$/, '')) || baseUrl.replace(/\/$/, '');
             mediaUrl = root + (relPath.startsWith('/') ? relPath : '/' + relPath);
         }
-        const mime = media.mimetype || '';
+        const mime = inferMimeFromFilename(media.filename || media.name, media.mimetype || '');
         if (mime.startsWith('image/')) msgType = 'image';
         else if (mime.startsWith('video/')) msgType = 'video';
         else if (mime.startsWith('audio/')) msgType = 'audio';
         else if (media.type && ['image', 'video', 'audio', 'document'].includes(media.type)) msgType = media.type;
         else msgType = 'document';
-        mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
+        mediaData = { url: relPath, filename: media.filename || media.name, mimetype: mime || media.mimetype };
     }
 
     const isVoiceNoteEarly =
@@ -245,7 +281,10 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         const uploadsDir = path.join(__dirname, '..', 'uploads');
         const relUnderUploads = String(relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').replace(/^\/+/, '');
         let readPath = resolveUploadFilePath(uploadsDir, relUnderUploads);
-        let sendMimetype = media.mimetype || 'application/octet-stream';
+        let sendMimetype = inferMimeFromFilename(
+            media.filename || media.name,
+            media.mimetype || 'application/octet-stream'
+        );
         let sendFilename = media.filename || media.name || path.basename(relUnderUploads) || 'file';
         if (!relPath.startsWith('http') && readPath && fs.existsSync(readPath)) {
             try {
@@ -280,6 +319,8 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                     payload.media.sendAsVoice = true;
                     payload.media.mimetype = WHATSAPP_VOICE_MIME;
                     payload.media.filename = WHATSAPP_VOICE_FILENAME;
+                } else if (msgType === 'document') {
+                    payload.media.sendAsDocument = true;
                 }
             } catch (readErr) {
                 if (isVoiceNote) {
@@ -293,7 +334,12 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                     };
                 }
                 if (mediaUrl) {
-                    payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
+                    payload.media = {
+                        url: mediaUrl,
+                        mimetype: sendMimetype || media.mimetype || '',
+                        filename: sendFilename,
+                    };
+                    if (msgType === 'document') payload.media.sendAsDocument = true;
                 }
             }
         } else if (mediaUrl) {
@@ -305,8 +351,12 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                     status: 502,
                 };
             }
-            payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-        } else if (isVoiceNote || (hasMedia && !readPath)) {
+            payload.media = {
+                url: mediaUrl,
+                mimetype: sendMimetype || media.mimetype || '',
+                filename: sendFilename,
+            };
+            if (msgType === 'document') payload.media.sendAsDocument = true;
             await msg.update({ status: 'failed' });
             return { msg, error: 'فایل برای ارسال یافت نشد.', status: 502 };
         }

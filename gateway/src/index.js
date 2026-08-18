@@ -317,6 +317,44 @@ function isVoiceMediaPayload(media) {
     return !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
 }
 
+function waSafeFilename(name) {
+    const raw = String(name || 'file').trim() || 'file';
+    const extMatch = raw.match(/(\.[a-z0-9]{1,8})$/i);
+    const ext = extMatch ? extMatch[1] : '';
+    const base = raw
+        .slice(0, Math.max(1, raw.length - ext.length))
+        .replace(/[^\w.-]+/g, '_')
+        .slice(0, 60);
+    return `${base || 'file'}${ext}`.slice(0, 80);
+}
+
+function shouldSendAsDocument(media, mime) {
+    if (!media) return false;
+    if (media.sendAsDocument) return true;
+    if (media.sendAsVoice || isVoiceMediaPayload(media)) return false;
+    const m = String(mime || media.mimetype || '')
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
+    if (m.startsWith('image/') || m.startsWith('video/') || m.startsWith('audio/')) return false;
+    const name = String(media.filename || '');
+    if (/\.(jpe?g|png|gif|webp|bmp|mp4|webm|mov|mp3|ogg|wav|m4a|opus)$/i.test(name) && !m) {
+        return false;
+    }
+    return !!(m || name);
+}
+
+function applyOutboundMediaSendOpts(sendOpts, media, mime, asVoice, caption) {
+    if (asVoice) {
+        sendOpts.sendAudioAsVoice = true;
+        return;
+    }
+    sendOpts.caption = caption || '';
+    if (shouldSendAsDocument(media, mime)) {
+        sendOpts.sendMediaAsDocument = true;
+    }
+}
+
 async function buildOutboundMessageMedia(media, _message) {
     if (!media?.data) return null;
     const mime = media.mimetype || 'application/octet-stream';
@@ -338,7 +376,7 @@ async function buildOutboundMessageMedia(media, _message) {
         mediaObj.filename = WHATSAPP_VOICE_FILENAME;
         return { mediaObj, asVoice: true, tmpPath, mime: WHATSAPP_VOICE_MIME };
     }
-    const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
+    const mediaObj = new MessageMedia(mime, media.data, waSafeFilename(media.filename || 'file'));
     return { mediaObj, asVoice: false, tmpPath: null, mime };
 }
 
@@ -1447,6 +1485,35 @@ async function ensureDir(dir) {
     } catch (_) {}
 }
 
+const BACKEND_UPLOADS_DIR =
+    process.env.BACKEND_UPLOADS_DIR || path.resolve(__dirname, '..', '..', 'backend', 'uploads');
+
+async function persistInboundMediaFile(media, type) {
+    if (!media || !media.data) return media;
+    try {
+        await ensureDir(BACKEND_UPLOADS_DIR);
+        const fallback = defaultMediaMeta(type);
+        const origName = String(media.filename || fallback.filename || 'file');
+        const extMatch = origName.match(/(\.[a-z0-9]{1,8})$/i);
+        const ext = extMatch ? extMatch[1] : path.extname(fallback.filename || '') || '.bin';
+        const safe = `wa-in-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+        const buf = Buffer.from(media.data, 'base64');
+        if (!buf.length) return media;
+        await fs.writeFile(path.join(BACKEND_UPLOADS_DIR, safe), buf);
+        return {
+            url: `/uploads/${safe}`,
+            filename: origName,
+            mimetype: media.mimetype || fallback.mimetype,
+        };
+    } catch (err) {
+        logger.warn('Inbound media persist to uploads failed', {
+            error: formatGatewayError(err),
+            type: type || null,
+        });
+        return media;
+    }
+}
+
 async function sendToBackendWithRetry(messageData) {
     const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
     const webhookSecret = process.env.WEBHOOK_SECRET || '';
@@ -1458,7 +1525,7 @@ async function sendToBackendWithRetry(messageData) {
                 `${backendUrl}/api/webhook/incoming-message`,
                 messageData,
                 {
-                    timeout: 15000,
+                    timeout: 30000,
                     validateStatus: () => true,
                     headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
                 }
@@ -1486,6 +1553,10 @@ async function sendToBackendWithRetry(messageData) {
  * (health: rabbitmq disabled) پیام‌ها در صف گم می‌شوند. فقط با INCOMING_VIA=rabbit صف استفاده شود.
  */
 async function deliverIncomingMessage(messageData) {
+    if (messageData && messageData.media && messageData.media.data) {
+        messageData.media = await persistInboundMediaFile(messageData.media, messageData.type);
+        if (messageData.media && messageData.media.url) messageData.hasMedia = true;
+    }
     const via = String(process.env.INCOMING_VIA || 'http').toLowerCase();
     if (via === 'rabbit' && rabbitChannel) {
         try {
@@ -1705,17 +1776,14 @@ async function startWhatsApp() {
         isClientStarting = false;
         const msg = e?.message || 'start_failed';
         logger.error('Start WhatsApp error', { error: msg });
-        if (/browser is already running/i.test(msg)) {
-            try {
-                await prepareChromeUserDataDir(getWhatsAppSessionPath());
-            } catch (_) {}
-            try {
-                resetClientState();
-            } catch (_) {}
-            scheduleReconnect();
-            return { ok: false, error: msg, recovering: true };
-        }
-        return { ok: false, error: msg };
+        try {
+            await prepareChromeUserDataDir(getWhatsAppSessionPath());
+        } catch (_) {}
+        try {
+            resetClientState();
+        } catch (_) {}
+        scheduleReconnect();
+        return { ok: false, error: msg, recovering: true };
     }
 }
 
@@ -1873,15 +1941,18 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                     throw err;
                 }
                 tmpMediaPath = built.tmpPath;
-                if (built.asVoice) {
-                    sendOpts.sendAudioAsVoice = true;
-                } else {
-                    sendOpts.caption = message || '';
-                }
+                applyOutboundMediaSendOpts(
+                    sendOpts,
+                    media,
+                    built.mime,
+                    built.asVoice,
+                    message || ''
+                );
                 logger.info('📎 Sending media (data)', {
                     to: targetChatId,
                     mime: built.mime,
                     asVoice: built.asVoice,
+                    asDocument: !!sendOpts.sendMediaAsDocument,
                     dataLen: (media.data || '').length,
                 });
                 return client.sendMessage(targetChatId, built.mediaObj, sendOpts);
@@ -1893,19 +1964,23 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                     throw err;
                 }
                 const mediaObj = await MessageMedia.fromUrl(media.url);
+                if (media.filename) mediaObj.filename = waSafeFilename(media.filename);
                 const asVoice = !!(
                     media.sendAsVoice ||
                     (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
                 );
-                if (asVoice) {
-                    sendOpts.sendAudioAsVoice = true;
-                } else {
-                    sendOpts.caption = message || '';
-                }
+                applyOutboundMediaSendOpts(
+                    sendOpts,
+                    media,
+                    mediaObj?.mimetype || media.mimetype,
+                    asVoice,
+                    message || ''
+                );
                 logger.info('📎 Sending media (url)', {
                     to: targetChatId,
                     mime: mediaObj?.mimetype,
                     asVoice,
+                    asDocument: !!sendOpts.sendMediaAsDocument,
                 });
                 return client.sendMessage(targetChatId, mediaObj, sendOpts);
             }
@@ -2419,6 +2494,14 @@ async function ingestStoreInboundMessage(raw, via) {
             hasKey: !!(raw.mediaMeta && raw.mediaMeta.mediaKey),
             hasPath: !!(raw.mediaMeta && (raw.mediaMeta.directPath || raw.mediaMeta.url)),
         });
+        if (raw.mediaMeta && (raw.mediaMeta.filename || raw.mediaMeta.mimetype)) {
+            const fallback = defaultMediaMeta(raw.type);
+            messageData.hasMedia = true;
+            messageData.media = {
+                mimetype: raw.mediaMeta.mimetype || fallback.mimetype,
+                filename: raw.mediaMeta.filename || fallback.filename,
+            };
+        }
     }
 
     try {
@@ -2433,7 +2516,7 @@ async function ingestStoreInboundMessage(raw, via) {
         to: to || null,
         via: via || 'store',
         type: messageData.type || null,
-        hasMediaBytes: !!(messageData.media && messageData.media.data),
+        hasMediaBytes: !!(messageData.media && (messageData.media.data || messageData.media.url)),
     });
     return true;
 }
@@ -2628,7 +2711,7 @@ async function hookIncomingMessageObserver() {
                     from,
                     to,
                     chatId,
-                    body: m.body || m.caption || '',
+                    body: m.body || m.caption || m.filename || '',
                     timestamp: m.t || 0,
                     type,
                     hasMedia: !!(
@@ -2768,7 +2851,7 @@ async function pollUnreadIncomingMessages() {
                         from,
                         to,
                         chatId,
-                        body: m.body || m.caption || '',
+                        body: m.body || m.caption || m.filename || '',
                         timestamp: m.t || 0,
                         type,
                         hasMedia: !!(
@@ -4130,11 +4213,7 @@ async function sendWhatsAppMessage(data) {
             const built = await buildOutboundMessageMedia(media, message);
             if (!built) throw new Error('Invalid media payload');
             tmpMediaPath = built.tmpPath;
-            if (built.asVoice) {
-                sendOpts.sendAudioAsVoice = true;
-            } else {
-                sendOpts.caption = message || '';
-            }
+            applyOutboundMediaSendOpts(sendOpts, media, built.mime, built.asVoice, message || '');
             const sent = await client.sendMessage(chatId, built.mediaObj, sendOpts);
             markGatewaySentMessage(sent?.id?.id);
             return sent;
@@ -4143,11 +4222,14 @@ async function sendWhatsAppMessage(data) {
         if (media?.url) {
             if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
             const mediaObj = await MessageMedia.fromUrl(media.url);
-            if (isVoiceMediaPayload(media)) {
-                sendOpts.sendAudioAsVoice = true;
-            } else {
-                sendOpts.caption = message || '';
-            }
+            if (media.filename) mediaObj.filename = waSafeFilename(media.filename);
+            applyOutboundMediaSendOpts(
+                sendOpts,
+                media,
+                mediaObj?.mimetype || media.mimetype,
+                isVoiceMediaPayload(media),
+                message || ''
+            );
             const sent = await client.sendMessage(chatId, mediaObj, sendOpts);
             markGatewaySentMessage(sent?.id?.id);
             return sent;
