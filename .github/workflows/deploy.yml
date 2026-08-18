@@ -1,9 +1,10 @@
 name: Deploy to Server
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: [CI]
+    types:
+      - completed
   workflow_dispatch:
 
 # آخرین push برنده است تا همیشه نتیجهٔ نهایی روی سرور همان کامیت آخر باشد (صف طولانی = حس «بدون نتیجه»).
@@ -13,6 +14,11 @@ concurrency:
 
 jobs:
   deploy:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     permissions:
@@ -41,10 +47,13 @@ jobs:
       # اگر android-app برگردد، مراحل Gradle/APK را دوباره فعال کنید.
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
+        env:
+          FIREBASE_SA_B64: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_B64 }}
         with:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: FIREBASE_SA_B64
           timeout: 3m
           command_timeout: 20m
           script: |
@@ -164,6 +173,17 @@ jobs:
             # پوشه‌های موبایل عمداً دیپلوی نمی‌شوند — باقی‌ماندهٔ قدیمی روی سرور را پاک کن
             echo "🧹 حذف android-app و ios-app از سرور (دیپلوی نمی‌شوند) ..."
             rm -rf android-app ios-app
+
+            # ---- Firebase Admin (پوش FCM کارکنان) — فایل gitignore است ----
+            if [ -n "${FIREBASE_SA_B64:-}" ]; then
+              echo "🔑 نوشتن سرویس‌اکانت Firebase ..."
+              umask 077
+              printf '%s' "$FIREBASE_SA_B64" | base64 -d > backend/firebase-service-account.json
+              node backend/scripts/upsert-dotenv.js backend/.env FIREBASE_SERVICE_ACCOUNT_PATH /var/www/kayaCRM-kaya/backend/firebase-service-account.json
+              echo "  ✅ FIREBASE_SERVICE_ACCOUNT_PATH تنظیم شد"
+            else
+              echo "⚠️ secret FIREBASE_SERVICE_ACCOUNT_B64 خالی است — پوش سیستم وقتی اپ بسته است کار نمی‌کند"
+            fi
 
             # ---- نصب dependencies ----
             echo "📦 نصب dependencies ..."

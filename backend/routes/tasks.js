@@ -279,4 +279,33 @@ router.post('/:id/updates', async (req, res, next) => {
     }
 });
 
+/** حذف تسک: ادمین/مالک/مدیر، یا سازندهٔ همان تسک */
+function canDeleteTask(req, task) {
+    const u = req.user;
+    if (!u || !task) return false;
+    if (isMainAdmin(u) || u.role === 'owner' || u.role === 'admin' || u.role === 'manager') return true;
+    if (task.createdBy && String(task.createdBy) === String(req.userId)) return true;
+    return false;
+}
+
+router.delete('/:id', async (req, res, next) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
+    try {
+        const { ok, status, task } = await canAccessTask(req, req.params.id);
+        if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
+        if (!canDeleteTask(req, task)) {
+            return res.status(403).json({ error: 'دسترسی حذف تسک را ندارید' });
+        }
+        await TaskUpdate.destroy({ where: { taskId: task.id } });
+        await task.destroy();
+        res.json({
+            ok: true,
+            deleted: true,
+            message: 'تسک حذف شد.',
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 module.exports = router;

@@ -25,4 +25,21 @@ function normalizeCallSignal(data, fromUserId) {
     };
 }
 
-module.exports = { asCallId, callUserRoom, normalizeCallSignal };
+async function canRelayCallSignal(fromUserId, toUserId, threadId) {
+    const from = asCallId(fromUserId);
+    const to = asCallId(toUserId);
+    const tid = asCallId(threadId);
+    if (!from || !to || !tid || from === to) return false;
+    const { User, InternalThreadParticipant } = require('../models');
+    const peer = await User.findByPk(to, { attributes: ['id', 'isActive'] });
+    if (!peer || !peer.isActive) return false;
+    const rows = await InternalThreadParticipant.findAll({
+        where: { threadId: tid },
+        attributes: ['userId'],
+    });
+    if (!rows.length) return false;
+    const ids = new Set(rows.map((r) => asCallId(r.userId)));
+    return ids.has(from) && ids.has(to);
+}
+
+module.exports = { asCallId, callUserRoom, normalizeCallSignal, canRelayCallSignal };

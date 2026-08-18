@@ -74,12 +74,23 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true
         },
+        tokenVersion: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            comment: 'با تغییر رمز، غیرفعال‌سازی یا خروج سراسری افزایش می‌یابد و JWTهای قبلی باطل می‌شوند'
+        },
         permissions: {
             type: DataTypes.JSON,
             defaultValue: {}
         },
         lastLoginAt: {
             type: DataTypes.DATE
+        },
+        lastSeenAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'آخرین سیگنال حضور زنده (heartbeat / سوکت)'
         },
         totpSecret: {
             type: DataTypes.STRING,
@@ -138,6 +149,8 @@ module.exports = (sequelize) => {
             { fields: ['branchId'] },
             { fields: ['isActive'] },
             { fields: ['role'] },
+            { fields: ['status'] },
+            { fields: ['lastSeenAt'] },
             { fields: ['telegramChatId'] },
             { fields: ['telegramLinkToken'] }
         ],
@@ -148,8 +161,16 @@ module.exports = (sequelize) => {
                 }
             },
             beforeUpdate: async (user) => {
+                let bumpSession = false;
                 if (user.changed('password')) {
                     user.password = await bcrypt.hash(user.password, 10);
+                    bumpSession = true;
+                }
+                if (user.changed('isActive') && user.isActive === false) {
+                    bumpSession = true;
+                }
+                if (bumpSession) {
+                    user.tokenVersion = (Number(user.tokenVersion) || 0) + 1;
                 }
             }
         }
@@ -188,6 +209,7 @@ module.exports = (sequelize) => {
         if (models.TicketReply) User.hasMany(models.TicketReply, { foreignKey: 'userId', as: 'ticketReplies' });
         if (models.InternalThread) User.belongsToMany(models.InternalThread, { through: models.InternalThreadParticipant, foreignKey: 'userId', otherKey: 'threadId', as: 'internalThreads' });
         if (models.InternalMessage) User.hasMany(models.InternalMessage, { foreignKey: 'fromUserId', as: 'internalMessages' });
+        if (models.DevicePushToken) User.hasMany(models.DevicePushToken, { foreignKey: 'userId', as: 'pushTokens' });
     };
 
     return User;

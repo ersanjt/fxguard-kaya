@@ -5,7 +5,7 @@
  */
 const express = require('express');
 const crypto = require('crypto');
-const { authMiddleware, requireSection } = require('../middleware/auth');
+const { authMiddleware, optionalAuthMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
 const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
@@ -42,6 +42,7 @@ const exchangeRoutes = require('./exchange');
 const whatsappRoutes = require('./whatsapp');
 const announcementsRoutes = require('./announcements');
 const createInternalRouter = require('./internal');
+const devicesRoutes = require('./devices');
 const companyEmailsRoutes = require('./companyEmails');
 const panelSettingsRoutes = require('./panelSettings');
 const { createSystemStatusRouter } = require('./systemStatus');
@@ -170,7 +171,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     });
 
     // گزارش خطاهای فرانت‌اند (landing/dashboard)
-    apiRouter.post('/client-errors', async (req, res) => {
+    apiRouter.post('/client-errors', optionalAuthMiddleware, async (req, res) => {
         try {
             const body = req.body || {};
             const message = (body.message || '').toString().trim();
@@ -181,19 +182,19 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             const eventType = (body.eventType || 'error').toString().slice(0, 80);
             const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
             const ua = (req.get && req.get('user-agent')) || null;
-
+            const payload = {
+                ip: clientIp,
+                userAgent: ua,
+                pageUrl,
+                path: source || pageUrl,
+                errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
+            };
+            if (!req.userId) {
+                logger.warn('anonymous client error ignored for admin alert', payload);
+                return res.json({ ok: true });
+            }
             const panelSettings = await getPanelSettings();
-            await sendAdminSecurityAlert(
-                'frontend_error',
-                {
-                    ip: clientIp,
-                    userAgent: ua,
-                    pageUrl,
-                    path: source || pageUrl,
-                    errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
-                },
-                { settings: panelSettings }
-            );
+            await sendAdminSecurityAlert('frontend_error', payload, { settings: panelSettings });
             return res.json({ ok: true });
         } catch (_) {
             return res.json({ ok: true });
@@ -204,6 +205,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);
+    apiRouter.use('/devices', authMiddleware, devicesRoutes);
     apiRouter.use('/users', authMiddleware, userRoutes);
     apiRouter.use('/conversations', authMiddleware, conversationRoutes);
     apiRouter.use('/departments', authMiddleware, departmentRoutes);
@@ -298,13 +300,13 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                         delete msgData._cloudMediaId;
                     }
                     const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
-                    await processIncomingMessage(msgData, { io, rabbitChannel, redisClient, logger }).catch(err => logger.error('Cloud webhook process error:', err));
+                    await processIncomingMessage(msgData, { io, rabbitChannel, redisClient, logger });
                 }
             }
             res.status(200).send('ok');
         } catch (err) {
             logger.error('Cloud webhook error:', err);
-            res.status(200).send('ok');
+            if (!res.headersSent) res.status(500).send('processing_error');
         }
     });
 

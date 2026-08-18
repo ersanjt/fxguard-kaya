@@ -56,6 +56,17 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
                 }
             }
 
+            // پوش موبایل
+            try {
+                const pushNotificationService = require('./pushNotificationService');
+                pushNotificationService.notifyAnnouncementPush({
+                    userIds: [userId],
+                    title: announcement.title,
+                    body: announcement.body,
+                    announcementId: announcement.id
+                }).catch(() => {});
+            } catch (_) {}
+
             // ایمیل
             if (pref.announceEmailEnabled && user.email) {
                 try {
@@ -122,6 +133,16 @@ async function notifyTaskAssigned(task, io) {
                 logger.error(`Socket notification error:`, err.message);
             }
         }
+
+        try {
+            const pushNotificationService = require('./pushNotificationService');
+            pushNotificationService.notifyTaskPush({
+                userIds: [task.assignedTo],
+                title: task.title || 'وظیفه جدید',
+                body: task.priority ? `اولویت: ${task.priority}` : 'وظیفه به شما تخصیص داده شد',
+                taskId: task.id
+            }).catch(() => {});
+        } catch (_) {}
 
         // ایمیل
         if (pref && pref.taskAssignedEmailEnabled && user.email) {
@@ -197,6 +218,16 @@ async function notifyTicketAssigned(ticket, io) {
             }
         }
 
+        try {
+            const pushNotificationService = require('./pushNotificationService');
+            pushNotificationService.notifyTicketPush({
+                userIds: [ticket.assignedTo],
+                title: ticket.title || 'تیکت جدید',
+                body: ticket.ticketNumber ? `#${ticket.ticketNumber}` : 'تیکت به شما تخصیص داده شد',
+                ticketId: ticket.id
+            }).catch(() => {});
+        } catch (_) {}
+
         // ایمیل با template جدید
         if (pref && pref.ticketAssignedEmailEnabled && user.email) {
             try {
@@ -270,6 +301,21 @@ async function notifyTicketReply(ticket, reply, io) {
                 } catch (err) {
                     logger.error(`Socket error:`, err.message);
                 }
+            }
+
+            if (reply && String(reply.userId) === String(userId)) {
+                /* نویسندهٔ پاسخ پوش نمی‌گیرد */
+            } else {
+                try {
+                    const pushNotificationService = require('./pushNotificationService');
+                    const fromName = reply && reply.user ? (reply.user.name || '') : '';
+                    pushNotificationService.notifyTicketPush({
+                        userIds: [userId],
+                        title: ticket.title || 'پاسخ تیکت',
+                        body: fromName ? `${fromName}: ${(reply.content || '').slice(0, 120)}` : (reply.content || '').slice(0, 140),
+                        ticketId: ticket.id
+                    }).catch(() => {});
+                } catch (_) {}
             }
 
             // ایمیل

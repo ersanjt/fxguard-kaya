@@ -103,25 +103,35 @@ router.post('/', async (req, res, next) => {
             targetId: finalTargetId
         });
         const withUser = await Announcement.findByPk(ann.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }] });
+        let recipientIds = [];
+        if (finalTargetType === 'all') {
+            const allUsers = await User.findAll({ where: { isActive: true }, attributes: ['id'] });
+            recipientIds = allUsers.map(u => u.id);
+        } else if (finalTargetType === 'department' && finalTargetId) {
+            const deptUsers = await User.findAll({ where: { departmentId: finalTargetId, isActive: true }, attributes: ['id'] });
+            recipientIds = deptUsers.map(u => u.id);
+        } else if (finalTargetType === 'user' && finalTargetId) {
+            recipientIds = [finalTargetId];
+        }
+        recipientIds = recipientIds.filter(id => String(id) !== String(me.id));
+        const io = req.app.get('io');
         if (ann.isImportant) {
-            let recipientIds = [];
-            if (finalTargetType === 'all') {
-                const allUsers = await User.findAll({ where: { isActive: true }, attributes: ['id'] });
-                recipientIds = allUsers.map(u => u.id);
-            } else if (finalTargetType === 'department' && finalTargetId) {
-                const deptUsers = await User.findAll({ where: { departmentId: finalTargetId, isActive: true }, attributes: ['id'] });
-                recipientIds = deptUsers.map(u => u.id);
-            } else if (finalTargetType === 'user' && finalTargetId) {
-                recipientIds = [finalTargetId];
-            }
-            recipientIds = recipientIds.filter(id => String(id) !== String(me.id));
-            
-            // استفاده از سرویس اطلاعات برای ارسال ایمیل و Socket.IO
-            const io = req.app.get('io');
             setImmediate(() => {
                 notificationService.notifyAnnouncement(withUser, recipientIds, io).catch(err => {
                     logger.error('Announcement notification error', { error: err.message });
                 });
+            });
+        } else if (recipientIds.length) {
+            setImmediate(() => {
+                try {
+                    const pushNotificationService = require('../services/pushNotificationService');
+                    pushNotificationService.notifyAnnouncementPush({
+                        userIds: recipientIds,
+                        title: withUser.title,
+                        body: withUser.body,
+                        announcementId: withUser.id
+                    }).catch(() => {});
+                } catch (_) {}
             });
         }
         res.status(201).json(withUser);

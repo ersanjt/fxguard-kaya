@@ -336,11 +336,14 @@ async function resolveIncomingMedia(media, logger) {
         return media;
     }
     try {
+        const { assertSafeHttpUrl, axiosRedirectGuard } = require('../lib/safeHttpUrl');
+        await assertSafeHttpUrl(url);
         const res = await axios.get(url, {
             responseType: 'arraybuffer',
             timeout: 30000,
             maxContentLength: 20 * 1024 * 1024,
-            maxRedirects: 5,
+            maxRedirects: 3,
+            beforeRedirect: axiosRedirectGuard,
             headers: {
                 'User-Agent': 'fxguard-kaya-backend/1.0',
                 Accept: 'image/*,video/*,audio/*,*/*',
@@ -1489,6 +1492,20 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 message: newMessage,
                 isHiddenFromStaff: !!conversation.isHiddenFromStaff,
             });
+        }
+
+        if (!isFromMe) {
+            try {
+                const pushNotificationService = require('./pushNotificationService');
+                pushNotificationService.notifyWhatsappMessage({
+                    conversation,
+                    message: newMessage,
+                    customer,
+                    isFromMe: false,
+                }).catch((err) => {
+                    logger.warn('WhatsApp push failed', { error: err.message });
+                });
+            } catch (_) {}
         }
 
         if (mongoose.connection.readyState === 1 && mongoose.models.MessageLog) {
