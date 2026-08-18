@@ -189,6 +189,7 @@ async function runPreSync(sequelize, logger) {
                 ['telegramLinkTokenExpiry', { type: DataTypes.DATE, allowNull: true }],
                 ['whatsappSenderName', { type: DataTypes.STRING, allowNull: true }],
                 ['whatsappHonorific', { type: DataTypes.STRING, allowNull: true }],
+                ['lastSeenAt', { type: DataTypes.DATE, allowNull: true }],
             ];
             for (const [col, def] of userCols) {
                 if (!userDesc[col]) {
@@ -249,6 +250,26 @@ async function runPreSync(sequelize, logger) {
     } catch (e) {
         if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
             logger.warn('InternalThreadParticipants pre-sync migration:', e.message);
+    }
+
+    try {
+        let userDesc;
+        try {
+            userDesc = await qi.describeTable('Users');
+        } catch (_) {
+            userDesc = null;
+        }
+        if (userDesc && userDesc.tokenVersion === undefined) {
+            await qi.addColumn('Users', 'tokenVersion', {
+                type: DataTypes.INTEGER,
+                allowNull: false,
+                defaultValue: 0,
+            });
+            logger.info('✅ Users.tokenVersion column added (pre-sync)');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('Users.tokenVersion pre-sync migration:', e.message);
     }
 
     try {
