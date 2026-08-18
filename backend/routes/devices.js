@@ -70,7 +70,8 @@ router.post('/push-test', async (req, res, next) => {
             return res.json({
                 ok: false,
                 reason: (result && result.reason) || 'no_token',
-                sent: (result && result.sent) || 0
+                sent: (result && result.sent) || 0,
+                error: (result && result.error) || undefined
             });
         }
         return res.json({ ok: true, sent: result.sent });

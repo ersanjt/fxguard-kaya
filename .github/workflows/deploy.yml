@@ -229,6 +229,12 @@ jobs:
 
             # ---- reload با PM2 (نام‌های واقعی روی سرور کایا) ----
             echo "🔄 reload سرویس‌ها ..."
+            export FIREBASE_SERVICE_ACCOUNT_PATH="/var/www/kayaCRM-kaya/backend/firebase-service-account.json"
+            if [ -s backend/firebase-service-account.json ]; then
+              echo "  ✅ فایل سرویس‌اکانت Firebase روی دیسک موجود است"
+            else
+              echo "⚠️ فایل سرویس‌اکانت Firebase روی دیسک نیست"
+            fi
             pm2 reload crm-backend-kaya --update-env || pm2 restart crm-backend-kaya --update-env
             echo "  ✅ backend reload شد"
             echo "🧹 Gateway: stop، بعد استارت تا خودش Chromium یتیم را پاک کند ..."

@@ -14,13 +14,17 @@ process.env.MAIN_ADMIN_PASSWORD = 'Admin@Test123!';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3099';
 process.env.DISABLE_RATE_LIMIT = 'true';
+delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+delete process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
+delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
 const assert = require('assert');
 const supertest = require('supertest');
 
 // ─── Test runner ─────────────────────────────────────────────────────────────
 
-let passed = 0, failed = 0;
+let passed = 0,
+    failed = 0;
 const failures = [];
 
 async function test(name, fn) {
@@ -53,14 +57,16 @@ let filterConversationId = null;
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 async function runTests() {
-
     // ── Health & Public ──────────────────────────────────────────────────────
     section('Health & Public Endpoints');
 
     await test('GET /health returns 200 with status ok', async () => {
         const r = await req.get('/health');
         assert.strictEqual(r.status, 200);
-        assert(['ok', 'degraded'].includes(r.body.status), `Unexpected health status: ${r.body.status}`);
+        assert(
+            ['ok', 'degraded'].includes(r.body.status),
+            `Unexpected health status: ${r.body.status}`
+        );
         assert(r.body.uptime >= 0);
     });
 
@@ -88,26 +94,28 @@ async function runTests() {
     section('Auth — Login');
 
     await test('Login with wrong password returns 401', async () => {
-        const r = await req.post('/api/auth/login')
+        const r = await req
+            .post('/api/auth/login')
             .send({ email: 'admin@test.com', password: 'WrongPass!' });
         assert.strictEqual(r.status, 401);
         assert(r.body.error);
     });
 
     await test('Login with non-existent user returns 401', async () => {
-        const r = await req.post('/api/auth/login')
+        const r = await req
+            .post('/api/auth/login')
             .send({ email: 'nobody@test.com', password: 'Test123!' });
         assert.strictEqual(r.status, 401);
     });
 
     await test('Login with missing password returns 400', async () => {
-        const r = await req.post('/api/auth/login')
-            .send({ email: 'admin@test.com' });
+        const r = await req.post('/api/auth/login').send({ email: 'admin@test.com' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('Login with valid admin credentials returns token', async () => {
-        const r = await req.post('/api/auth/login')
+        const r = await req
+            .post('/api/auth/login')
             .send({ email: 'admin@test.com', password: 'Admin@Test123!' });
         assert.strictEqual(r.status, 200, `Login failed: ${JSON.stringify(r.body)}`);
         assert(r.body.token, 'Expected token');
@@ -126,8 +134,7 @@ async function runTests() {
     });
 
     await test('GET /api/auth/me with valid token returns user without password', async () => {
-        const r = await req.get('/api/auth/me')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/auth/me').set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.email, 'admin@test.com');
         assert(!r.body.password, 'Password must not be in /me response');
@@ -139,26 +146,33 @@ async function runTests() {
     });
 
     await test('GET /api/system-status for admin returns health payload', async () => {
-        const r = await req.get('/api/system-status')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/system-status').set('Authorization', `Bearer ${adminToken}`);
         assert.ok([200, 503].includes(r.status), `Unexpected status ${r.status}`);
-        assert(['ok', 'degraded', 'error'].includes(r.body.status), `Unexpected status: ${r.body.status}`);
+        assert(
+            ['ok', 'degraded', 'error'].includes(r.body.status),
+            `Unexpected status: ${r.body.status}`
+        );
         assert(r.body.checks && r.body.checks.database, 'Expected database check');
         assert(r.body.checks.gateway || r.body.checks.whatsapp, 'Expected gateway/whatsapp check');
         assert(r.body.process, 'Expected process info');
     });
 
     await test('GET /api/whatsapp/numbers seeds primary slot', async () => {
-        const r = await req.get('/api/whatsapp/numbers')
+        const r = await req
+            .get('/api/whatsapp/numbers')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.numbers), 'Expected numbers array');
-        assert(r.body.numbers.some((n) => n.slotKey === 'primary' || n.role === 'primary'), 'Expected primary slot');
+        assert(
+            r.body.numbers.some((n) => n.slotKey === 'primary' || n.role === 'primary'),
+            'Expected primary slot'
+        );
         assert.strictEqual(typeof r.body.failoverEnabled, 'boolean');
     });
 
     await test('POST /api/whatsapp/numbers creates empty standby slot', async () => {
-        const r = await req.post('/api/whatsapp/numbers')
+        const r = await req
+            .post('/api/whatsapp/numbers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ label: 'Standby test slot' });
         assert.strictEqual(r.status, 201, JSON.stringify(r.body));
@@ -168,12 +182,15 @@ async function runTests() {
     });
 
     await test('GET /api/profile-image without auth returns 401', async () => {
-        const r = await req.get('/api/profile-image?url=' + encodeURIComponent('https://pps.whatsapp.net/v/t61/test'));
+        const r = await req.get(
+            '/api/profile-image?url=' + encodeURIComponent('https://pps.whatsapp.net/v/t61/test')
+        );
         assert.strictEqual(r.status, 401);
     });
 
     await test('GET /api/profile-image with token rejects non-CDN host', async () => {
-        const r = await req.get('/api/profile-image?url=' + encodeURIComponent('https://example.com/pic.jpg'))
+        const r = await req
+            .get('/api/profile-image?url=' + encodeURIComponent('https://example.com/pic.jpg'))
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
         assert(r.body.error, 'Expected error body');
@@ -183,14 +200,16 @@ async function runTests() {
     section('Auth — Presence');
 
     await test('PATCH /me/presence with invalid status returns 400', async () => {
-        const r = await req.patch('/api/auth/me/presence')
+        const r = await req
+            .patch('/api/auth/me/presence')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ status: 'invalid_status' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('PATCH /me/presence with valid status returns correct status', async () => {
-        const r = await req.patch('/api/auth/me/presence')
+        const r = await req
+            .patch('/api/auth/me/presence')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ status: 'away' });
         assert.strictEqual(r.status, 200);
@@ -198,8 +217,7 @@ async function runTests() {
     });
 
     await test('PATCH /me/presence without token returns 401', async () => {
-        const r = await req.patch('/api/auth/me/presence')
-            .send({ status: 'online' });
+        const r = await req.patch('/api/auth/me/presence').send({ status: 'online' });
         assert.strictEqual(r.status, 401);
     });
 
@@ -207,65 +225,93 @@ async function runTests() {
     section('Auth — Password Reset');
 
     await test('Forgot-password with non-existent email returns 200 (no enumeration)', async () => {
-        const r = await req.post('/api/auth/forgot-password')
-            .send({ email: 'nobody@nowhere.com' });
+        const r = await req.post('/api/auth/forgot-password').send({ email: 'nobody@nowhere.com' });
         assert.strictEqual(r.status, 200);
         assert(r.body.message);
     });
 
     await test('Forgot-password without email returns 400', async () => {
-        const r = await req.post('/api/auth/forgot-password')
-            .send({});
+        const r = await req.post('/api/auth/forgot-password').send({});
         assert.strictEqual(r.status, 400);
     });
 
     await test('Reset-password with invalid token returns 400', async () => {
-        const r = await req.post('/api/auth/reset-password')
+        const r = await req
+            .post('/api/auth/reset-password')
             .send({ token: 'fake-token', newPassword: 'NewPass@123!' });
         assert.strictEqual(r.status, 400);
+    });
+
+    section('Devices — push');
+
+    await test('POST /api/devices/push-test without auth returns 401', async () => {
+        const r = await req.post('/api/devices/push-test').send({});
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('POST /api/devices/push-test without Firebase reports no_firebase', async () => {
+        const r = await req
+            .post('/api/devices/push-test')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({});
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        assert.strictEqual(r.body.ok, false);
+        assert.strictEqual(r.body.reason, 'no_firebase');
     });
 
     // ── Users: Create ────────────────────────────────────────────────────────
     section('Users — Create');
 
     await test('POST /api/users without auth returns 401', async () => {
-        const r = await req.post('/api/users')
+        const r = await req
+            .post('/api/users')
             .send({ name: 'Test', email: 'test@test.com', password: 'Test@123!' });
         assert.strictEqual(r.status, 401);
     });
 
     await test('POST /api/users with invalid email returns 400', async () => {
-        const r = await req.post('/api/users')
+        const r = await req
+            .post('/api/users')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Test', email: 'not-an-email', password: 'Test@123!' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/users with weak password returns 400', async () => {
-        const r = await req.post('/api/users')
+        const r = await req
+            .post('/api/users')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Test', email: 'agent@test.com', password: '123' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/users with invalid role returns 400', async () => {
-        const r = await req.post('/api/users')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .send({ name: 'Test', email: 'agent@test.com', password: 'Test@123!', role: 'superadmin' });
+        const r = await req.post('/api/users').set('Authorization', `Bearer ${adminToken}`).send({
+            name: 'Test',
+            email: 'agent@test.com',
+            password: 'Test@123!',
+            role: 'superadmin',
+        });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/users with non-UUID departmentId returns 400', async () => {
-        const r = await req.post('/api/users')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .send({ name: 'Test', email: 'agent2@test.com', password: 'Test@123!', departmentId: 'not-a-uuid' });
+        const r = await req.post('/api/users').set('Authorization', `Bearer ${adminToken}`).send({
+            name: 'Test',
+            email: 'agent2@test.com',
+            password: 'Test@123!',
+            departmentId: 'not-a-uuid',
+        });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/users creates agent successfully', async () => {
-        const r = await req.post('/api/users')
-            .set('Authorization', `Bearer ${adminToken}`)
-            .send({ name: 'Test Agent', email: 'agent@test.com', password: 'Agent@Test123!', role: 'agent' });
+        const r = await req.post('/api/users').set('Authorization', `Bearer ${adminToken}`).send({
+            name: 'Test Agent',
+            email: 'agent@test.com',
+            password: 'Agent@Test123!',
+            role: 'agent',
+        });
         assert.strictEqual(r.status, 201, `Create user failed: ${JSON.stringify(r.body)}`);
         assert(r.body.id, 'Expected id');
         assert.strictEqual(r.body.email, 'agent@test.com');
@@ -274,7 +320,8 @@ async function runTests() {
     });
 
     await test('POST /api/users with duplicate email returns 400', async () => {
-        const r = await req.post('/api/users')
+        const r = await req
+            .post('/api/users')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Dup', email: 'agent@test.com', password: 'Test@123!' });
         assert.strictEqual(r.status, 400);
@@ -284,22 +331,56 @@ async function runTests() {
     section('Users — Agent Login');
 
     await test('Agent can login with created credentials', async () => {
-        const r = await req.post('/api/auth/login')
+        const r = await req
+            .post('/api/auth/login')
             .send({ email: 'agent@test.com', password: 'Agent@Test123!' });
         assert.strictEqual(r.status, 200);
         assert(r.body.token);
         agentToken = r.body.token;
     });
 
+    await test('GET /supervision/online excludes stale status without lastSeenAt', async () => {
+        const { User } = require('../models');
+        await User.update({ status: 'online', lastSeenAt: null }, { where: { id: createdUserId } });
+        const r = await req
+            .get('/api/supervision/online')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        const ids = (r.body.data || []).map((u) => u.id);
+        assert(!ids.includes(createdUserId), 'stale online user must not appear');
+    });
+
+    await test('GET /supervision/online includes self after presence heartbeat', async () => {
+        const { User } = require('../models');
+        const me = await req
+            .patch('/api/auth/me/presence')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ status: 'online' });
+        assert.strictEqual(me.status, 200);
+        const r = await req
+            .get('/api/supervision/online')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        const admin = await User.findOne({ where: { email: process.env.MAIN_ADMIN_EMAIL } });
+        const ids = (r.body.data || []).map((u) => u.id);
+        assert(admin && ids.includes(admin.id), 'fresh presence must appear as online');
+    });
+
     // ── Tickets: access scoping ───────────────────────────────────────────────
     section('Tickets — access filter');
 
     await test('GET /api/tickets for agent only returns own/dept tickets', async () => {
-        const adminTicket = await req.post('/api/tickets')
+        const adminTicket = await req
+            .post('/api/tickets')
             .set('Authorization', `Bearer ${adminToken}`)
-            .send({ title: 'Admin-only ticket leak check', description: 'should not leak to agent', priority: 'low' });
+            .send({
+                title: 'Admin-only ticket leak check',
+                description: 'should not leak to agent',
+                priority: 'low',
+            });
         assert.strictEqual(adminTicket.status, 201, JSON.stringify(adminTicket.body));
-        const agentTicket = await req.post('/api/tickets')
+        const agentTicket = await req
+            .post('/api/tickets')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({
                 title: 'Assigned to agent',
@@ -309,41 +390,83 @@ async function runTests() {
             });
         assert.strictEqual(agentTicket.status, 201, JSON.stringify(agentTicket.body));
 
-        const list = await req.get('/api/tickets')
-            .set('Authorization', `Bearer ${agentToken}`);
+        const list = await req.get('/api/tickets').set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(list.status, 200);
         const rows = list.body.data || [];
         const ids = rows.map((t) => t.id);
         assert(ids.includes(agentTicket.body.id), 'agent should see assigned ticket');
         assert(!ids.includes(adminTicket.body.id), 'agent must not see unrelated admin ticket');
 
-        const stats = await req.get('/api/tickets/stats')
+        const stats = await req
+            .get('/api/tickets/stats')
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(stats.status, 200);
-        assert.strictEqual(stats.body.total, rows.length, 'stats total should match scoped list length');
+        assert.strictEqual(
+            stats.body.total,
+            rows.length,
+            'stats total should match scoped list length'
+        );
     });
 
     await test('DELETE /api/tickets permanently removes ticket for admin', async () => {
-        const created = await req.post('/api/tickets')
+        const created = await req
+            .post('/api/tickets')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ title: 'Ticket to delete', description: 'remove me', priority: 'low' });
         assert.strictEqual(created.status, 201, JSON.stringify(created.body));
         const id = created.body.id;
-        const del = await req.delete('/api/tickets/' + id)
+        const del = await req
+            .delete('/api/tickets/' + id)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(del.status, 200, JSON.stringify(del.body));
         assert.strictEqual(del.body.deleted, true);
-        const getGone = await req.get('/api/tickets/' + id)
+        const getGone = await req
+            .get('/api/tickets/' + id)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(getGone.status, 404);
     });
 
     await test('DELETE /api/tickets is forbidden for agent', async () => {
-        const created = await req.post('/api/tickets')
+        const created = await req
+            .post('/api/tickets')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ title: 'Agent cannot delete', assignedTo: createdUserId, priority: 'low' });
         assert.strictEqual(created.status, 201, JSON.stringify(created.body));
-        const del = await req.delete('/api/tickets/' + created.body.id)
+        const del = await req
+            .delete('/api/tickets/' + created.body.id)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(del.status, 403);
+    });
+
+    // ── Tasks: delete ─────────────────────────────────────────────────────────
+    section('Tasks — delete');
+
+    await test('DELETE /api/tasks permanently removes task for admin', async () => {
+        const created = await req
+            .post('/api/tasks')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ title: 'Task to delete', assignedTo: createdUserId, priority: 'low' });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        const id = created.body.id;
+        const del = await req
+            .delete('/api/tasks/' + id)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(del.status, 200, JSON.stringify(del.body));
+        assert.strictEqual(del.body.deleted, true);
+        const getGone = await req
+            .get('/api/tasks/' + id)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(getGone.status, 404);
+    });
+
+    await test('DELETE /api/tasks is forbidden for agent who did not create it', async () => {
+        const created = await req
+            .post('/api/tasks')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ title: 'Agent cannot delete', assignedTo: createdUserId, priority: 'low' });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        const del = await req
+            .delete('/api/tasks/' + created.body.id)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(del.status, 403);
     });
@@ -352,29 +475,31 @@ async function runTests() {
     section('Users — Read');
 
     await test('GET /api/users returns list without passwords', async () => {
-        const r = await req.get('/api/users')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/users').set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.length >= 2);
-        r.body.data.forEach(u => assert(!u.password, `Password leaked for user ${u.email}`));
+        r.body.data.forEach((u) => assert(!u.password, `Password leaked for user ${u.email}`));
     });
 
     await test('GET /api/users/:id with valid UUID returns user', async () => {
-        const r = await req.get(`/api/users/${createdUserId}`)
+        const r = await req
+            .get(`/api/users/${createdUserId}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.id, createdUserId);
     });
 
     await test('GET /api/users/:id with invalid UUID returns 400', async () => {
-        const r = await req.get('/api/users/not-a-uuid')
+        const r = await req
+            .get('/api/users/not-a-uuid')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
     });
 
     await test('GET /api/users/:id with non-existent UUID returns 404', async () => {
-        const r = await req.get('/api/users/00000000-0000-0000-0000-000000000000')
+        const r = await req
+            .get('/api/users/00000000-0000-0000-0000-000000000000')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 404);
     });
@@ -383,7 +508,8 @@ async function runTests() {
     section('Users — Update');
 
     await test('PUT /api/users/:id updates name', async () => {
-        const r = await req.put(`/api/users/${createdUserId}`)
+        const r = await req
+            .put(`/api/users/${createdUserId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Updated Agent' });
         assert.strictEqual(r.status, 200);
@@ -391,7 +517,8 @@ async function runTests() {
     });
 
     await test('PATCH /api/users/me updates own profile', async () => {
-        const r = await req.patch('/api/users/me')
+        const r = await req
+            .patch('/api/users/me')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ name: 'Agent Updated' });
         assert.strictEqual(r.status, 200);
@@ -399,21 +526,24 @@ async function runTests() {
     });
 
     await test('PATCH /api/users/me with javascript: avatar returns 400', async () => {
-        const r = await req.patch('/api/users/me')
+        const r = await req
+            .patch('/api/users/me')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ avatar: 'javascript:alert(1)' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('PATCH /api/users/me with data: avatar returns 400', async () => {
-        const r = await req.patch('/api/users/me')
+        const r = await req
+            .patch('/api/users/me')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ avatar: 'data:text/html,<script>alert(1)</script>' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('PATCH /api/users/me with valid https avatar is accepted', async () => {
-        const r = await req.patch('/api/users/me')
+        const r = await req
+            .patch('/api/users/me')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ avatar: 'https://example.com/avatar.jpg' });
         assert.strictEqual(r.status, 200);
@@ -424,20 +554,21 @@ async function runTests() {
     section('Customers — Create');
 
     await test('POST /api/customers without auth returns 401', async () => {
-        const r = await req.post('/api/customers')
-            .send({ name: 'Test', phone: '09121234567' });
+        const r = await req.post('/api/customers').send({ name: 'Test', phone: '09121234567' });
         assert.strictEqual(r.status, 401);
     });
 
     await test('POST /api/customers without name or phone returns 400', async () => {
-        const r = await req.post('/api/customers')
+        const r = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ email: 'test@test.com' });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/customers with invalid status is sanitized to active', async () => {
-        const r = await req.post('/api/customers')
+        const r = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Status Test', phone: '09000000001', status: 'hacked_status' });
         assert.strictEqual(r.status, 201);
@@ -445,9 +576,15 @@ async function runTests() {
     });
 
     await test('POST /api/customers creates customer successfully', async () => {
-        const r = await req.post('/api/customers')
+        const r = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
-            .send({ name: 'Ali Mohammadi', phone: '09121234567', email: 'ali@test.com', status: 'active' });
+            .send({
+                name: 'Ali Mohammadi',
+                phone: '09121234567',
+                email: 'ali@test.com',
+                status: 'active',
+            });
         assert.strictEqual(r.status, 201, `Create customer failed: ${JSON.stringify(r.body)}`);
         assert(r.body.id);
         assert.strictEqual(r.body.name, 'Ali Mohammadi');
@@ -455,61 +592,135 @@ async function runTests() {
     });
 
     await test('POST /api/customers cannot inject id field (mass assignment guard)', async () => {
-        const r = await req.post('/api/customers')
+        const r = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
-            .send({ name: 'Hacker', phone: '09999999999', id: '00000000-0000-0000-0000-deadbeef0000' });
+            .send({
+                name: 'Hacker',
+                phone: '09999999999',
+                id: '00000000-0000-0000-0000-deadbeef0000',
+            });
         assert.strictEqual(r.status, 201);
-        assert.notStrictEqual(r.body.id, '00000000-0000-0000-0000-deadbeef0000', 'ID must not be injectable');
+        assert.notStrictEqual(
+            r.body.id,
+            '00000000-0000-0000-0000-deadbeef0000',
+            'ID must not be injectable'
+        );
     });
 
     // ── Customers: Read ──────────────────────────────────────────────────────
     section('Customers — Read');
 
     await test('GET /api/customers returns paginated list', async () => {
-        const r = await req.get('/api/customers')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/customers').set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(typeof r.body.total === 'number');
     });
 
     await test('GET /api/customers?search=Ali returns results', async () => {
-        const r = await req.get('/api/customers?search=Ali')
+        const r = await req
+            .get('/api/customers?search=Ali')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
     });
 
     await test('GET /api/customers?search= with LIKE wildcard chars is safe', async () => {
-        const r = await req.get('/api/customers?search=test%25_test')
+        const r = await req
+            .get('/api/customers?search=test%25_test')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
     });
 
     await test('GET /api/customers/:id returns customer', async () => {
-        const r = await req.get(`/api/customers/${createdCustomerId}`)
+        const r = await req
+            .get(`/api/customers/${createdCustomerId}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.id, createdCustomerId);
     });
 
     await test('GET /api/customers/:id with invalid UUID returns 400', async () => {
-        const r = await req.get('/api/customers/not-a-uuid')
+        const r = await req
+            .get('/api/customers/not-a-uuid')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
     });
 
     await test('GET /api/customers/:id with non-existent UUID returns 404', async () => {
-        const r = await req.get('/api/customers/00000000-0000-0000-0000-000000000000')
+        const r = await req
+            .get('/api/customers/00000000-0000-0000-0000-000000000000')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 404);
+    });
+
+    section('Customers — phone visibility');
+
+    let phoneHiddenCustomerId = null;
+    await test('Admin sees customer phone; agent without permission does not', async () => {
+        const created = await req
+            .post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: '+98 930 588 0135', phone: '989305889001', status: 'active' });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        phoneHiddenCustomerId = created.body.id;
+        assert(created.body.phone, 'admin create response should include phone');
+
+        const adminGet = await req
+            .get(`/api/customers/${phoneHiddenCustomerId}`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(adminGet.status, 200);
+        assert(adminGet.body.phone, 'admin must see phone');
+
+        const agentGet = await req
+            .get(`/api/customers/${phoneHiddenCustomerId}`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.ok([200, 403].includes(agentGet.status), `unexpected ${agentGet.status}`);
+        if (agentGet.status === 200) {
+            assert.strictEqual(agentGet.body.phone, null);
+            assert.notStrictEqual(String(agentGet.body.name || ''), '+98 930 588 0135');
+        }
+
+        const agentList = await req
+            .get('/api/customers?limit=200')
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(agentList.status, 200);
+        const row = (agentList.body.data || []).find((c) => c.id === phoneHiddenCustomerId);
+        if (row) {
+            assert.strictEqual(row.phone, null);
+            assert.notStrictEqual(String(row.name || ''), '+98 930 588 0135');
+        }
+    });
+
+    await test('Granting view_customer_phone lets the agent see the number', async () => {
+        assert(phoneHiddenCustomerId, 'phone-hidden customer missing');
+        const grant = await req
+            .put(`/api/users/${createdUserId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ permissions: { view_customer_phone: true } });
+        assert.strictEqual(grant.status, 200, JSON.stringify(grant.body));
+
+        const agentGet = await req
+            .get(`/api/customers/${phoneHiddenCustomerId}`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        if (agentGet.status === 200) {
+            assert(agentGet.body.phone, 'granted agent must see phone');
+        }
+
+        const revoke = await req
+            .put(`/api/users/${createdUserId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ permissions: { view_customer_phone: false } });
+        assert.strictEqual(revoke.status, 200);
     });
 
     // ── Customers: Update ────────────────────────────────────────────────────
     section('Customers — Update');
 
     await test('PUT /api/customers/:id updates name', async () => {
-        const r = await req.put(`/api/customers/${createdCustomerId}`)
+        const r = await req
+            .put(`/api/customers/${createdCustomerId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Updated Name' });
         assert.strictEqual(r.status, 200);
@@ -517,7 +728,8 @@ async function runTests() {
     });
 
     await test('PUT /api/customers/:id with invalid UUID returns 400', async () => {
-        const r = await req.put('/api/customers/bad-id')
+        const r = await req
+            .put('/api/customers/bad-id')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'X' });
         assert.strictEqual(r.status, 400);
@@ -531,8 +743,7 @@ async function runTests() {
     });
 
     await test('GET /api/bulk/limits returns maxRecipients', async () => {
-        const r = await req.get('/api/bulk/limits')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/bulk/limits').set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(typeof r.body.maxRecipients, 'number');
         assert(r.body.maxRecipients >= 1);
@@ -541,47 +752,59 @@ async function runTests() {
     });
 
     await test('POST /api/bulk/send without auth returns 401', async () => {
-        const r = await req.post('/api/bulk/send')
+        const r = await req
+            .post('/api/bulk/send')
             .send({ customerIds: [createdCustomerId], message: 'hi', useCloudTemplate: false });
         assert.strictEqual(r.status, 401);
     });
 
     await test('POST /api/bulk/send as agent without permission returns 403', async () => {
-        const r = await req.post('/api/bulk/send')
+        const r = await req
+            .post('/api/bulk/send')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ customerIds: [createdCustomerId], message: 'hi', useCloudTemplate: false });
         assert.strictEqual(r.status, 403);
     });
 
     await test('POST /api/bulk/send without customerIds returns 400', async () => {
-        const r = await req.post('/api/bulk/send')
+        const r = await req
+            .post('/api/bulk/send')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ message: 'hi', useCloudTemplate: false });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/bulk/send free text without message returns 400', async () => {
-        const r = await req.post('/api/bulk/send')
+        const r = await req
+            .post('/api/bulk/send')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ customerIds: [createdCustomerId], useCloudTemplate: false });
         assert.strictEqual(r.status, 400);
     });
 
     await test('POST /api/bulk/send template mode without Cloud API returns 400', async () => {
-        const r = await req.post('/api/bulk/send')
+        const r = await req
+            .post('/api/bulk/send')
             .set('Authorization', `Bearer ${adminToken}`)
-            .send({ customerIds: [createdCustomerId], useCloudTemplate: true, templateName: 'hello_world' });
+            .send({
+                customerIds: [createdCustomerId],
+                useCloudTemplate: true,
+                templateName: 'hello_world',
+            });
         assert.strictEqual(r.status, 400);
         assert(r.body.error);
     });
 
     await test('POST /api/bulk/send rejects more than max recipients', async () => {
-        const limits = await req.get('/api/bulk/limits')
+        const limits = await req
+            .get('/api/bulk/limits')
             .set('Authorization', `Bearer ${adminToken}`);
         const max = limits.body.maxRecipients || 100;
         const ids = [];
-        for (let i = 0; i < max + 1; i++) ids.push('00000000-0000-4000-8000-' + String(i).padStart(12, '0'));
-        const r = await req.post('/api/bulk/send')
+        for (let i = 0; i < max + 1; i++)
+            ids.push('00000000-0000-4000-8000-' + String(i).padStart(12, '0'));
+        const r = await req
+            .post('/api/bulk/send')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ customerIds: ids, message: 'hi', useCloudTemplate: false });
         assert.strictEqual(r.status, 400);
@@ -596,8 +819,7 @@ async function runTests() {
     });
 
     await test('GET /api/conversations returns paginated list', async () => {
-        const r = await req.get('/api/conversations')
-            .set('Authorization', `Bearer ${adminToken}`);
+        const r = await req.get('/api/conversations').set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(typeof r.body.total === 'number');
@@ -606,7 +828,8 @@ async function runTests() {
     });
 
     await test('POST /api/conversations creates conversation for customer', async () => {
-        const r = await req.post('/api/conversations')
+        const r = await req
+            .post('/api/conversations')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ customerId: createdCustomerId });
         assert.strictEqual(r.status, 201);
@@ -615,21 +838,24 @@ async function runTests() {
     });
 
     await test('Agent can open unassigned live conversation (inbox)', async () => {
-        const r = await req.get(`/api/conversations/${createdConversationId}`)
+        const r = await req
+            .get(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 200, `inbox detail failed: ${JSON.stringify(r.body)}`);
         assert.strictEqual(r.body.id, createdConversationId);
     });
 
     await test('Agent cannot change assignment/status of live conversation (403)', async () => {
-        const r = await req.patch(`/api/conversations/${createdConversationId}`)
+        const r = await req
+            .patch(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ status: 'pending' });
         assert.strictEqual(r.status, 403);
     });
 
     await test('Agent can send to unassigned live conversation', async () => {
-        const r = await req.post(`/api/conversations/${createdConversationId}/send`)
+        const r = await req
+            .post(`/api/conversations/${createdConversationId}/send`)
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ content: 'hello' });
         assert(
@@ -640,45 +866,52 @@ async function runTests() {
     });
 
     await test('Agent cannot delete conversation (403)', async () => {
-        const r = await req.delete(`/api/conversations/${createdConversationId}`)
+        const r = await req
+            .delete(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 403);
     });
 
     await test('GET /api/conversations/:id with invalid UUID returns 400', async () => {
-        const r = await req.get('/api/conversations/not-a-uuid')
+        const r = await req
+            .get('/api/conversations/not-a-uuid')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
     });
 
     await test('GET /api/conversations/:id with non-existent UUID returns 404', async () => {
-        const r = await req.get('/api/conversations/00000000-0000-0000-0000-000000000000')
+        const r = await req
+            .get('/api/conversations/00000000-0000-0000-0000-000000000000')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 404);
     });
 
     await test('GET /api/conversations/:id/messages with invalid before param returns 400', async () => {
-        const r = await req.get('/api/conversations/00000000-0000-0000-0000-000000000001/messages?before=not-uuid')
+        const r = await req
+            .get('/api/conversations/00000000-0000-0000-0000-000000000001/messages?before=not-uuid')
             .set('Authorization', `Bearer ${adminToken}`);
         assert([400, 404].includes(r.status), `Expected 400 or 404, got ${r.status}`);
     });
 
     await test('POST /api/conversations/:id/read marks conversation as read (admin)', async () => {
-        const r = await req.post(`/api/conversations/${createdConversationId}/read`)
+        const r = await req
+            .post(`/api/conversations/${createdConversationId}/read`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.ok, true);
     });
 
     await test('Agent can mark unassigned live conversation as read', async () => {
-        const r = await req.post(`/api/conversations/${createdConversationId}/read`)
+        const r = await req
+            .post(`/api/conversations/${createdConversationId}/read`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.ok, true);
     });
 
     await test('GET /api/conversations/:id/stats returns stats shape (admin)', async () => {
-        const r = await req.get(`/api/conversations/${createdConversationId}/stats`)
+        const r = await req
+            .get(`/api/conversations/${createdConversationId}/stats`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(typeof r.body.messageCount === 'number');
@@ -688,14 +921,16 @@ async function runTests() {
     });
 
     await test('Agent can read stats of unassigned live conversation', async () => {
-        const r = await req.get(`/api/conversations/${createdConversationId}/stats`)
+        const r = await req
+            .get(`/api/conversations/${createdConversationId}/stats`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 200);
         assert(typeof r.body.messageCount === 'number');
     });
 
     await test('PATCH /api/conversations/:id archive works for main admin', async () => {
-        const r = await req.patch(`/api/conversations/${createdConversationId}`)
+        const r = await req
+            .patch(`/api/conversations/${createdConversationId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ status: 'archived' });
         assert.strictEqual(r.status, 200);
@@ -703,7 +938,8 @@ async function runTests() {
     });
 
     await test('POST /api/conversations/:id/send to archived conversation continues on a live thread', async () => {
-        const r = await req.post(`/api/conversations/${createdConversationId}/send`)
+        const r = await req
+            .post(`/api/conversations/${createdConversationId}/send`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ content: 'after archive' });
         assert(
@@ -719,54 +955,81 @@ async function runTests() {
     });
 
     await test('GET /api/conversations?status=archived includes archived conversation', async () => {
-        const r = await req.get('/api/conversations?status=archived&limit=50')
+        const r = await req
+            .get('/api/conversations?status=archived&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
-        assert(r.body.data.some(c => c.id === createdConversationId), 'Archived conversation should be in archived list');
+        assert(
+            r.body.data.some((c) => c.id === createdConversationId),
+            'Archived conversation should be in archived list'
+        );
     });
 
     await test('Prepare a second conversation for filters', async () => {
-        const customerRes = await req.post('/api/customers')
+        const customerRes = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Filter Test Customer', phone: '09009998877', status: 'active' });
-        assert.strictEqual(customerRes.status, 201, `customer create failed: ${JSON.stringify(customerRes.body)}`);
+        assert.strictEqual(
+            customerRes.status,
+            201,
+            `customer create failed: ${JSON.stringify(customerRes.body)}`
+        );
 
-        const convRes = await req.post('/api/conversations')
+        const convRes = await req
+            .post('/api/conversations')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ customerId: customerRes.body.id });
-        assert.strictEqual(convRes.status, 201, `conversation create failed: ${JSON.stringify(convRes.body)}`);
+        assert.strictEqual(
+            convRes.status,
+            201,
+            `conversation create failed: ${JSON.stringify(convRes.body)}`
+        );
         filterConversationId = convRes.body.id;
         assert(filterConversationId, 'Expected filter conversation id');
     });
 
     await test('GET /api/conversations?unassigned=true returns only unassigned conversations', async () => {
-        const assignRes = await req.patch(`/api/conversations/${filterConversationId}`)
+        const assignRes = await req
+            .patch(`/api/conversations/${filterConversationId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ assignedTo: null, departmentId: null, status: 'open' });
         assert.strictEqual(assignRes.status, 200);
 
-        const r = await req.get('/api/conversations?unassigned=true&limit=50')
+        const r = await req
+            .get('/api/conversations?unassigned=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.length > 0, 'Expected at least one unassigned conversation');
-        assert(r.body.data.some(c => c.id === filterConversationId), 'Prepared unassigned conversation should be present');
-        assert(r.body.data.every(c => !c.assignedTo && !c.departmentId), 'All results must be unassigned and without department');
+        assert(
+            r.body.data.some((c) => c.id === filterConversationId),
+            'Prepared unassigned conversation should be present'
+        );
+        assert(
+            r.body.data.every((c) => !c.assignedTo && !c.departmentId),
+            'All results must be unassigned and without department'
+        );
     });
 
     await test('GET /api/conversations?assignedTo=<agent> for agent returns own conversations only', async () => {
-        const assignRes = await req.patch(`/api/conversations/${filterConversationId}`)
+        const assignRes = await req
+            .patch(`/api/conversations/${filterConversationId}`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ assignedTo: createdUserId, status: 'open' });
         assert.strictEqual(assignRes.status, 200);
 
-        const r = await req.get(`/api/conversations?assignedTo=${createdUserId}&limit=50`)
+        const r = await req
+            .get(`/api/conversations?assignedTo=${createdUserId}&limit=50`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.length > 0, 'Agent should see assigned conversation');
-        assert(r.body.data.every(c => c.assignedTo === createdUserId), 'Agent result should be limited to own assignments');
+        assert(
+            r.body.data.every((c) => c.assignedTo === createdUserId),
+            'Agent result should be limited to own assignments'
+        );
     });
 
     await test('GET /api/conversations?unread=true includes conversation with unreadCount > 0', async () => {
@@ -775,38 +1038,58 @@ async function runTests() {
         assert(conv, 'Prepared conversation not found');
         await conv.update({ unreadCount: 2, status: 'open' });
 
-        const r = await req.get('/api/conversations?unread=true&limit=50')
+        const r = await req
+            .get('/api/conversations?unread=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
-        assert(r.body.data.some(c => c.id === filterConversationId), 'Unread conversation should appear in unread filter');
-        assert(r.body.data.every(c => (c.unreadCount || 0) > 0), 'Unread filter should only include unread conversations');
+        assert(
+            r.body.data.some((c) => c.id === filterConversationId),
+            'Unread conversation should appear in unread filter'
+        );
+        assert(
+            r.body.data.every((c) => (c.unreadCount || 0) > 0),
+            'Unread filter should only include unread conversations'
+        );
     });
 
     await test('GET /api/conversations?isGroup=true includes conversations with metadata.isGroup', async () => {
         const { Conversation } = require('../models');
         const conv = await Conversation.findByPk(filterConversationId);
         assert(conv, 'Prepared conversation not found');
-        await conv.update({ metadata: { ...(conv.metadata || {}), isGroup: true, groupName: 'Test Group' } });
+        await conv.update({
+            metadata: { ...(conv.metadata || {}), isGroup: true, groupName: 'Test Group' },
+        });
 
-        const r = await req.get('/api/conversations?isGroup=true&limit=50')
+        const r = await req
+            .get('/api/conversations?isGroup=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
-        assert(r.body.data.some(c => c.id === filterConversationId), 'Group conversation should appear in group filter');
+        assert(
+            r.body.data.some((c) => c.id === filterConversationId),
+            'Group conversation should appear in group filter'
+        );
     });
 
     await test('GET /api/conversations?isGroup=true includes @g.us chats without metadata.isGroup', async () => {
         const groupId = '120363888000111555@g.us';
-        const customerRes = await req.post('/api/customers')
+        const customerRes = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Phone Group', phone: groupId, status: 'active' });
-        assert.strictEqual(customerRes.status, 201, `customer create failed: ${JSON.stringify(customerRes.body)}`);
-        const convRes = await req.post('/api/conversations')
+        assert.strictEqual(
+            customerRes.status,
+            201,
+            `customer create failed: ${JSON.stringify(customerRes.body)}`
+        );
+        const convRes = await req
+            .post('/api/conversations')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ customerId: customerRes.body.id });
         assert.strictEqual(convRes.status, 201);
-        const r = await req.get('/api/conversations?isGroup=true&limit=50')
+        const r = await req
+            .get('/api/conversations?isGroup=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
         assert(
@@ -832,11 +1115,12 @@ async function runTests() {
         });
         assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
 
-        const list = await req.get('/api/conversations?limit=50')
+        const list = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(list.status, 200);
-        const found = (list.body.data || []).find((c) =>
-            c.customer && String(c.customer.phone) === groupId
+        const found = (list.body.data || []).find(
+            (c) => c.customer && String(c.customer.phone) === groupId
         );
         assert(found, 'group conversation should appear in All after a live group message');
         assert(found.metadata && found.metadata.isGroup, 'conversation must be marked as group');
@@ -857,7 +1141,8 @@ async function runTests() {
         });
         assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
 
-        const list = await req.get('/api/conversations?isGroup=true&limit=50')
+        const list = await req
+            .get('/api/conversations?isGroup=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(list.status, 200);
         assert(
@@ -901,7 +1186,8 @@ async function runTests() {
         assert.strictEqual(conv.status, 'open');
         assert.strictEqual(conv.isHiddenFromStaff, false);
         assert.strictEqual(cust.isRestrictedFromStaff, false);
-        const list = await req.get('/api/conversations?limit=50')
+        const list = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(list.status, 200);
         assert(
@@ -937,7 +1223,10 @@ async function runTests() {
         assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
         const msgs = await Message.findAll({ where: { conversationId: conv.id } });
         assert(
-            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('تست ورودی LID')),
+            msgs.some(
+                (m) =>
+                    m.direction === 'incoming' && String(m.content || '').includes('تست ورودی LID')
+            ),
             'incoming LID message must land on the phone-number conversation'
         );
         await cust.reload();
@@ -977,11 +1266,17 @@ async function runTests() {
         assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
         const msgs = await Message.findAll({ where: { conversationId: conv.id } });
         assert(
-            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('جواب مشتری')),
+            msgs.some(
+                (m) => m.direction === 'incoming' && String(m.content || '').includes('جواب مشتری')
+            ),
             'incoming LID-only payload must reuse the customer that already has this LID'
         );
         const stray = await Customer.findOne({ where: { phone: lid } });
-        assert.strictEqual(stray && stray.id !== cust.id ? stray.id : null, null, 'must not create a second customer for the LID');
+        assert.strictEqual(
+            stray && stray.id !== cust.id ? stray.id : null,
+            null,
+            'must not create a second customer for the LID'
+        );
     });
 
     await test('incoming LID with to=business phone attaches to stored LID customer', async () => {
@@ -1015,7 +1310,11 @@ async function runTests() {
         assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
         const msgs = await Message.findAll({ where: { conversationId: conv.id } });
         assert(
-            msgs.some((m) => m.direction === 'incoming' && String(m.content || '').includes('جواب مشتری از LID')),
+            msgs.some(
+                (m) =>
+                    m.direction === 'incoming' &&
+                    String(m.content || '').includes('جواب مشتری از LID')
+            ),
             'inbound LID must land on the phone conversation even when to=business JID'
         );
         const businessCust = await Customer.findOne({ where: { phone: business } });
@@ -1026,18 +1325,116 @@ async function runTests() {
         );
     });
 
+    await test('incoming media without downloaded bytes still saves a placeholder', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const phone = '989301112233';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'Media Placeholder', source: 'whatsapp' },
+        });
+        const conv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            lastMessageAt: new Date(),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-media-nodata-1',
+            from: `${phone}@c.us`,
+            body: '',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'ptt',
+            hasMedia: true,
+            contact: { number: phone, name: 'Customer' },
+            chat: { id: `${phone}@c.us`, isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        const msgs = await Message.findAll({ where: { conversationId: conv.id } });
+        assert(
+            msgs.some(
+                (m) => m.direction === 'incoming' && String(m.content || '').includes('پیام صوتی')
+            ),
+            'failed media download must still leave a visible incoming message'
+        );
+    });
+
+    await test('incoming LID prefers the conversation staff just used', async () => {
+        const { Customer, Conversation, Message } = require('../models');
+        const phone = '989305880199';
+        const lid = '201206702071899';
+        const [phoneCust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: {
+                name: 'Phone Copy',
+                source: 'whatsapp',
+                customFields: { whatsappLid: lid },
+            },
+        });
+        await phoneCust.update({
+            customFields: { ...(phoneCust.customFields || {}), whatsappLid: lid },
+        });
+        const [lidCust] = await Customer.findOrCreate({
+            where: { phone: lid },
+            defaults: {
+                name: 'Ersan LID Chat',
+                source: 'whatsapp',
+                customFields: { whatsappLid: lid },
+            },
+        });
+        const oldConv = await Conversation.create({
+            customerId: phoneCust.id,
+            status: 'open',
+            source: 'whatsapp',
+            metadata: { whatsappLid: lid },
+            lastMessageAt: new Date(Date.now() - 60 * 60 * 1000),
+        });
+        const liveConv = await Conversation.create({
+            customerId: lidCust.id,
+            status: 'open',
+            source: 'whatsapp',
+            metadata: { whatsappLid: lid, whatsappChatId: `${lid}@lid` },
+            lastMessageAt: new Date(),
+        });
+        const r = await req.post('/api/webhook/incoming-message').send({
+            id: 'wa-lid-prefer-live-1',
+            from: `${lid}@lid`,
+            to: '905339470880@c.us',
+            body: 'جواب در همان چت باز',
+            timestamp: Math.floor(Date.now() / 1000),
+            fromMe: false,
+            type: 'chat',
+            contact: { number: phone, lid: `${lid}@lid`, name: 'Ersan' },
+            chat: { id: `${phone}@c.us`, isGroup: false },
+        });
+        assert.strictEqual(r.status, 200, `webhook failed: ${JSON.stringify(r.body)}`);
+        const liveMsgs = await Message.findAll({ where: { conversationId: liveConv.id } });
+        const oldMsgs = await Message.findAll({ where: { conversationId: oldConv.id } });
+        assert(
+            liveMsgs.some((m) => String(m.content || '').includes('جواب در همان چت باز')),
+            'reply must land on the LID chat staff is using'
+        );
+        assert.strictEqual(
+            oldMsgs.some((m) => String(m.content || '').includes('جواب در همان چت باز')),
+            false,
+            'must not hide the reply on the older phone conversation'
+        );
+    });
+
     // ── Security: Auth Boundaries ────────────────────────────────────────────
     section('Security — Auth Boundaries');
 
     await test('Agent cannot create users (403)', async () => {
-        const r = await req.post('/api/users')
+        const r = await req
+            .post('/api/users')
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ name: 'Unauthorized', email: 'unauth@test.com', password: 'Test@123!' });
         assert.strictEqual(r.status, 403);
     });
 
     await test('Agent cannot delete customers (403)', async () => {
-        const r = await req.delete(`/api/customers/${createdCustomerId}`)
+        const r = await req
+            .delete(`/api/customers/${createdCustomerId}`)
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(r.status, 403);
     });
@@ -1054,13 +1451,15 @@ async function runTests() {
     section('Security — UUID Injection');
 
     await test("GET /api/users/'; DROP TABLE-- returns 400", async () => {
-        const r = await req.get("/api/users/'; DROP TABLE Users; --")
+        const r = await req
+            .get("/api/users/'; DROP TABLE Users; --")
             .set('Authorization', `Bearer ${adminToken}`);
         assert([400, 404].includes(r.status));
     });
 
     await test('GET /api/customers/12345 returns 400', async () => {
-        const r = await req.get('/api/customers/12345')
+        const r = await req
+            .get('/api/customers/12345')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
     });
@@ -1082,6 +1481,62 @@ async function runTests() {
         const { isMainAdmin } = require('../lib/permissions');
         assert.strictEqual(isMainAdmin(null), false);
         assert.strictEqual(isMainAdmin({}), false);
+    });
+
+    await test('manager cannot assign owner or admin roles', async () => {
+        const { canAssignRole } = require('../lib/permissions');
+        const manager = { role: 'manager', email: 'mgr@test.com', permissions: { manage_users: true } };
+        assert.strictEqual(canAssignRole(manager, 'owner'), false);
+        assert.strictEqual(canAssignRole(manager, 'admin'), false);
+        assert.strictEqual(canAssignRole(manager, 'agent'), true);
+        assert.strictEqual(canAssignRole({ role: 'owner', email: 'boss@test.com' }, 'admin'), true);
+    });
+
+    await test('manager cannot mutate owner or admin accounts', async () => {
+        const { canMutateUser } = require('../lib/permissions');
+        const manager = { role: 'manager', email: 'mgr@test.com', permissions: { manage_users: true } };
+        assert.strictEqual(canMutateUser(manager, { role: 'owner', email: 'boss@test.com' }), false);
+        assert.strictEqual(canMutateUser(manager, { role: 'admin', email: 'adm@test.com' }), false);
+        assert.strictEqual(canMutateUser(manager, { role: 'agent', email: 'a@test.com' }), true);
+        assert.strictEqual(canMutateUser({ role: 'owner', email: 'boss@test.com' }, { role: 'admin', email: 'adm@test.com' }), true);
+    });
+
+    section('Auth — session revocation');
+
+    await test('logout invalidates the previous JWT', async () => {
+        const created = await req
+            .post('/api/users')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                name: 'Session Revoke',
+                email: `session-revoke-${Date.now()}@test.com`,
+                password: 'Session@Test123',
+                role: 'agent',
+            });
+        assert.strictEqual(created.status, 201, JSON.stringify(created.body));
+        const login = await req.post('/api/auth/login').send({
+            email: created.body.email,
+            password: 'Session@Test123',
+        });
+        assert.strictEqual(login.status, 200);
+        const tok = login.body.token;
+        const meOk = await req.get('/api/auth/me').set('Authorization', `Bearer ${tok}`);
+        assert.strictEqual(meOk.status, 200);
+        const out = await req.post('/api/auth/logout').set('Authorization', `Bearer ${tok}`);
+        assert.strictEqual(out.status, 200);
+        const meDead = await req.get('/api/auth/me').set('Authorization', `Bearer ${tok}`);
+        assert.strictEqual(meDead.status, 401);
+    });
+
+    await test('private media hosts are rejected', async () => {
+        const { isPrivateIp, isBlockedHostname } = require('../lib/safeHttpUrl');
+        assert.strictEqual(isPrivateIp('127.0.0.1'), true);
+        assert.strictEqual(isPrivateIp('10.0.0.8'), true);
+        assert.strictEqual(isPrivateIp('192.168.1.1'), true);
+        assert.strictEqual(isPrivateIp('169.254.169.254'), true);
+        assert.strictEqual(isPrivateIp('8.8.8.8'), false);
+        assert.strictEqual(isBlockedHostname('localhost'), true);
+        assert.strictEqual(isBlockedHostname('metadata.google.internal'), true);
     });
 
     // ── Validation Library ───────────────────────────────────────────────────
@@ -1148,7 +1603,8 @@ async function runTests() {
     await test('DELETE /api/customers/:id soft-deletes without wiping messages', async () => {
         const { Message, Conversation, Customer } = require('../models');
         const uniquePhone = '0900' + String(Date.now()).slice(-7);
-        const cr = await req.post('/api/customers')
+        const cr = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Soft Del Msg', phone: uniquePhone, status: 'active' });
         assert.strictEqual(cr.status, 201, JSON.stringify(cr.body));
@@ -1166,7 +1622,8 @@ async function runTests() {
             direction: 'incoming',
             timestamp: new Date(),
         });
-        const dr = await req.delete(`/api/customers/${cid}`)
+        const dr = await req
+            .delete(`/api/customers/${cid}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(dr.status, 200, JSON.stringify(dr.body));
         assert.strictEqual(dr.body.messagesPreserved, true);
@@ -1180,7 +1637,8 @@ async function runTests() {
 
     await test('DELETE /api/customers/:id succeeds when customer has documents and tags', async () => {
         const { CustomerDocument, Tag, Customer } = require('../models');
-        const cr = await req.post('/api/customers')
+        const cr = await req
+            .post('/api/customers')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ name: 'Delete FK Test', phone: '09001112233', status: 'active' });
         assert.strictEqual(cr.status, 201, `create: ${JSON.stringify(cr.body)}`);
@@ -1197,27 +1655,31 @@ async function runTests() {
             filePath: 'uploads/customers/_test/dummy.txt',
             fileName: 'dummy.txt',
             fileType: 'document',
-            source: 'manual'
+            source: 'manual',
         });
-        const dr = await req.delete(`/api/customers/${cid}`)
+        const dr = await req
+            .delete(`/api/customers/${cid}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(dr.status, 200, `delete: ${JSON.stringify(dr.body)}`);
     });
 
     await test('DELETE /api/customers/:id with invalid UUID returns 400', async () => {
-        const r = await req.delete('/api/customers/bad-id')
+        const r = await req
+            .delete('/api/customers/bad-id')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 400);
     });
 
     await test('DELETE /api/customers/:id deletes customer', async () => {
-        const r = await req.delete(`/api/customers/${createdCustomerId}`)
+        const r = await req
+            .delete(`/api/customers/${createdCustomerId}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 200);
     });
 
     await test('GET /api/customers/:id after delete returns 404', async () => {
-        const r = await req.get(`/api/customers/${createdCustomerId}`)
+        const r = await req
+            .get(`/api/customers/${createdCustomerId}`)
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(r.status, 404);
     });
@@ -1226,14 +1688,16 @@ async function runTests() {
     section('Users — Deactivate');
 
     await test('delete-with-transfer without transferToUserId returns 400', async () => {
-        const r = await req.post(`/api/users/${createdUserId}/delete-with-transfer`)
+        const r = await req
+            .post(`/api/users/${createdUserId}/delete-with-transfer`)
             .set('Authorization', `Bearer ${adminToken}`)
             .send({});
         assert.strictEqual(r.status, 400);
     });
 
     await test('delete-with-transfer with invalid UUID returns 400', async () => {
-        const r = await req.post('/api/users/bad-id/delete-with-transfer')
+        const r = await req
+            .post('/api/users/bad-id/delete-with-transfer')
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ transferToUserId: createdUserId });
         assert.strictEqual(r.status, 400);
@@ -1245,39 +1709,57 @@ async function runTests() {
     const deptB = '22222222-2222-4222-8222-222222222222';
 
     await test('owner can supervise agent in any department', async () => {
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'owner' },
-            { id: '2', role: 'agent', departmentId: deptB, isActive: true }
-        ), true);
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'owner' },
+                { id: '2', role: 'agent', departmentId: deptB, isActive: true }
+            ),
+            true
+        );
     });
 
     await test('manager supervises agent in same department only', async () => {
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'manager', departmentId: deptA },
-            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
-        ), true);
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'manager', departmentId: deptA },
-            { id: '2', role: 'agent', departmentId: deptB, isActive: true }
-        ), false);
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'manager', departmentId: deptA },
+                { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+            ),
+            true
+        );
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'manager', departmentId: deptA },
+                { id: '2', role: 'agent', departmentId: deptB, isActive: true }
+            ),
+            false
+        );
     });
 
     await test('supervisor cannot supervise manager or peer supervisor', async () => {
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'supervisor', departmentId: deptA },
-            { id: '2', role: 'manager', departmentId: deptA, isActive: true }
-        ), false);
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'supervisor', departmentId: deptA },
-            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
-        ), true);
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'supervisor', departmentId: deptA },
+                { id: '2', role: 'manager', departmentId: deptA, isActive: true }
+            ),
+            false
+        );
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'supervisor', departmentId: deptA },
+                { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+            ),
+            true
+        );
     });
 
     await test('agent cannot supervise anyone', async () => {
-        assert.strictEqual(canSuperviseStaff(
-            { id: '1', role: 'agent', departmentId: deptA },
-            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
-        ), false);
+        assert.strictEqual(
+            canSuperviseStaff(
+                { id: '1', role: 'agent', departmentId: deptA },
+                { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+            ),
+            false
+        );
     });
 
     section('Legacy cutover visibility');
@@ -1310,7 +1792,8 @@ async function runTests() {
         assert.strictEqual(conv.isHiddenFromStaff, false);
         assert.strictEqual(cust.isRestrictedFromStaff, false);
 
-        const all = await req.get('/api/conversations?limit=50')
+        const all = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(all.status, 200);
         assert(
@@ -1320,7 +1803,8 @@ async function runTests() {
 
         const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
         await ensureLegacyCutover(null, { reason: 'test_group_stay_visible' });
-        const allAfterSweep = await req.get('/api/conversations?limit=50')
+        const allAfterSweep = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(allAfterSweep.status, 200);
         assert(
@@ -1382,14 +1866,16 @@ async function runTests() {
         assert.strictEqual(oldConv.isHiddenFromStaff, true);
         assert.strictEqual(oldCust.isRestrictedFromStaff, true);
 
-        const all = await req.get('/api/conversations?limit=50')
+        const all = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(all.status, 200);
         const ids = (all.body.data || []).map((c) => c.id);
         assert(ids.includes(currentConv.id), 'current number chat must appear in All');
         assert(!ids.includes(oldConv.id), 'previous number chat must not appear in All');
 
-        const archived = await req.get('/api/conversations?status=archived&limit=50')
+        const archived = await req
+            .get('/api/conversations?status=archived&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(archived.status, 200);
         assert(
@@ -1403,7 +1889,103 @@ async function runTests() {
         const v = chatIdVariants('905551112233@c.us');
         assert(v.includes('905551112233'));
         assert(v.includes('905551112233@c.us'));
+        const iran = chatIdVariants('9121234567@c.us');
+        assert(iran.includes('989121234567'), 'local Iranian number must match stored 98 prefix');
         assert.strictEqual(normalizeLinkedNumber('+90 555 111 22 33'), '905551112233');
+    });
+
+    await test('sync chat rows merge @c.us and @lid for the same phone', async () => {
+        const { dedupeChatRows, preferredCreatePhone } = require('../lib/whatsappCustomerIdentity');
+        const rows = dedupeChatRows([
+            { id: '989121234567@c.us', phone: '989121234567', name: 'Ali', isGroup: false },
+            { id: '277012345678901@lid', name: 'Ali', isGroup: false },
+            { id: '277012345678901@lid', lid: '277012345678901', phone: '989121234567' },
+        ]);
+        assert.strictEqual(rows.length, 1, 'same contact must become one chat row');
+        assert.strictEqual(preferredCreatePhone(rows[0]), '989121234567');
+        assert(!/@lid$/i.test(String(rows[0].id)), 'kept identity should be the phone JID');
+    });
+
+    await test('sync does not create a second customer for LID of an existing phone', async () => {
+        const { Customer } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '989305880199';
+        const lid = '201206702071999';
+        const [existing] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'Sync Merge', source: 'whatsapp' },
+        });
+        const first = await findOrCreateSyncedCustomer({
+            id: `${phone}@c.us`,
+            phone,
+            name: 'Sync Merge',
+            isGroup: false,
+        });
+        const second = await findOrCreateSyncedCustomer({
+            id: `${lid}@lid`,
+            lid,
+            phone,
+            name: 'Sync Merge',
+            isGroup: false,
+        });
+        assert.strictEqual(first.id, existing.id);
+        assert.strictEqual(second.id, existing.id);
+        const stray = await Customer.findOne({ where: { phone: lid } });
+        assert.strictEqual(
+            stray && stray.id !== existing.id ? stray.id : null,
+            null,
+            'must not store the LID as a second customer phone'
+        );
+        await existing.reload();
+        assert.strictEqual(String((existing.customFields || {}).whatsappLid || ''), lid);
+    });
+
+    await test('sync hides leftover phone JID duplicate', async () => {
+        const { Customer } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '989121230011';
+        const [phoneCust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'Format Keep', source: 'whatsapp' },
+        });
+        const [jidCust] = await Customer.findOrCreate({
+            where: { phone: `${phone}@c.us` },
+            defaults: { name: 'Format Dup', source: 'whatsapp', isRestrictedFromStaff: false },
+        });
+        const keep = await findOrCreateSyncedCustomer({
+            id: `${phone}@c.us`,
+            phone,
+            name: 'Format Keep',
+            isGroup: false,
+        });
+        assert.strictEqual(keep.id, phoneCust.id);
+        await jidCust.reload();
+        assert.strictEqual(jidCust.isRestrictedFromStaff, true);
+    });
+
+    await test('sync hides leftover LID-as-phone duplicate', async () => {
+        const { Customer } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '989121239988';
+        const lid = '188812345679988';
+        const [phoneCust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'Real Phone', source: 'whatsapp' },
+        });
+        const [lidCust] = await Customer.findOrCreate({
+            where: { phone: lid },
+            defaults: { name: 'LID Dup', source: 'whatsapp', isRestrictedFromStaff: false },
+        });
+        const keep = await findOrCreateSyncedCustomer({
+            id: `${phone}@c.us`,
+            phone,
+            lid,
+            name: 'Real Phone',
+            isGroup: false,
+        });
+        assert.strictEqual(keep.id, phoneCust.id);
+        await lidCust.reload();
+        assert.strictEqual(lidCust.isRestrictedFromStaff, true);
     });
 
     await test('hidden restricted conversation is denied to assigned agent without grant', async () => {
@@ -1469,13 +2051,20 @@ async function runTests() {
     });
 
     await test('internal call signaling normalizes user and thread ids', async () => {
-        const { asCallId, callUserRoom, normalizeCallSignal } = require('../lib/internalCallSignaling');
+        const {
+            asCallId,
+            callUserRoom,
+            normalizeCallSignal,
+        } = require('../lib/internalCallSignaling');
         const uid = '3f1c0a2e-1111-4aaa-8bbb-999999999999';
         assert.strictEqual(asCallId(uid), uid);
         assert.strictEqual(callUserRoom(uid), 'user_' + uid);
         assert.strictEqual(normalizeCallSignal(null, uid), null);
         assert.strictEqual(normalizeCallSignal({ toUserId: uid }, uid), null);
-        const sig = normalizeCallSignal({ toUserId: uid, threadId: 'thread-1', type: 'voice', sdp: { type: 'offer' } }, uid);
+        const sig = normalizeCallSignal(
+            { toUserId: uid, threadId: 'thread-1', type: 'voice', sdp: { type: 'offer' } },
+            uid
+        );
         assert.strictEqual(sig.toUserId, uid);
         assert.strictEqual(sig.threadId, 'thread-1');
         assert.strictEqual(sig.fromUserId, uid);
@@ -1511,14 +2100,22 @@ async function runTests() {
         }
         const sweep = await ensureLegacyCutover(null, { reason: 'test_sweep' });
         assert(sweep.changed || sweep.swept, 'expected leftover sweep');
-        const all = await req.get('/api/conversations?limit=50')
+        const all = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(all.status, 200);
-        assert(!all.body.data.some((c) => c.id === filterConversationId), 'pre-cutover conv must leave All');
-        const archived = await req.get('/api/conversations?status=archived&limit=50')
+        assert(
+            !all.body.data.some((c) => c.id === filterConversationId),
+            'pre-cutover conv must leave All'
+        );
+        const archived = await req
+            .get('/api/conversations?status=archived&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(archived.status, 200);
-        assert(archived.body.data.some((c) => c.id === filterConversationId), 'pre-cutover conv should be in archive');
+        assert(
+            archived.body.data.some((c) => c.id === filterConversationId),
+            'pre-cutover conv should be in archive'
+        );
     });
 
     await test('hidden conversations are excluded from default All list', async () => {
@@ -1526,14 +2123,22 @@ async function runTests() {
         const conv = await Conversation.findByPk(filterConversationId);
         assert(conv, 'filter conversation missing');
         await conv.update({ isHiddenFromStaff: true, status: 'archived' });
-        const all = await req.get('/api/conversations?limit=50')
+        const all = await req
+            .get('/api/conversations?limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(all.status, 200);
-        assert(!all.body.data.some((c) => c.id === filterConversationId), 'hidden conv must not appear in All');
-        const hidden = await req.get('/api/conversations?hiddenOnly=true&limit=50')
+        assert(
+            !all.body.data.some((c) => c.id === filterConversationId),
+            'hidden conv must not appear in All'
+        );
+        const hidden = await req
+            .get('/api/conversations?hiddenOnly=true&limit=50')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(hidden.status, 200);
-        assert(hidden.body.data.some((c) => c.id === filterConversationId), 'hidden conv should appear in restricted tab');
+        assert(
+            hidden.body.data.some((c) => c.id === filterConversationId),
+            'hidden conv should appear in restricted tab'
+        );
     });
 
     await test('archive backup then purge keeps گروه فروش کایا and deletes other archive', async () => {
@@ -1567,17 +2172,26 @@ async function runTests() {
             content: 'old archived text',
             type: 'text',
         });
-        const backup = await req.get('/api/conversations/archive-backup')
+        const backup = await req
+            .get('/api/conversations/archive-backup')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(backup.status, 200, `backup failed: ${backup.status}`);
-        assert(backup.headers['content-type'] && /gzip|octet/i.test(String(backup.headers['content-type'])));
-        const agentDenied = await req.get('/api/conversations/archive-backup')
+        assert(
+            backup.headers['content-type'] &&
+                /gzip|octet/i.test(String(backup.headers['content-type']))
+        );
+        const agentDenied = await req
+            .get('/api/conversations/archive-backup')
             .set('Authorization', `Bearer ${agentToken}`);
         assert.strictEqual(agentDenied.status, 403);
-        const purge = await req.post('/api/conversations/archive-purge')
+        const purge = await req
+            .post('/api/conversations/archive-purge')
             .set('Authorization', `Bearer ${adminToken}`);
         assert.strictEqual(purge.status, 200, `purge failed: ${JSON.stringify(purge.body)}`);
-        assert((purge.body.purged && purge.body.purged.deletedConversations) >= 1, 'expected archived rows deleted');
+        assert(
+            (purge.body.purged && purge.body.purged.deletedConversations) >= 1,
+            'expected archived rows deleted'
+        );
         const gone = await Conversation.findByPk(oldConv.id);
         assert.strictEqual(gone, null);
         await keepConv.reload();
@@ -1585,6 +2199,119 @@ async function runTests() {
         assert.strictEqual(keepConv.status, 'open');
         assert.strictEqual(keepConv.isHiddenFromStaff, false);
         assert.strictEqual(keepCust.isRestrictedFromStaff, false);
+    });
+
+    section('Internal chat');
+
+    await test('GET /api/internal/threads without auth returns 401', async () => {
+        const r = await req.get('/api/internal/threads');
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('GET /api/internal/users lists other staff, not self', async () => {
+        const r = await req.get('/api/internal/users').set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        const ids = r.body.data.map((u) => u.id);
+        const { User } = require('../models');
+        const admin = await User.findOne({ where: { email: process.env.MAIN_ADMIN_EMAIL } });
+        assert(admin);
+        assert(!ids.includes(admin.id), 'self must not appear in picker');
+        assert(ids.includes(createdUserId), 'other staff must appear');
+        const agent = r.body.data.find((u) => u.id === createdUserId);
+        assert(agent);
+        assert.strictEqual('lastSeenAt' in agent, true);
+        assert(!agent.password);
+    });
+
+    await test('POST /api/internal/threads without users returns 400', async () => {
+        const r = await req
+            .post('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ userIds: [] });
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/internal/threads with invalid user id returns 400', async () => {
+        const r = await req
+            .post('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ userIds: ['not-a-uuid'] });
+        assert.strictEqual(r.status, 400);
+    });
+
+    let internalThreadId = null;
+    await test('POST /api/internal/threads creates a DM and lists it', async () => {
+        const r = await req
+            .post('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ userIds: [createdUserId] });
+        assert.ok([200, 201].includes(r.status), `create thread failed: ${JSON.stringify(r.body)}`);
+        assert(r.body.id, 'expected thread id');
+        assert.strictEqual(r.body.isGroup, false);
+        internalThreadId = r.body.id;
+        const list = await req
+            .get('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(list.status, 200);
+        assert(list.body.data.some((th) => th.id === internalThreadId));
+        const agentList = await req
+            .get('/api/internal/threads')
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(agentList.status, 200);
+        assert(
+            agentList.body.data.some((th) => th.id === internalThreadId),
+            'other participant must see the thread'
+        );
+    });
+
+    await test('POST /api/internal/threads reuses existing DM', async () => {
+        const r = await req
+            .post('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ userIds: [createdUserId] });
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.body.id, internalThreadId);
+    });
+
+    await test('POST /api/internal/threads/:id/messages then GET messages', async () => {
+        const sent = await req
+            .post(`/api/internal/threads/${internalThreadId}/messages`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ content: 'salam from suite' });
+        assert.strictEqual(sent.status, 201, `send failed: ${JSON.stringify(sent.body)}`);
+        assert.strictEqual(sent.body.content, 'salam from suite');
+        const list = await req
+            .get('/api/internal/threads')
+            .set('Authorization', `Bearer ${agentToken}`);
+        const th = list.body.data.find((x) => x.id === internalThreadId);
+        assert(th);
+        assert(th.lastMessage && th.lastMessage.content === 'salam from suite');
+        assert(Array.isArray(th.lastMessage.attachments));
+        assert(th.unreadCount >= 1);
+        const msgs = await req
+            .get(`/api/internal/threads/${internalThreadId}/messages`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(msgs.status, 200);
+        assert(msgs.body.data.some((m) => m.content === 'salam from suite'));
+    });
+
+    await test('GET /api/internal/threads/:id/messages with invalid id returns 400', async () => {
+        const r = await req
+            .get('/api/internal/threads/not-a-uuid/messages')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/internal/threads creates a named group', async () => {
+        const r = await req
+            .post('/api/internal/threads')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ userIds: [createdUserId], name: 'تیم پشتیبانی تهران', type: 'group' });
+        assert.strictEqual(r.status, 201, `group create failed: ${JSON.stringify(r.body)}`);
+        assert.strictEqual(r.body.isGroup, true);
+        assert.strictEqual(r.body.name, 'تیم پشتیبانی تهران');
+        assert.strictEqual(r.body.displayName, 'تیم پشتیبانی تهران');
     });
 }
 
@@ -1612,14 +2339,14 @@ async function main() {
     console.log(`Results: ${passed} passed, ${failed} failed`);
     if (failures.length) {
         console.log('\nFailed tests:');
-        failures.forEach(f => console.log(`  ✗ ${f.name}\n    → ${f.error}`));
+        failures.forEach((f) => console.log(`  ✗ ${f.name}\n    → ${f.error}`));
     }
     console.log('─'.repeat(50));
 
     process.exit(failed > 0 ? 1 : 0);
 }
 
-main().catch(err => {
+main().catch((err) => {
     console.error('Fatal:', err.message, err.stack);
     process.exit(1);
 });

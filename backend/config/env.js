@@ -1,7 +1,8 @@
 /**
  * اعتبارسنجی متغیرهای محیطی — در صورت نبودن مقادیر ضروری، سرور متوقف می‌شود
  */
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 function validateEnv() {
     const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL;
@@ -25,6 +26,10 @@ function validateEnv() {
     }
     if (process.env.NODE_ENV === 'production' && (!process.env.WEBHOOK_SECRET || process.env.WEBHOOK_SECRET.length < 16)) {
         console.error('❌ در production، WEBHOOK_SECRET باید در .env تنظیم شود (حداقل ۱۶ کاراکتر)');
+        process.exit(1);
+    }
+    if (process.env.NODE_ENV === 'production' && process.env.DISABLE_RATE_LIMIT === 'true') {
+        console.error('❌ DISABLE_RATE_LIMIT در production مجاز نیست');
         process.exit(1);
     }
 

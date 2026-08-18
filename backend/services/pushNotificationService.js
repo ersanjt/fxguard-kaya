@@ -7,12 +7,14 @@
  */
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const logger = require('../config/logger');
 
 let adminApp = null;
-let initAttempted = false;
 
 function readServiceAccount() {
+    if (process.env.NODE_ENV === 'test') return null;
     const raw = String(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
     if (raw) {
         try {
@@ -22,22 +24,28 @@ function readServiceAccount() {
             return null;
         }
     }
-    const fs = require('fs');
-    const path = String(process.env.FIREBASE_SERVICE_ACCOUNT_PATH || process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim();
-    if (!path) return null;
-    try {
-        return JSON.parse(fs.readFileSync(path, 'utf8'));
-    } catch (err) {
-        logger.warn('Firebase service account file unreadable', { error: err.message });
-        return null;
+    const candidates = [
+        String(process.env.FIREBASE_SERVICE_ACCOUNT_PATH || '').trim(),
+        String(process.env.GOOGLE_APPLICATION_CREDENTIALS || '').trim(),
+    ];
+    if (process.env.NODE_ENV !== 'test') {
+        candidates.push(path.join(__dirname, '..', 'firebase-service-account.json'));
     }
+    for (const filePath of candidates) {
+        if (!filePath || !fs.existsSync(filePath)) continue;
+        try {
+            return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        } catch (err) {
+            logger.warn('Firebase service account file unreadable', { error: err.message });
+        }
+    }
+    return null;
 }
 
 function getMessaging() {
-    if (initAttempted) {
-        return adminApp ? adminApp.messaging() : null;
+    if (adminApp) {
+        return adminApp.messaging();
     }
-    initAttempted = true;
     const creds = readServiceAccount();
     if (!creds) return null;
     try {
@@ -118,6 +126,7 @@ async function sendToUsers(userIds, payload) {
 
     const stale = [];
     let sent = 0;
+    let lastError = '';
     for (let i = 0; i < tokens.length; i += 500) {
         const batch = tokens.slice(i, i + 500);
         try {
@@ -135,7 +144,9 @@ async function sendToUsers(userIds, payload) {
                         sound: 'default',
                         defaultSound: true,
                         defaultVibrateTimings: true,
-                        notificationCount: 1
+                        notificationCount: 1,
+                        visibility: 'public',
+                        priority: 'high'
                     }
                 }
             });
@@ -143,6 +154,9 @@ async function sendToUsers(userIds, payload) {
             (res.responses || []).forEach((item, idx) => {
                 if (item.success) return;
                 const code = item.error && item.error.code;
+                const message = (item.error && item.error.message) || code || 'fcm_error';
+                lastError = String(message).slice(0, 180);
+                logger.warn('FCM item failed', { code, error: lastError });
                 if (
                     code === 'messaging/registration-token-not-registered' ||
                     code === 'messaging/invalid-registration-token'
@@ -151,10 +165,14 @@ async function sendToUsers(userIds, payload) {
                 }
             });
         } catch (err) {
-            logger.warn('FCM send failed', { error: err.message, count: batch.length });
+            lastError = String(err.message || err).slice(0, 180);
+            logger.warn('FCM send failed', { error: lastError, count: batch.length });
         }
     }
     if (stale.length) await deleteTokens(stale);
+    if (!sent) {
+        return { sent: 0, stale: stale.length, reason: 'send_failed', error: lastError || 'fcm_zero' };
+    }
     return { sent, stale: stale.length };
 }
 
