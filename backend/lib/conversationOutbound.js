@@ -46,6 +46,8 @@ const MIME_FROM_EXT = {
     '.ogg': 'audio/ogg',
     '.wav': 'audio/wav',
     '.m4a': 'audio/mp4',
+    '.apk': 'application/vnd.android.package-archive',
+    '.ipa': 'application/octet-stream',
 };
 
 function inferMimeFromFilename(filename, given) {
@@ -314,13 +316,31 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                 }
                 const fileBuf = await fsPromises.readFile(readPath);
                 const base64 = fileBuf.toString('base64');
-                payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
+                const mediaPayload = {
+                    mimetype: sendMimetype,
+                    filename: sendFilename,
+                };
+                if (fileBuf.length > 2 * 1024 * 1024) {
+                    mediaPayload.localPath = readPath;
+                } else {
+                    mediaPayload.data = base64;
+                }
+                payload.media = mediaPayload;
                 if (isVoiceNote) {
                     payload.media.sendAsVoice = true;
                     payload.media.mimetype = WHATSAPP_VOICE_MIME;
                     payload.media.filename = WHATSAPP_VOICE_FILENAME;
+                } else if (
+                    sendMimetype === 'image/webp' &&
+                    /sticker/i.test(String(sendFilename || ''))
+                ) {
+                    payload.media.sendAsSticker = true;
                 } else if (msgType === 'document') {
                     payload.media.sendAsDocument = true;
+                }
+                if (mediaData) {
+                    mediaData = { ...mediaData, size: fileBuf.length };
+                    await msg.update({ mediaData });
                 }
             } catch (readErr) {
                 if (isVoiceNote) {
@@ -438,7 +458,9 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             }
         }
         // باید از timeout ارسال Gateway (~45s) بیشتر باشد تا خطای واقعی برگردد نه abort خالی
-        const gwRes = await sendWhatsAppMessage(payload, { timeout: 55000 });
+        const gwRes = await sendWhatsAppMessage(payload, {
+            timeout: payload.media ? 130000 : 55000,
+        });
         const waId = gwRes?.data?.messageId;
         const updateFields = { status: 'sent' };
         if (waId) updateFields.whatsappId = waId;

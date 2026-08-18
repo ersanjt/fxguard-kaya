@@ -330,6 +330,7 @@ function waSafeFilename(name) {
 
 function shouldSendAsDocument(media, mime) {
     if (!media) return false;
+    if (media.sendAsSticker || media.sendAsDocument === false) return false;
     if (media.sendAsDocument) return true;
     if (media.sendAsVoice || isVoiceMediaPayload(media)) return false;
     const m = String(mime || media.mimetype || '')
@@ -347,6 +348,10 @@ function shouldSendAsDocument(media, mime) {
 function applyOutboundMediaSendOpts(sendOpts, media, mime, asVoice, caption) {
     if (asVoice) {
         sendOpts.sendAudioAsVoice = true;
+        return;
+    }
+    if (media && media.sendAsSticker) {
+        sendOpts.sendMediaAsSticker = true;
         return;
     }
     sendOpts.caption = caption || '';
@@ -1488,6 +1493,30 @@ async function ensureDir(dir) {
 const BACKEND_UPLOADS_DIR =
     process.env.BACKEND_UPLOADS_DIR || path.resolve(__dirname, '..', '..', 'backend', 'uploads');
 
+function resolveTrustedLocalMediaPath(localPath) {
+    if (!localPath || typeof localPath !== 'string') return null;
+    const resolved = path.resolve(localPath);
+    const roots = [BACKEND_UPLOADS_DIR, UPLOADS_DIR].map((d) => path.resolve(d));
+    if (roots.some((root) => resolved === root || resolved.startsWith(root + path.sep))) {
+        return resolved;
+    }
+    return null;
+}
+
+async function messageMediaFromLocalPath(media) {
+    const p = resolveTrustedLocalMediaPath(media && media.localPath);
+    if (!p) {
+        const err = new Error('Invalid local media path');
+        err.statusCode = 400;
+        throw err;
+    }
+    await fs.access(p);
+    const mediaObj = MessageMedia.fromFilePath(p);
+    if (media.mimetype) mediaObj.mimetype = media.mimetype;
+    mediaObj.filename = waSafeFilename(media.filename || path.basename(p));
+    return { mediaObj, mime: mediaObj.mimetype || media.mimetype || 'application/octet-stream' };
+}
+
 async function persistInboundMediaFile(media, type) {
     if (!media || !media.data) return media;
     try {
@@ -1504,6 +1533,8 @@ async function persistInboundMediaFile(media, type) {
             url: `/uploads/${safe}`,
             filename: origName,
             mimetype: media.mimetype || fallback.mimetype,
+            size: buf.length,
+            isSticker: String(type || '').toLowerCase() === 'sticker',
         };
     } catch (err) {
         logger.warn('Inbound media persist to uploads failed', {
@@ -1933,6 +1964,23 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
         let sentMsg;
         const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
         const doSend = async (targetChatId) => {
+            if (media?.localPath) {
+                const built = await messageMediaFromLocalPath(media);
+                applyOutboundMediaSendOpts(
+                    sendOpts,
+                    media,
+                    built.mime,
+                    isVoiceMediaPayload(media),
+                    message || ''
+                );
+                logger.info('📎 Sending media (localPath)', {
+                    to: targetChatId,
+                    mime: built.mime,
+                    asDocument: !!sendOpts.sendMediaAsDocument,
+                    asSticker: !!sendOpts.sendMediaAsSticker,
+                });
+                return client.sendMessage(targetChatId, built.mediaObj, sendOpts);
+            }
             if (media?.data) {
                 const built = await buildOutboundMessageMedia(media, message);
                 if (!built) {
@@ -1989,6 +2037,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
 
         outboundApiSendDepth += 1;
         try {
+            const sendTimeoutMs = media ? 120000 : 45000;
             sentMsg = await Promise.race([
                 doSend(chatId),
                 new Promise((_, reject) =>
@@ -1996,7 +2045,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                         const err = new Error('send_timeout');
                         err.statusCode = 503;
                         reject(err);
-                    }, 45000)
+                    }, sendTimeoutMs)
                 ),
             ]);
         } finally {
@@ -4209,6 +4258,20 @@ async function sendWhatsAppMessage(data) {
     let tmpMediaPath = null;
 
     try {
+        if (media?.localPath) {
+            const built = await messageMediaFromLocalPath(media);
+            applyOutboundMediaSendOpts(
+                sendOpts,
+                media,
+                built.mime,
+                isVoiceMediaPayload(media),
+                message || ''
+            );
+            const sent = await client.sendMessage(chatId, built.mediaObj, sendOpts);
+            markGatewaySentMessage(sent?.id?.id);
+            return sent;
+        }
+
         if (media?.data) {
             const built = await buildOutboundMessageMedia(media, message);
             if (!built) throw new Error('Invalid media payload');

@@ -1043,9 +1043,7 @@
             const newItems = visibleRows.map(function(c) {
                 const cust = c.customer || {};
                 const isGroup = !!(c.metadata && c.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
-                const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
-                const rawPhone = cust.phone || '';
-                const phone = canSeePhone ? rawPhone : '';
+                const phone = customerUiPhone(cust);
                 let metaObj = c.metadata;
                 if (typeof metaObj === 'string') {
                     try { metaObj = JSON.parse(metaObj); } catch (e) { metaObj = {}; }
@@ -1062,7 +1060,7 @@
                     else if (custName && !looksLikeJid(custName)) name = custName;
                     else name = (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp group');
                 } else {
-                    name = custName || (canSeePhone ? rawPhone : '') || t('customer');
+                    name = customerUiName(cust);
                 }
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
@@ -1159,11 +1157,50 @@
             if (currentUser.role === 'owner') return true;
             return !!(currentUser.permissions && currentUser.permissions.view_customer_phone);
         }
+        function customerUiName(cust, extraName) {
+            const fallback = typeof t === 'function' ? t('customer') : (LANG === 'fa' ? 'مشتری' : 'Customer');
+            const c = cust || {};
+            const merged = { name: extraName != null && extraName !== '' ? extraName : c.name, phone: c.phone };
+            if (window.CRM && CRM.Utils && typeof CRM.Utils.customerDisplayName === 'function') {
+                return CRM.Utils.customerDisplayName(merged, { seePhone: canViewCustomerPhoneUi(), fallback: fallback });
+            }
+            const see = canViewCustomerPhoneUi();
+            const rawName = String(merged.name || '').trim();
+            if (rawName && (see || !(window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(rawName)))) return rawName;
+            if (see && merged.phone) return String(merged.phone);
+            return fallback;
+        }
+        function customerUiPhone(cust) {
+            if (window.CRM && CRM.Utils && typeof CRM.Utils.visibleCustomerPhone === 'function') {
+                return CRM.Utils.visibleCustomerPhone(cust, canViewCustomerPhoneUi());
+            }
+            if (!canViewCustomerPhoneUi()) return '';
+            const p = String((cust && cust.phone) || '').trim();
+            return /@g\.us$/i.test(p) ? '' : p;
+        }
+        function applyPhoneSearchPlaceholders() {
+            const see = canViewCustomerPhoneUi();
+            const conv = document.getElementById('convSearch');
+            const cust = document.getElementById('customerSearch');
+            if (conv) {
+                conv.placeholder = see
+                    ? (t('conv_search_ph') || conv.placeholder)
+                    : (t('conv_search_ph_no_phone') || (LANG === 'fa' ? 'جستجو نام مشتری...' : 'Search name...'));
+            }
+            if (cust) {
+                cust.placeholder = see
+                    ? (t('customer_search_ph') || cust.placeholder)
+                    : (t('customer_search_ph_no_phone') || (LANG === 'fa' ? 'جستجو نام یا ایمیل...' : 'Search name or email...'));
+            }
+        }
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
-            var visiblePhone = canViewCustomerPhoneUi() ? String(phone || '').trim() : '';
+            var visiblePhone = customerUiPhone({ phone: phone });
+            if (!currentConvIsGroup && name && window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(name) && !canViewCustomerPhoneUi()) {
+                name = t('customer');
+            }
             openChatCustomerPreview = !currentConvIsGroup
                 ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: visiblePhone, profilePic: String(profilePic || '').trim() }
                 : null;
@@ -1433,10 +1470,9 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + escapeHtml(t('empty_customers') || '') + '</div>'; return; }
             const currentCustId = currentConvDetail && currentConvDetail.customerId;
             list.innerHTML = data.data.map(function(c) {
-                const seePhone = canViewCustomerPhoneUi();
-                const phoneRaw = String(c.phone || '');
-                const isGroup = /@g\.us$/i.test(phoneRaw) || !!(c.metadata && c.metadata.isGroup);
-                const name = c.name || (seePhone && !isGroup ? phoneRaw : '') || (isGroup ? (t('group_chat') || 'Group') : t('customer'));
+                const phoneRaw = customerUiPhone(c);
+                const isGroup = /@g\.us$/i.test(String(c.phone || '')) || !!(c.metadata && c.metadata.isGroup);
+                const name = customerUiName(c) || (isGroup ? (t('group_chat') || 'Group') : t('customer'));
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : '?');
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = !isGroup && customerAvatarShowsImage(c) && picSrcNc
@@ -1449,7 +1485,7 @@
                 let metaText = '';
                 if (isGroup) {
                     metaText = t('conv_forward_group_meta') || (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp group');
-                } else if (seePhone && phoneRaw) {
+                } else if (phoneRaw) {
                     metaText = phoneRaw;
                 }
                 return '<div class="new-conv-customer-item forward-customer-item' + (isCurrent ? ' is-current' : '') + '" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '">' +
@@ -1497,13 +1533,12 @@
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
-                const seePhone = canViewCustomerPhoneUi();
-                const name = c.name || (seePhone ? c.phone : '') || t('customer');
+                const name = customerUiName(c);
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
-                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
+                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(customerUiPhone(c)) + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
@@ -1856,6 +1891,88 @@
             } catch (_e) {}
         }
         window.crmVoiceAudioErr = crmVoiceAudioErr;
+        function coerceMediaData(raw) {
+            if (!raw) return null;
+            if (typeof raw === 'string') {
+                var t = raw.trim();
+                if (!t) return null;
+                if (t.charAt(0) === '{' || t.charAt(0) === '[') {
+                    try { return JSON.parse(t); } catch (_e) { return { filename: t }; }
+                }
+                return { filename: t };
+            }
+            return raw;
+        }
+        function formatMsgFileSize(n) {
+            var sz = Number(n);
+            if (!sz || sz < 1) return '';
+            if (sz < 1024) return sz + ' B';
+            if (sz < 1024 * 1024) return (sz / 1024).toFixed(sz < 10 * 1024 ? 1 : 0) + ' KB';
+            return (sz / (1024 * 1024)).toFixed(sz < 10 * 1024 * 1024 ? 1 : 0) + ' MB';
+        }
+        function buildMsgFileCardHtml(fileUrl, filename, kind, sizeBytes) {
+            var name = String(filename || '').trim() || (LANG === 'fa' ? 'فایل' : 'File');
+            var icon = '📎';
+            var k = String(kind || '').toLowerCase();
+            if (k === 'image' || k === 'sticker') icon = '🖼';
+            else if (k === 'video') icon = '🎬';
+            else if (k === 'audio' || k === 'ptt') icon = '🎵';
+            else if (/\.pdf$/i.test(name)) icon = '📄';
+            else if (/\.apk$/i.test(name)) icon = '📦';
+            var sizeStr = formatMsgFileSize(sizeBytes);
+            var openLbl = LANG === 'fa' ? 'باز کردن' : (LANG === 'tr' ? 'Aç' : 'Open');
+            var saveLbl = LANG === 'fa' ? 'ذخیره' : (LANG === 'tr' ? 'Farklı kaydet' : 'Save as...');
+            var missing = LANG === 'fa' ? 'فایل در دسترس نیست' : 'File unavailable';
+            var safeUrl = fileUrl ? escapeHtml(fileUrl) : '';
+            var safeName = escapeHtml(name);
+            var actions = fileUrl
+                ? ('<span class="msg-file-card-actions">' +
+                    '<a href="' + safeUrl + '" target="_blank" rel="noopener noreferrer" class="msg-file-card-btn" data-open="1">' + escapeHtml(openLbl) + '</a>' +
+                    '<a href="' + safeUrl + '" download="' + safeName + '" class="msg-file-card-btn" rel="noopener noreferrer">' + escapeHtml(saveLbl) + '</a>' +
+                    '</span>')
+                : ('<span class="msg-file-card-action">' + escapeHtml(missing) + '</span>');
+            return '<div class="msg-file-card">' +
+                '<span class="msg-file-card-icon" aria-hidden="true">' + icon + '</span>' +
+                '<span class="msg-file-card-body"><span class="msg-file-card-name">' + safeName + '</span>' +
+                (sizeStr ? '<span class="msg-file-card-size">' + escapeHtml(sizeStr) + '</span>' : '') +
+                actions + '</span></div>';
+        }
+        function crmMsgMediaImgErr(img) {
+            if (!img) return;
+            function showFallback() {
+                img.onerror = null;
+                img.style.display = 'none';
+                var wrap = img.closest ? img.closest('.msg-media-image') : null;
+                if (wrap) {
+                    wrap.classList.add('msg-media-image-failed');
+                    var fb = wrap.querySelector('.msg-media-image-fallback');
+                    if (fb) {
+                        fb.hidden = false;
+                        fb.style.display = 'block';
+                    }
+                }
+            }
+            if (img.dataset.retryBlob === '1') {
+                showFallback();
+                return;
+            }
+            img.dataset.retryBlob = '1';
+            var src = img.getAttribute('src') || img.currentSrc || img.src || '';
+            if (!src || src.indexOf('blob:') === 0 || src.indexOf('data:') === 0) {
+                showFallback();
+                return;
+            }
+            fetch(src, { credentials: 'include' }).then(function(r) {
+                if (!r.ok) throw new Error('http ' + r.status);
+                return r.blob();
+            }).then(function(b) {
+                if (!b || !b.size) throw new Error('empty');
+                img.src = URL.createObjectURL(b);
+            }).catch(function() {
+                showFallback();
+            });
+        }
+        window.crmMsgMediaImgErr = crmMsgMediaImgErr;
         function initChatMessageVoicePlayers(root) {
             if (!root || !root.querySelectorAll) return;
             root.querySelectorAll('.msg-voice-player').forEach(function(wrap) {
@@ -2108,10 +2225,7 @@
                     profilePic: openChatCustomerPreview.profilePic
                 };
             }
-            var name = cust ? String(cust.name || cust.phone || '').trim() : '';
-            if (!name && openChatCustomerPreview) {
-                name = String(openChatCustomerPreview.phone || openChatCustomerPreview.name || '').trim();
-            }
+            var name = cust ? (typeof customerUiName === 'function' ? customerUiName(cust) : String(cust.name || '').trim()) : '';
             var initial = name ? name.charAt(0).toUpperCase() : '?';
             var rawPic = cust && cust.profilePic ? String(cust.profilePic).trim() : '';
             var picSrc = cust && cust.id ? customerAvatarDisplaySrc(cust) : (rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '');
@@ -2150,10 +2264,13 @@
             if (data.oldestId) _currentMsgOldestId = data.oldestId;
             const list = data.data.filter(function(m) {
                 if (m.direction === 'outgoing') return true;
-                const hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
+                if (m.hasMedia) return true;
+                const md = coerceMediaData(m.mediaData);
+                const hasContent = (m.content && String(m.content).trim()) || (md && (md.url || md.filename));
                 return !!hasContent;
             });
             const newMsgs = list.map(function(m) {
+                if (m.mediaData) m.mediaData = coerceMediaData(m.mediaData) || m.mediaData;
                 const isOut = m.direction === 'outgoing';
                 const time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 let senderLabel = '';
@@ -2163,12 +2280,14 @@
                     const sn = (m.metadata && m.metadata.senderName) || null;
                     const sid = (m.metadata && m.metadata.senderId) || null;
                     let displayName = sn;
-                    // استخراج شماره تلفن از senderId (مثلاً 989123456789@c.us)
                     let senderPhone = null;
-                    if (sid) {
+                    if (sid && canViewCustomerPhoneUi()) {
                         const rawPhone = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
                         if (rawPhone) senderPhone = rawPhone;
                         if (!displayName) displayName = rawPhone ? (rawPhone.replace(/^98/, '0') || rawPhone) : null;
+                    }
+                    if (displayName && window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(displayName) && !canViewCustomerPhoneUi()) {
+                        displayName = null;
                     }
                     if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
                     const senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
@@ -2179,10 +2298,11 @@
                 const baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
                 function inferMediaType(msg) {
                     const t = (msg.type || 'document').toLowerCase();
-                    if (t === 'image' || t === 'video' || t === 'audio' || t === 'ptt') return (t === 'ptt' ? 'audio' : t);
                     const md = msg.mediaData || {};
                     const mime = (md.mimetype || '').toLowerCase();
                     const name = (md.filename || msg.content || '').toLowerCase();
+                    if (t === 'sticker' || md.isSticker || name === 'sticker.webp' || /(?:^|[_-])sticker\.webp$/i.test(name)) return 'sticker';
+                    if (t === 'image' || t === 'video' || t === 'audio' || t === 'ptt') return (t === 'ptt' ? 'audio' : t);
                     var urlTail = '';
                     if (md.url && typeof md.url === 'string') {
                         const ru = md.url.trim();
@@ -2229,10 +2349,18 @@
                 if (mediaUrl && m.hasMedia && m.mediaData) {
                     const mediaType = inferMediaType(m);
                     const mdMime = ((m.mediaData && m.mediaData.mimetype) || '').split(';')[0].trim();
-                    if (mediaType === 'image') {
+                    const fileSizeBytes = m.mediaData && (m.mediaData.size || m.mediaData.filesize);
+                    if (mediaType === 'sticker') {
+                        mediaHtml = '<div class="msg-media msg-media-sticker"><img src="' + escapeHtml(mediaUrl) + '" alt="" loading="lazy" onerror="crmMsgMediaImgErr(this)"></div>';
+                    } else if (mediaType === 'image') {
                         const imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
-                        const fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
-                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
+                        const fnRaw = (m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        mediaHtml = '<div class="msg-media msg-media-image">' +
+                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-image-link" data-open="1">' +
+                            '<img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="crmMsgMediaImgErr(this)">' +
+                            '</a>' +
+                            '<div class="msg-media-image-fallback" hidden>' + buildMsgFileCardHtml(mediaUrl, fnRaw, 'image', fileSizeBytes) + '</div>' +
+                            '</div>';
                     } else if (mediaType === 'video') {
                         mediaHtml = '<div class="msg-media msg-media-video"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata" playsinline></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
                     } else if (mediaType === 'audio') {
@@ -2331,12 +2459,12 @@
                                 '</div>';
                         }
                     } else {
-                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
+                        mediaHtml = '<div class="msg-media msg-media-file">' + buildMsgFileCardHtml(mediaUrl, m.mediaData.filename || m.content, mediaType, fileSizeBytes) + '</div>';
                     }
-                } else if (m.hasMedia && (m.content || (m.mediaData && m.mediaData.filename))) {
+                } else if (m.hasMedia && (m.content || (m.mediaData && (m.mediaData.filename || m.mediaData.url)))) {
                     const fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
                     const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
-                    mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
+                    mediaHtml = '<div class="msg-media msg-media-file">' + buildMsgFileCardHtml('', fileName, isImageName ? 'image' : 'document', m.mediaData && m.mediaData.size) + '</div>';
                 }
                 var resolvedMediaType = (mediaUrl && m.hasMedia && m.mediaData) ? inferMediaType(m) : '';
                 let contentHtml = '';
@@ -2348,6 +2476,7 @@
                 if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
                 else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
                 var fnCaption = (m.mediaData && m.mediaData.filename) ? String(m.mediaData.filename).trim() : '';
+                if (resolvedMediaType === 'sticker' && (/sticker\.webp/i.test(displayContent) || displayContent === '🌟 استیکر')) displayContent = '';
                 if (resolvedMediaType === 'audio' && displayContent) {
                     var dcLo = displayContent.toLowerCase();
                     var fnLo = fnCaption.toLowerCase();
@@ -2361,6 +2490,8 @@
                 if ((m.content || '').length > 50) preview += '…';
                 if (resolvedMediaType === 'audio') {
                     preview = LANG === 'fa' ? '🎤 پیام صوتی' : (LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
+                } else if (resolvedMediaType === 'sticker') {
+                    preview = LANG === 'fa' ? 'استیکر' : 'Sticker';
                 }
                 // اضافه کردن اسم فرستنده به preview برای گروه
                 let replyPreviewSender = '';
@@ -3415,13 +3546,12 @@
             window._currentCustomerListData = sorted;
             const bulkIds = (window._bulkSelectedIds || []).map(String);
             list.innerHTML = sorted.map(function(c) {
-                const seePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
-                const name = c.name || (seePhone ? c.phone : '') || t('customer');
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (seePhone && c.phone && c.phone[0]) ? c.phone[0] : '?';
+                const name = customerUiName(c);
+                const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcCust = customerAvatarDisplaySrc(c);
                 const hasCustPic = customerAvatarShowsImage(c) && picSrcCust;
-                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (seePhone ? (c.phone || '') : '')) + '"');
+                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
                     ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">'
@@ -3434,7 +3564,7 @@
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(String(c.id)) >= 0 ? ' checked' : '';
-                const phoneShown = seePhone ? (c.phone || '') : '';
+                const phoneShown = customerUiPhone(c);
                 const restrictedBadge = c.isRestrictedFromStaff
                     ? '<span class="badge customer-badge-restricted">' + escapeHtml(t('customer_restricted_badge') || (LANG === 'fa' ? 'آرشیو شماره قبلی' : 'Previous number')) + '</span>'
                     : '';
@@ -3811,13 +3941,14 @@
             if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + escapeHtml(resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
             currentCustomerData = resDetail.data;
             const c = currentCustomerData;
-            const initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+            const name = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || t('customer'));
+            const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
             const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
             const firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
             const lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
             if (quickActionsEl) {
-                const qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                const qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const qName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const qPhone = ((typeof customerUiPhone === 'function' ? customerUiPhone(c) : '') || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
                 const grantBtn = canViewHiddenConversations() ? '<button type="button" class="btn-secondary customer-detail-action-btn" id="custGrantAccessBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('access_grant_btn') || 'Grant access') + '</button>' : '';
                 const restrictedBadge = c.isRestrictedFromStaff ? '<span class="badge" style="margin-inline-start:8px;">' + escapeHtml(t('customer_restricted_badge') || 'Restricted') + '</span>' : '';

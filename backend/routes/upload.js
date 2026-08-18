@@ -29,6 +29,7 @@ const ALLOWED_MIME_TYPES = new Set([
     'application/x-rar-compressed',
     'application/vnd.rar',
     'application/x-7z-compressed',
+    'application/vnd.android.package-archive',
 ]);
 
 const IMAGE_LIKE_EXT = new Set(['.ico', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
@@ -36,7 +37,7 @@ const ALLOWED_EXT = new Set([
     ...IMAGE_LIKE_EXT,
     '.mp4', '.webm', '.ogg', '.mov', '.mp3', '.wav', '.aac', '.m4a',
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.txt', '.csv', '.zip', '.rar', '.7z',
+    '.txt', '.csv', '.zip', '.rar', '.7z', '.apk', '.ipa',
 ]);
 
 const BLOCKED_EXTENSIONS = new Set([
@@ -71,7 +72,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage,
-    limits: { fileSize: 15 * 1024 * 1024 },
+    limits: { fileSize: 64 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
         const ext = path.extname(file.originalname || '').toLowerCase();
         if (BLOCKED_EXTENSIONS.has(ext)) {
@@ -95,7 +96,7 @@ const upload = multer({
 
 function handleUploadError(err, req, res, next) {
     if (!err) return next();
-    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'حجم فایل بیش از ۱۵ مگابایت است' });
+    if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'حجم فایل بیش از ۶۴ مگابایت است' });
     if (err.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'تعداد فایل‌ها بیش از حد مجاز است' });
     next(err);
 }

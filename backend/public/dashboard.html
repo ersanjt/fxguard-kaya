@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="bce98ed81a86">
+    <meta name="crm-build" content="2bf1e6a0e606">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=bce98ed81a86">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=bce98ed81a86" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=2bf1e6a0e606">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=2bf1e6a0e606" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -439,7 +439,7 @@
                             </div>
                         </div>
                         <div class="chat-send">
-                            <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
+                            <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.apk,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
                             <div class="chat-send-main">
                             <div id="chatVoiceRecordingBar" class="chat-voice-recording-bar" style="display:none;" hidden>
                                 <button type="button" class="chat-voice-action-btn chat-voice-delete-btn" id="chatVoiceDeleteBtn" onclick="cancelVoiceRecord()" title="حذف ضبط" aria-label="حذف ضبط">
@@ -935,7 +935,10 @@
                         <button type="button" class="btn-secondary" id="btnLoadMoreTasks" data-i18n="load_more">بارگذاری بیشتر</button>
                     </div>
                     <div id="taskDetailBox" class="task-detail-view" style="display:none;">
-                        <button type="button" class="btn-secondary task-back-btn" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div class="task-detail-toolbar">
+                            <button type="button" class="btn-secondary task-back-btn" data-i18n="back_to_list">← بازگشت به لیست</button>
+                            <button type="button" class="btn-danger btn-sm" id="taskDeleteBtn" data-i18n="btn_delete" style="display:none;">حذف</button>
+                        </div>
                         <div id="taskDetailContent" class="task-detail-content"></div>
                         <div id="taskUpdatesList" class="task-updates-list"></div>
                         <div class="task-update-form form-box">
@@ -953,9 +956,21 @@
                         </div>
                     </div>
                 </div>
-                <div id="pageProcesses" class="page">
-                    <h2 data-i18n="page_processes">مدیر فرایندهای کسب‌وکار</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="processes_intro">قالب‌های فرایند را تعریف کنید و نمونه‌های در حال اجرا را پیگیری کنید.</p>
+                <div id="pageProcesses" class="page process-page">
+                    <div class="process-page-header">
+                        <h2 data-i18n="page_processes">مدیر فرایندهای کسب‌وکار</h2>
+                        <p class="process-intro" data-i18n="processes_intro">مراحل استاندارد کار را یک‌بار به‌صورت قالب تعریف کنید و هر بار یک نمونه از آن را اجرا و پیگیری کنید تا همهٔ شعب یکسان عمل کنند.</p>
+                        <details class="process-help-box" open>
+                            <summary class="process-help-title" data-i18n="processes_help_title">راهنمای استفاده</summary>
+                            <p class="process-help-flow" data-i18n="processes_help_flow">جریان کار: قالب بسازید → نمونه را شروع و به کارمند اختصاص دهید → هر مرحله را تکمیل کنید تا فرایند تمام شود.</p>
+                            <ol class="process-help-steps">
+                                <li data-i18n="processes_help_step1">در تب «قالب‌های فرایند» قالب بسازید و مراحل را به‌ترتیب بنویسید؛ مثلاً احراز هویت، تأیید مدارک، واریز.</li>
+                                <li data-i18n="processes_help_step2">با «شروع نمونه» یک اجرای واقعی بسازید، عنوان بگذارید و در صورت نیاز مسئول تعیین کنید.</li>
+                                <li data-i18n="processes_help_step3">در تب «نمونه‌های در حال اجرا» نمونه را باز کنید، یادداشت بگذارید و به مرحله بعد بروید. مرحلهٔ آخر فرایند را می‌بندد.</li>
+                            </ol>
+                            <p class="process-help-note" data-i18n="processes_help_note">از جزئیات تیکت هم می‌توانید فرایند شروع کنید. فرایند با تسک فرق دارد: تسک یک کار تکی است؛ فرایند چند مرحلهٔ استاندارد پشت‌سرهم است.</p>
+                        </details>
+                    </div>
                     <div class="process-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border);">
                         <button type="button" class="process-tab active" data-tab="templates" data-i18n="process_templates">قالب‌های فرایند</button>
                         <button type="button" class="process-tab" data-tab="instances" data-i18n="process_instances">نمونه‌های در حال اجرا</button>
@@ -1183,23 +1198,40 @@
                     </div>
                 </div>
                 <div id="pageInternalChat" class="page internal-chat-page">
-                    <h2 data-i18n="page_internal_chat">چت داخلی</h2>
+                    <h2 class="internal-chat-page-title" data-i18n="page_internal_chat">چت داخلی</h2>
                     <div id="internalChatLayoutWrap" class="internal-chat-layout-wrap internal-chat-box">
                         <div class="internal-chat-thread-col">
                             <div class="internal-chat-list-header">
-                                <input type="text" id="internalChatSearch" class="internal-chat-search" data-i18n-ph="search_or_start" placeholder="جستجو یا گفتگوی جدید...">
-                                <button type="button" class="internal-chat-new-btn" title="گفتگوی جدید" aria-label="گفتگوی جدید"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                                <div class="internal-chat-list-title-row">
+                                    <h3 class="internal-chat-list-title" data-i18n="page_internal_chat">چت داخلی</h3>
+                                    <button type="button" class="internal-chat-new-btn" title="گفتگوی جدید" aria-label="گفتگوی جدید"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                                </div>
+                                <div class="internal-chat-search-wrap">
+                                    <svg class="internal-chat-search-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3-3"/></svg>
+                                    <input type="search" id="internalChatSearch" class="internal-chat-search" data-i18n-ph="search_or_start" placeholder="جستجو یا گفتگوی جدید..." autocomplete="off">
+                                </div>
                             </div>
                             <div id="internalThreadList" class="empty internal-chat-thread-list" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
-                        <div id="internalChatPane" class="internal-chat-pane" style="display:none;">
+                        <div id="internalChatPane" class="internal-chat-pane">
+                            <div id="internalChatEmptyPane" class="internal-chat-empty-pane">
+                                <div class="internal-chat-empty-visual" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                                </div>
+                                <h3 data-i18n="internal_chat_empty_title">گفتگوی تیمی</h3>
+                                <p data-i18n="internal_chat_empty_hint">یک گفتگو را از فهرست انتخاب کنید یا گفتگوی جدید شروع کنید.</p>
+                                <button type="button" class="btn-primary internal-chat-empty-new-btn" data-i18n="start_chat">شروع چت</button>
+                            </div>
+                            <div id="internalChatActivePane" class="internal-chat-active-pane">
                             <div class="internal-chat-header-compact">
                                 <button type="button" class="internal-chat-back-btn" aria-label="بازگشت" data-i18n-title="back_to_list"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <button type="button" class="internal-chat-header-person" id="internalChatHeaderPerson" data-action="manage-thread">
                                 <div class="internal-chat-header-avatar" id="internalChatHeaderAvatar"><span class="avatar-fallback">💬</span></div>
                                 <div class="internal-chat-header-info">
                                     <span id="internalChatHeader" class="internal-chat-header-title" data-i18n="select_conversation">انتخاب گفتگو</span>
                                     <span id="internalChatHeaderStatus" class="internal-chat-header-status" data-i18n="last_seen">آخرین بازدید</span>
                                 </div>
+                                </button>
                                 <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
                                     <button type="button" class="internal-call-btn internal-call-btn-sm" id="internalChatManageBtn" data-action="manage-thread" title="مدیریت گفتگو" data-i18n-title="manage_chat" aria-label="مدیریت گفتگو"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></button>
                                     <button type="button" class="internal-call-btn internal-call-btn-sm" data-call-type="voice" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
@@ -1207,27 +1239,45 @@
                                 </div>
                             </div>
                             <div id="internalChatQuickReplies" class="internal-chat-full-quick-replies" style="display:none;"></div>
-                            <div class="chat-messages internal-chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
+                            <div class="internal-chat-messages-wrap">
+                            <div class="chat-messages internal-chat-messages" id="internalChatMessages"></div>
+                            <button type="button" id="internalChatJumpLatest" class="internal-chat-jump-latest" hidden data-i18n-title="internal_jump_latest" aria-label="رفتن به آخرین پیام">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+                            </div>
                             <div class="internal-chat-send-wrap">
                                 <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" data-i18n-title="attach_file" style="display:none">
-                                <label id="internalChatFileOption" class="internal-chat-file-option" style="display:none"><input type="checkbox" id="internalChatAllowDownload" checked> <span data-i18n="file_allow_download">مجاز به دانلود</span></label>
-                                <div class="internal-chat-send-inner">
-                                    <button type="button" class="internal-chat-attach-btn-sm" data-i18n-title="attach_file" aria-label="پیوست"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-                                    <input type="text" id="internalChatInput" class="internal-chat-input" data-i18n-ph="msg_ph_short" placeholder="پیام بنویسید...">
-                                    <button type="button" class="internal-chat-send-btn-sm" aria-label="ارسال"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+                                <div id="internalChatFileChip" class="internal-chat-file-chip" hidden>
+                                    <img id="internalChatFileChipThumb" class="internal-chat-file-chip-thumb" alt="" hidden>
+                                    <span id="internalChatFileChipName"></span>
+                                    <label id="internalChatFileOption" class="internal-chat-file-option"><input type="checkbox" id="internalChatAllowDownload" checked> <span data-i18n="file_allow_download">مجاز به دانلود</span></label>
+                                    <button type="button" class="internal-chat-file-chip-clear" id="internalChatFileChipClear" aria-label="حذف فایل">&times;</button>
                                 </div>
+                                <div class="internal-chat-send-inner">
+                                    <button type="button" class="internal-chat-attach-btn-sm" data-i18n-title="attach_file" aria-label="پیوست"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg></button>
+                                    <textarea id="internalChatInput" class="internal-chat-input" rows="1" data-i18n-ph="msg_ph_short" placeholder="پیام بنویسید..."></textarea>
+                                    <button type="button" class="internal-chat-send-btn-sm is-idle" aria-label="ارسال"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg></button>
+                                </div>
+                            </div>
                             </div>
                         </div>
                     </div>
-                    <div id="internalNewChatForm" style="display:none; margin-top:12px;" class="form-box">
-                        <label data-i18n="start_chat_with">شروع گفتگو با</label>
-                        <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
-                        <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
-                        <label for="internalNewChatName" style="margin-top:12px;display:block;" data-i18n="group_name_optional">نام گروه (اختیاری)</label>
-                        <input type="text" id="internalNewChatName" class="internal-chat-group-name-input" maxlength="120" data-i18n-ph="group_name_ph" placeholder="مثال: تیم پشتیبانی تهران">
-                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
-                            <button type="button" id="btnInternalStartChat" class="btn-primary" data-i18n="start_chat">شروع چت</button>
-                            <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                    <div id="internalNewChatForm" class="modal-overlay internal-new-chat-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="internalNewChatTitle">
+                        <div class="modal-box internal-new-chat-dialog">
+                            <div class="modal-header">
+                                <h3 id="internalNewChatTitle" data-i18n="start_chat_with">شروع گفتگو با</h3>
+                                <button type="button" class="modal-close" id="btnInternalCancelChatX" aria-label="بستن">&times;</button>
+                            </div>
+                            <input type="search" id="internalNewChatSearch" class="internal-new-chat-search" data-i18n-ph="search_people" placeholder="جستجوی نام..." autocomplete="off">
+                            <div id="internalNewChatSelected" class="internal-new-chat-selected" hidden></div>
+                            <div id="internalNewChatUserList" class="internal-new-chat-user-list" role="listbox" aria-multiselectable="true"></div>
+                            <small class="text-muted internal-new-chat-hint" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
+                            <label for="internalNewChatName" data-i18n="group_name_optional">نام گروه (اختیاری)</label>
+                            <input type="text" id="internalNewChatName" class="internal-chat-group-name-input" maxlength="120" data-i18n-ph="group_name_ph" placeholder="مثال: تیم پشتیبانی تهران">
+                            <div class="internal-new-chat-actions">
+                                <button type="button" id="btnInternalStartChat" class="btn-primary" data-i18n="start_chat">شروع چت</button>
+                                <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3448,8 +3498,9 @@
                         <div id="internalThreadMembersList" class="internal-thread-members-list"></div>
                     </div>
                     <div class="form-group" id="internalThreadAddMembersWrap">
-                        <label for="internalThreadAddMembers" data-i18n="add_members">افزودن عضو</label>
-                        <select id="internalThreadAddMembers" multiple style="min-height:88px;width:100%;"></select>
+                        <label for="internalThreadAddSearch" data-i18n="add_members">افزودن عضو</label>
+                        <input type="search" id="internalThreadAddSearch" class="internal-new-chat-search" data-i18n-ph="search_people" placeholder="جستجوی نام..." autocomplete="off">
+                        <div id="internalThreadAddList" class="internal-new-chat-user-list internal-thread-add-list" role="listbox" aria-multiselectable="true"></div>
                         <button type="button" class="btn-secondary btn-sm" id="btnInternalAddMembers" style="margin-top:8px;" data-i18n="add_members">افزودن عضو</button>
                     </div>
                     <div class="form-group" style="margin-top:16px;">
@@ -3938,10 +3989,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=bce98ed81a86" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=2bf1e6a0e606" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -3968,10 +4019,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=bce98ed81a86" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=bce98ed81a86" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=2bf1e6a0e606" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=2bf1e6a0e606" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');
