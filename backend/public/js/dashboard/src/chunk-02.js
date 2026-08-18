@@ -1124,7 +1124,7 @@
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
                 if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (t('dashboard_min') || (LANG === 'fa' ? 'دقیقه' : 'min')), label: t('dashboard_avg_response') || t('avg_response_time') || 'Avg response time', convTab: 'all' });
-                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/5', label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/' + dashFormatNum(5), label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
                 summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
             }
