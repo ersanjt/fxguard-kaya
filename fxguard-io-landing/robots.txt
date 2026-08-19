@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Prefer HTTPS apex
+Sitemap: https://fxguard.io/sitemap.xml

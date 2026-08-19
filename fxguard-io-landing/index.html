@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search).get('lang');
+        var s = null;
+        try { s = localStorage.getItem('landing_lang'); } catch (e) {}
+        var lang = p || s;
+        if (!lang) {
+          var langs = (navigator.languages || []).slice();
+          langs.push(navigator.language || navigator.userLanguage || 'en');
+          for (var i = 0; i < langs.length; i++) {
+            var primary = String(langs[i] || '').toLowerCase().split('-')[0];
+            if (primary === 'fa' || primary === 'ps') { lang = 'fa'; break; }
+            if (primary === 'tr' || primary === 'az') { lang = 'tr'; break; }
+            if (primary === 'ar') { lang = 'ar'; break; }
+            if (primary === 'ru') { lang = 'ru'; break; }
+          }
+        }
+        if (!lang) {
+          try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            var map = {
+              'Asia/Tehran':'fa','Asia/Kabul':'fa','Europe/Istanbul':'tr',
+              'Asia/Dubai':'ar','Asia/Riyadh':'ar','Asia/Qatar':'ar','Asia/Kuwait':'ar',
+              'Asia/Bahrain':'ar','Asia/Muscat':'ar','Asia/Baghdad':'ar','Africa/Cairo':'ar',
+              'Europe/Moscow':'ru'
+            };
+            lang = map[tz] || null;
+          } catch (e2) {}
+        }
+        if (lang === 'fa' || lang === 'ar') {
+          document.documentElement.lang = lang;
+          document.documentElement.dir = 'rtl';
+          document.documentElement.setAttribute('data-lang', lang);
+        } else if (lang) {
+          document.documentElement.lang = lang;
+          document.documentElement.setAttribute('data-lang', lang);
+        }
+      } catch (e) {}
+    })();
+    </script>
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>FXGuard | WhatsApp CRM for exchange, remittance and finance desks</title>
+    <meta name="description" content="WhatsApp CRM for exchange, remittance and finance desks. FX rates on the same panel as the chat. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo inbox. Business from $249 with the FX pack. QR or official Meta Cloud API.">
+    <meta name="keywords" content="WhatsApp CRM, WhatsApp CRM for sales teams, WhatsApp CRM for shops, WhatsApp CRM for clinics, company WhatsApp inbox, customized WhatsApp CRM, واتساپ سی آر ام, پنل واتساپ فروشگاه, واتساپ CRM مطب, döviz WhatsApp CRM">
+    <meta name="author" content="FXGuard">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow">
+    <meta name="theme-color" content="#059669">
+    <meta name="color-scheme" content="dark">
+    <meta name="geo.region" content="TR">
+    <meta name="geo.placename" content="Istanbul">
+    <meta name="format-detection" content="telephone=yes">
+    <meta name="application-name" content="FXGuard">
+    <link rel="canonical" href="https://fxguard.io/">
+    <link rel="alternate" hreflang="en" href="https://fxguard.io/?lang=en">
+    <link rel="alternate" hreflang="fa" href="https://fxguard.io/?lang=fa">
+    <link rel="alternate" hreflang="tr" href="https://fxguard.io/?lang=tr">
+    <link rel="alternate" hreflang="ar" href="https://fxguard.io/?lang=ar">
+    <link rel="alternate" hreflang="ru" href="https://fxguard.io/?lang=ru">
+    <link rel="alternate" hreflang="en-GB" href="https://fxguard.io/eu/">
+    <link rel="alternate" hreflang="tr-TR" href="https://fxguard.io/tr/">
+    <link rel="alternate" hreflang="ar-AE" href="https://fxguard.io/ae/">
+    <link rel="alternate" hreflang="fa-IR" href="https://fxguard.io/ir/">
+    <link rel="alternate" hreflang="x-default" href="https://fxguard.io/">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="fa_IR">
+    <meta property="og:locale:alternate" content="tr_TR">
+    <meta property="og:locale:alternate" content="ar_AE">
+    <meta property="og:locale:alternate" content="ru_RU">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fxguard.io/">
+    <meta property="og:site_name" content="FXGuard">
+    <meta property="og:title" content="FXGuard — WhatsApp CRM for exchange, remittance and finance desks">
+    <meta property="og:description" content="FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49 inbox. Business from $249 with the FX pack.">
+    <meta property="og:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
+    <meta property="og:image:alt" content="FXGuard WhatsApp CRM desktop dashboard">
+    <meta property="og:image:width" content="1024">
+    <meta property="og:image:height" content="507">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://fxguard.io/">
+    <meta name="twitter:title" content="FXGuard — WhatsApp CRM for FX and finance desks">
+    <meta name="twitter:description" content="Rates on the same panel as the chat. Company-owned book. Cloud Start $49. Business from $249 with the FX pack.">
+    <meta name="twitter:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
+    <meta name="twitter:image:alt" content="FXGuard WhatsApp CRM desktop dashboard">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://fxguard.io/#organization",
+      "name": "FXGuard",
+      "legalName": "ERST IT Solutions Bilişim Teknolojileri Sanayi ve Ticaret Limited Şirketi",
+      "alternateName": [
+        "FX Guard",
+        "fxguard.io",
+        "FXGuard WhatsApp CRM",
+        "ERST IT"
+      ],
+      "url": "https://fxguard.io",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://fxguard.io/images/logo.svg",
+        "width": 512,
+        "height": 512
+      },
+      "image": "https://fxguard.io/images/Desktop-Dashboard.png",
+      "email": "sales@fxguard.io",
+      "telephone": "+90-501-067-6486",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Gökevler Mah. 2312. Sk. Burç İstanbul 18 Blok No: 18 J İç Kapı No: 199",
+        "addressLocality": "Esenyurt",
+        "addressRegion": "İstanbul",
+        "addressCountry": "TR"
+      },
+      "sameAs": [
+        "https://app.fxguard.io",
+        "https://wa.me/905010676486"
+      ],
+      "areaServed": [
+        {
+          "@type": "Country",
+          "name": "Turkey"
+        },
+        {
+          "@type": "Country",
+          "name": "United Arab Emirates"
+        },
+        {
+          "@type": "Place",
+          "name": "Europe"
+        },
+        {
+          "@type": "Country",
+          "name": "Iran"
+        }
+      ],
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+90-501-067-6486",
+          "contactType": "sales",
+          "url": "https://wa.me/905010676486",
+          "availableLanguage": [
+            "English",
+            "Turkish",
+            "Persian",
+            "Arabic",
+            "Russian"
+          ]
+        },
+        {
+          "@type": "ContactPoint",
+          "email": "sales@fxguard.io",
+          "contactType": "sales",
+          "availableLanguage": [
+            "English",
+            "Turkish",
+            "Persian",
+            "Arabic",
+            "Russian"
+          ]
+        },
+        {
+          "@type": "ContactPoint",
+          "email": "support@fxguard.io",
+          "contactType": "customer service",
+          "availableLanguage": [
+            "English",
+            "Turkish",
+            "Persian",
+            "Arabic",
+            "Russian"
+          ]
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://fxguard.io/#website",
+      "url": "https://fxguard.io",
+      "name": "FXGuard",
+      "description": "WhatsApp CRM for exchange, remittance and finance desks: FX rates on the same panel as the chat, company-owned customer book, roles and branches. Hosted Cloud, self-hosted license, or managed dedicated.",
+      "inLanguage": [
+        "en",
+        "fa",
+        "tr",
+        "ar",
+        "ru"
+      ],
+      "publisher": {
+        "@id": "https://fxguard.io/#organization"
+      }
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://fxguard.io/#webpage",
+      "url": "https://fxguard.io/",
+      "name": "FXGuard — WhatsApp CRM for any business",
+      "description": "Customer book stays with the company. Customized for sales teams, shops, clinics and companies. Cloud Start $49/mo for one small team. Commercial from $249.",
+      "isPartOf": {
+        "@id": "https://fxguard.io/#website"
+      },
+      "about": {
+        "@id": "https://fxguard.io/#software"
+      },
+      "primaryImageOfPage": {
+        "@type": "ImageObject",
+        "url": "https://fxguard.io/images/Desktop-Dashboard.png"
+      },
+      "inLanguage": [
+        "en",
+        "fa",
+        "tr",
+        "ar",
+        "ru"
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://fxguard.io/#software",
+      "name": "FXGuard WhatsApp CRM",
+      "applicationCategory": "BusinessApplication",
+      "applicationSubCategory": "Customer Relationship Management",
+      "operatingSystem": "Web, iOS, Android",
+      "url": "https://app.fxguard.io",
+      "description": "WhatsApp operations panel for exchange, remittance and finance desks. FX rates, charts and exchange services on the same panel as the chat. Company-owned customer book, roles, branches, 2FA. Inbox included. Two channel paths: unofficial QR gateway or official Meta Cloud API.",
+      "screenshot": [
+        "https://fxguard.io/images/Desktop-Dashboard.png",
+        "https://fxguard.io/images/Desktop-Users.png",
+        "https://fxguard.io/images/Mobile-Conversations.png"
+      ],
+      "featureList": [
+        "Customer book stays with the company",
+        "Quoted prices, timestamped",
+        "Roles, branches, 2FA, audit logs",
+        "Shared WhatsApp inbox",
+        "QR gateway or official Meta Cloud API",
+        "Tickets and tasks"
+      ],
+      "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "USD",
+        "lowPrice": "49",
+        "highPrice": "4000",
+        "offerCount": "5",
+        "url": "https://fxguard.io/pricing"
+      },
+      "provider": {
+        "@id": "https://fxguard.io/#organization"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://fxguard.io/#service-cloud",
+      "name": "FXGuard Hosted Cloud",
+      "serviceType": "SaaS WhatsApp CRM",
+      "provider": {
+        "@id": "https://fxguard.io/#organization"
+      },
+      "areaServed": "Worldwide",
+      "url": "https://fxguard.io/pricing"
+    },
+    {
+      "@type": "Service",
+      "@id": "https://fxguard.io/#service-license",
+      "name": "FXGuard Self-hosted License",
+      "serviceType": "Software license",
+      "provider": {
+        "@id": "https://fxguard.io/#organization"
+      },
+      "url": "https://fxguard.io/self-hosted"
+    },
+    {
+      "@type": "Service",
+      "@id": "https://fxguard.io/#service-managed",
+      "name": "FXGuard Managed Dedicated Hosting",
+      "serviceType": "Managed hosting",
+      "provider": {
+        "@id": "https://fxguard.io/#organization"
+      },
+      "url": "https://fxguard.io/managed-hosting"
+    },
+    {
+      "@type": "HowTo",
+      "@id": "https://fxguard.io/#howto",
+      "name": "How to start with FXGuard",
+      "description": "Book a guided demo, choose a published price floor, then go live with WhatsApp or an invoice.",
+      "step": [
+        {
+          "@type": "HowToStep",
+          "position": 1,
+          "name": "Book a guided demo",
+          "text": "A 10-minute walkthrough of rates, inbox, roles and branches. Optional 7-day trial on your own number. No shared public password is published on the marketing site.",
+          "url": "https://fxguard.io/live-demo"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 2,
+          "name": "Pick a published floor",
+          "text": "Cloud Start $49/mo (1 branch, 3 staff). Business from $249. Multi-branch from $499. License from $4,000. Managed from $800/mo.",
+          "url": "https://fxguard.io/pricing"
+        },
+        {
+          "@type": "HowToStep",
+          "position": 3,
+          "name": "WhatsApp or invoice",
+          "text": "Cloud Start on WhatsApp. Commercial, license and managed go through a written quote. Procurement pack at /procurement.",
+          "url": "https://fxguard.io/contact"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://fxguard.io/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is this a generic WhatsApp CRM?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The inbox is included. The product is a company-owned customer book with roles and branches — then we customize the panel for your trade. FX rates are an optional module."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is WhatsApp official Meta API?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Two paths: unofficial WhatsApp Web (QR) without Business verification — faster, bulk raises ban risk — and official Meta Cloud API. Serious broadcast needs Cloud API."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How is it priced?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Cloud Start $49/month for 1 branch and up to 3 staff without the FX module. Business from $249. Multi-branch from $499. License from $4000 one-time. Managed from $800/month. New signups only."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I try FXGuard before buying?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Book a 10-minute guided demo or a time-limited trial on your own number. A shared public password is not published on the marketing site."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my data backed up?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "On Hosted Cloud and Managed Dedicated plans we run daily backups as part of the service. On a Self-hosted License, backups run on your own infrastructure; we provide guidance and can include this in a support contract."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What do I actually get with a Self-hosted License?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "A one-time purchase of the full FXGuard system with installation documentation, so your team can deploy and run it on your own servers, fully under your control."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How secure is FXGuard?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every account can enable 2FA via Google Authenticator. Access is role-based across Owner, Admin, Manager, Supervisor and Agent, and activity is logged for accountability."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can FXGuard handle multiple branches or departments?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Branches and departments are built in, with owner-level oversight of staff activity, online status and login history across locations."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What languages do you support?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This website supports English, Persian, Turkish, Arabic and Russian — and our support team assists in these languages."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I get started?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Book a guided demo, then Cloud Start on WhatsApp or a written quote for Business, license or managed."
+          }
+        }
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2310b981'/%3E%3Cpath fill='%230b1220' d='M7 8h8.2v2.6H9.8v3.1H14.4v2.5H9.8V24H7V8zM17.2 11.2 19.6 14.2 22 11.2h3.1l-3.5 4.2 3.7 4.6h-3.2l-2.5-3.2-2.5 3.2h-3.2l3.7-4.6-3.5-4.2h3.1z'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="https://fxguard.io/images/logo.svg">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="sitemap" type="application/xml" href="https://fxguard.io/sitemap.xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preload" as="image" href="/images/Desktop-Dashboard.png" fetchpriority="high">
+    <link rel="preload" as="script" href="/js/pages-i18n.js?v=20260819q">
+    <link rel="preload" as="script" href="/js/landing.js?v=20260819q">
+    <link rel="preload" as="script" href="/js/site-yield.js">
+    <noscript></noscript>
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <noscript></noscript>
+    <link rel="stylesheet" href="/css/motion.css?v=20260819f">
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="/css/style.css?v=20260819">
+    <link rel="stylesheet" href="/css/landing.css?v=20260819n">
+    <link rel="stylesheet" href="/css/seo-pages.css?v=20260819h">
+    <link rel="stylesheet" href="/css/blog.css?v=20260819">
+</head>
+<body>
+    <svg id="fx-icon-sprite" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <!-- FXGuard custom icon set - 24x24, currentColor + .fx-fill for duotone -->
+
+  <symbol id="fx-logo" viewBox="0 0 32 32">
+    <rect width="32" height="32" rx="9" fill="currentColor"/>
+    <g fill="#0b1220">
+      <path d="M7 8h8.2v2.6H9.8v3.1H14.4v2.5H9.8V24H7V8z"/>
+      <path d="M17.2 11.2 19.6 14.2 22 11.2h3.1l-3.5 4.2 3.7 4.6h-3.2l-2.5-3.2-2.5 3.2h-3.2l3.7-4.6-3.5-4.2h3.1z"/>
+    </g>
+  </symbol>
+
+  <!-- Problems -->
+  <symbol id="icon-phones" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="3" y="4" width="8" height="14" rx="1.8" opacity=".22"/>
+    <rect x="3.75" y="4.75" width="6.5" height="12.5" rx="1.4" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M6.2 15.2h2.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <rect class="fx-fill" x="11.5" y="6" width="9" height="14" rx="1.8" opacity=".35"/>
+    <rect x="12.25" y="6.75" width="7.5" height="12.5" rx="1.4" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M15.1 17.2h2.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="16.25" cy="9.1" r="0.7" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="icon-history-lost" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M5 7.5c0-1.4 1.2-2.5 2.7-2.5h8.6c1.5 0 2.7 1.1 2.7 2.5v6.2c0 1.4-1.2 2.5-2.7 2.5H11l-3.8 2.8V16.2H7.7C6.2 16.2 5 15.1 5 13.7V7.5Z" opacity=".25"/>
+    <path d="M7.7 5.2h8.6c1.4 0 2.5 1 2.5 2.3v6.2c0 1.3-1.1 2.3-2.5 2.3H11.2L7.6 19v-3H7.7c-1.4 0-2.5-1-2.5-2.3V7.5c0-1.3 1.1-2.3 2.5-2.3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M9 10h6M9 13h3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55"/>
+    <circle cx="17.6" cy="17.2" r="3.4" fill="#0b1220" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M17.6 15.7v1.7l1.1.7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-no-owner" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M7 4.5h10a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V6A1.5 1.5 0 0 1 7 4.5Z" opacity=".25"/>
+    <rect x="6.2" y="5.2" width="11.6" height="13.6" rx="1.4" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M9 3.8h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M9 10.2h6M9 13.2h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".5"/>
+    <circle cx="16.8" cy="16.6" r="3.5" fill="#0b1220" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M16.8 15.2v.2M16.8 16.5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-unlock" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="5" y="11" width="14" height="9.5" rx="2.2" opacity=".28"/>
+    <rect x="5.7" y="11.7" width="12.6" height="8" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M8.2 11.5V8.2a3.8 3.8 0 0 1 7.4-.7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="12" cy="15.6" r="1.35" fill="currentColor"/>
+    <path d="M12 16.7v1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-solve" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M12 3.2 4.8 6.2v5.1c0 4.7 3.1 8.6 7.2 10.5 4.1-1.9 7.2-5.8 7.2-10.5V6.2L12 3.2Z" opacity=".28"/>
+    <path d="M12 3.8 5.5 6.5v4.7c0 4.3 2.85 7.9 6.5 9.6 3.65-1.7 6.5-5.3 6.5-9.6V6.5L12 3.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="m8.6 12.2 2.4 2.4 4.6-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <!-- Deployment models -->
+  <symbol id="icon-cloud" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M7.8 18.5h9.4a4.3 4.3 0 0 0 .7-8.55A5.7 5.7 0 0 0 7.2 11.2a3.9 3.9 0 0 0 .6 7.3Z" opacity=".3"/>
+    <path d="M7.8 18.2h9.2a4 4 0 0 0 .65-7.95A5.4 5.4 0 0 0 7.4 11.4a3.6 3.6 0 0 0 .4 6.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M12 14.2v-5M10 11.2l2-2.2 2 2.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-license" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M5.5 8.2 12 4.6l6.5 3.6v7.6L12 19.4l-6.5-3.6V8.2Z" opacity=".28"/>
+    <path d="M12 4.2 5 8v7.8L12 19.6 19 15.8V8L12 4.2Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M5.2 8.2 12 12l6.8-3.8M12 12v7.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="12" cy="10.2" r="1.5" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="icon-managed" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="4" y="4.5" width="16" height="6.2" rx="1.6" opacity=".3"/>
+    <rect class="fx-fill" x="4" y="13.3" width="16" height="6.2" rx="1.6" opacity=".18"/>
+    <rect x="4.7" y="5.2" width="14.6" height="4.8" rx="1.2" stroke="currentColor" stroke-width="1.6"/>
+    <rect x="4.7" y="14" width="14.6" height="4.8" rx="1.2" stroke="currentColor" stroke-width="1.6"/>
+    <circle cx="7.6" cy="7.6" r="0.9" fill="currentColor"/>
+    <circle cx="7.6" cy="16.4" r="0.9" fill="currentColor"/>
+    <path d="M10.5 7.6h6.2M10.5 16.4h6.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".7"/>
+  </symbol>
+
+  <!-- Features -->
+  <symbol id="icon-inbox" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M4.5 6.2h15a1.8 1.8 0 0 1 1.8 1.8v9.5a1.8 1.8 0 0 1-1.8 1.8h-15a1.8 1.8 0 0 1-1.8-1.8V8A1.8 1.8 0 0 1 4.5 6.2Z" opacity=".25"/>
+    <rect x="3.5" y="5.8" width="17" height="12.8" rx="2" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M3.8 13.2h4.2l1.3 2.2h5.4l1.3-2.2h4.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M8 9.2h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".55"/>
+  </symbol>
+
+  <symbol id="icon-customers" viewBox="0 0 24 24" fill="none">
+    <circle class="fx-fill" cx="9" cy="8" r="3.2" opacity=".3"/>
+    <circle cx="9" cy="8" r="3" stroke="currentColor" stroke-width="1.6"/>
+    <path class="fx-fill" d="M3.5 19.2c0-2.9 2.5-5.2 5.5-5.2s5.5 2.3 5.5 5.2" opacity=".2"/>
+    <path d="M3.8 19c0-2.6 2.3-4.7 5.2-4.7S14.2 16.4 14.2 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="16.8" cy="8.6" r="2.4" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M15.2 14.2c1.7-.7 3.7-.5 5.2.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-ticket" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M4 8.2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2.1a1.9 1.9 0 0 0 0 3.8v2.1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2.1a1.9 1.9 0 0 0 0-3.8V8.2Z" opacity=".28"/>
+    <path d="M4.5 8.2a1.7 1.7 0 0 1 1.7-1.7h11.6a1.7 1.7 0 0 1 1.7 1.7v2a2.2 2.2 0 0 0 0 4.2v2a1.7 1.7 0 0 1-1.7 1.7H6.2a1.7 1.7 0 0 1-1.7-1.7v-2a2.2 2.2 0 0 0 0-4.2v-2Z" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M13 6.8v10.4" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.2 2.2"/>
+  </symbol>
+
+  <symbol id="icon-tasks" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="4.5" y="4" width="15" height="16" rx="2.2" opacity=".25"/>
+    <rect x="5.2" y="4.7" width="13.6" height="14.6" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="m8 9.2 1.6 1.6 3.4-3.5M8 14.2l1.6 1.6 3.4-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14.5 10.5H17M14.5 15.5H17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".55"/>
+  </symbol>
+
+  <symbol id="icon-roles" viewBox="0 0 24 24" fill="none">
+    <circle class="fx-fill" cx="12" cy="8" r="3.2" opacity=".28"/>
+    <circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M5.2 19c0-3 3-5.2 6.8-5.2S18.8 16 18.8 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path class="fx-fill" d="M16.2 11.2 18 13l3.2-3.2" opacity=".0"/>
+    <circle cx="18.2" cy="12.8" r="3.3" fill="#0b1220" stroke="currentColor" stroke-width="1.5"/>
+    <path d="m16.9 12.8 1 1 1.8-1.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-branches" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M5 19.5V9.2l7-4.4 7 4.4v10.3" opacity=".2"/>
+    <path d="M4 20h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M6 20V9.5l6-3.8 6 3.8V20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M10 10.5h1.2M10 13.5h1.2M10 16.5h1.2M13.8 10.5H15M13.8 13.5H15M13.8 16.5H15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-fx" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="3.5" y="4.5" width="17" height="15" rx="2.2" opacity=".25"/>
+    <rect x="4.2" y="5.2" width="15.6" height="13.6" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M7.5 14.5 10.2 11l2.2 2.4 3.8-4.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M14.8 8.8h2.6v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-security" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M12 3.2 5 6.2v5c0 4.6 3 8.4 7 10.2 4-1.8 7-5.6 7-10.2v-5L12 3.2Z" opacity=".28"/>
+    <path d="M12 3.8 5.6 6.5v4.6c0 4.2 2.8 7.7 6.4 9.4 3.6-1.7 6.4-5.2 6.4-9.4V6.5L12 3.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <circle cx="12" cy="11.2" r="1.5" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M12 12.6v2.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- Services -->
+  <symbol id="icon-monitor" viewBox="0 0 24 24" fill="none">
+    <circle class="fx-fill" cx="12" cy="12" r="8.2" opacity=".22"/>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M12 7.5v5l3.2 2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="12" cy="12" r="1.1" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="icon-backup" viewBox="0 0 24 24" fill="none">
+    <ellipse class="fx-fill" cx="12" cy="7" rx="6.5" ry="2.6" opacity=".3"/>
+    <ellipse cx="12" cy="7" rx="6.5" ry="2.6" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M5.5 7v4.2c0 1.5 2.9 2.7 6.5 2.7s6.5-1.2 6.5-2.7V7" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M5.5 11.2v4.2c0 1.5 2.9 2.7 6.5 2.7s6.5-1.2 6.5-2.7v-4.2" stroke="currentColor" stroke-width="1.6"/>
+  </symbol>
+
+  <symbol id="icon-lock" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="5" y="11" width="14" height="9.2" rx="2.2" opacity=".28"/>
+    <rect x="5.7" y="11.7" width="12.6" height="7.8" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M8.2 11.5V8.4a3.8 3.8 0 0 1 7.6 0v3.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="12" cy="15.5" r="1.3" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="icon-globe" viewBox="0 0 24 24" fill="none">
+    <circle class="fx-fill" cx="12" cy="12" r="8.2" opacity=".22"/>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M4 12h16M12 4c2.4 2.4 3.6 5 3.6 8s-1.2 5.6-3.6 8c-2.4-2.4-3.6-5-3.6-8s1.2-5.6 3.6-8Z" stroke="currentColor" stroke-width="1.5"/>
+  </symbol>
+
+  <symbol id="icon-rollout" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M4 19.5h16V11l-5 3.2-3-2-3 2.2L4 11v8.5Z" opacity=".2"/>
+    <path d="M3.5 20h17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M5 20V11.2l3.5 2.3 2.8-2 3.2 2.2L19 11.2V20" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M8.5 9.2 12 6.8l3.5 2.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-uptime" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M3.5 16.5 8 10.8l3.2 3.6 4.2-6.4 4.8 8.5H3.5Z" opacity=".22"/>
+    <path d="M3.5 16.8 8.2 10l3.1 3.5L15.8 7l4.7 9.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M3 18.5h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity=".45"/>
+  </symbol>
+
+  <symbol id="icon-gdpr" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M7 4.5h7.2L19 9.3V19a1.8 1.8 0 0 1-1.8 1.8H7A1.8 1.8 0 0 1 5.2 19V6.3A1.8 1.8 0 0 1 7 4.5Z" opacity=".25"/>
+    <path d="M14.2 4.8V9H19" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M7.2 5.2h6.5L18.8 10v8.8a1.3 1.3 0 0 1-1.3 1.3H7.2a1.3 1.3 0 0 1-1.3-1.3V6.5a1.3 1.3 0 0 1 1.3-1.3Z" stroke="currentColor" stroke-width="1.6"/>
+    <path d="m9.2 14.2 1.8 1.8 3.6-3.8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-onboard" viewBox="0 0 24 24" fill="none">
+    <path class="fx-fill" d="M4 8.5 12 4.5l8 4v7.2l-3.2-1.8-2.8 2.2-2-1.5-2.2 1.7L4 15.5V8.5Z" opacity=".2"/>
+    <path d="M4 8.8 12 4.8l8 4v6.8l-3.5-2-2.7 2.1-2-1.5-2.3 1.8L4 15.4V8.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    <path d="M12 4.8v10.2" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="12" cy="18.2" r="1.4" fill="currentColor"/>
+  </symbol>
+
+  <symbol id="icon-check" viewBox="0 0 24 24" fill="none">
+    <circle class="fx-fill" cx="12" cy="12" r="8.2" opacity=".28"/>
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="m8.2 12.2 2.5 2.5 5.2-5.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+
+  <symbol id="icon-desktop" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="3" y="4.5" width="18" height="12" rx="2" opacity=".25"/>
+    <rect x="3.7" y="5.2" width="16.6" height="10.6" rx="1.6" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M9 19.5h6M12 16v3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+
+  <symbol id="icon-mobile" viewBox="0 0 24 24" fill="none">
+    <rect class="fx-fill" x="7" y="3" width="10" height="18" rx="2.2" opacity=".28"/>
+    <rect x="7.7" y="3.7" width="8.6" height="16.6" rx="1.8" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M11 17.8h2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </symbol>
+</svg>
+    <a href="#main" class="skip-link" data-i18n="skip_link">Skip to content</a>
+<script>
+  var PANEL_URL = 'https://app.fxguard.io';
+  var WA_NUMBER = '905010676486';
+  var WA_LINK = 'https://wa.me/' + WA_NUMBER;
+  if (typeof CONTACT_API_URL === 'undefined') {
+    var CONTACT_API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://app.fxguard.io';
+  }
+</script>
+<a href="https://wa.me/905010676486" class="wa-float js-wa-link" data-wa="buy" target="_blank" rel="noopener noreferrer" data-i18n-aria="aria_wa_buy" aria-label="Buy FXGuard on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<header id="header" role="banner">
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label="FXGuard">
+      <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+      <span>FXGuard</span>
+    </a>
+    <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
+      <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+      <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Pricing</a>
+      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
+      <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
+      <a href="/live-demo" class="btn btn-primary" id="btnPanel" data-i18n="nav_try_demo">Demo</a>
+    </nav>
+    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    </div>
+    <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<nav class="nav-mobile" id="navMobile" data-i18n-aria="aria_nav_mobile" aria-label="Mobile">
+  <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
+  <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+  <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Pricing</a>
+  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
+  <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
+  <a href="/live-demo" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_try_demo">Demo</a>
+  <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+    <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+    <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+    <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+    <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+    <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+  </div>
+</nav>
+<main id="main" role="main">
+        <section class="hero" id="top" aria-labelledby="hero-heading">
+            <div class="hero-bg"></div>
+            <div class="container hero-content">
+<div class="hero-badge" data-i18n="hero_badge">WhatsApp CRM for FX &amp; finance</div>
+                <h1 id="hero-heading" data-i18n="hero_title">WhatsApp CRM for <span>exchange, remittance and finance</span> desks</h1>
+                <p class="hero-desc" data-i18n="hero_desc">One company WhatsApp number. Rates, quoted prices, customer book and branches on one panel. Built for money desks — not a generic ads inbox. Other teams can run the core without the FX pack.</p>
+                <div class="hero-audience">
+                    <p class="hero-audience-label" data-i18n="hero_who_label">Built for</p>
+                    <ul class="hero-audience-list">
+                        <li data-i18n="hero_a1">Exchange offices</li>
+                        <li data-i18n="hero_a2">Remittance desks</li>
+                        <li data-i18n="hero_a3">Finance firms</li>
+                        <li data-i18n="hero_a4">Multi-branch money desks</li>
+                        <li data-i18n="hero_a5">Other teams — core without FX</li>
+                        <li data-i18n="hero_a6">We tailor the panel</li>
+                    </ul>
+                </div>
+                <p class="hero-trust" data-i18n="hero_trust">Optional first-replies with your OpenAI key — staff still close the deal · 7-day money-back on first Cloud Start month</p>
+                <div class="hero-btns">
+                    <a href="/live-demo" class="btn btn-primary btn-lg" data-i18n="hero_cta_demo">See demo</a>
+                    <a href="#packages" class="btn btn-outline btn-lg" data-i18n="hero_cta_packages">Prices</a>
+                    <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="hero_cta_wa">Talk on WhatsApp</a>
+                </div>
+                <p class="hero-offer" data-i18n="hero_offer">Cloud Start <strong>$49/mo</strong> (1 branch, 3 staff) · Business from <strong>$249</strong> · License from <strong>$4,000</strong></p>
+                <div class="trust-row">
+                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <strong data-i18n="trust_demo">Guided demo on request</strong></span>
+                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_secure">2FA and audit logs</span></span>
+                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_multibranch">Exchange, remittance, finance</span></span>
+                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_uptime">Invoice / PO available</span></span>
+                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_refund">7-day money-back on first Cloud month</span></span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section products-strip reveal" id="products" aria-labelledby="products-strip-heading">
+            <div class="container">
+                <div class="section-header">
+                    <p class="section-eyebrow" data-i18n="products_eyebrow">One vertical, three products</p>
+                    <h2 id="products-strip-heading" data-i18n="home_products_h2">What FXGuard offers</h2>
+                    <p data-i18n="home_products_sub">WhatsApp CRM with an FX rates pack is the lead product. Accounting and branded exchange websites sit beside it — each quoted separately.</p>
+                </div>
+                <div class="product-suite-grid">
+                    <article class="product-card product-card--live">
+                        <p class="product-badge" data-i18n="products_badge_live">Available now</p>
+                        <h3 data-i18n="products_crm_h2">WhatsApp CRM</h3>
+                        <p data-i18n="home_products_crm_p">Company WhatsApp, customer book, roles, branches — plus FX rates, charts and exchange services on Business and above.</p>
+                        <p class="product-who" data-i18n="home_products_crm_who">For exchange, remittance and finance desks. Other teams use Cloud Start without the FX pack.</p>
+                        <div class="product-actions">
+                            <a class="btn btn-primary" href="/whatsapp-crm" data-i18n="products_crm_cta">View product</a>
+                            <a class="btn btn-outline" href="#packages" data-i18n="home_products_all">Prices</a>
+                        </div>
+                    </article>
+                    <article class="product-card product-card--live">
+                        <p class="product-badge" data-i18n="products_badge_soon">Live demo</p>
+                        <h3 data-i18n="products_acc_h2">Accounting</h3>
+                        <p data-i18n="home_products_acc_p">A live ledger for receipts, payments, rates and remittance. Public demo is separate from the CRM and resets.</p>
+                        <p class="product-who" data-i18n="home_products_acc_who">For exchange offices and remittance desks.</p>
+                        <div class="product-actions">
+                            <a class="btn btn-primary" href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="products_acc_cta">Open demo</a>
+                            <a class="btn btn-wa js-wa-link" data-wa="accounting" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="home_products_learn">Quote</a>
+                        </div>
+                    </article>
+                    <article class="product-card product-card--live">
+                        <p class="product-badge" data-i18n="products_badge_live">Available now</p>
+                        <h3 data-i18n="products_ex_h2">Exchange &amp; finance websites</h3>
+                        <p data-i18n="home_products_ex_p">A branded website with rates, orders and tracking. Live example at exchange.fxguard.io — quoted separately from the CRM.</p>
+                        <p class="product-who" data-i18n="home_products_ex_who">For exchange offices and finance firms.</p>
+                        <div class="product-actions">
+                            <a class="btn btn-primary" href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="products_ex_cta">See live example</a>
+                            <a class="btn btn-wa js-wa-link" data-wa="exchange" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="products_ex_contact">Quote</a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="problems" aria-labelledby="problems-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="problems-heading" data-i18n="problems_title">Why a money desk buys FXGuard</h2>
+                    <p data-i18n="problems_sub">If your exchange, remittance or finance team quotes prices on WhatsApp, these are the four reasons to buy — not a prettier inbox than Wati.</p>
+                </div>
+                <div class="problems-grid">
+                    <article class="problem-card">
+                        <a class="problem-card-hit" href="/blog/where-whatsapp-on-personal-phones-costs-you#loss-1">
+                            <div class="problem-card-head">
+                                <span class="icon-box icon-box-danger"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-phones"></use></svg></span>
+                                <h3 data-i18n="p1_title">So the customer book stays when staff leave</h3>
+                            </div>
+                            <p data-i18n="p1_desc">When a salesperson, shop clerk, clinic assistant or teller leaves, chats on their phone leave too. You buy the panel so history stays with the company.</p>
+                        </a>
+                    </article>
+                    <article class="problem-card">
+                        <a class="problem-card-hit" href="/blog/where-whatsapp-on-personal-phones-costs-you#loss-2">
+                            <div class="problem-card-head">
+                                <span class="icon-box icon-box-danger"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-history-lost"></use></svg></span>
+                                <h3 data-i18n="p2_title">So the price you quoted can be proven</h3>
+                            </div>
+                            <p data-i18n="p2_desc">A shop quote, clinic fee or FX rate in chat is not a document. One dispute can cost more than years of software. You buy this so the quoted price is on record.</p>
+                        </a>
+                    </article>
+                    <article class="problem-card">
+                        <a class="problem-card-hit" href="/blog/where-whatsapp-on-personal-phones-costs-you#loss-3">
+                            <div class="problem-card-head">
+                                <span class="icon-box icon-box-danger"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-no-owner"></use></svg></span>
+                                <h3 data-i18n="p3_title">So you know who did what</h3>
+                            </div>
+                            <p data-i18n="p3_desc">One WhatsApp shared by several people means nobody is accountable. You buy roles so each person has their own login.</p>
+                        </a>
+                    </article>
+                    <article class="problem-card">
+                        <a class="problem-card-hit" href="/blog/where-whatsapp-on-personal-phones-costs-you#loss-4">
+                            <div class="problem-card-head">
+                                <span class="icon-box icon-box-danger"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-unlock"></use></svg></span>
+                                <h3 data-i18n="p4_title">So the business WhatsApp number is not banned</h3>
+                            </div>
+                            <p data-i18n="p4_desc">Bulk messages on an unofficial link burn the line. You buy this to choose an honest path — QR or official Cloud API — before the number dies.</p>
+                        </a>
+                    </article>
+                </div>
+                <p class="problems-more">
+                    <a href="/blog/where-whatsapp-on-personal-phones-costs-you" data-i18n="problems_readmore">Read how these four losses actually happen →</a>
+                </p>
+                <div class="solution-box">
+                    <div class="solution-box-head">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-solve"></use></svg></span>
+                        <h3 data-i18n="solution_title">That is why you buy FXGuard</h3>
+                    </div>
+                    <p data-i18n="solution_desc">One company number, FX rates on the same panel as the chat, customer book stays with the business. First Cloud Start month: 7-day money-back. Other teams can skip the FX pack.</p>
+                    <a href="#packages" class="btn btn-primary" data-i18n="solution_cta">See prices</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal outcomes-section" id="outcomes" aria-labelledby="outcomes-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="outcomes-heading" data-i18n="outcomes_title">What you get after you buy</h2>
+                    <p data-i18n="outcomes_sub">For sales teams, shops, clinics and companies. Exchange offices can add the rates module — it is optional, not the product.</p>
+                </div>
+                <div class="outcomes-grid">
+                    <article class="outcome-card">
+                        <span class="outcome-num">01</span>
+                        <h3 data-i18n="out1_title">The customer book stays with the company</h3>
+                        <p data-i18n="out1_desc">History and tags sit on the company panel — not on a salesperson’s, clerk’s or assistant’s phone.</p>
+                    </article>
+                    <article class="outcome-card">
+                        <span class="outcome-num">02</span>
+                        <h3 data-i18n="out2_title">The price you told the customer is on record</h3>
+                        <p data-i18n="out2_desc">A shop quote, clinic fee or any price said in chat is timestamped. Optional FX rates only if you need them.</p>
+                    </article>
+                    <article class="outcome-card">
+                        <span class="outcome-num">03</span>
+                        <h3 data-i18n="out3_title">Roles and branches, not a shared login</h3>
+                        <p data-i18n="out3_desc">Owner through agent. Each person has their own access. 2FA and activity logs.</p>
+                    </article>
+                    <article class="outcome-card">
+                        <span class="outcome-num">04</span>
+                        <h3 data-i18n="out4_title">Price follows the size of your team</h3>
+                        <p data-i18n="out4_desc">Cloud Start $49 for a small team. Business from $249. License from $4,000. Managed from $800/mo.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="solutions" aria-labelledby="solutions-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="solutions-heading" data-i18n="solutions_title">Which one should you pick?</h2>
+                    <p data-i18n="solutions_sub">The WhatsApp CRM is the same. The difference is only: who keeps the server, and how you pay.</p>
+                </div>
+                <div class="model-grid">
+                    <article class="model-card featured">
+                        <span class="price-badge" data-i18n="model1_badge">Start here</span>
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cloud"></use></svg></span>
+                        <h3 data-i18n="model1_title">Cloud</h3>
+                        <p class="model-price" data-i18n="model1_price">From $49 / month</p>
+                        <p class="model-who" data-i18n="model1_who">If you have no server and want to start this week.</p>
+                        <p class="model-desc" data-i18n="model1_desc">We keep the software online. You log in and work. Start plan: 1 branch, 3 people.</p>
+                        <ul class="model-list">
+                            <li data-i18n="model1_f1">No server to install</li>
+                            <li data-i18n="model1_f2">For a shop, clinic or small sales team</li>
+                            <li data-i18n="model1_f3">First month: 7-day money-back</li>
+                            <li data-i18n="model1_f4">Pay monthly or yearly</li>
+                        </ul>
+                        <a href="#packages" class="btn btn-primary btn-block" data-i18n="model1_cta">Cloud from $49</a>
+                    </article>
+                    <article class="model-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-license"></use></svg></span>
+                        <h3 data-i18n="model2_title">License</h3>
+                        <p class="model-price" data-i18n="model2_price">From $4,000 once</p>
+                        <p class="model-who" data-i18n="model2_who">If you want it installed on your own company server.</p>
+                        <p class="model-desc" data-i18n="model2_desc">You buy it once. You install it. Customer data stays inside your company.</p>
+                        <ul class="model-list">
+                            <li data-i18n="model2_f1">One payment — it is yours</li>
+                            <li data-i18n="model2_f2">Data does not leave your server</li>
+                            <li data-i18n="model2_f3">For companies that need an invoice</li>
+                            <li data-i18n="model2_f4">Yearly updates optional</li>
+                        </ul>
+                        <a href="#packages" class="btn btn-outline btn-block" data-i18n="model2_cta">License from $4,000</a>
+                    </article>
+                    <article class="model-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-managed"></use></svg></span>
+                        <h3 data-i18n="model3_title">We run it for you</h3>
+                        <p class="model-price" data-i18n="model3_price">From $800 / month</p>
+                        <p class="model-who" data-i18n="model3_who">If you have several branches and do not want to manage a server yourself.</p>
+                        <p class="model-desc" data-i18n="model3_desc">We install a copy only for your company and we keep it running.</p>
+                        <ul class="model-list">
+                            <li data-i18n="model3_f1">A separate copy — not shared with other customers</li>
+                            <li data-i18n="model3_f2">We handle backups and upkeep</li>
+                            <li data-i18n="model3_f3">Written support terms on the invoice</li>
+                            <li data-i18n="model3_f4">For larger teams</li>
+                        </ul>
+                        <a href="#packages" class="btn btn-outline btn-block" data-i18n="model3_cta">From $800 / month</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="channel" aria-labelledby="channel-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="channel-heading" data-i18n="ch_title">How WhatsApp is connected — two honest paths</h2>
+                    <p data-i18n="ch_sub">We will not pretend every deployment is a Meta Business Solution Provider. Choose the path that matches your market.</p>
+                </div>
+                <div class="channel-grid">
+                    <article class="channel-card">
+                        <h3 data-i18n="ch_a_title">QR gateway (WhatsApp Web)</h3>
+                        <p data-i18n="ch_a_desc">Scan once, staff reply from the panel. Fast, no Meta Business verification. Unofficial session: bulk/broadcast raises ban risk. Use it when official API is not available.</p>
+                    </article>
+                    <article class="channel-card channel-card-official">
+                        <h3 data-i18n="ch_b_title">Official Meta Cloud API</h3>
+                        <p data-i18n="ch_b_desc">Verified WhatsApp Business API. No QR. Template messages outside the 24-hour window. Required for serious bulk and for buyers who need a compliant channel.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="cases" aria-labelledby="cases-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="cases-heading" data-i18n="cases_title">What desks tell us — anonymized</h2>
+                    <p data-i18n="cases_sub">No fake logos. These are the incidents that close a deal, written so a buyer can recognize themselves.</p>
+                </div>
+                <div class="cases-grid">
+                    <article class="case-card">
+                        <p class="case-meta" data-i18n="c1_meta">Istanbul · remittance · 2 branches</p>
+                        <h3 data-i18n="c1_title">The book stayed when two dealers left</h3>
+                        <p data-i18n="c1_desc">Chats and tags were on the company panel. The owner did not buy the customer list back from departing staff.</p>
+                    </article>
+                    <article class="case-card">
+                        <p class="case-meta" data-i18n="c2_meta">Anatolia · FX / gold shop</p>
+                        <h3 data-i18n="c2_title">A quoted USD/TRY rate was on record</h3>
+                        <p data-i18n="c2_desc">A dispute over the price said in WhatsApp ended with a timestamped quote — not a screenshot argument.</p>
+                    </article>
+                    <article class="case-card">
+                        <p class="case-meta" data-i18n="c3_meta">Multi-city desk · 8 staff</p>
+                        <h3 data-i18n="c3_title">Roles stopped a shared WhatsApp login</h3>
+                        <p data-i18n="c3_desc">Each branch saw its own queue. The owner could see who quoted and who marked a ticket done.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="demo" aria-labelledby="demo-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="demo-heading" data-i18n="demo_title">Guided demo, or a time-limited trial on your number</h2>
+                    <p data-i18n="demo_sub">We do not publish a shared public password on this site. Screens can be walked through in about 10 minutes. A live line is a session you book, or a trial you can disconnect.</p>
+                </div>
+
+                <div class="demo-card">
+                    <ol class="demo-steps">
+                        <li data-i18n="demo_step1">10-minute walkthrough of rates, inbox, roles and branches</li>
+                        <li data-i18n="demo_step2">Optional trial: connect your WhatsApp, then disconnect it</li>
+                        <li data-i18n="demo_step3">Cloud Start self-serve, or a written quote for Business / license</li>
+                    </ol>
+                    <p class="demo-note" data-i18n="demo_note">Do not enter real customer secrets in any shared environment. For a live line, book a session.</p>
+                    <div class="demo-actions">
+                        <a href="https://wa.me/905010676486" class="btn btn-primary btn-lg js-wa-link" data-wa="demo" target="_blank" rel="noopener" data-i18n="demo_cta">Book a guided demo on WhatsApp</a>
+                        <a href="https://wa.me/905010676486" class="btn btn-outline btn-lg js-wa-link" data-wa="trial" target="_blank" rel="noopener" data-i18n="demo_trial">Ask for a 7-day own-number trial</a>
+                    </div>
+                </div>
+
+                <h3 class="gallery-title" data-i18n="gallery_title">Real Screens, Desktop &amp; Mobile</h3>
+                <div class="demo-gallery">
+                    <div class="demo-gallery-primary">
+                        <div class="browser-frame">
+                            <div class="browser-bar">
+                                <div class="browser-dots"><span></span><span></span><span></span></div>
+                                <div class="browser-url">app.fxguard.io/dashboard</div>
+                            </div>
+                            <div class="browser-content">
+                                <img src="/images/Desktop-Dashboard.png" alt="FXGuard WhatsApp CRM desktop dashboard — live overview and quick actions" width="1024" height="507" loading="eager" fetchpriority="high">
+                            </div>
+                        </div>
+                        <span class="device-badge"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-desktop"></use></svg><span data-i18n="shot1_caption">Dashboard - live overview &amp; quick actions</span></span>
+                    </div>
+
+                    <div class="demo-gallery-secondary">
+                        <figure class="shot-card">
+                            <img src="/images/Desktop-Users.png" alt="FXGuard users and roles management screen" loading="lazy" width="1024" height="484">
+                            <figcaption data-i18n="shot2_caption">Users &amp; Roles - Owner, Admin, Manager, Supervisor, Agent</figcaption>
+                        </figure>
+                        <figure class="shot-card">
+                            <img src="/images/Desktop-Profile.png" alt="FXGuard profile, password and 2FA security screen" loading="lazy" width="1024" height="484">
+                            <figcaption data-i18n="shot3_caption">Security &amp; Profile - 2FA and account settings</figcaption>
+                        </figure>
+                    </div>
+
+                    <div class="demo-gallery-mobiles">
+                        <div class="mobile-shot">
+                            <div class="phone-frame">
+                                <div class="phone-notch" aria-hidden="true"></div>
+                                <div class="phone-screen">
+                                    <img src="/images/Mobile-View.png" alt="FXGuard mobile dashboard view" loading="lazy" width="425" height="926">
+                                </div>
+                            </div>
+                            <p class="mobile-caption" data-i18n="shot4_caption">Mobile Dashboard - manage from anywhere</p>
+                        </div>
+                        <div class="mobile-shot">
+                            <div class="phone-frame">
+                                <div class="phone-notch" aria-hidden="true"></div>
+                                <div class="phone-screen">
+                                    <img src="/images/Mobile-Conversations.png" alt="FXGuard mobile WhatsApp conversations view" loading="lazy" width="429" height="924">
+                                </div>
+                            </div>
+                            <p class="mobile-caption" data-i18n="shot5_caption">Mobile Conversations - WhatsApp inbox on the go</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="features" aria-labelledby="features-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="features-heading" data-i18n="features_title">Built for money desks on WhatsApp</h2>
+                    <p data-i18n="features_sub">FX rates on the same panel as the chat. Inbox is included — it is not why you pick us over Wati or respond.io.</p>
+                </div>
+                <div class="features-grid">
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-customers"></use></svg></div>
+                        <h3 data-i18n="f1_title">Customer book stays in the company</h3>
+                        <p data-i18n="f1_desc">History, tags and notes follow the customer — not the employee’s phone. Owners keep the book after staff exit.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-fx"></use></svg></div>
+                        <h3 data-i18n="f2_title">FX rates, charts, exchange services</h3>
+                        <p data-i18n="f2_desc">Live buy/sell, charts and exchange services on the same panel as WhatsApp. This pack starts on Cloud Business. Cloud Start is inbox only.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-roles"></use></svg></div>
+                        <h3 data-i18n="f3_title">Roles, branches, 2FA, audit logs</h3>
+                        <p data-i18n="f3_desc">Owner through agent. Each branch sees its desk. Google Authenticator and activity logs on every account.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-inbox"></use></svg></div>
+                        <h3 data-i18n="f4_title">Shared WhatsApp inbox</h3>
+                        <p data-i18n="f4_desc">One business number, assignment, unread and unanswered queues. Included — not the reason to choose us.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-ticket"></use></svg></div>
+                        <h3 data-i18n="f5_title">Tickets and tasks</h3>
+                        <p data-i18n="f5_desc">Turn a chat into a tracked job with an owner. Included with every plan.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-security"></use></svg></div>
+                        <h3 data-i18n="f6_title">Two WhatsApp paths, stated honestly</h3>
+                        <p data-i18n="f6_desc">QR / WhatsApp Web for markets without Meta BSP. Official Cloud API when you need templates and lower ban risk.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-branches"></use></svg></div>
+                        <h3 data-i18n="f7_title">Quoted prices, timestamped</h3>
+                        <p data-i18n="f7_desc">The rate or fee you told the customer stays on record. One dispute can cost more than years of software.</p>
+                    </article>
+                    <article class="feature-card">
+                        <div class="feature-icon icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-lock"></use></svg></div>
+                        <h3 data-i18n="f8_title">Optional AI first-replies</h3>
+                        <p data-i18n="f8_desc">OpenAI can draft and route — you bring the key. Staff still close the rate and the file. Not an AI Agent that replaces roles and 2FA.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="stats" aria-label="Key metrics">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-item"><span class="stat-num">12+</span><span data-i18n="stat1">Modules</span></div>
+                    <div class="stat-item"><span class="stat-num">5</span><span data-i18n="stat2">User Roles</span></div>
+                    <div class="stat-item"><span class="stat-num">5</span><span data-i18n="stat3">Languages</span></div>
+                    <div class="stat-item"><span class="stat-num">7</span><span data-i18n="stat4">Day money-back</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="packages" aria-labelledby="packages-heading">
+            <div class="container" id="pricing">
+                <div class="section-header">
+                    <h2 id="packages-heading" data-i18n="packages_title">Start is inbox. Business is the FX pack.</h2>
+                    <p data-i18n="packages_sub">Self-serve cloud for a small desk. Commercial quotes, invoices and SLA for multi-branch FX teams. New tiers apply to new signups.</p>
+                </div>
+                <p class="pricing-kicker" data-i18n="pricing_cloud_note">Hosted cloud</p>
+                <div class="pricing-grid">
+                    <article class="price-card">
+                        <span class="icon-box pkg-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cloud"></use></svg></span>
+                        <h3 data-i18n="plan_start">Cloud Start</h3>
+                        <p class="price-who" data-i18n="plan_start_who">1 branch · up to 3 staff · no FX module</p>
+                        <div class="price"><span class="price-amt">$49</span><span class="price-period" data-i18n="plan_mo">/month</span></div>
+                        <ul>
+                            <li data-i18n="plan_s1">Inbox, customers, tickets, tasks</li>
+                            <li data-i18n="plan_s2">1 WhatsApp number</li>
+                            <li data-i18n="plan_s3">Email support</li>
+                            <li data-i18n="plan_s4">7-day money-back on first month</li>
+                        </ul>
+                        <a href="https://wa.me/905010676486" class="btn btn-wa btn-block js-wa-link" data-wa="cloud" target="_blank" rel="noopener" data-i18n="plan_btn">Buy Start on WhatsApp</a>
+                        <a href="/pay" class="btn btn-outline btn-block" data-i18n="plan_btn_usdt">Pay $49 in crypto</a>
+                    </article>
+                    <article class="price-card price-card-featured">
+                        <span class="price-badge" data-i18n="plan_popular">For growing desks</span>
+                        <span class="icon-box pkg-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-cloud"></use></svg></span>
+                        <h3 data-i18n="plan_business">Cloud Business</h3>
+                        <p class="price-who" data-i18n="plan_business_who">Up to 3 branches · 10 staff · FX module</p>
+                        <div class="price"><span class="price-from" data-i18n="plan_from">from</span> <span class="price-amt">$249</span><span class="price-period" data-i18n="plan_mo">/month</span></div>
+                        <ul>
+                            <li data-i18n="plan_b1">FX rates, charts, exchange services</li>
+                            <li data-i18n="plan_b2">Roles and branch separation</li>
+                            <li data-i18n="plan_b3">2FA and audit logs</li>
+                        </ul>
+                        <a href="https://wa.me/905010676486" class="btn btn-primary btn-block js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="plan_btn_biz">Quote Business on WhatsApp</a>
+                    </article>
+                    <article class="price-card">
+                        <span class="icon-box pkg-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-branches"></use></svg></span>
+                        <h3 data-i18n="plan_multi">Cloud Multi-branch</h3>
+                        <p class="price-who" data-i18n="plan_multi_who">More branches · written support SLA</p>
+                        <div class="price"><span class="price-from" data-i18n="plan_from">from</span> <span class="price-amt">$499</span><span class="price-period" data-i18n="plan_mo">/month</span></div>
+                        <ul>
+                            <li data-i18n="plan_m1">Priority support / SLA on request</li>
+                            <li data-i18n="plan_m2">Onboarding for multiple locations</li>
+                            <li data-i18n="plan_m3">Invoice and procurement pack</li>
+                        </ul>
+                        <a href="#contact-form" class="btn btn-outline btn-block js-set-purpose" data-purpose="quote" data-i18n="plan_btn_multi">Request invoice</a>
+                    </article>
+                </div>
+                <p class="pricing-kicker pricing-kicker-gap" data-i18n="pricing_commercial_note">Commercial — invoice and security summary</p>
+                <p class="pricing-kicker"><a href="/procurement" data-i18n="footer_procurement">Security / invoice pack</a></p>
+                <div class="pricing-grid pricing-grid-commercial">
+                    <article class="price-card">
+                        <span class="icon-box pkg-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-license"></use></svg></span>
+                        <h3 data-i18n="plan_license">Self-hosted license</h3>
+                        <p class="price-who" data-i18n="plan_license_who">Your servers · data stays with you</p>
+                        <div class="price"><span class="price-from" data-i18n="plan_once">one-time from</span> <span class="price-amt">$4,000</span></div>
+                        <ul>
+                            <li data-i18n="plan_l1">Full system handover</li>
+                            <li data-i18n="plan_l2">Install guide</li>
+                            <li data-i18n="plan_l3">Optional yearly updates</li>
+                        </ul>
+                        <a href="#contact-form" class="btn btn-outline btn-block js-set-purpose" data-purpose="license" data-i18n="plan_contact">Get a written quote</a>
+                    </article>
+                    <article class="price-card">
+                        <span class="icon-box pkg-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-managed"></use></svg></span>
+                        <h3 data-i18n="plan_managed">Managed dedicated</h3>
+                        <p class="price-who" data-i18n="plan_managed_who">We install and operate a dedicated instance</p>
+                        <div class="price"><span class="price-from" data-i18n="plan_from">from</span> <span class="price-amt">$800</span><span class="price-period" data-i18n="plan_mo">/month</span></div>
+                        <ul>
+                            <li data-i18n="plan_g1">Dedicated instance</li>
+                            <li data-i18n="plan_g2">Monitoring and backups</li>
+                            <li data-i18n="plan_g3">Account manager</li>
+                        </ul>
+                        <a href="#contact-form" class="btn btn-outline btn-block js-set-purpose" data-purpose="managed" data-i18n="plan_contact">Get a written quote</a>
+                    </article>
+                </div>
+                <p class="packages-guarantee" data-i18n="packages_guarantee">Floors are published so procurement is not guessing. Final commercial numbers can be negotiated.</p>
+                <p class="packages-note" data-i18n="packages_note">Cloud Start does not include the FX rates module. Business and above do. License and Managed are invoiced.</p>
+            </div>
+        </section>
+
+        <section class="section reveal buy-path-section" id="buy" aria-labelledby="buy-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="buy-heading" data-i18n="buy_title">How to Buy — 3 Simple Steps</h2>
+                    <p data-i18n="buy_sub">No long sales cycle. Demo free, choose a package, purchase on WhatsApp or the form.</p>
+                </div>
+                <div class="buy-steps">
+                    <article class="buy-step">
+                        <span class="buy-step-num">1</span>
+                        <h3 data-i18n="buy1_title">1. Book a guided demo</h3>
+                        <p data-i18n="buy1_desc">Ten minutes on rates, inbox, roles and branches. Optional 7-day trial on your own number.</p>
+                    </article>
+                    <article class="buy-step">
+                        <span class="buy-step-num">2</span>
+                        <h3 data-i18n="buy2_title">2. Pick your package</h3>
+                        <p data-i18n="buy2_desc">Hosted Cloud for speed, Self-hosted License for ownership, or Managed Dedicated hands-off.</p>
+                    </article>
+                    <article class="buy-step">
+                        <span class="buy-step-num">3</span>
+                        <h3 data-i18n="buy3_title">3. Purchase today</h3>
+                        <p data-i18n="buy3_desc">Message WhatsApp or send the form. Sales replies on business days within 24 hours — often faster.</p>
+                    </article>
+                </div>
+                <div class="buy-actions">
+                    <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="buy_cta_wa">Start Purchase on WhatsApp</a>
+                    <a href="#contact-form" class="btn btn-outline btn-lg" data-i18n="buy_cta_form">Or send a buy request</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="services" aria-labelledby="services-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="services-heading" data-i18n="services_title">Support That Doesn't Stop at Setup</h2>
+                    <p data-i18n="services_sub">Backups, maintenance, security and multilingual support - on every plan we operate.</p>
+                </div>
+                <div class="services-grid">
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-monitor"></use></svg></span>
+                        <h3 data-i18n="svc1_title">24/7 Monitoring &amp; Maintenance</h3>
+                        <p data-i18n="svc1_desc">Cloud and Managed plans are monitored around the clock, with proactive maintenance and patching.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-backup"></use></svg></span>
+                        <h3 data-i18n="svc2_title">Daily Backups &amp; Recovery</h3>
+                        <p data-i18n="svc2_desc">Automatic daily backups on hosted plans, with a documented recovery process.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-lock"></use></svg></span>
+                        <h3 data-i18n="svc3_title">Security &amp; 2FA</h3>
+                        <p data-i18n="svc3_desc">Google Authenticator 2FA, role-based permissions and full activity logs on every deployment.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-globe"></use></svg></span>
+                        <h3 data-i18n="svc4_title">Multilingual Support</h3>
+                        <p data-i18n="svc4_desc">Support and onboarding available in English, Turkish, Persian, Arabic and Russian.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-rollout"></use></svg></span>
+                        <h3 data-i18n="svc5_title">Multi-Branch Rollouts</h3>
+                        <p data-i18n="svc5_desc">We help you structure branches, departments and roles as you grow.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-uptime"></use></svg></span>
+                        <h3 data-i18n="svc6_title">7-day money-back on Cloud Start</h3>
+                        <p data-i18n="svc6_desc">First Cloud Start month: write on WhatsApp within 7 days of payment, disconnect the number, we refund that month. Commercial and license terms sit on the invoice. SLA is written on request — not a 99.9% sticker.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-gdpr"></use></svg></span>
+                        <h3 data-i18n="svc7_title">Data handling (DPA on request)</h3>
+                        <p data-i18n="svc7_desc">Access control, minimization and activity logs. A GDPR DPA is discussed on the Europe page and with EU buyers — this homepage does not claim a certificate.</p>
+                    </article>
+                    <article class="service-card">
+                        <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-onboard"></use></svg></span>
+                        <h3 data-i18n="svc8_title">Onboarding &amp; Migration</h3>
+                        <p data-i18n="svc8_desc">Guided setup, data import assistance and staff training when you go live.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="updates" aria-labelledby="updates-heading">
+            <div class="container">
+                <div class="section-header">
+                    <p class="section-eyebrow" data-i18n="updates_badge">System Updates</p>
+                    <h2 id="updates-heading" data-i18n="updates_title">What's New in FXGuard</h2>
+                    <p data-i18n="updates_sub">We ship product improvements continuously — Hosted Cloud and Managed plans get them automatically; Self-hosted customers receive them with the update contract.</p>
+                </div>
+                <ol class="updates-timeline">
+                    <li class="update-card update-card-latest">
+                        <div class="update-meta">
+                            <time datetime="2026-07" data-i18n="upd1_date">Jul 2026</time>
+                            <span class="update-tag" data-i18n="upd1_tag">Latest</span>
+                        </div>
+                        <h3 data-i18n="upd1_title">Public live demo &amp; clearer deployment options</h3>
+                        <p data-i18n="upd1_desc">A public demo environment at app.fxguard.io, plus clearer packaging for Hosted Cloud, Self-hosted License and Managed Dedicated — so enterprise buyers can evaluate before deciding how to deploy.</p>
+                        <ul class="update-points">
+                            <li data-i18n="upd1_p1">Guided demo — no public shared password</li>
+                            <li data-i18n="upd1_p2">License and managed-hosting sales paths</li>
+                            <li data-i18n="upd1_p3">Real desktop &amp; mobile product screenshots</li>
+                        </ul>
+                    </li>
+                    <li class="update-card">
+                        <div class="update-meta">
+                            <time datetime="2026-05" data-i18n="upd2_date">May 2026</time>
+                            <span class="update-tag update-tag-muted" data-i18n="upd2_tag">Security</span>
+                        </div>
+                        <h3 data-i18n="upd2_title">Stronger account security &amp; panel branding</h3>
+                        <p data-i18n="upd2_desc">Google Authenticator 2FA, profile hardening, and panel appearance settings so each organization can brand the staff experience without forking the product.</p>
+                        <ul class="update-points">
+                            <li data-i18n="upd2_p1">2FA setup in profile / security</li>
+                            <li data-i18n="upd2_p2">Role-based access across Owner → Agent</li>
+                            <li data-i18n="upd2_p3">Configurable organization title &amp; login visuals</li>
+                        </ul>
+                    </li>
+                    <li class="update-card">
+                        <div class="update-meta">
+                            <time datetime="2026-03" data-i18n="upd3_date">Mar 2026</time>
+                            <span class="update-tag update-tag-muted" data-i18n="upd3_tag">Product</span>
+                        </div>
+                        <h3 data-i18n="upd3_title">Multi-branch ops &amp; FX team tools</h3>
+                        <p data-i18n="upd3_desc">Branches, departments and owner-level oversight for multi-location teams, plus FX rate and exchange service tools built for financial operations.</p>
+                        <ul class="update-points">
+                            <li data-i18n="upd3_p1">Branch &amp; department structure</li>
+                            <li data-i18n="upd3_p2">Staff activity and online status visibility</li>
+                            <li data-i18n="upd3_p3">FX rates, charts and exchange services</li>
+                        </ul>
+                    </li>
+                    <li class="update-card">
+                        <div class="update-meta">
+                            <time datetime="2026-01" data-i18n="upd4_date">Jan 2026</time>
+                            <span class="update-tag update-tag-muted" data-i18n="upd4_tag">Core</span>
+                        </div>
+                        <h3 data-i18n="upd4_title">Unified inbox, tickets, tasks &amp; mobile</h3>
+                        <p data-i18n="upd4_desc">The core CRM loop: one WhatsApp number for the whole team, customer history, tickets and tasks — usable from desktop and mobile so agents stay productive anywhere.</p>
+                        <ul class="update-points">
+                            <li data-i18n="upd4_p1">Shared WhatsApp team inbox</li>
+                            <li data-i18n="upd4_p2">Customers, tickets and task workflows</li>
+                            <li data-i18n="upd4_p3">Mobile dashboard &amp; conversations</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p class="updates-note" data-i18n="updates_note">Want these updates on your self-hosted instance? Ask about the annual update &amp; support contract when you buy a license.</p>
+            </div>
+        </section>
+
+
+        <section class="section reveal" id="blog-teaser" aria-labelledby="blog-teaser-heading">
+            <div class="container">
+                <div class="section-header">
+                    <p class="section-eyebrow" data-i18n="blog_teaser_badge">Blog</p>
+                    <h2 id="blog-teaser-heading" data-i18n="blog_teaser_title">Guides for Teams Evaluating FXGuard</h2>
+                    <p data-i18n="blog_teaser_sub">Practical articles on WhatsApp operations, licensing and security — with links to demos and packages.</p>
+                </div>
+                <div class="blog-grid blog-teaser-grid">
+
+                    <article class="blog-card">
+                        <a class="blog-card-media" href="/blog/where-whatsapp-on-personal-phones-costs-you">
+                            <img src="/images/blog/blog-whatsapp-team-inbox.jpg" alt="Four losses when WhatsApp lives on personal phones" width="640" height="360" loading="lazy">
+                        </a>
+                        <div class="blog-card-body">
+                            <p class="blog-meta"><span data-i18n="post_loss_cat">Operations</span> · 8 min read</p>
+                            <h3><a href="/blog/where-whatsapp-on-personal-phones-costs-you" data-i18n="post_loss_title">A $49 chat tool does not stop these four losses</a></h3>
+                            <a class="blog-readmore" href="/blog/where-whatsapp-on-personal-phones-costs-you" data-i18n="blog_readmore">Read article →</a>
+                        </div>
+                    </article>
+
+                    <article class="blog-card">
+                        <a class="blog-card-media" href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">
+                            <img src="/images/blog/blog-cloud-vs-license.png" alt="Buy WhatsApp CRM packages guide" width="640" height="360" loading="lazy">
+                        </a>
+                        <div class="blog-card-body">
+                            <p class="blog-meta"><span data-i18n="post_buy_cat">Buying Guide</span> · 9 min read</p>
+                            <h3><a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed" data-i18n="post_buy_title">Buy WhatsApp CRM: Cloud vs License vs Managed</a></h3>
+                            <a class="blog-readmore" href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed" data-i18n="blog_readmore">Read article →</a>
+                        </div>
+                    </article>
+
+                    <article class="blog-card">
+                        <a class="blog-card-media" href="/blog/whatsapp-crm-pricing-explained">
+                            <img src="/images/blog/blog-pricing-explained.png" alt="WhatsApp CRM pricing explained" width="640" height="360" loading="lazy">
+                        </a>
+                        <div class="blog-card-body">
+                            <p class="blog-meta"><span data-i18n="post_price_cat">Pricing</span> · 7 min read</p>
+                            <h3><a href="/blog/whatsapp-crm-pricing-explained" data-i18n="post_price_title">WhatsApp CRM Pricing Explained: $49 Cloud &amp; Custom Quotes</a></h3>
+                            <a class="blog-readmore" href="/blog/whatsapp-crm-pricing-explained" data-i18n="blog_readmore">Read article →</a>
+                        </div>
+                    </article>
+
+                </div>
+                <p class="updates-note"><a class="btn btn-outline" href="/blog" data-i18n="blog_teaser_cta">View all articles</a></p>
+            </div>
+        </section>
+
+        <section class="section reveal" id="faq" aria-labelledby="faq-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="faq-heading" data-i18n="faq_title">Questions buyers actually ask</h2>
+                    <p data-i18n="faq_sub">Channel, price floors, and how to purchase with an invoice.</p>
+                </div>
+                <div class="faq-list">
+                    <details class="faq-item" open>
+                        <summary data-i18n="faq1_q">Why not respond.io, Wati, Kommo, Trengo or Chatwoot?</summary>
+                        <p data-i18n="faq1_a">Those are conversation inboxes for ads and support — Instagram, TikTok, AI Agents, HubSpot. FXGuard is an operations panel for exchange, remittance and finance desks: FX rates on the same screen as WhatsApp, a company-owned customer book, branches, 2FA, and a license if data cannot sit on a US SaaS. Inbox is included. If you need ads plus Instagram, pick them.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq2_q">Is WhatsApp official Meta API?</summary>
+                        <p data-i18n="faq2_a">Two paths: unofficial WhatsApp Web (QR) without Business verification — faster, bulk raises ban risk — and official Meta Cloud API. We do not hide which one you are on. Serious broadcast needs Cloud API.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq3_q">Why not $49 unlimited for everyone?</summary>
+                        <p data-i18n="faq3_a">Cloud Start is $49/month for one branch and up to three staff, without the FX module. Business from $249. Multi-branch from $499. License from $4,000 one-time. Managed from $800/month. Final numbers can be negotiated; the floor is published.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq4_q">Can we get an invoice / PO instead of WhatsApp checkout?</summary>
+                        <p data-i18n="faq4_a">Yes. Use Request invoice or Get a written quote. Read the <a href="/procurement">security and procurement summary</a> (print to PDF). Cloud Start is WhatsApp. Commercial and license deals go through invoice.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq5_q">How do we try it with our own number?</summary>
+                        <p data-i18n="faq5_a">We do not publish a shared demo password here. Book a 10-minute guided session, or a time-limited trial where you connect your number and can disconnect it afterwards.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq6_q">Can FXGuard handle multiple branches?</summary>
+                        <p data-i18n="faq6_a">Yes. Branches and departments are built in, with owner-level oversight. Multi-branch cloud starts from $499/month for new signups.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq7_q">What languages do you support?</summary>
+                        <p data-i18n="faq7_a">This website supports English, Persian, Turkish, Arabic and Russian. The panel is customized per business — sales teams, shops, clinics, companies, and FX desks that need the rates module.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq8_q">How do I get started?</summary>
+                        <p data-i18n="faq8_a">Book a guided demo, then Cloud Start on WhatsApp or a written quote for Business, license or managed. We guide onboarding after that.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq9_q">If I am not satisfied, do I get my money back?</summary>
+                        <p data-i18n="faq9_a">Yes for the first Cloud Start month: message WhatsApp within 7 days of the first payment, disconnect the number, and we refund that month. Business, multi-branch, license and managed refunds follow the invoice. We do not publish a fake unlimited guarantee.</p>
+                    </details>
+                    <details class="faq-item">
+                        <summary data-i18n="faq10_q">Does AI run the desk instead of staff?</summary>
+                        <p data-i18n="faq10_a">No. Optional OpenAI first-replies and routing — you bring the key. AI does not quote a live rate, does not process files, and does not replace roles or 2FA. Staff close the deal.</p>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <section class="section reveal" id="contact-form" aria-labelledby="contact-heading">
+            <div class="container">
+                <div class="section-header">
+                    <h2 id="contact-heading" data-i18n="form_title">Talk to Us</h2>
+                    <p data-i18n="form_sub">Demo questions, a cloud subscription, a license quote, or managed hosting - tell us what you need.</p>
+                </div>
+                <div class="contact-quick-actions">
+                    <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20a%2010-minute%20guided%20demo%20of%20FXGuard" class="contact-quick-btn js-wa-link" data-wa="demo" data-purpose="demo" target="_blank" rel="noopener"><span data-i18n="contact_demo">Guided demo</span></a>
+                    <a href="https://wa.me/905010676486" class="contact-quick-btn js-wa-link js-set-purpose" data-wa="cloud" data-purpose="purchase" target="_blank" rel="noopener"><span data-i18n="contact_cloud">Cloud Start $49</span></a>
+                    <a href="mailto:sales@fxguard.io?subject=Self-hosted%20License%20Quote" class="contact-quick-btn js-set-purpose" data-purpose="license"><span data-i18n="contact_license">License from $4,000</span></a>
+                    <a href="https://wa.me/905010676486" class="contact-quick-btn js-wa-link js-set-purpose" data-wa="managed" data-purpose="managed" target="_blank" rel="noopener"><span data-i18n="contact_managed">Managed from $800</span></a>
+                    <a href="mailto:support@fxguard.io?subject=Support%20Request" class="contact-quick-btn js-set-purpose" data-purpose="support"><span data-i18n="contact_support">Get Support</span></a>
+                </div>
+                <div class="contact-channels">
+                    <a href="https://wa.me/905010676486" class="contact-channel wa js-wa-link" data-wa="buy" target="_blank" rel="noopener">
+                        <span class="cc-label" data-i18n="channel_wa">WhatsApp</span>
+                        <span class="cc-value">+90 501 067 6486</span>
+                    </a>
+                    <a href="mailto:sales@fxguard.io" class="contact-channel">
+                        <span class="cc-label" data-i18n="channel_sales">Sales</span>
+                        <span class="cc-value">sales@fxguard.io</span>
+                    </a>
+                    <a href="mailto:support@fxguard.io" class="contact-channel">
+                        <span class="cc-label" data-i18n="channel_support">Support</span>
+                        <span class="cc-value">support@fxguard.io</span>
+                    </a>
+                </div>
+                <p class="contact-response-note" data-i18n="form_response">We respond within 24 hours on business days. For urgent matters, use WhatsApp.</p>
+                <div class="contact-form-card">
+                    <form id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                        <input type="hidden" name="_subject" value="FXGuard - New Contact">
+                        <input type="hidden" name="_next" value="">
+                        <div class="form-group">
+                            <label for="purpose" data-i18n="form_purpose">I'm interested in *</label>
+                            <select id="purpose" name="purpose" required>
+                                <option value="" data-i18n="form_purpose_placeholder">Select...</option>
+                                <option value="demo" data-i18n="form_purpose_demo">Guided demo</option>
+                                <option value="trial" data-i18n="form_purpose_trial">7-day own-number trial</option>
+                                <option value="purchase" data-i18n="form_purpose_cloud">Cloud Start (self-serve)</option>
+                                <option value="quote" data-i18n="form_purpose_quote">Commercial quote / invoice</option>
+                                <option value="license" data-i18n="form_purpose_license">Self-hosted license</option>
+                                <option value="managed" data-i18n="form_purpose_managed">Managed dedicated</option>
+                                <option value="support" data-i18n="form_purpose_support">Technical support</option>
+                                <option value="other" data-i18n="form_purpose_other">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name" data-i18n="form_name">Name *</label>
+                                <input type="text" id="name" name="name" required placeholder="Your name">
+                            </div>
+                            <div class="form-group">
+                                <label for="email" data-i18n="form_email">Email *</label>
+                                <input type="email" id="email" name="email" required placeholder="your@email.com">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone" data-i18n="form_phone">Phone / WhatsApp</label>
+                            <input type="tel" id="phone" name="phone" placeholder="+90...">
+                        </div>
+                        <div class="form-group">
+                            <label for="message" data-i18n="form_message">Message *</label>
+                            <textarea id="message" name="message" required placeholder="Your message, demo request, or deployment needs..."></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" data-i18n="form_submit">Send Message</button>
+                    </form>
+                    <div class="form-success" id="formSuccess" data-i18n="form_success">Thank you! We will contact you soon.</div>
+                </div>
+                <p class="contact-wa-link">
+                    <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="form_wa">Faster: buy / quote on WhatsApp +90 501 067 6486</a>
+                </p>
+            </div>
+        </section>
+
+        <section class="cta-section reveal">
+            <div class="container">
+                <div class="cta-card">
+                    <h2 data-i18n="cta_title">Ready to run the money desk on one company WhatsApp panel?</h2>
+                    <p data-i18n="cta_desc">Cloud Start $49/mo inbox. Business from $249 with the FX pack. Channel path stated honestly.</p>
+                    <div class="cta-btns">
+                        <a href="/live-demo" class="btn btn-outline-light" data-i18n="cta_demo">Demo</a>
+                        <a href="#packages" class="btn btn-primary" data-i18n="cta_plans">See Prices</a>
+                        <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="cta_wa">Buy via WhatsApp</a>
+                        <a href="#contact-form" class="btn btn-ghost" data-i18n="cta_form">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer" role="contentinfo">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="logo footer-logo">
+        <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+        <span data-i18n="logo">FXGuard</span>
+      </a>
+      <p data-i18n="footer_about">FXGuard is a WhatsApp CRM: one company number, a shared team panel, customer history stays with the business. We customize it for your trade.</p>
+      <p class="footer-who" data-i18n="footer_who">For sales teams, shops, clinics, companies, exchange desks — and any business we tailor.</p>
+      <p class="footer-trust" data-i18n="footer_trust">AI-assisted engineering · optional smart replies · 7-day money-back on first Cloud Start month</p>
+      <p class="footer-markets" data-i18n="footer_markets">Turkey · UAE · Europe · Iran</p>
+      <nav class="footer-market-links" aria-label="Markets">
+        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+      </nav>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h3 data-i18n="footer_col_product">Products</h3>
+      <a href="/products" data-i18n="footer_products">All products</a>
+      <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
+      <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
+      <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
+      <a href="/live-demo" data-i18n="footer_demo">Demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+    </nav>
+    <nav class="footer-col" aria-label="Solutions">
+      <h3 data-i18n="footer_col_solutions">Solutions</h3>
+      <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/procurement" data-i18n="footer_procurement">Security / invoice pack</a>
+      <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
+      <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
+      <a href="/#services" data-i18n="footer_services">Support &amp; Backups</a>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h3 data-i18n="footer_col_company">Company</h3>
+      <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/#faq" data-i18n="footer_faq">FAQ</a>
+      <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
+      <a href="mailto:support@fxguard.io">support@fxguard.io</a>
+      <a href="https://wa.me/905010676486" class="js-wa-link" data-wa="buy" target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a>
+    </nav>
+  </div>
+  <div class="container footer-bottom">
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">WhatsApp CRM — tailored to your business</span></p>
+    <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
+    <p class="footer-legal">
+      <a href="/">fxguard.io</a> ·
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
+    </p>
+  </div>
+</footer>
+<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+  <p class="sticky-buy-text" data-i18n="sticky_text">Start $49 · Business from $249</p>
+  <div class="sticky-buy-actions">
+    <a href="/live-demo" class="btn btn-outline sticky-btn" data-i18n="sticky_demo">Demo</a>
+    <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Buy</a>
+  </div>
+</div>
+<script src="/js/pages-i18n.js?v=20260819q" defer></script>
+<script src="/js/gtm-i18n.js?v=20260819r" defer></script>
+<script src="/js/landing.js?v=20260819q" defer></script>
+<script src="/js/site-yield.js?v=20260819" defer></script>
+</body>
+</html>

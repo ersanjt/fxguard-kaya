@@ -1,0 +1,431 @@
+﻿<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search).get('lang');
+        var s = null;
+        try { s = localStorage.getItem('landing_lang'); } catch (e) {}
+        var lang = p || s;
+        if (!lang) {
+          var langs = (navigator.languages || []).slice();
+          langs.push(navigator.language || navigator.userLanguage || 'en');
+          for (var i = 0; i < langs.length; i++) {
+            var primary = String(langs[i] || '').toLowerCase().split('-')[0];
+            if (primary === 'fa' || primary === 'ps') { lang = 'fa'; break; }
+            if (primary === 'tr' || primary === 'az') { lang = 'tr'; break; }
+            if (primary === 'ar') { lang = 'ar'; break; }
+            if (primary === 'ru') { lang = 'ru'; break; }
+          }
+        }
+        if (!lang) {
+          try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            var map = {
+              'Asia/Tehran':'fa','Asia/Kabul':'fa','Europe/Istanbul':'tr',
+              'Asia/Dubai':'ar','Asia/Riyadh':'ar','Asia/Qatar':'ar','Asia/Kuwait':'ar',
+              'Asia/Bahrain':'ar','Asia/Muscat':'ar','Asia/Baghdad':'ar','Africa/Cairo':'ar',
+              'Europe/Moscow':'ru'
+            };
+            lang = map[tz] || null;
+          } catch (e2) {}
+        }
+        if (lang === 'fa' || lang === 'ar') {
+          document.documentElement.lang = lang;
+          document.documentElement.dir = 'rtl';
+          document.documentElement.setAttribute('data-lang', lang);
+        } else if (lang) {
+          document.documentElement.lang = lang;
+          document.documentElement.setAttribute('data-lang', lang);
+        }
+      } catch (e) {}
+    })();
+    </script>
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Pay Cloud Start $49 — USDT, BNB or BTC | FXGuard</title>
+    <meta name="description" content="Pay FXGuard Cloud Start $49 in USDT (TRC20, ERC20 or BEP20), native BNB, or Bitcoin. Then send the TXID on WhatsApp. Do not mix coins or networks.">
+    <meta name="keywords" content="FXGuard USDT, BNB, BTC, pay Cloud Start, TRC20, ERC20, BEP20">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="author" content="FXGuard">
+    <meta name="theme-color" content="#059669">
+    <link rel="canonical" href="https://fxguard.io/pay">
+    <link rel="alternate" hreflang="en" href="https://fxguard.io/pay">
+    <link rel="alternate" hreflang="fa" href="https://fxguard.io/pay?lang=fa">
+    <link rel="alternate" hreflang="tr" href="https://fxguard.io/pay?lang=tr">
+    <link rel="alternate" hreflang="ar" href="https://fxguard.io/pay?lang=ar">
+    <link rel="alternate" hreflang="ru" href="https://fxguard.io/pay?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://fxguard.io/pay">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://fxguard.io/pay">
+    <meta property="og:site_name" content="FXGuard">
+    <meta property="og:title" content="Pay Cloud Start $49 — USDT, BNB or BTC | FXGuard">
+    <meta property="og:description" content="Pay Cloud Start $49 in USDT, native BNB, or Bitcoin. Then send the TXID on WhatsApp. Do not mix networks.">
+    <meta property="og:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
+    <meta property="og:image:alt" content="FXGuard WhatsApp CRM">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Pay Cloud Start $49 — USDT, BNB or BTC | FXGuard">
+    <meta name="twitter:description" content="Pay Cloud Start $49 in USDT, native BNB, or Bitcoin. Then send the TXID on WhatsApp.">
+    <meta name="twitter:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://fxguard.io/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Pay crypto",
+          "item": "https://fxguard.io/pay"
+        }
+      ]
+    },
+    {
+      "@type": "WebPage",
+      "@id": "https://fxguard.io/pay#webpage",
+      "url": "https://fxguard.io/pay",
+      "name": "Pay Cloud Start $49 in USDT, BNB or BTC",
+      "description": "Send 49 USDT (TRC20, ERC20 or BEP20), about $49 of native BNB, or about $49 of Bitcoin, then send the TXID on WhatsApp. Mixed coins and networks are lost.",
+      "isPartOf": {
+        "@id": "https://fxguard.io/#website"
+      },
+      "publisher": {
+        "@id": "https://fxguard.io/#organization"
+      },
+      "inLanguage": [
+        "en",
+        "fa",
+        "tr"
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2310b981'/%3E%3Cpath fill='%230b1220' d='M7 8h8.2v2.6H9.8v3.1H14.4v2.5H9.8V24H7V8zM17.2 11.2 19.6 14.2 22 11.2h3.1l-3.5 4.2 3.7 4.6h-3.2l-2.5-3.2-2.5 3.2h-3.2l3.7-4.6-3.5-4.2h3.1z'/%3E%3C/svg%3E">
+    <link rel="manifest" href="/site.webmanifest">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <noscript></noscript>
+        <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://app.fxguard.io" crossorigin>
+    <link rel="preload" as="script" href="/js/pages-i18n.js">
+    <link rel="preload" as="script" href="/js/landing.js">
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <noscript></noscript>
+    <link rel="stylesheet" href="/css/motion.css">
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="/css/style.css?v=20260819">
+    <link rel="stylesheet" href="/css/landing.css?v=20260819b">
+    <link rel="stylesheet" href="/css/seo-pages.css?v=20260819q">
+</head>
+<body class="seo-page" data-page="pay">
+        <a href="#main" class="skip-link" data-i18n="skip_link">Skip to content</a>
+<script>
+  var PANEL_URL = 'https://app.fxguard.io';
+  var WA_NUMBER = '905010676486';
+  var WA_LINK = 'https://wa.me/' + WA_NUMBER;
+  if (typeof CONTACT_API_URL === 'undefined') {
+    var CONTACT_API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://app.fxguard.io';
+  }
+</script>
+<a href="https://wa.me/905010676486" class="wa-float js-wa-link" data-wa="buy" target="_blank" rel="noopener noreferrer" data-i18n-aria="aria_wa_buy" aria-label="Buy FXGuard on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<header id="header" role="banner">
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label="FXGuard">
+      <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+      <span>FXGuard</span>
+    </a>
+    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    </div>
+    <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
+      <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+      <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
+      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
+      <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
+      <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanel" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<nav class="nav-mobile" id="navMobile" data-i18n-aria="aria_nav_mobile" aria-label="Mobile">
+  <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
+  <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+  <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
+  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
+  <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
+  <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanelMob" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+  <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+    <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+    <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+    <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+    <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+    <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+  </div>
+</nav>
+<main id="main" role="main">
+        <div class="container seo-wrap">
+            <nav class="breadcrumbs" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="/" data-i18n="crumb_home">Home</a></li>
+                    <li aria-current="page" data-i18n="crumb_pay">Pay crypto</li>
+                </ol>
+            </nav>
+            <article class="seo-article">
+                <h1 data-i18n="pay_h1">Pay Cloud Start — $49 in USDT, BNB or BTC</h1>
+                <p class="lead" data-i18n="pay_lead">This page is for Cloud Start ($49 / month). Pick <strong>one</strong> card. USDT is exactly 49. BNB and BTC are about $49. Then send the TXID on WhatsApp. We open the tenant after we confirm — it is not automatic. The 0x address is the same for USDT ERC20, USDT BEP20 and native BNB — the token and network in your wallet must match the card.</p>
+                <div class="pay-grid">
+                    <div class="pay-card seo-demo-card">
+                        <h2 class="pay-card-title" data-i18n="pay_usdt_h2">USDT · TRC20 (Tron)</h2>
+                        <div class="pay-warn" role="alert" data-i18n="pay_warn">Only Tether USDT on TRC20. Other coins or networks on this Tron address are lost.</div>
+                        <p class="pay-amount"><span data-i18n="pay_amount_label">Amount</span> <strong>49 USDT</strong></p>
+                        <p class="pay-network"><span data-i18n="pay_network_label">Network</span> <strong>TRC20 (Tron)</strong></p>
+                        <p class="pay-asset"><span data-i18n="pay_asset_label">Asset</span> <strong>USDT</strong></p>
+                        <div class="pay-qr-wrap">
+                            <img class="pay-qr" width="220" height="220" alt="USDT TRC20 QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;ecc=M&amp;data=TYXX9pYcTsbizX1P59NM4B2PmcN9Bmh1aH" referrerpolicy="no-referrer">
+                        </div>
+                        <p class="pay-addr-label" data-i18n="pay_addr_label">Wallet address</p>
+                        <div class="pay-addr-row">
+                            <code id="payAddressUsdt" class="pay-addr">TYXX9pYcTsbizX1P59NM4B2PmcN9Bmh1aH</code>
+                            <button type="button" class="btn btn-outline" data-pay-copy="payAddressUsdt" data-pay-ok="payCopiedUsdt" data-i18n="pay_copy">Copy</button>
+                        </div>
+                        <p id="payCopiedUsdt" class="pay-copied" hidden data-i18n="pay_copied">Copied.</p>
+                        <ol class="seo-list">
+                            <li data-i18n="pay_s1">Send 49 USDT (TRC20) to this address.</li>
+                            <li data-i18n="pay_s2">Copy the transaction hash (TXID).</li>
+                            <li data-i18n="pay_s3">Send the TXID on WhatsApp. We confirm, then open Cloud Start.</li>
+                        </ol>
+                        <a class="btn btn-wa btn-lg js-wa-link" data-wa="pay" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_cta_wa">I paid USDT TRC20 — TXID</a>
+                    </div>
+                    <div class="pay-card seo-demo-card">
+                        <h2 class="pay-card-title" data-i18n="pay_erc20_h2">USDT · ERC20 (Ethereum)</h2>
+                        <div class="pay-warn" role="alert" data-i18n="pay_erc20_warn">Only Tether USDT on Ethereum ERC20. Not TRC20, not BEP20, not ETH, not BNB.</div>
+                        <p class="pay-same" data-i18n="pay_evm_erc20_same">Same 0x address as BNB and USDT BEP20. In the wallet, select USDT and Ethereum — not BNB Smart Chain.</p>
+                        <p class="pay-amount"><span data-i18n="pay_amount_label">Amount</span> <strong>49 USDT</strong></p>
+                        <p class="pay-network"><span data-i18n="pay_network_label">Network</span> <strong>ERC20 (Ethereum)</strong></p>
+                        <p class="pay-asset"><span data-i18n="pay_asset_label">Asset</span> <strong>USDT</strong></p>
+                        <div class="pay-qr-wrap">
+                            <img class="pay-qr" width="220" height="220" alt="USDT ERC20 QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;ecc=M&amp;data=0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97" referrerpolicy="no-referrer">
+                        </div>
+                        <p class="pay-addr-label" data-i18n="pay_addr_label">Wallet address</p>
+                        <div class="pay-addr-row">
+                            <code id="payAddressErc20" class="pay-addr">0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97</code>
+                            <button type="button" class="btn btn-outline" data-pay-copy="payAddressErc20" data-pay-ok="payCopiedErc20" data-i18n="pay_copy">Copy</button>
+                        </div>
+                        <p id="payCopiedErc20" class="pay-copied" hidden data-i18n="pay_copied">Copied.</p>
+                        <ol class="seo-list">
+                            <li data-i18n="pay_erc20_s1">Send 49 USDT (ERC20 / Ethereum) to this address.</li>
+                            <li data-i18n="pay_s2">Copy the transaction hash (TXID).</li>
+                            <li data-i18n="pay_s3">Send the TXID on WhatsApp. We confirm, then open Cloud Start.</li>
+                        </ol>
+                        <a class="btn btn-wa btn-lg js-wa-link" data-wa="pay_erc20" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_erc20_cta">I paid USDT ERC20 — TXID</a>
+                    </div>
+                    <div class="pay-card seo-demo-card">
+                        <h2 class="pay-card-title" data-i18n="pay_bep20_h2">USDT · BEP20 (BNB Smart Chain)</h2>
+                        <div class="pay-warn" role="alert" data-i18n="pay_bep20_warn">Only Tether USDT on BNB Smart Chain. Not native BNB, not ERC20, not TRC20.</div>
+                        <p class="pay-same" data-i18n="pay_evm_bep20_same">Same 0x address as BNB and USDT ERC20. In the wallet, select USDT and BNB Smart Chain — not native BNB, not Ethereum.</p>
+                        <p class="pay-amount"><span data-i18n="pay_amount_label">Amount</span> <strong>49 USDT</strong></p>
+                        <p class="pay-network"><span data-i18n="pay_network_label">Network</span> <strong>BEP20 (BNB Smart Chain)</strong></p>
+                        <p class="pay-asset"><span data-i18n="pay_asset_label">Asset</span> <strong>USDT</strong></p>
+                        <div class="pay-qr-wrap">
+                            <img class="pay-qr" width="220" height="220" alt="USDT BEP20 QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;ecc=M&amp;data=0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97" referrerpolicy="no-referrer">
+                        </div>
+                        <p class="pay-addr-label" data-i18n="pay_addr_label">Wallet address</p>
+                        <div class="pay-addr-row">
+                            <code id="payAddressBep20" class="pay-addr">0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97</code>
+                            <button type="button" class="btn btn-outline" data-pay-copy="payAddressBep20" data-pay-ok="payCopiedBep20" data-i18n="pay_copy">Copy</button>
+                        </div>
+                        <p id="payCopiedBep20" class="pay-copied" hidden data-i18n="pay_copied">Copied.</p>
+                        <ol class="seo-list">
+                            <li data-i18n="pay_bep20_s1">Send 49 USDT (BEP20) to this address — not native BNB.</li>
+                            <li data-i18n="pay_s2">Copy the transaction hash (TXID).</li>
+                            <li data-i18n="pay_s3">Send the TXID on WhatsApp. We confirm, then open Cloud Start.</li>
+                        </ol>
+                        <a class="btn btn-wa btn-lg js-wa-link" data-wa="pay_bep20" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_bep20_cta">I paid USDT BEP20 — TXID</a>
+                    </div>
+                    <div class="pay-card seo-demo-card">
+                        <h2 class="pay-card-title" data-i18n="pay_bnb_h2">BNB · BNB Smart Chain</h2>
+                        <div class="pay-warn" role="alert" data-i18n="pay_bnb_warn">Only native BNB on BNB Smart Chain. Not USDT. Not Ethereum. Not Bitcoin.</div>
+                        <p class="pay-same" data-i18n="pay_evm_bnb_same">Same 0x address as USDT ERC20 and USDT BEP20. In the wallet, select native BNB — not USDT.</p>
+                        <p class="pay-amount"><span data-i18n="pay_amount_label">Amount</span> <strong data-i18n="pay_bnb_amount">≈ $49 in BNB</strong></p>
+                        <p class="pay-network"><span data-i18n="pay_network_label">Network</span> <strong>BNB Smart Chain (BEP20)</strong></p>
+                        <p class="pay-asset"><span data-i18n="pay_asset_label">Asset</span> <strong>BNB</strong></p>
+                        <div class="pay-qr-wrap">
+                            <img class="pay-qr" width="220" height="220" alt="BNB BEP20 QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;ecc=M&amp;data=0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97" referrerpolicy="no-referrer">
+                        </div>
+                        <p class="pay-addr-label" data-i18n="pay_addr_label">Wallet address</p>
+                        <div class="pay-addr-row">
+                            <code id="payAddressBnb" class="pay-addr">0x5B7b93CD8fC14E24515eBa9B9C584342eF0BBD97</code>
+                            <button type="button" class="btn btn-outline" data-pay-copy="payAddressBnb" data-pay-ok="payCopiedBnb" data-i18n="pay_copy">Copy</button>
+                        </div>
+                        <p id="payCopiedBnb" class="pay-copied" hidden data-i18n="pay_copied">Copied.</p>
+                        <ol class="seo-list">
+                            <li data-i18n="pay_bnb_s1">Send about $49 of native BNB to this address — not USDT.</li>
+                            <li data-i18n="pay_s2">Copy the transaction hash (TXID).</li>
+                            <li data-i18n="pay_s3">Send the TXID on WhatsApp. We confirm, then open Cloud Start.</li>
+                        </ol>
+                        <a class="btn btn-wa btn-lg js-wa-link" data-wa="pay_bnb" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_bnb_cta">I paid BNB — send TXID</a>
+                    </div>
+                    <div class="pay-card seo-demo-card">
+                        <h2 class="pay-card-title" data-i18n="pay_btc_h2">BTC · Bitcoin</h2>
+                        <div class="pay-warn" role="alert" data-i18n="pay_btc_warn">Only Bitcoin (BTC) on the Bitcoin network. USDT, BNB, ETH or any other coin sent here is lost.</div>
+                        <p class="pay-amount"><span data-i18n="pay_amount_label">Amount</span> <strong data-i18n="pay_btc_amount">≈ $49 in BTC</strong></p>
+                        <p class="pay-network"><span data-i18n="pay_network_label">Network</span> <strong>Bitcoin</strong></p>
+                        <p class="pay-asset"><span data-i18n="pay_asset_label">Asset</span> <strong>BTC</strong></p>
+                        <div class="pay-qr-wrap">
+                            <img class="pay-qr" width="220" height="220" alt="BTC QR" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&amp;ecc=M&amp;data=bc1qt7ynteuhpvzslg7xfm2yzz7ayj9cjhcg30ay2l" referrerpolicy="no-referrer">
+                        </div>
+                        <p class="pay-addr-label" data-i18n="pay_addr_label">Wallet address</p>
+                        <div class="pay-addr-row">
+                            <code id="payAddressBtc" class="pay-addr">bc1qt7ynteuhpvzslg7xfm2yzz7ayj9cjhcg30ay2l</code>
+                            <button type="button" class="btn btn-outline" data-pay-copy="payAddressBtc" data-pay-ok="payCopiedBtc" data-i18n="pay_copy">Copy</button>
+                        </div>
+                        <p id="payCopiedBtc" class="pay-copied" hidden data-i18n="pay_copied">Copied.</p>
+                        <ol class="seo-list">
+                            <li data-i18n="pay_btc_s1">Send about $49 of Bitcoin (BTC) to this address.</li>
+                            <li data-i18n="pay_s2">Copy the transaction hash (TXID).</li>
+                            <li data-i18n="pay_s3">Send the TXID on WhatsApp. We confirm, then open Cloud Start.</li>
+                        </ol>
+                        <a class="btn btn-wa btn-lg js-wa-link" data-wa="pay_btc" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_btc_cta">I paid BTC — send TXID</a>
+                    </div>
+                </div>
+                <h2 data-i18n="pay_not_h2">Do not use these addresses for</h2>
+                <p data-i18n="pay_not_p">Business from $249, multi-branch, license or managed — those go by invoice on WhatsApp. Do not send $49 here for those plans. Europe buyers who need a card or invoice: use WhatsApp, not this page.</p>
+                <p><a class="btn btn-outline" href="/pricing" data-i18n="pay_back">Back to prices</a>
+                   <a class="btn btn-wa js-wa-link" data-wa="cloud" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="pay_wa_alt">Pay via WhatsApp instead</a></p>
+            </article>
+            <nav class="seo-related" aria-label="Related pages">
+                <h2 data-i18n="seo_explore">Explore</h2>
+                <ul>
+                    <li><a href="/whatsapp-crm" data-i18n="seo_rel_crm">WhatsApp CRM overview</a></li>
+                    <li><a href="/pricing" data-i18n="seo_rel_pricing">Pricing &amp; packages</a></li>
+                    <li><a href="/self-hosted" data-i18n="seo_rel_license">Self-hosted license</a></li>
+                    <li><a href="/managed-hosting" data-i18n="seo_rel_managed">Managed hosting</a></li>
+                    <li><a href="/live-demo" data-i18n="seo_rel_demo">Live demo access</a></li>
+                    <li><a href="/blog" data-i18n="seo_rel_blog">Blog &amp; articles</a></li>
+                    <li><a href="/contact" data-i18n="seo_rel_contact">Contact</a></li>
+                </ul>
+            </nav>
+
+        </div>
+    </main>
+    <footer class="site-footer" role="contentinfo">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="logo footer-logo">
+        <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+        <span data-i18n="logo">FXGuard</span>
+      </a>
+      <p data-i18n="footer_about">FXGuard builds digital products for exchange, finance and support teams. Start with WhatsApp CRM today — Accounting is coming next.</p>
+      <p class="footer-markets" data-i18n="footer_markets">Serving teams in Turkey · UAE / Dubai · Europe · Iran</p>
+      <nav class="footer-market-links" aria-label="Markets">
+        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+      </nav>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h3 data-i18n="footer_col_product">Products</h3>
+      <a href="/products" data-i18n="footer_products">All products</a>
+      <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
+            <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
+      <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
+      <a href="/live-demo" data-i18n="footer_demo">Live Demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+    </nav>
+    <nav class="footer-col" aria-label="Solutions">
+      <h3 data-i18n="footer_col_solutions">Solutions</h3>
+      <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
+      <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
+      <a href="/#services" data-i18n="footer_services">Support &amp; Backups</a>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h3 data-i18n="footer_col_company">Company</h3>
+      <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/#faq" data-i18n="footer_faq">FAQ</a>
+      <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
+      <a href="mailto:support@fxguard.io">support@fxguard.io</a>
+      <a href="https://wa.me/905010676486" class="js-wa-link" data-wa="buy" target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a>
+    </nav>
+  </div>
+  <div class="container footer-bottom">
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">Digital products for Exchange, Finance &amp; Support Teams</span></p>
+    <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
+    <p class="footer-legal">
+      <a href="/">fxguard.io</a> ·
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
+    </p>
+  </div>
+</footer>
+<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+  <p class="sticky-buy-text" data-i18n="sticky_text">From $49/mo · Free demo</p>
+  <div class="sticky-buy-actions">
+    <a href="https://app.fxguard.io/" class="btn btn-outline sticky-btn js-panel-link" target="_blank" rel="noopener" data-i18n="sticky_demo">Demo</a>
+    <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Buy</a>
+  </div>
+</div>
+<script src="/js/pages-i18n.js?v=20260819q" defer></script>
+<script src="/js/gtm-i18n.js?v=20260819r" defer></script>
+<script src="/js/landing.js?v=20260819q" defer></script>
+<script src="/js/site-yield.js" defer></script>
+<script>
+(function () {
+  document.querySelectorAll('[data-pay-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var addr = document.getElementById(btn.getAttribute('data-pay-copy'));
+      var ok = document.getElementById(btn.getAttribute('data-pay-ok'));
+      if (!addr) return;
+      var text = (addr.textContent || '').trim();
+      function done() {
+        if (ok) { ok.hidden = false; setTimeout(function () { ok.hidden = true; }, 2000); }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () {
+          window.prompt(text, text);
+        });
+      } else {
+        window.prompt(text, text);
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>

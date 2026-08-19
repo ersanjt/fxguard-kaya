@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search).get('lang');
+        var s = null;
+        try { s = localStorage.getItem('landing_lang'); } catch (e) {}
+        var lang = p || s;
+        if (!lang) {
+          var langs = (navigator.languages || []).slice();
+          langs.push(navigator.language || navigator.userLanguage || 'en');
+          for (var i = 0; i < langs.length; i++) {
+            var primary = String(langs[i] || '').toLowerCase().split('-')[0];
+            if (primary === 'fa' || primary === 'ps') { lang = 'fa'; break; }
+            if (primary === 'tr' || primary === 'az') { lang = 'tr'; break; }
+            if (primary === 'ar') { lang = 'ar'; break; }
+            if (primary === 'ru') { lang = 'ru'; break; }
+          }
+        }
+        if (!lang) {
+          try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            var map = {
+              'Asia/Tehran':'fa','Asia/Kabul':'fa','Europe/Istanbul':'tr',
+              'Asia/Dubai':'ar','Asia/Riyadh':'ar','Asia/Qatar':'ar','Asia/Kuwait':'ar',
+              'Asia/Bahrain':'ar','Asia/Muscat':'ar','Asia/Baghdad':'ar','Africa/Cairo':'ar',
+              'Europe/Moscow':'ru'
+            };
+            lang = map[tz] || null;
+          } catch (e2) {}
+        }
+        if (lang === 'fa' || lang === 'ar') {
+          document.documentElement.lang = lang;
+          document.documentElement.dir = 'rtl';
+          document.documentElement.setAttribute('data-lang', lang);
+        } else if (lang) {
+          document.documentElement.lang = lang;
+          document.documentElement.setAttribute('data-lang', lang);
+        }
+      } catch (e) {}
+    })();
+    </script>
+
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>WhatsApp CRM Pricing Explained ($49 Cloud) | FXGuard Blog</title>
+    <meta name="description" content="FXGuard WhatsApp CRM pricing explained: Hosted Cloud $49/mo or $490/year, what is included, when to choose License or Managed, and how to get a quote on WhatsApp.">
+    <meta name="keywords" content="WhatsApp CRM pricing, FXGuard price, WhatsApp CRM $49, buy WhatsApp CRM cost, CRM yearly plan">
+    <meta name="author" content="FXGuard">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="theme-color" content="#059669">
+    <link rel="canonical" href="https://fxguard.io/blog/whatsapp-crm-pricing-explained">
+    <link rel="alternate" hreflang="en" href="https://fxguard.io/blog/whatsapp-crm-pricing-explained">
+    <link rel="alternate" hreflang="x-default" href="https://fxguard.io/blog/whatsapp-crm-pricing-explained">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://fxguard.io/blog/whatsapp-crm-pricing-explained">
+    <meta property="og:site_name" content="FXGuard">
+    <meta property="og:title" content="WhatsApp CRM Pricing Explained: $49 Cloud, Yearly Savings and Custom Quotes">
+    <meta property="og:description" content="FXGuard WhatsApp CRM pricing explained: Hosted Cloud $49/mo or $490/year, what is included, when to choose License or Managed, and how to get a quote on WhatsApp.">
+    <meta property="og:image" content="https://fxguard.io/images/blog/blog-pricing-explained.png">
+    <meta property="og:image:alt" content="FXGuard users and roles screen — pricing covers full team access">
+    <meta property="article:published_time" content="2026-07-26">
+    <meta property="article:modified_time" content="2026-07-28">
+    <meta property="article:section" content="Pricing">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WhatsApp CRM Pricing Explained: $49 Cloud, Yearly Savings and Custom Quotes">
+    <meta name="twitter:description" content="FXGuard WhatsApp CRM pricing explained: Hosted Cloud $49/mo or $490/year, what is included, when to choose License or Managed, and how to get a quote on WhatsApp.">
+    <meta name="twitter:image" content="https://fxguard.io/images/blog/blog-pricing-explained.png">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fxguard.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://fxguard.io/blog" },
+        { "@type": "ListItem", "position": 3, "name": "WhatsApp CRM Pricing Explained: $49 Cloud, Yearly Savings and Custom Quotes", "item": "https://fxguard.io/blog/whatsapp-crm-pricing-explained" }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "https://fxguard.io/blog/whatsapp-crm-pricing-explained#article",
+      "headline": "WhatsApp CRM Pricing Explained: $49 Cloud, Yearly Savings and Custom Quotes",
+      "description": "FXGuard WhatsApp CRM pricing explained: Hosted Cloud $49/mo or $490/year, what is included, when to choose License or Managed, and how to get a quote on WhatsApp.",
+      "image": "https://fxguard.io/images/blog/blog-pricing-explained.png",
+      "datePublished": "2026-07-26",
+      "dateModified": "2026-07-28",
+      "author": { "@type": "Organization", "name": "FXGuard", "url": "https://fxguard.io" },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FXGuard",
+        "logo": { "@type": "ImageObject", "url": "https://fxguard.io/images/logo.svg" }
+      },
+      "mainEntityOfPage": "https://fxguard.io/blog/whatsapp-crm-pricing-explained",
+      "keywords": "WhatsApp CRM pricing, FXGuard price, WhatsApp CRM $49, buy WhatsApp CRM cost, CRM yearly plan",
+      "articleSection": "Pricing",
+      "inLanguage": "en",
+      "isPartOf": { "@id": "https://fxguard.io/blog#blog" },
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [".blog-article-head h1", ".blog-article-head .lead"]
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "How much does FXGuard Hosted Cloud cost?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Hosted Cloud is $49 per month or $490 per year. Yearly billing saves two months compared with paying monthly." }
+        },
+        {
+          "@type": "Question",
+          "name": "Are License and Managed priced the same?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Self-hosted License and Managed Dedicated are custom quotes based on scope and SLA. Contact WhatsApp sales for pricing." }
+        }
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2310b981'/%3E%3Cpath fill='%230b1220' d='M7 8h8.2v2.6H9.8v3.1H14.4v2.5H9.8V24H7V8zM17.2 11.2 19.6 14.2 22 11.2h3.1l-3.5 4.2 3.7 4.6h-3.2l-2.5-3.2-2.5 3.2h-3.2l3.7-4.6-3.5-4.2h3.1z'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://app.fxguard.io" crossorigin>
+    <link rel="preload" as="script" href="/js/blog-articles-i18n.js">
+    <link rel="preload" as="script" href="/js/pages-i18n.js">
+    <link rel="preload" as="script" href="/js/landing.js">
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <noscript></noscript>
+    <link rel="stylesheet" href="/css/motion.css">
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/landing.css">
+    <link rel="stylesheet" href="/css/seo-pages.css">
+    <link rel="stylesheet" href="/css/blog.css">
+</head>
+<body class="seo-page blog-article-page" data-page="blog">
+    <a href="#main" class="skip-link" data-i18n="skip_link">Skip to content</a>
+<script>
+  var PANEL_URL = 'https://app.fxguard.io';
+  var WA_NUMBER = '905010676486';
+  var WA_LINK = 'https://wa.me/' + WA_NUMBER;
+  if (typeof CONTACT_API_URL === 'undefined') {
+    var CONTACT_API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://app.fxguard.io';
+  }
+</script>
+<a href="https://wa.me/905010676486" class="wa-float js-wa-link" data-wa="buy" target="_blank" rel="noopener noreferrer" data-i18n-aria="aria_wa_buy" aria-label="Buy FXGuard on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<header id="header" role="banner">
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label="FXGuard">
+      <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+      <span>FXGuard</span>
+    </a>
+    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    </div>
+    <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
+      <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+      <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
+      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
+      <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
+      <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanel" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<nav class="nav-mobile" id="navMobile" data-i18n-aria="aria_nav_mobile" aria-label="Mobile">
+  <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
+  <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+  <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
+  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
+  <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
+  <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanelMob" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+  <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+    <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+    <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+    <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+    <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+    <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+  </div>
+</nav>
+<main id="main" role="main">
+        <article class="container blog-article" data-article-slug="whatsapp-crm-pricing-explained" itemscope itemtype="https://schema.org/BlogPosting">
+            <nav class="breadcrumbs reveal" aria-label="Breadcrumb">
+                <ol>
+                    <li><a href="/" data-i18n="crumb_home">Home</a></li>
+                    <li><a href="/blog" data-i18n="crumb_blog">Blog</a></li>
+                    <li aria-current="page" data-i18n="post_price_cat">Pricing</li>
+                </ol>
+            </nav>
+            <div class="blog-article-head reveal">
+                <p class="blog-meta"><span data-i18n="post_price_cat">Pricing</span> · <time datetime="2026-07-26" data-i18n-date itemprop="datePublished">Jul 26, 2026</time> · <span data-i18n="updated">Updated</span> <time datetime="2026-07-28" data-i18n-date itemprop="dateModified">Jul 28, 2026</time> · 7 <span data-i18n="min_read">min read</span></p>
+                <h1 itemprop="headline" data-article-title>WhatsApp CRM Pricing Explained: $49 Cloud, Yearly Savings and Custom Quotes</h1>
+                <p class="lead" itemprop="description" data-article-lead>Clear numbers help buyers decide. Here is how FXGuard pricing works — what $49 includes, when yearly billing saves money, and when custom quotes apply.</p>
+            </div>
+            <figure class="blog-hero-figure">
+                <img src="/images/blog/blog-pricing-explained.png" alt="FXGuard users and roles screen — pricing covers full team access" width="1280" height="720" loading="eager" fetchpriority="high" itemprop="image">
+                <figcaption data-article-hero-caption>FXGuard users and roles screen — pricing covers full team access</figcaption>
+            </figure>
+            <nav class="blog-toc reveal" aria-label="Table of contents">
+                <h2 data-i18n="blog_toc">In this article</h2>
+                <ol data-article-toc>
+                    <li><a href="#cloud-price">Hosted Cloud price</a></li>
+                    <li><a href="#included">What every package includes</a></li>
+                    <li><a href="#custom">When you need a custom quote</a></li>
+                    <li><a href="#buy">How to purchase</a></li>
+                    <li><a href="#faq">FAQ</a></li>
+                </ol>
+            </nav>
+
+            <div class="blog-content reveal" data-article-body itemprop="articleBody">
+<p>Pricing pages fail when they hide the number. FXGuard publishes a clear Cloud entry price and custom quotes for ownership models that need scoping.</p>
+
+<h2 id="cloud-price">Hosted Cloud price</h2>
+<ul>
+  <li><strong>$49 / month</strong> — Hosted Cloud (SaaS)</li>
+  <li><strong>$490 / year</strong> — same Cloud plan, billed yearly (save 2 months)</li>
+</ul>
+<p>Official package cards: <a href="/pricing">fxguard.io/pricing</a>.</p>
+
+<figure class="blog-inline-shot">
+  <img src="/images/Desktop-Users.png" alt="FXGuard users and roles included in every package" width="1024" height="484" loading="lazy">
+  <figcaption>Users &amp; roles are included — pricing is about hosting model, not feature gates on core CRM.</figcaption>
+</figure>
+
+<h2 id="included">What every package includes</h2>
+<p>Whether you buy Cloud, License or Managed, core modules stay available:</p>
+<ul>
+  <li>Unified WhatsApp inbox</li>
+  <li>Customers / CRM history</li>
+  <li>Tickets and tasks</li>
+  <li>Roles, branches, FX tools</li>
+  <li>2FA security</li>
+</ul>
+<p>Learn more on the <a href="/whatsapp-crm">WhatsApp CRM overview</a>.</p>
+
+<h2 id="custom">When you need a custom quote</h2>
+<ul>
+  <li><a href="/self-hosted">Self-hosted License</a> — one-time purchase, your servers</li>
+  <li><a href="/managed-hosting">Managed Dedicated</a> — dedicated instance + SLA</li>
+</ul>
+<p>Ask WhatsApp sales for a written quote after you try the <a href="/live-demo">demo</a>.</p>
+
+<h2 id="buy">How to purchase</h2>
+<ol>
+  <li>Confirm fit in the free demo (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>Choose Cloud vs License vs Managed — <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">buyer guide</a></li>
+  <li>Pay / quote via <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a></li>
+</ol>
+
+<h2 id="faq">FAQ</h2>
+<h3>Is there a free plan?</h3>
+<p>There is a free public demo, not a free production plan. Production starts at Hosted Cloud $49/mo.</p>
+            </div>
+
+            <div class="blog-buy-box reveal" aria-label="Buy FXGuard">
+                <h2 data-i18n="blog_buy_h2">Ready to buy FXGuard?</h2>
+                <p data-i18n="blog_buy_p">Hosted Cloud from <strong>$49/month</strong> · Self-hosted License · Managed Dedicated. Free live demo first — then purchase on WhatsApp.</p>
+                <div class="blog-buy-actions">
+                    <a class="btn btn-wa js-wa-link" data-wa="buy" href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard%20WhatsApp%20CRM.%20Please%20send%20packages." target="_blank" rel="noopener" data-i18n="blog_buy_wa">Buy on WhatsApp</a>
+                    <a class="btn btn-primary" href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="blog_buy_demo">Open Free Demo</a>
+                    <a class="btn btn-outline" href="/pricing" data-i18n="blog_buy_packages">See Packages</a>
+                </div>
+            </div>
+                        <nav class="seo-related reveal" aria-label="Related reading">
+                <h2 data-i18n="blog_keep">Keep reading</h2>
+                <div class="blog-related-grid">
+                  <a class="blog-related-card" href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed"><span data-i18n="post_buy_cat">Buying Guide</span><span class="blog-related-title" data-i18n="post_buy_title">Buy WhatsApp CRM: Cloud vs Self-hosted License vs Managed Dedicated</span></a>
+                  <a class="blog-related-card" href="/pricing"><span data-i18n="blog_hub_packages">Packages &amp; $49 Cloud</span><span class="blog-related-title" data-i18n="blog_hub_packages">Packages &amp; $49 Cloud</span></a>
+                  <a class="blog-related-card" href="/blog/self-hosted-whatsapp-crm-license"><span data-i18n="post_lic_cat">Licensing</span><span class="blog-related-title" data-i18n="post_lic_title">Self-hosted WhatsApp CRM License: When Buying the System Makes Sense</span></a>
+                  <a class="blog-related-card" href="/blog/how-to-try-fxguard-live-demo"><span data-i18n="post_demo_cat">Demo</span><span class="blog-related-title" data-i18n="post_demo_title">How to Try the FXGuard Live Demo (Free) Before You Buy</span></a>
+                </div>
+            </nav>
+        </article>
+    </main>
+    <footer class="site-footer" role="contentinfo">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="logo footer-logo">
+        <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+        <span data-i18n="logo">FXGuard</span>
+      </a>
+      <p data-i18n="footer_about">FXGuard builds digital products for exchange, finance and support teams. Start with WhatsApp CRM today — Accounting is coming next.</p>
+      <p class="footer-markets" data-i18n="footer_markets">Serving teams in Turkey · UAE / Dubai · Europe · Iran</p>
+      <nav class="footer-market-links" aria-label="Markets">
+        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+      </nav>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h3 data-i18n="footer_col_product">Products</h3>
+      <a href="/products" data-i18n="footer_products">All products</a>
+      <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
+            <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
+      <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
+      <a href="/live-demo" data-i18n="footer_demo">Live Demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+    </nav>
+    <nav class="footer-col" aria-label="Solutions">
+      <h3 data-i18n="footer_col_solutions">Solutions</h3>
+      <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
+      <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
+      <a href="/#services" data-i18n="footer_services">Support &amp; Backups</a>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h3 data-i18n="footer_col_company">Company</h3>
+      <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/#faq" data-i18n="footer_faq">FAQ</a>
+      <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
+      <a href="mailto:support@fxguard.io">support@fxguard.io</a>
+      <a href="https://wa.me/905010676486" class="js-wa-link" data-wa="buy" target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a>
+    </nav>
+  </div>
+  <div class="container footer-bottom">
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">Digital products for Exchange, Finance &amp; Support Teams</span></p>
+    <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
+    <p class="footer-legal">
+      <a href="/">fxguard.io</a> ·
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
+    </p>
+  </div>
+</footer>
+<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+  <p class="sticky-buy-text" data-i18n="sticky_text">From $49/mo · Free demo</p>
+  <div class="sticky-buy-actions">
+    <a href="https://app.fxguard.io/" class="btn btn-outline sticky-btn js-panel-link" target="_blank" rel="noopener" data-i18n="sticky_demo">Demo</a>
+    <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Buy</a>
+  </div>
+</div>
+<script src="/js/pages-i18n.js" defer></script>
+<script src="/js/gtm-i18n.js?v=20260819b" defer></script>
+<script src="/js/landing.js" defer></script>
+<script src="/js/site-yield.js" defer></script>
+</body>
+</html>

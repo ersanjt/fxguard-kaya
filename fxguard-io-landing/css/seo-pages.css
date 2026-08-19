@@ -1,0 +1,245 @@
+/* SEO landing pages — shared chrome comes from landing.css */
+.seo-page { padding-top: 104px; }
+
+/* Solid site header on content pages (toolbar/article <header> must NOT match) */
+.seo-page #header {
+  background: rgba(7, 11, 18, 0.97);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 10px 28px rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 400;
+}
+.seo-page #header.scrolled {
+  background: rgba(7, 11, 18, 0.99);
+}
+
+/* Page content stays below the fixed site header */
+.seo-page main {
+  position: relative;
+  z-index: 1;
+}
+.seo-wrap { padding: 32px 0 72px; max-width: 880px; }
+.breadcrumbs ol {
+  display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0 0 24px;
+  color: var(--text-muted); font-size: 0.88rem;
+}
+.breadcrumbs li:not(:last-child)::after { content: "/"; margin-inline-start: 8px; opacity: 0.5; }
+.breadcrumbs a { color: var(--accent); text-decoration: none; }
+.seo-article h1 {
+  font-size: clamp(1.75rem, 4vw, 2.6rem);
+  line-height: 1.2; margin: 0 0 18px; font-weight: 800;
+}
+.seo-article h2 { font-size: 1.25rem; margin: 32px 0 12px; }
+.seo-article .lead { font-size: 1.1rem; color: var(--text-muted); line-height: 1.7; margin-bottom: 24px; }
+.seo-article p { color: var(--text-muted); line-height: 1.75; margin-bottom: 14px; }
+.seo-list { margin: 0 0 20px; padding-inline-start: 1.2rem; color: var(--text-muted); line-height: 1.8; }
+.seo-list li { margin-bottom: 8px; }
+.seo-cards {
+  display: grid; gap: 16px; margin: 24px 0 32px;
+}
+@media (min-width: 768px) { .seo-cards { grid-template-columns: repeat(3, 1fr); } }
+.seo-cards article {
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 22px;
+}
+.seo-cards h2 { margin-top: 0; font-size: 1.15rem; }
+.seo-cards .btn { margin-top: 12px; width: 100%; }
+.seo-cta {
+  margin-top: 40px; padding: 28px; border-radius: 18px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.12), var(--bg-card));
+  border: 1px solid var(--border-hover);
+}
+.seo-cta h2 { margin: 0 0 14px; font-size: 1.15rem; }
+.seo-cta-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.seo-related { margin-top: 48px; padding-top: 28px; border-top: 1px solid var(--border); }
+.seo-related h2 { font-size: 1.05rem; margin-bottom: 12px; }
+.seo-related ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+@media (min-width: 600px) { .seo-related ul { grid-template-columns: 1fr 1fr; } }
+.seo-related a { color: var(--accent); text-decoration: none; }
+.seo-related a:hover { text-decoration: underline; }
+.seo-creds { display: grid; gap: 10px; text-align: left; margin: 16px 0 20px; }
+.seo-creds div {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 12px;
+}
+.seo-creds dt { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; }
+.seo-creds dd { margin: 0; font-weight: 600; }
+.seo-creds code { font-family: ui-monospace, monospace; color: var(--accent); }
+.seo-demo-card { max-width: none; margin: 0 0 32px; }
+
+/* Footer grid (home) */
+.site-footer { padding: 56px 0 28px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.25); }
+.footer-grid {
+  display: grid; gap: 32px; margin-bottom: 36px;
+}
+@media (min-width: 768px) {
+  .footer-grid { grid-template-columns: 1.4fr 1fr 1fr 1fr; }
+}
+.footer-brand p { color: var(--text-muted); font-size: 0.92rem; line-height: 1.65; margin-top: 12px; }
+.footer-who { color: var(--text) !important; font-weight: 600; }
+.footer-trust { color: var(--accent-light) !important; font-size: 0.85rem !important; }
+.footer-markets { font-size: 0.85rem !important; color: var(--accent) !important; }
+.footer-col { display: flex; flex-direction: column; gap: 8px; }
+.footer-col h3 {
+  font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-muted); margin: 0 0 6px; font-weight: 700;
+}
+.footer-col a { color: var(--text); text-decoration: none; font-size: 0.92rem; padding: 4px 0; }
+.footer-col a:hover { color: var(--accent); }
+.footer-bottom {
+  display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px;
+  padding-top: 20px; border-top: 1px solid var(--border);
+  color: var(--text-muted); font-size: 0.85rem;
+}
+.footer-bottom a { color: var(--text-muted); text-decoration: none; }
+.footer-bottom a:hover { color: var(--accent); }
+.footer-logo { margin-bottom: 4px; }
+
+
+/* Yield: reduce layout work for below-fold blocks (not blog-grid — fights reveal/IO) */
+.seo-page .seo-related,
+.seo-page .site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 480px;
+}
+
+/* Multilingual article note */
+.seo-page .blog-lang-note {
+  margin: 0 0 1.25rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.25);
+  color: var(--text-muted, #64748b);
+  font-size: 0.92rem;
+}
+
+/* Multi-product suite */
+.product-suite-grid {
+  display: grid;
+  gap: 18px;
+  margin: 28px 0 8px;
+}
+@media (min-width: 720px) {
+  .product-suite-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1100px) {
+  .product-suite-grid { grid-template-columns: repeat(3, 1fr); }
+}
+.product-card {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 22px 22px 20px;
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.product-card--live {
+  border-color: rgba(16,185,129,0.35);
+  background: linear-gradient(180deg, rgba(16,185,129,0.1), var(--bg-card) 48%);
+}
+.product-card--soon {
+  border-style: dashed;
+  opacity: 0.96;
+}
+.product-badge {
+  display: inline-flex;
+  align-self: flex-start;
+  margin: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid rgba(16,185,129,0.3);
+}
+.product-badge--soon {
+  color: var(--text-muted);
+  background: rgba(255,255,255,0.04);
+  border-color: var(--border);
+}
+.product-card h2,
+.product-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--text);
+}
+.product-card > p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+.product-who {
+  color: var(--accent-light) !important;
+  font-weight: 600;
+  font-size: 0.9rem !important;
+}
+.product-points {
+  margin: 0;
+  padding-inline-start: 1.1rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.product-points li { margin-bottom: 6px; }
+.product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.products-strip {
+  padding-top: 40px;
+  padding-bottom: 24px;
+}
+.products-strip .section-header { margin-bottom: 8px; }
+
+.pay-warn {
+  background: rgba(234, 179, 8, 0.12);
+  border: 1px solid rgba(234, 179, 8, 0.45);
+  color: var(--text);
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin: 0 0 20px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.pay-card { padding: 24px; }
+.pay-amount, .pay-network, .pay-asset { margin: 0 0 8px; color: var(--text); }
+.pay-network strong, .pay-asset strong { display: inline-block; font-size: 1.35rem; }
+.pay-qr-wrap { display: flex; justify-content: center; margin: 20px 0; }
+.pay-qr { background: #fff; padding: 10px; border-radius: 12px; }
+.pay-addr-label { margin: 8px 0 6px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.pay-addr-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.pay-addr {
+  display: block;
+  flex: 1 1 240px;
+  word-break: break-all;
+  font-size: 0.92rem;
+  background: rgba(255,255,255,0.04);
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--text);
+}
+.pay-copied { color: var(--accent); font-size: 0.9rem; margin: 0 0 12px; }
+.pay-grid {
+  display: grid;
+  gap: 20px;
+  margin: 0 0 28px;
+}
+.pay-card-title { font-size: 1.15rem; margin: 0 0 14px; }
+.pay-same { font-size: 0.92rem; font-weight: 600; line-height: 1.45; margin: 0 0 14px; }
+@media (min-width: 900px) {
+  .pay-grid { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+@media (min-width: 1100px) {
+  .pay-grid { grid-template-columns: 1fr 1fr 1fr; }
+}
+
+

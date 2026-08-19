@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<script>
+    (function () {
+      try {
+        var p = new URLSearchParams(location.search).get('lang');
+        var s = null;
+        try { s = localStorage.getItem('landing_lang'); } catch (e) {}
+        var lang = p || s;
+        if (!lang) {
+          var langs = (navigator.languages || []).slice();
+          langs.push(navigator.language || navigator.userLanguage || 'en');
+          for (var i = 0; i < langs.length; i++) {
+            var primary = String(langs[i] || '').toLowerCase().split('-')[0];
+            if (primary === 'fa' || primary === 'ps') { lang = 'fa'; break; }
+            if (primary === 'tr' || primary === 'az') { lang = 'tr'; break; }
+            if (primary === 'ar') { lang = 'ar'; break; }
+            if (primary === 'ru') { lang = 'ru'; break; }
+          }
+        }
+        if (!lang) {
+          try {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            var map = {
+              'Asia/Tehran':'fa','Asia/Kabul':'fa','Europe/Istanbul':'tr',
+              'Asia/Dubai':'ar','Asia/Riyadh':'ar','Asia/Qatar':'ar','Asia/Kuwait':'ar',
+              'Asia/Bahrain':'ar','Asia/Muscat':'ar','Asia/Baghdad':'ar','Africa/Cairo':'ar',
+              'Europe/Moscow':'ru'
+            };
+            lang = map[tz] || null;
+          } catch (e2) {}
+        }
+        if (lang === 'fa' || lang === 'ar') {
+          document.documentElement.lang = lang;
+          document.documentElement.dir = 'rtl';
+          document.documentElement.setAttribute('data-lang', lang);
+        } else if (lang) {
+          document.documentElement.lang = lang;
+          document.documentElement.setAttribute('data-lang', lang);
+        }
+      } catch (e) {}
+    })();
+    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>A $49 chat tool does not stop these four losses | FXGuard Blog</title>
+    <meta name="description" content="Inbox is table stakes. Staff walking off with the customer book, unrecorded quotes, shared logins, and broadcasts that ban the number are what actually cost money. A $49 chat tool does not prevent them.">
+    <meta name="keywords" content="WhatsApp personal phone risk, customer book theft, quoted price no record, shared WhatsApp login, WhatsApp ban broadcast, واتساپ گوشی شخصی, دفتر مشتری, اختلاف نرخ">
+    <meta name="author" content="FXGuard">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+    <meta name="theme-color" content="#059669">
+    <link rel="canonical" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you">
+    <link rel="alternate" hreflang="en" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you?lang=en">
+    <link rel="alternate" hreflang="fa" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you?lang=fa">
+    <link rel="alternate" hreflang="tr" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you?lang=tr">
+    <link rel="alternate" hreflang="ar" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you?lang=ar">
+    <link rel="alternate" hreflang="ru" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you">
+    <meta property="og:site_name" content="FXGuard">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="fa_IR">
+    <meta property="og:title" content="A $49 chat tool does not stop these four losses">
+    <meta property="og:description" content="Staff leave with the book. A quoted price has no record. Shared logins. Broadcasts that ban the line. Inbox tools do not prevent this.">
+    <meta property="og:image" content="https://fxguard.io/images/blog/blog-whatsapp-team-inbox.jpg">
+    <meta property="og:image:alt" content="WhatsApp on personal phones vs a company panel">
+    <meta property="article:published_time" content="2026-08-19">
+    <meta property="article:modified_time" content="2026-08-19">
+    <meta property="article:section" content="Operations">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="A $49 chat tool does not stop these four losses">
+    <meta name="twitter:description" content="The four incidents a cheap shared inbox does not stop — and what actually keeps the customer book in the company.">
+    <meta name="twitter:image" content="https://fxguard.io/images/blog/blog-whatsapp-team-inbox.jpg">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://fxguard.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://fxguard.io/blog" },
+        { "@type": "ListItem", "position": 3, "name": "A $49 chat tool does not stop these four losses", "item": "https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you" }
+      ]
+    },
+    {
+      "@type": "BlogPosting",
+      "@id": "https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you#article",
+      "headline": "A $49 chat tool does not stop these four losses",
+      "description": "Inbox is table stakes. Staff walking off with the customer book, unrecorded quotes, shared logins, and broadcasts that ban the number are what actually cost money.",
+      "image": "https://fxguard.io/images/blog/blog-whatsapp-team-inbox.jpg",
+      "datePublished": "2026-08-19",
+      "dateModified": "2026-08-19",
+      "author": { "@type": "Organization", "name": "FXGuard", "url": "https://fxguard.io" },
+      "publisher": {
+        "@type": "Organization",
+        "name": "FXGuard",
+        "logo": { "@type": "ImageObject", "url": "https://fxguard.io/images/logo.svg" }
+      },
+      "mainEntityOfPage": "https://fxguard.io/blog/where-whatsapp-on-personal-phones-costs-you",
+      "keywords": "WhatsApp personal phone, customer book, quoted price, shared login, WhatsApp ban",
+      "inLanguage": ["en", "fa", "tr", "ar", "ru"],
+      "isPartOf": { "@id": "https://fxguard.io/blog#blog" }
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Does a shared WhatsApp inbox stop staff from leaving with the customer book?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. If chats live on a personal phone, the relationships leave with the employee. The book has to sit on a company panel with roles — not only in an inbox." }
+        },
+        {
+          "@type": "Question",
+          "name": "Why is an unrecorded quote more expensive than software?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A price said in chat — shop quote, clinic fee, or FX rate — cannot be proven from a screenshot argument. One dispute can cost more than years of a $49 tool." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is unofficial WhatsApp plus bulk messaging safe?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Unofficial QR / WhatsApp Web sessions plus broadcast raise ban risk. Serious bulk needs official Meta Cloud API. FXGuard states both paths instead of hiding the unofficial one." }
+        }
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%2310b981'/%3E%3Cpath fill='%230b1220' d='M7 8h8.2v2.6H9.8v3.1H14.4v2.5H9.8V24H7V8zM17.2 11.2 19.6 14.2 22 11.2h3.1l-3.5 4.2 3.7 4.6h-3.2l-2.5-3.2-2.5 3.2h-3.2l3.7-4.6-3.5-4.2h3.1z'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://app.fxguard.io">
+    <link rel="dns-prefetch" href="https://wa.me">
+    <link rel="stylesheet" href="/css/motion.css?v=20260819b">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="/css/style.css?v=20260819b">
+    <link rel="stylesheet" href="/css/landing.css?v=20260819b">
+    <link rel="stylesheet" href="/css/seo-pages.css?v=20260819b">
+    <link rel="stylesheet" href="/css/blog.css?v=20260819b">
+</head>
+<body class="seo-page blog-article-page" data-page="blog">
+<a href="#main" class="skip-link" data-i18n="skip_link">Skip to content</a>
+<script>
+  var PANEL_URL = 'https://app.fxguard.io';
+  var WA_NUMBER = '905010676486';
+  var WA_LINK = 'https://wa.me/' + WA_NUMBER;
+  if (typeof CONTACT_API_URL === 'undefined') {
+    var CONTACT_API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+      ? 'http://localhost:3002'
+      : 'https://app.fxguard.io';
+  }
+</script>
+<a href="https://wa.me/905010676486" class="wa-float js-wa-link" data-wa="buy" target="_blank" rel="noopener noreferrer" data-i18n-aria="aria_wa_buy" aria-label="Buy FXGuard on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor" width="28" height="28" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+<header id="header" role="banner">
+  <div class="container header-inner">
+    <a href="/" class="logo" aria-label="FXGuard">
+      <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+      <span>FXGuard</span>
+    </a>
+    <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
+      <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+      <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Pricing</a>
+      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Guided demo</a>
+      <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
+      <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
+      <a href="/live-demo" class="btn btn-primary" id="btnPanel" data-i18n="nav_try_demo">Guided demo</a>
+    </nav>
+    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    </div>
+    <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<nav class="nav-mobile" id="navMobile" data-i18n-aria="aria_nav_mobile" aria-label="Mobile">
+  <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
+  <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
+  <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Pricing</a>
+  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Guided demo</a>
+  <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
+  <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
+  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
+  <a href="/live-demo" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_try_demo">Guided demo</a>
+  <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
+    <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
+    <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
+    <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
+    <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
+    <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+  </div>
+</nav>
+<main id="main" role="main">
+  <article class="container blog-article" data-article-slug="where-whatsapp-on-personal-phones-costs-you" itemscope itemtype="https://schema.org/BlogPosting">
+    <nav class="breadcrumbs reveal" aria-label="Breadcrumb">
+      <ol>
+        <li><a href="/" data-i18n="crumb_home">Home</a></li>
+        <li><a href="/blog" data-i18n="crumb_blog">Blog</a></li>
+        <li aria-current="page" data-i18n="post_loss_cat">Operations</li>
+      </ol>
+    </nav>
+    <div class="blog-article-head reveal">
+      <p class="blog-meta"><span data-i18n="post_loss_cat">Operations</span> · <time datetime="2026-08-19" data-i18n-date itemprop="datePublished">Aug 19, 2026</time> · 8 <span data-i18n="min_read">min read</span></p>
+      <h1 itemprop="headline" data-article-title>A $49 chat tool does not stop these four losses</h1>
+      <p class="lead" itemprop="description" data-article-lead>A shared inbox is table stakes. These are the incidents a cheap chat tool does not prevent — staff walking off with the book, quotes with no record, shared logins, and broadcasts that ban the number.</p>
+    </div>
+    <figure class="blog-hero-figure">
+      <img src="/images/blog/blog-whatsapp-team-inbox.jpg" alt="WhatsApp on personal phones versus a company-owned customer book" width="1280" height="720" loading="eager" fetchpriority="high">
+    </figure>
+    <nav class="blog-toc reveal" aria-label="Table of contents">
+      <h2 data-i18n="blog_toc">In this article</h2>
+      <ol data-article-toc>
+        <li><a href="#loss-1">Staff leave with the customer book</a></li>
+        <li><a href="#loss-2">Quoted prices with no record</a></li>
+        <li><a href="#loss-3">Shared logins across branches</a></li>
+        <li><a href="#loss-4">Broadcasts that burn the line</a></li>
+        <li><a href="#what-fixes">What actually fixes it</a></li>
+      </ol>
+    </nav>
+    <div class="blog-content reveal" data-article-body itemprop="articleBody">
+<p>Most teams start the same way: one phone, one WhatsApp, fast replies. It feels cheap and it works — until the second person joins, a staff member resigns, or a customer argues about the price said in chat.</p>
+<p>A shared inbox is useful. It is also what every WhatsApp CRM already sells. The losses below are why owners actually pay: the customer book walking out, a quote that cannot be proven, a shared login nobody can audit, and a banned number after bulk sends.</p>
+<div class="blog-callout">Same four losses show up in shops, clinics, sales teams and companies — not only exchange desks. The FX rate is one kind of quoted price. We customize the panel per trade. See <a href="/whatsapp-crm">WhatsApp CRM</a>.</div>
+
+<h2 id="loss-1">1. Staff leave with the customer book</h2>
+<p>When chats live on a personal phone, the relationship is not the company’s. A salesperson, clerk, or doctor’s assistant resigns and the history goes with them. Buying the list back is not a software problem — it is a ransom on your own customers.</p>
+<p>What owners need is not “unread badges”. They need the book on a company panel: tags, notes, assignment, and a login that can be revoked the same afternoon.</p>
+
+<h2 id="loss-2">2. Quoted prices with no record</h2>
+<p>A price said in WhatsApp — a shop quote, a clinic fee, or a USD/TRY rate — is not evidence. The customer has a screenshot. The staff member has a different memory. One dispute can cost more than years of a $49 tool.</p>
+<p>The fix is a timestamped quote on the customer record. For desks that need it, that includes an FX rates module. Other businesses skip the FX tile and still keep the quoted price.</p>
+
+<h2 id="loss-3">3. Shared logins across branches</h2>
+<p>One WhatsApp, many people, no roles. Nobody can say who quoted, who saw the customer’s number, or who marked the job done. That is not “collaboration”. It is a shared password.</p>
+<p>Branches and roles exist so each desk sees its queue, and the owner can still see all of them. 2FA and activity logs sit on every account — not as a slogan, as the only way to answer “who did this?”</p>
+
+<h2 id="loss-4">4. Broadcasts that burn the line</h2>
+<p>Unofficial WhatsApp Web / QR sessions are real. We use them where official Meta access is not available. They are not “fully legal API”. Bulk and broadcast on that path raise ban risk. When the number dies, so does the customer line.</p>
+<p>FXGuard states two paths: QR gateway for markets without a Meta BSP, and official Cloud API when you need templates and lower ban risk. Serious bulk needs Cloud API. We do not hide which one you are on. Read the channel section on the <a href="/#channel">homepage</a>.</p>
+
+<h2 id="what-fixes">What actually fixes it</h2>
+<p>Compare vendors on ownership, quoted prices, roles, and an honest channel — not on who has more inbox filters. Inbox, tickets and tasks are included in FXGuard. They are not the product.</p>
+<ul>
+  <li>The customer book stays when staff leave.</li>
+  <li>The price you said is on the record.</li>
+  <li>Roles and branches replace a shared login.</li>
+  <li>QR vs Cloud API is stated before you connect a number.</li>
+</ul>
+<p>Cloud Start is <strong>$49/month for 1 branch and up to 3 staff</strong>, without the FX module. Business from $249. License from $4,000. Managed from $800/mo. Floors are published on <a href="/pricing">/pricing</a>. We do not publish a shared demo password here — book a <a href="/live-demo">10-minute guided session</a> or a 7-day trial on your own number.</p>
+    </div>
+    <div class="blog-buy-box reveal" aria-label="Buy FXGuard">
+      <h2 data-i18n="blog_buy_h2">Ready to buy FXGuard?</h2>
+      <p data-i18n="blog_buy_p">Cloud Start $49/mo (1 branch, 3 staff). Business from $249. License from $4,000. Guided demo first — not a public password.</p>
+      <div class="blog-buy-actions">
+        <a class="btn btn-wa js-wa-link" data-wa="buy" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="blog_buy_wa">Quote on WhatsApp</a>
+        <a class="btn btn-primary" href="/live-demo" data-i18n="hero_cta_demo">Book a guided demo</a>
+        <a class="btn btn-outline" href="/pricing" data-i18n="blog_buy_packages">See price floors</a>
+      </div>
+    </div>
+    <nav class="seo-related reveal" aria-label="Related reading">
+      <h2 data-i18n="blog_keep">Keep reading</h2>
+      <div class="blog-related-grid">
+        <a class="blog-related-card" href="/blog/whatsapp-team-inbox-vs-personal-phones"><span data-i18n="post_inbox_cat">Operations</span><span class="blog-related-title" data-i18n="post_inbox_title">WhatsApp Team Inbox vs Personal Phones: What Breaks First</span></a>
+        <a class="blog-related-card" href="/blog/whatsapp-crm-pricing-explained"><span data-i18n="post_price_cat">Pricing</span><span class="blog-related-title" data-i18n="post_price_title">WhatsApp CRM Pricing Explained</span></a>
+        <a class="blog-related-card" href="/live-demo"><span data-i18n="blog_hub_demo">Guided demo</span><span class="blog-related-title" data-i18n="demo_h1">Guided demo — not a public shared login</span></a>
+      </div>
+    </nav>
+  </article>
+</main>
+<footer class="site-footer" role="contentinfo">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a href="/" class="logo footer-logo">
+        <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
+        <span data-i18n="logo">FXGuard</span>
+      </a>
+      <p data-i18n="footer_about">FXGuard is a WhatsApp CRM for sales teams, shops, clinics and companies. Customer book, roles and branches stay with the business. We customize it per trade. Accounting is a separate product with a public demo.</p>
+      <p class="footer-markets" data-i18n="footer_markets">Serving teams in Turkey · UAE / Dubai · Europe · Iran</p>
+      <nav class="footer-market-links" aria-label="Markets">
+        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+      </nav>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h3 data-i18n="footer_col_product">Products</h3>
+      <a href="/products" data-i18n="footer_products">All products</a>
+      <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
+      <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
+      <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
+      <a href="/live-demo" data-i18n="footer_demo">Guided demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+    </nav>
+    <nav class="footer-col" aria-label="Solutions">
+      <h3 data-i18n="footer_col_solutions">Solutions</h3>
+      <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/procurement" data-i18n="footer_procurement">Security / invoice pack</a>
+      <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
+      <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
+    </nav>
+    <nav class="footer-col" aria-label="Company">
+      <h3 data-i18n="footer_col_company">Company</h3>
+      <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/#faq" data-i18n="footer_faq">FAQ</a>
+      <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
+      <a href="mailto:support@fxguard.io">support@fxguard.io</a>
+      <a href="https://wa.me/905010676486" class="js-wa-link" data-wa="buy" target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a>
+    </nav>
+  </div>
+  <div class="container footer-bottom">
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">WhatsApp CRM — tailored to your business</span></p>
+    <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
+    <p class="footer-legal">
+      <a href="/">fxguard.io</a> ·
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
+    </p>
+  </div>
+</footer>
+<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+  <p class="sticky-buy-text" data-i18n="sticky_text">Start $49 · Business from $249</p>
+  <div class="sticky-buy-actions">
+    <a href="/live-demo" class="btn btn-outline sticky-btn" data-i18n="sticky_demo">Demo</a>
+    <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Quote</a>
+  </div>
+</div>
+<script src="/js/blog-articles-i18n.js?v=20260819c" defer></script>
+<script src="/js/pages-i18n.js?v=20260819c" defer></script>
+<script src="/js/gtm-i18n.js?v=20260819c" defer></script>
+<script src="/js/landing.js?v=20260819b" defer></script>
+<script src="/js/site-yield.js?v=20260819" defer></script>
+</body>
+</html>

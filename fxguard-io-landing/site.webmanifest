@@ -1,0 +1,19 @@
+{
+  "name": "FXGuard \u2014 Enterprise WhatsApp CRM",
+  "short_name": "FXGuard",
+  "description": "Enterprise WhatsApp CRM \u2014 Cloud, Self-hosted License & Managed Hosting",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b1220",
+  "theme_color": "#059669",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/images/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
