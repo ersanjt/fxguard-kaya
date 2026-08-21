@@ -417,7 +417,7 @@
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preload" as="image" href="/images/Desktop-Dashboard.png" fetchpriority="high">
     <link rel="preload" as="script" href="/js/pages-i18n.js?v=20260819q">
-    <link rel="preload" as="script" href="/js/landing.js?v=20260819q">
+    <link rel="preload" as="script" href="/js/landing.js?v=20260821b">
     <link rel="preload" as="script" href="/js/site-yield.js">
     <noscript></noscript>
     <link rel="dns-prefetch" href="https://app.fxguard.io">
@@ -425,7 +425,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <noscript></noscript>
-    <link rel="stylesheet" href="/css/motion.css?v=20260819f">
+    <link rel="stylesheet" href="/css/motion.css?v=20260821a">
     <link rel="dns-prefetch" href="https://app.fxguard.io">
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -433,7 +433,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="/css/style.css?v=20260819">
-    <link rel="stylesheet" href="/css/landing.css?v=20260819n">
+    <link rel="stylesheet" href="/css/landing.css?v=20260821a">
     <link rel="stylesheet" href="/css/seo-pages.css?v=20260819h">
     <link rel="stylesheet" href="/css/blog.css?v=20260819">
 </head>
@@ -708,36 +708,40 @@
 </nav>
 <main id="main" role="main">
         <section class="hero" id="top" aria-labelledby="hero-heading">
-            <div class="hero-bg"></div>
-            <div class="container hero-content">
-<div class="hero-badge" data-i18n="hero_badge">WhatsApp CRM for FX &amp; finance</div>
-                <h1 id="hero-heading" data-i18n="hero_title">WhatsApp CRM for <span>exchange, remittance and finance</span> desks</h1>
-                <p class="hero-desc" data-i18n="hero_desc">One company WhatsApp number. Rates, quoted prices, customer book and branches on one panel. Built for money desks — not a generic ads inbox. Other teams can run the core without the FX pack.</p>
-                <div class="hero-audience">
-                    <p class="hero-audience-label" data-i18n="hero_who_label">Built for</p>
-                    <ul class="hero-audience-list">
-                        <li data-i18n="hero_a1">Exchange offices</li>
-                        <li data-i18n="hero_a2">Remittance desks</li>
-                        <li data-i18n="hero_a3">Finance firms</li>
-                        <li data-i18n="hero_a4">Multi-branch money desks</li>
-                        <li data-i18n="hero_a5">Other teams — core without FX</li>
-                        <li data-i18n="hero_a6">We tailor the panel</li>
-                    </ul>
+            <div class="hero-bg" aria-hidden="true"></div>
+            <div class="container hero-split">
+                <div class="hero-copy">
+                    <p class="hero-kicker" data-i18n="hero_badge">Exchange · remittance · finance</p>
+                    <h1 id="hero-heading" data-i18n="hero_title">Quote the rate on WhatsApp. Keep the customer book.</h1>
+                    <p class="hero-desc" data-i18n="hero_desc">One company number. Staff reply from the panel. When someone leaves, chats and quoted prices stay with you — not on a personal phone.</p>
+                    <div class="hero-btns">
+                        <a href="/live-demo" class="btn btn-primary btn-lg" data-i18n="hero_cta_demo">See the panel</a>
+                        <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="hero_cta_wa">WhatsApp</a>
+                    </div>
+                    <p class="hero-offer" data-i18n="hero_offer">From <strong>$49/mo</strong> · guided demo · 7-day money-back on first Cloud month</p>
                 </div>
-                <p class="hero-trust" data-i18n="hero_trust">Optional first-replies with your OpenAI key — staff still close the deal · 7-day money-back on first Cloud Start month</p>
-                <div class="hero-btns">
-                    <a href="/live-demo" class="btn btn-primary btn-lg" data-i18n="hero_cta_demo">See demo</a>
-                    <a href="#packages" class="btn btn-outline btn-lg" data-i18n="hero_cta_packages">Prices</a>
-                    <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="hero_cta_wa">Talk on WhatsApp</a>
-                </div>
-                <p class="hero-offer" data-i18n="hero_offer">Cloud Start <strong>$49/mo</strong> (1 branch, 3 staff) · Business from <strong>$249</strong> · License from <strong>$4,000</strong></p>
-                <div class="trust-row">
-                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <strong data-i18n="trust_demo">Guided demo on request</strong></span>
-                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_secure">2FA and audit logs</span></span>
-                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_multibranch">Exchange, remittance, finance</span></span>
-                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_uptime">Invoice / PO available</span></span>
-                    <span class="trust-item"><span class="trust-icon"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-check"></use></svg></span> <span data-i18n="trust_refund">7-day money-back on first Cloud month</span></span>
-                </div>
+                <figure class="hero-visual">
+                    <div class="hero-desk">
+                        <div class="browser-window hero-browser">
+                            <div class="browser-bar">
+                                <div class="browser-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                                <div class="browser-url">app.fxguard.io</div>
+                            </div>
+                            <div class="browser-content">
+                                <img src="/images/Desktop-Dashboard.png" width="1024" height="507" alt="FXGuard panel: WhatsApp inbox and rates on one desktop screen" fetchpriority="high">
+                            </div>
+                        </div>
+                        <div class="hero-phone" aria-hidden="true">
+                            <div class="phone-frame">
+                                <div class="phone-notch"></div>
+                                <div class="phone-screen">
+                                    <img src="/images/Mobile-Conversations.png" width="429" height="924" alt="" loading="lazy">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <figcaption data-i18n="hero_shot_caption">The panel your teller actually uses — chat and rates together.</figcaption>
+                </figure>
             </div>
         </section>
 
@@ -1253,8 +1257,8 @@
                     </article>
                     <article class="service-card">
                         <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-gdpr"></use></svg></span>
-                        <h3 data-i18n="svc7_title">Data handling (DPA on request)</h3>
-                        <p data-i18n="svc7_desc">Access control, minimization and activity logs. A GDPR DPA is discussed on the Europe page and with EU buyers — this homepage does not claim a certificate.</p>
+                        <h3 data-i18n="svc7_title">Customer book stays on your panel</h3>
+                        <p data-i18n="svc7_desc">2FA, roles and activity logs on every plan. Buying from Europe? We send a DPA with the invoice so procurement can sign — <a href="/eu/">Europe</a>.</p>
                     </article>
                     <article class="service-card">
                         <span class="icon-box"><svg class="fx-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-onboard"></use></svg></span>
@@ -1581,8 +1585,8 @@
   </div>
 </div>
 <script src="/js/pages-i18n.js?v=20260819q" defer></script>
-<script src="/js/gtm-i18n.js?v=20260819r" defer></script>
-<script src="/js/landing.js?v=20260819q" defer></script>
+<script src="/js/gtm-i18n.js?v=20260821b" defer></script>
+<script src="/js/landing.js?v=20260821b" defer></script>
 <script src="/js/site-yield.js?v=20260819" defer></script>
 </body>
 </html>

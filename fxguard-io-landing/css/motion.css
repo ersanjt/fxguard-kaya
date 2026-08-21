@@ -6,6 +6,12 @@
   .motion-hero-btns,
   .motion-hero-offer,
   .motion-hero-trust,
+  .hero-copy .hero-kicker,
+  .hero-copy h1,
+  .hero-copy .hero-desc,
+  .hero-copy .hero-btns,
+  .hero-copy .hero-offer,
+  .hero-visual,
   .wa-float,
   .blog-featured,
   .blog-card,
@@ -20,30 +26,23 @@
 }
 
 /* Homepage hero cascade */
-.hero-content .hero-badge,
-.hero-content .lang-switch {
-  animation: fxFadeUp 0.7s ease both;
+.hero-copy .hero-kicker {
+  animation: fxFadeUp 0.55s ease both;
 }
-.hero-content h1 {
-  animation: fxFadeUp 0.75s ease 0.08s both;
+.hero-copy h1 {
+  animation: fxFadeUp 0.6s ease 0.06s both;
 }
-.hero-content .hero-desc {
-  animation: fxFadeUp 0.75s ease 0.16s both;
+.hero-copy .hero-desc {
+  animation: fxFadeUp 0.6s ease 0.12s both;
 }
-.hero-content .hero-audience {
-  animation: fxFadeUp 0.75s ease 0.2s both;
+.hero-copy .hero-btns {
+  animation: fxFadeUp 0.6s ease 0.18s both;
 }
-.hero-content .hero-trust {
-  animation: fxFadeUp 0.75s ease 0.24s both;
+.hero-copy .hero-offer {
+  animation: fxFadeUp 0.6s ease 0.22s both;
 }
-.hero-content .hero-btns {
-  animation: fxFadeUp 0.75s ease 0.28s both;
-}
-.hero-content .hero-offer {
-  animation: fxFadeUp 0.75s ease 0.32s both;
-}
-.hero-content .trust-row {
-  animation: fxFadeUp 0.75s ease 0.4s both;
+.hero-visual {
+  animation: fxFadeUp 0.7s ease 0.16s both;
 }
 
 @keyframes fxFadeUp {
