@@ -210,6 +210,10 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             await qi.addColumn('Users', 'position', { type: DataTypes.STRING, allowNull: true });
             logger.info('✅ Users: position column added (auto-migration)');
         }
+        if (userDesc && !userDesc.lastSeenAt) {
+            await qi.addColumn('Users', 'lastSeenAt', { type: DataTypes.DATE, allowNull: true });
+            logger.info('✅ Users: lastSeenAt column added (auto-migration)');
+        }
     } catch (e) {
         if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
             logger.warn('Users position migration:', e.message);

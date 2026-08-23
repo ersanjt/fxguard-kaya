@@ -140,7 +140,7 @@ router.get('/connection', async (req, res, next) => {
             where: { id: 'default' },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
-        res.json({
+        const payload = {
             connectionMode: row.connectionMode || 'cloud_first',
             cloudEnabled: row.cloudEnabled !== false,
             cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
@@ -153,7 +153,14 @@ router.get('/connection', async (req, res, next) => {
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
-        });
+        };
+        try {
+            const { getTrialSnapshot } = require('../lib/whatsappTrial');
+            payload.trial = await getTrialSnapshot();
+        } catch (_) {
+            payload.trial = { status: 'none', canStart: true, canConvert: false, days: 7 };
+        }
+        res.json(payload);
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
             return res.json({
@@ -427,6 +434,35 @@ router.post('/cloud/test-send', async (req, res, next) => {
                     : undefined,
             });
         }
+        next(err);
+    }
+});
+
+function requireOwnerOrAdmin(req, res, next) {
+    if (req.user && (req.user.role === 'admin' || req.user.role === 'owner')) return next();
+    return res.status(403).json({ error: 'فقط ادمین یا مالک' });
+}
+
+router.post('/trial/start', requireOwnerOrAdmin, async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const { startWhatsappTrial } = require('../lib/whatsappTrial');
+        const trial = await startWhatsappTrial();
+        res.json({ ok: true, trial });
+    } catch (err) {
+        if (err && err.status) return res.status(err.status).json({ error: err.message, code: err.code });
+        next(err);
+    }
+});
+
+router.post('/trial/convert', requireOwnerOrAdmin, async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const { convertWhatsappTrial } = require('../lib/whatsappTrial');
+        const trial = await convertWhatsappTrial();
+        res.json({ ok: true, trial });
+    } catch (err) {
+        if (err && err.status) return res.status(err.status).json({ error: err.message, code: err.code });
         next(err);
     }
 });

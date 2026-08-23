@@ -6,6 +6,10 @@ const { isValidUUID, parsePagination } = require('../lib/validation');
 const Decimal = require('decimal.js');
 const logger = require('../config/logger');
 const { logActivity } = require('../services/activityLog');
+const { redactCustomerPhone, redactNestedCustomer } = require('../lib/customerPhoneVisibility');
+const { requireFxModule } = require('../lib/planLimits');
+
+router.use(requireFxModule);
 
 function serverError(res, err, context) {
     logger.error(`exchange.js error [${context}]`, { error: err?.message });
@@ -221,7 +225,11 @@ router.get('/transactions', requireServices, async (req, res) => {
             limit,
             offset
         });
-        res.json({ ...list, page });
+        res.json({
+            ...list,
+            rows: (list.rows || []).map((row) => redactNestedCustomer(row, req.user)),
+            page,
+        });
     } catch (e) {
         serverError(res, e, 'exchange');
     }
@@ -242,7 +250,7 @@ router.get('/transactions/:id', requireServices, async (req, res) => {
             ]
         });
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
-        res.json(tx);
+        res.json(redactNestedCustomer(tx, req.user));
     } catch (e) {
         serverError(res, e, 'exchange');
     }
@@ -571,7 +579,7 @@ router.get('/statement', requireServices, async (req, res) => {
                         credit,
                         balance: bal,
                         sign: bal >= 0 ? 'Cr' : 'Dr',
-                        customer: tx.customer,
+                        customer: redactCustomerPhone(tx.customer, req.user),
                         user: tx.user,
                         fromCashBox: tx.fromCashBox,
                         toCashBox: tx.toCashBox,
@@ -612,7 +620,7 @@ router.get('/statement', requireServices, async (req, res) => {
                     credit,
                     balance: bal,
                     sign: bal >= 0 ? 'Cr' : 'Dr',
-                    customer: tx.customer,
+                    customer: redactCustomerPhone(tx.customer, req.user),
                     user: tx.user,
                     fromCashBox: tx.fromCashBox,
                     toCashBox: tx.toCashBox,
@@ -937,7 +945,7 @@ router.get('/expense-journal', requireServices, async (req, res) => {
                 reference: r.reference,
                 user: r.user,
                 fromCashBox: r.fromCashBox,
-                customer: r.customer
+                customer: redactCustomerPhone(r.customer, req.user)
             })),
             totalAmount,
             count: rows.length

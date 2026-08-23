@@ -5,11 +5,6 @@
  */
 async function emitNewMessageToAuthorized(io, conversation, payload) {
     if (!io || !payload || !conversation) return;
-    // چت زندهٔ غیرمخفی: همهٔ نشست‌های واردشده ببینند (رفتار قبلی اینباکس)
-    if (!conversation.isHiddenFromStaff) {
-        io.emit('new_message', payload);
-        return;
-    }
     let sockets;
     try {
         sockets = await io.fetchSockets();
@@ -17,10 +12,13 @@ async function emitNewMessageToAuthorized(io, conversation, payload) {
         return;
     }
     const { canAccessConversationAsync } = require('./conversationAccess');
+    const { canAccess } = require('./permissions');
     await Promise.all(
         sockets.map(async (s) => {
             if (!s.user || !s.userId) return;
+            if (s.user.isActive === false) return;
             try {
+                if (!canAccess(s.user, 'conversations')) return;
                 if (await canAccessConversationAsync(s.user, s.userId, conversation)) {
                     s.emit('new_message', payload);
                 }

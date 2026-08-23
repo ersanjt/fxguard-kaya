@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const { assertMatchingTokenVersion } = require('../lib/staffSession');
 
 module.exports = async (socket, next) => {
     try {
@@ -14,6 +15,11 @@ module.exports = async (socket, next) => {
         const user = await User.findByPk(decoded.id || decoded.userId);
         if (!user || !user.isActive) {
             return next(new Error('کاربر نامعتبر یا غیرفعال است'));
+        }
+        try {
+            assertMatchingTokenVersion(decoded, user);
+        } catch (_) {
+            return next(new Error('نشست باطل شده است'));
         }
         socket.userId = user.id;
         socket.departmentId = user.departmentId;

@@ -17,8 +17,8 @@ const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets, canV
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
+const { issueStaffToken, revokeStaffSessions, disconnectStaffSockets } = require('../lib/staffSession');
 
-const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
 const TOTP_MAX_ATTEMPTS = 5;
 const TOTP_TTL_SECONDS = 5 * 60; // 5 minutes
@@ -72,11 +72,7 @@ async function clearTotpAttempts(redisClient, jti) {
 }
 
 function issueToken(user) {
-    return jwt.sign(
-        { id: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        JWT_OPTIONS
-    );
+    return issueStaffToken(user);
 }
 
 router.post('/login', async (req, res, _next) => {
@@ -161,7 +157,7 @@ router.post('/login', async (req, res, _next) => {
             return sendJson(200, { needTotp: true, tempToken, email: user.email, username: user.username });
         }
         const now = new Date();
-        await user.update({ lastLoginAt: now, status: 'online' });
+        await user.update({ lastLoginAt: now, lastSeenAt: now, status: 'online' });
         const clientIp = getRealIp(req);
         await logActivity({
             userId: user.id,
@@ -304,6 +300,12 @@ router.post('/reset-password', async (req, res, next) => {
         user.password = newPassword;
         await user.save();
         await PasswordResetToken.destroy({ where: { userId: user.id } });
+        try {
+            const io = req.app && req.app.get('io');
+            await disconnectStaffSockets(io, user.id);
+            const { DevicePushToken } = require('../models');
+            if (DevicePushToken) await DevicePushToken.destroy({ where: { userId: user.id } });
+        } catch (_) {}
         res.json({ message: 'Your password has been updated. You can sign in now.' });
     } catch (err) {
         next(err);
@@ -338,7 +340,7 @@ router.post('/totp/verify-login', async (req, res, next) => {
         // Clear attempt counter on success
         await clearTotpAttempts(redisClient, jti);
         const now = new Date();
-        await user.update({ lastLoginAt: now, status: 'online' });
+        await user.update({ lastLoginAt: now, lastSeenAt: now, status: 'online' });
         const clientIp2fa = getRealIp(req);
         await logActivity({
             userId: user.id,
@@ -430,7 +432,8 @@ router.get('/me', authMiddleware, async (req, res, next) => {
         u.canManageTickets = canManageTickets(user);
         u.canViewCustomerPhone = canViewCustomerPhone(user);
         u.canManageConversations = canManageConversations(user);
-        if (req.authToken) u.token = req.authToken;
+        const usedBearer = !!(req.headers && req.headers.authorization && String(req.headers.authorization).startsWith('Bearer '));
+        if (usedBearer && req.authToken) u.token = req.authToken;
         res.json(u);
     } catch (err) {
         next(err);
@@ -487,6 +490,10 @@ router.post('/logout', optionalAuthMiddleware, async (req, res, next) => {
         if (!user) {
             return res.json({ ok: true, message: 'خروج انجام شد' });
         }
+        try {
+            const io = req.app && req.app.get('io');
+            await revokeStaffSessions(user, io);
+        } catch (_) {}
         await user.update({ status: 'offline' });
         await logActivity({
             userId: user.id,
@@ -580,8 +587,10 @@ router.patch('/me/presence', authMiddleware, async (req, res, next) => {
             return res.status(400).json({ error: 'وضعیت نامعتبر است. مقادیر مجاز: online, away, busy, offline' });
         }
         const previousStatus = req.user.status;
+        const updates = { lastSeenAt: new Date() };
+        if (previousStatus !== status) updates.status = status;
+        await req.user.update(updates);
         if (previousStatus !== status) {
-            await req.user.update({ status });
             try {
                 const io = req.app && req.app.get('io');
                 notifyStaffPresence(io, req.user, { event: 'status', status, previousStatus }).catch(() => {});

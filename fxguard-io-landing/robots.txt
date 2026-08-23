@@ -3,3 +3,6 @@ Allow: /
 
 # Prefer HTTPS apex
 Sitemap: https://fxguard.io/sitemap.xml
+
+# LLM / assistant discovery
+# https://fxguard.io/llms.txt

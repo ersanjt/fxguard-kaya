@@ -75,6 +75,11 @@ struct LoginView: View {
                     if showServer {
                         field(t("server"), text: $model.serverUrl)
                     }
+                    if let url = URL(string: model.serverUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/privacy") {
+                        Link(t("privacy"), destination: url)
+                            .font(.caption)
+                            .foregroundStyle(KayaColor.text3)
+                    }
                 }
             }
             .padding(22)

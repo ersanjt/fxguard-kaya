@@ -36,6 +36,8 @@ function resolveBuildId() {
             hash.update(readNormalized(p));
         }
     }
+    const cssPath = path.join(root, 'public/css/dashboard.css');
+    if (fs.existsSync(cssPath)) hash.update(readNormalized(cssPath));
     return hash.digest('hex').slice(0, 12);
 }
 
@@ -76,6 +78,8 @@ function bundleJs() {
     const outPath = path.join(root, 'public/js/dashboard.js');
     fs.writeFileSync(outPath, out, 'utf8');
     try {
+        // Same parse the browser uses: a SyntaxError here would leave the live
+        // panel stuck on an empty shell (window.showPage never assigned).
         // eslint-disable-next-line no-new-func
         new Function(out);
     } catch (e) {

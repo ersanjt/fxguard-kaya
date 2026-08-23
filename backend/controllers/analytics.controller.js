@@ -12,12 +12,26 @@ const {
     Announcement,
     AnnouncementRead,
     User,
+    ProductFitSurvey,
+    ContactLead,
     sequelize,
 } = require('../models');
+const {
+    LOOKBACK_DAYS,
+    PANEL_SHARE_TARGET_PCT,
+    panelSharePct,
+    meetsPanelShareTarget,
+    seanEllisVeryDisappointedPct,
+    normalizeSeanEllisAnswer,
+} = require('../lib/productFit');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin, canViewHiddenConversations } = require('../lib/permissions');
 const { conversationListWhereAsync } = require('../lib/conversationAccess');
 const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staffSupervision');
+const { mergeLivePresenceWhere, ACTIVE_PRESENCE_STATUSES } = require('../lib/staffPresence');
+const { tallyPurposeCounts } = require('../lib/contactLead');
+const { getPlanSnapshot } = require('../lib/planLimits');
+const { getTrialSnapshot } = require('../lib/whatsappTrial');
 
 /** آیا where خالی نیست؟ (کلیدهای Symbol مثل Op.and/Op.or با Object.keys دیده نمی‌شوند) */
 function hasWhereClauses(where) {
@@ -178,8 +192,12 @@ async function dashboard(req, res, next) {
             (async () => {
                 if (!req.canAccess('staff_activity')) return 0;
                 const visibleIds = await getVisibleStaffUserIds(req.user, User);
+                const io = req.app && req.app.get('io');
                 const where = applyVisibleUserFilter(
-                    { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } },
+                    mergeLivePresenceWhere(
+                        { isActive: true, status: { [Op.in]: ACTIVE_PRESENCE_STATUSES } },
+                        io
+                    ),
                     visibleIds
                 );
                 return User.count({ where });
@@ -272,10 +290,130 @@ async function dashboard(req, res, next) {
             /** فقط برای ادمین: تعداد مکالمات آرشیو قفل‌شده (شمارهٔ قبلی) — در KPI اصلی نیست */
             archivedLockedConversations: archivedLockedCount || 0,
             scopedToUser: true,
+            productFit: await productFitPayload(req),
+            contactFunnel: await contactFunnelPayload(req),
+            planLimits: await planLimitsPayload(),
+            whatsappTrial: await whatsappTrialPayload(req),
         });
     } catch (err) {
         next(err);
     }
 }
 
-module.exports = { dashboard };
+function canSeeProductFit(req) {
+    if (!req.user) return false;
+    if (isMainAdmin(req.user)) return true;
+    return ['owner', 'admin'].indexOf(req.user.role || '') !== -1;
+}
+
+async function productFitPayload(req) {
+    if (!canSeeProductFit(req)) return null;
+    const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+    const outgoingBase = {
+        direction: 'outgoing',
+        isAutoReply: false,
+        timestamp: { [Op.gte]: since },
+    };
+    const [panelOutgoing, phoneOutgoing, surveyRows, myLatest] = await Promise.all([
+        Message.count({
+            where: { ...outgoingBase, userId: { [Op.ne]: null } },
+        }),
+        Message.count({
+            where: { ...outgoingBase, userId: null },
+        }),
+        ProductFitSurvey.findAll({
+            attributes: ['answer', [fn('COUNT', col('id')), 'n']],
+            group: ['answer'],
+            raw: true,
+        }).catch(() => []),
+        ProductFitSurvey.findOne({
+            where: { userId: req.userId },
+            order: [['createdAt', 'DESC']],
+        }).catch(() => null),
+    ]);
+    const counts = { very: 0, somewhat: 0, not: 0 };
+    (surveyRows || []).forEach((row) => {
+        if (row.answer && counts[row.answer] != null) counts[row.answer] = Number(row.n) || 0;
+    });
+    const pct = panelSharePct(panelOutgoing, phoneOutgoing);
+    const askedAt = myLatest && myLatest.createdAt ? new Date(myLatest.createdAt).getTime() : 0;
+    const askAgainAfterMs = 90 * 24 * 60 * 60 * 1000;
+    return {
+        lookbackDays: LOOKBACK_DAYS,
+        panelOutgoing,
+        phoneOutgoing,
+        panelSharePct: pct,
+        panelShareTargetPct: PANEL_SHARE_TARGET_PCT,
+        panelShareOk: meetsPanelShareTarget(pct),
+        seanEllis: {
+            counts,
+            veryDisappointedPct: seanEllisVeryDisappointedPct(counts),
+            ask: Date.now() - askedAt > askAgainAfterMs,
+        },
+    };
+}
+
+async function productFit(req, res, next) {
+    try {
+        if (!req.canAccess('dashboard')) {
+            return res.status(403).json({ error: 'دسترسی به داشبورد ندارید' });
+        }
+        const data = await productFitPayload(req);
+        if (!data) return res.status(403).json({ error: 'فقط مالک و ادمین این آمار را می‌بینند' });
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function submitProductFitSurvey(req, res, next) {
+    try {
+        if (!canSeeProductFit(req)) {
+            return res.status(403).json({ error: 'فقط مالک و ادمین می‌توانند نظر بدهند' });
+        }
+        const answer = normalizeSeanEllisAnswer(req.body && req.body.answer);
+        if (!answer) {
+            return res.status(400).json({ error: 'پاسخ نامعتبر است' });
+        }
+        await ProductFitSurvey.create({ userId: req.userId, answer });
+        res.json({ ok: true, productFit: await productFitPayload(req) });
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function contactFunnelPayload(req) {
+    if (!canSeeProductFit(req)) return null;
+    const since = new Date(Date.now() - LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
+    const rows = await ContactLead.findAll({
+        attributes: ['purpose', [fn('COUNT', col('id')), 'n']],
+        where: { createdAt: { [Op.gte]: since } },
+        group: ['purpose'],
+        raw: true,
+    }).catch(() => []);
+    const byPurpose = tallyPurposeCounts(rows);
+    const total = Object.keys(byPurpose).reduce((sum, k) => sum + (byPurpose[k] || 0), 0);
+    const stripePaid = await ContactLead.count({
+        where: { source: 'stripe', createdAt: { [Op.gte]: since } },
+    }).catch(() => 0);
+    return { days: LOOKBACK_DAYS, total, byPurpose, stripePaid };
+}
+
+async function planLimitsPayload() {
+    try {
+        return await getPlanSnapshot({ counts: true });
+    } catch (_) {
+        return null;
+    }
+}
+
+async function whatsappTrialPayload(req) {
+    if (!canSeeProductFit(req)) return null;
+    try {
+        return await getTrialSnapshot();
+    } catch (_) {
+        return null;
+    }
+}
+
+module.exports = { dashboard, productFit, submitProductFitSurvey };

@@ -43,7 +43,7 @@ async function parseExcelBuffer(buffer) {
         const name = (row[nameIdx] != null ? String(row[nameIdx]).trim() : '') || (row[0] != null ? String(row[0]).trim() : '');
         const phone = (row[phoneIdx] != null ? String(row[phoneIdx]).trim() : '') || (row[1] != null ? String(row[1]).trim() : '');
         const email = emailIdx >= 0 && row[emailIdx] != null ? String(row[emailIdx]).trim() : '';
-        if (phone) result.push({ name: name || `مشتری ${phone}`, phone, email });
+        if (phone) result.push({ name: name || 'مشتری', phone, email });
     }
     return result;
 }
@@ -88,7 +88,7 @@ router.post('/import', async (req, res, next) => {
             } else {
                 await Customer.create({
                     phone,
-                    name: r.name || `مشتری ${phone}`,
+                    name: r.name || 'مشتری',
                     email: r.email || null,
                     status: 'active',
                     source: 'import'

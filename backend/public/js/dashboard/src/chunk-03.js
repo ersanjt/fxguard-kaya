@@ -125,6 +125,20 @@
             bindOnce(dashRefreshBtn, '_crmBoundDashRefresh', function() {
                 if (typeof refreshDashboard === 'function') refreshDashboard();
             });
+            document.querySelectorAll('.mobile-tab-item[data-page]').forEach(function(item) {
+                if (item._crmBoundMobileTab) return;
+                item._crmBoundMobileTab = true;
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var pg = item.getAttribute('data-page');
+                    if (pg === 'more') {
+                        if (typeof toggleSidebarMobile === 'function') toggleSidebarMobile();
+                        return;
+                    }
+                    if (pg && typeof showPage === 'function') showPage(pg);
+                    if (typeof closeSidebarMobile === 'function') closeSidebarMobile();
+                });
+            });
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
@@ -3848,6 +3862,12 @@
             const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
             if (useCloudTemplate && !templateName) { toast(bulkFmt('bulk_err_template_name', ''), true); return; }
             if (!useCloudTemplate && !content) { toast(bulkFmt('bulk_err_message', ''), true); return; }
+            if (!useCloudTemplate) {
+                var gwRisk = t('whatsapp_warn_number_risk') || (LANG === 'fa'
+                    ? 'ارسال انبوه روی Gateway غیررسمی می‌تواند شماره را مسدود کند. ادامه می‌دهید؟'
+                    : 'Bulk on the unofficial Gateway can ban the number. Continue?');
+                if (!confirm(gwRisk)) return;
+            }
             if (!confirm(bulkFmt('bulk_confirm', '', { n: ids.length }))) return;
             const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
             const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;

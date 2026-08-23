@@ -8,6 +8,10 @@
 cpanel-landing/
 ├── index.html
 ├── contact.html
+├── pricing.html
+├── whatsapp-crm.html
+├── procurement.html
+├── billing-success.html
 ├── .htaccess
 ├── robots.txt
 ├── sitemap.xml
@@ -43,7 +47,7 @@ action="https://formspree.io/f/xyzabc"
 
 ## قیمت‌گذاری
 
-قیمت‌های فعلی: **$49/ماه** و **$490/سال** (۲ ماه رایگان). در `index.html` قابل تغییر است.
+قیمت‌های منتشرشده (ثبت‌نام جدید): **Cloud Start ۴۹ دلار/ماه** (۱ شعبه، تا ۳ کارمند)، **Business از ۲۴۹**، **Multi-branch از ۴۹۹**، **لایسنس از ۴۰۰۰ یک‌باره**، **Managed از ۸۰۰/ماه**. در `index.html` قابل تغییر است.
 
 ## سئو (SEO)
 

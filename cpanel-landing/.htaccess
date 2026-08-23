@@ -14,6 +14,10 @@ RewriteBase /
 
 # /contact -> contact.html (SEO-friendly URL, preserves ?lang= etc)
 RewriteRule ^contact$ contact.html [L,QSA]
+RewriteRule ^pricing$ pricing.html [L,QSA]
+RewriteRule ^whatsapp-crm$ whatsapp-crm.html [L,QSA]
+RewriteRule ^procurement$ procurement.html [L,QSA]
+RewriteRule ^billing/success$ billing-success.html [L,QSA]
 
 # Optional: redirect /dashboard to panel subdomain (uncomment if needed)
 # RewriteCond %{REQUEST_URI} ^/dashboard

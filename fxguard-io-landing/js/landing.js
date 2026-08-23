@@ -881,24 +881,34 @@
 
     var SEO_META = {
         en: {
-            title: 'FXGuard | WhatsApp CRM for sales teams, shops, clinics and companies',
-            description: 'FXGuard is a WhatsApp CRM: one company number, shared panel, customer history stays with the business. For sales teams, shops, clinics, companies, exchange desks — customized per trade. Cloud from $49/mo. 7-day money-back on first Cloud Start month.'
+            title: 'FXGuard | WhatsApp CRM for exchange, remittance and finance desks',
+            description: 'Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo inbox. Business from $249 with the FX pack. License from $4,000.',
+            keywords: 'WhatsApp CRM for exchange offices, remittance WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM, WhatsApp CRM Istanbul, döviz WhatsApp CRM',
+            imageAlt: 'FXGuard staff panel: WhatsApp inbox and FX rates on one desktop screen'
         },
         fa: {
-            title: 'FXGuard | واتساپ CRM برای تیم فروش، فروشگاه، مطب و شرکت',
-            description: 'FXGuard یک واتساپ CRM است: یک شماره سازمانی، پنل مشترک، تاریخچه مشتری مال شرکت می‌ماند. مناسب تیم فروش، فروشگاه، مطب، شرکت، صرافی. ابر از ۴۹$/ماه. بازگشت وجه ۷روزه ماه اول.'
-        },
-        ar: {
-            title: 'FXGuard | واتساب CRM لأي عمل · سحابة من 49$',
-            description: 'واتساب CRM لفرق المبيعات والمتاجر والعيادات والشركات — يُخصَّص. دفتر العملاء يبقى للشركة. بدء 49$/شهر. أعمال من 249. وحدة أسعار الصرف اختيارية.'
-        },
-        ru: {
-            title: 'FXGuard | WhatsApp CRM для любого бизнеса · от $49',
-            description: 'WhatsApp CRM для продаж, магазинов, клиник и компаний — кастомизируется. Книга клиентов остаётся в компании. Start $49/мес. Business от $249. FX-модуль по желанию.'
+            title: 'واتساپ CRM صرافی و حواله | نرخ روی همان پنل | FXGuard',
+            description: 'نرخ را در واتساپ بگویید؛ دفتر مشتری مال شرکت بماند. ابر شروع ۴۹$/ماه (۱ شعبه، ۳ نفر، بدون نرخ). تجاری از ۲۴۹$ با ماژول نرخ. بازگشت وجه ۷روزه ماه اول.',
+            keywords: 'واتساپ CRM صرافی, پنل واتساپ صرافی, نرم‌افزار صرافی واتساپ, CRM حواله, نرخ ارز واتساپ, صندوق ورودی واتساپ سازمانی',
+            imageAlt: 'پنل کارکنان FXGuard: اینباکس واتساپ و نرخ ارز روی یک صفحه دسکتاپ'
         },
         tr: {
-            title: 'FXGuard | Her işletme için WhatsApp CRM · $49’dan bulut',
-            description: 'Satış ekipleri, dükkanlar, klinikler ve şirketler için WhatsApp CRM — işinize göre özelleştirilir. Müşteri defteri şirkette kalır. Cloud Start $49/ay. Business $249’dan. İsteğe bağlı döviz modülü.'
+            title: 'Döviz ve havale için WhatsApp CRM | FXGuard',
+            description: 'Kur, WhatsApp ile aynı panelde. Müşteri defteri şirkette kalır. Cloud Start $49/ay. Business $249’dan FX paketiyle. Lisans $4.000’dan. İlk ay 7 gün iade.',
+            keywords: 'döviz WhatsApp CRM, havale WhatsApp, döviz bürosu CRM, şubeli WhatsApp paneli, FXGuard İstanbul',
+            imageAlt: 'FXGuard personel paneli: WhatsApp gelen kutusu ve döviz kurları tek ekranda'
+        },
+        ar: {
+            title: 'واتساب CRM للصرافة والحوالات | FXGuard',
+            description: 'سعر الصرف على نفس لوحة واتساب. دفتر العملاء ملك الشركة. بدء سحابي 49$/شهر. أعمال من 249$ مع حزمة الأسعار. ترخيص من 4000$.',
+            keywords: 'واتساب صرافة, CRM حوالات, لوحة واتساب شركات الصرافة, WhatsApp CRM دبي, صرافة متعددة الفروع',
+            imageAlt: 'لوحة موظفي FXGuard: صندوق وارد واتساب وأسعار الصرف على شاشة واحدة'
+        },
+        ru: {
+            title: 'WhatsApp CRM для обменников и переводов | FXGuard',
+            description: 'Курс на той же панели, что и WhatsApp. Книга клиентов остаётся в компании. Cloud Start $49/мес. Business от $249 с FX. Лицензия от $4000.',
+            keywords: 'WhatsApp CRM обменник, CRM для обменных пунктов, WhatsApp для денежных переводов, FXGuard Стамбул',
+            imageAlt: 'Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране'
         }
     };
 
@@ -907,22 +917,62 @@
         if (meta.title) document.title = meta.title;
         var desc = document.querySelector('meta[name="description"]');
         if (desc && meta.description) desc.setAttribute('content', meta.description);
+        var kw = document.querySelector('meta[name="keywords"]');
+        if (kw && meta.keywords) kw.setAttribute('content', meta.keywords);
         var ogTitle = document.querySelector('meta[property="og:title"]');
         if (ogTitle && meta.title) ogTitle.setAttribute('content', meta.title);
         var ogDesc = document.querySelector('meta[property="og:description"]');
         if (ogDesc && meta.description) ogDesc.setAttribute('content', meta.description);
+        var ogImageAlt = document.querySelector('meta[property="og:image:alt"]');
+        if (ogImageAlt && (meta.imageAlt || meta.title)) ogImageAlt.setAttribute('content', meta.imageAlt || meta.title);
         var twTitle = document.querySelector('meta[name="twitter:title"]');
         if (twTitle && meta.title) twTitle.setAttribute('content', meta.title);
         var twDesc = document.querySelector('meta[name="twitter:description"]');
         if (twDesc && meta.description) twDesc.setAttribute('content', meta.description);
+        var twAlt = document.querySelector('meta[name="twitter:image:alt"]');
+        if (twAlt && (meta.imageAlt || meta.title)) twAlt.setAttribute('content', meta.imageAlt || meta.title);
+    }
+
+    function isGeoPath() {
+        return /^\/(ir|tr|ae|eu)(\/|$)/i.test(location.pathname || '');
+    }
+
+    function canonicalForLang(lang) {
+        var origin = 'https://fxguard.io';
+        var path = location.pathname || '/';
+        if (path === '/index.html') path = '/';
+        if (isGeoPath()) return origin + path;
+        if (!lang || lang === 'en') return origin + path;
+        return origin + path + '?lang=' + encodeURIComponent(lang);
+    }
+
+    function syncDiscoveryTags(lang) {
+        if (isGeoPath()) return;
+        var url = canonicalForLang(lang);
+        var canon = document.querySelector('link[rel="canonical"]');
+        if (canon) canon.setAttribute('href', url);
+        var ogUrl = document.querySelector('meta[property="og:url"]');
+        if (ogUrl) ogUrl.setAttribute('content', url);
+        var twUrl = document.querySelector('meta[name="twitter:url"]');
+        if (twUrl) twUrl.setAttribute('content', url);
+        var ogLocale = document.querySelector('meta[property="og:locale"]');
+        var locales = { en: 'en_US', fa: 'fa_IR', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
+        if (ogLocale && locales[lang]) ogLocale.setAttribute('content', locales[lang]);
+    }
+
+    function applyImageAlts(t) {
+        if (!t) return;
+        document.querySelectorAll('[data-i18n-alt]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n-alt');
+            var val = t[key];
+            if (val) el.setAttribute('alt', val);
+        });
     }
 
     function updateSeoMeta(lang) {
         var meta = SEO_META[lang] || SEO_META.en;
         applyMetaTags(meta);
-        var ogLocale = document.querySelector('meta[property="og:locale"]');
-        var locales = { en: 'en_US', fa: 'fa_IR', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
-        if (ogLocale && locales[lang]) ogLocale.setAttribute('content', locales[lang]);
+        syncDiscoveryTags(lang);
         var html = document.documentElement;
         if (html && lang) {
             html.lang = lang;
@@ -955,6 +1005,7 @@
         var meta = pack && pack[pageId];
         if (!meta) return;
         applyMetaTags(meta);
+        syncDiscoveryTags(lang);
         var ogLocale = document.querySelector('meta[property="og:locale"]');
         var locales = { en: 'en_US', fa: 'fa_IR', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
         if (ogLocale && locales[lang]) ogLocale.setAttribute('content', locales[lang]);
@@ -1117,6 +1168,7 @@
             var val = t[key] || ct[key];
             if (val != null) el.setAttribute('aria-label', val);
         });
+        applyImageAlts(t);
         document.querySelectorAll('.lang-switch button').forEach(function(btn) {
             var on = btn.getAttribute('data-lang') === lang;
             btn.classList.toggle('active', on);

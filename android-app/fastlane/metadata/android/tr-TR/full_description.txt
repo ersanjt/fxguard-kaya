@@ -1,0 +1,24 @@
+Kaya Staff, yetkili Kaya CRM çalışanları için resmi mobil portaldır.
+
+Web panelindeki aynı hesapla giriş yapın. WhatsApp sohbetlerini inceleyin, müşteri bulun, talepleri ve görevleri takip edin; masadan uzaktayken ekibinizle uyumlu kalın.
+
+Kimin için
+• Zaten Kaya CRM kullanan bir kuruluşun personeli
+• Kamuya açık tüketici mesajlaşma uygulaması değildir; müşteri hesabı açmaz
+
+Neler yapabilirsiniz
+• E-posta veya kullanıcı adı, parola ve isteğe bağlı Authenticator (TOTP) ile giriş
+• Canlı gelen kutusu, sohbet arama ve yanıt
+• Müşteri listesi ve profilden sohbet başlatma
+• Gösterge paneli istatistikleri ve mobil web ile aynı bölümler
+• Dil: فارسی, English, Türkçe
+• Kuruluş sunucu adresini ayarlama (varsayılan https://kaya.fxguard.io)
+
+Gizlilik
+Oturum jetonu Android şifreli tercihlerde saklanır. Reklam ve üçüncü taraf analitik SDK yoktur. Politika: https://kaya.fxguard.io/privacy
+
+Erişim
+Hesabı yönetici oluşturur. Uygulamayı indirmek bir şirketin verisine erişim vermez.
+
+Destek: https://kaya.fxguard.io/contact
+Hesap silme: https://kaya.fxguard.io/account-deletion

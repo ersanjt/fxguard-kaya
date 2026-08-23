@@ -13,6 +13,7 @@ const { getCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
 const models = require('../models');
 const { Message } = models;
 const { createContactRouter } = require('./contact');
+const { createBillingRouter } = require('./billing');
 const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
@@ -202,6 +203,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     });
 
     apiRouter.use('/', createContactRouter(logger));
+    apiRouter.use('/', createBillingRouter(logger));
     apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);

@@ -816,8 +816,12 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
     }
 
     const purposeLabels = {
-        purchase: 'Purchase',
+        purchase: 'Purchase / Cloud Start',
         quote: 'Custom Quote',
+        license: 'Self-hosted license',
+        managed: 'Managed dedicated',
+        demo: 'Guided demo',
+        trial: '7-day own-number trial',
         support: 'Support',
         other: 'Other',
     };

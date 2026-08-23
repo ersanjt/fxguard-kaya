@@ -200,7 +200,9 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
         store: buildRedisStore('rl:clienterr:')
     });
     app.use('/api/', (req, res, next) => {
-        if (process.env.DISABLE_RATE_LIMIT === 'true') return next();
+        if (process.env.DISABLE_RATE_LIMIT === 'true' && process.env.NODE_ENV !== 'production') {
+            return next();
+        }
         const p = req.path || '';
         // Gateway / Meta webhooks have their own auth; do not share the staff API bucket
         if (p.includes('/webhook/')) return next();
@@ -410,6 +412,16 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
     app.get('/privacy.html', (req, res) => res.redirect(301, '/privacy'));
     app.get('/terms', sendPublicHtml('terms.html'));
     app.get('/terms.html', (req, res) => res.redirect(301, '/terms'));
+    app.get('/pricing', sendPublicHtml('pricing.html'));
+    app.get('/pricing.html', (req, res) => res.redirect(301, '/pricing'));
+    app.get('/whatsapp-crm', sendPublicHtml('whatsapp-crm.html'));
+    app.get('/whatsapp-crm.html', (req, res) => res.redirect(301, '/whatsapp-crm'));
+    app.get('/procurement', sendPublicHtml('procurement.html'));
+    app.get('/procurement.html', (req, res) => res.redirect(301, '/procurement'));
+    app.get('/billing/success', (req, res) => {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.sendFile(path.join(__dirname, '..', 'public', 'billing-success.html'));
+    });
     app.get('/account-deletion', sendPublicHtml('account-deletion.html'));
     app.get('/account-deletion.html', (req, res) => res.redirect(301, '/account-deletion'));
     const publicDir = path.join(__dirname, '..', 'public');
@@ -438,6 +450,9 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
             const isInline = inlineExts.includes(ext);
             res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
             res.setHeader('X-Content-Type-Options', 'nosniff');
+            if (ext === '.svg') {
+                res.setHeader('Content-Type', 'application/octet-stream');
+            }
             next();
         },
         express.static(path.join(__dirname, '..', 'uploads'), {

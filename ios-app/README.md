@@ -11,9 +11,12 @@
 3. Run روی آیفون یا Simulator.
 
 Bundle ID: `io.fxguard.kaya.staff`  
-حداقل iOS: **17**
+حداقل iOS: **17**  
+نام نمایش: **Kaya Staff**
 
 پیش‌فرض سرور: `https://kaya.fxguard.io` — از صفحه ورود یا پروفایل قابل تغییر است.
+
+انتشار App Store / TestFlight: `docs/STORE-RELEASE.md` (فقط macOS).
 
 ## معماری
 

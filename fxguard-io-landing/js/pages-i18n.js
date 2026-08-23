@@ -858,6 +858,7 @@
 
 
       crumb_home: 'Главная',
+      crumb_pay: 'Оплата крипто',
       crumb_pricing: 'Цены',
       crumb_demo: 'Демо',
       crumb_product: 'Продукт',

@@ -1,0 +1,6 @@
+# Fastlane — Android Play
+*.json
+!Appfile
+play-service-account.json
+report.xml
+README.md

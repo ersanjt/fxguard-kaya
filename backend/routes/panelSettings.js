@@ -7,6 +7,14 @@ const {
     getSupportedLanguages,
     getPanelEmailConfig,
 } = require('../services/panelSettingsLoader');
+const {
+    attachPlanToSettings,
+    getPlanSnapshot,
+    mergeFxHidden,
+    invalidatePlanCache,
+    normalizePlanTier,
+    isPlanTierLockEnabled,
+} = require('../lib/planLimits');
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 
@@ -70,7 +78,12 @@ router.get('/public/visibility', optionalAuthMiddleware, async (req, res, next) 
             return res.json({ hiddenSections: [] });
         }
         const s = await getPanelSettings();
-        res.json({ hiddenSections: s.hiddenSections || [] });
+        const snap = await getPlanSnapshot({ counts: false });
+        res.json({
+            hiddenSections: mergeFxHidden(s.hiddenSections, snap),
+            fxEnabled: snap.fxEnabled !== false,
+            planTier: snap.tier,
+        });
     } catch (err) {
         next(err);
     }
@@ -96,6 +109,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
         if (out.supportedLanguages && out.supportedLanguages.indexOf(out.defaultLanguage) < 0) {
             out.defaultLanguage = out.supportedLanguages[0] || 'fa';
         }
+        await attachPlanToSettings(out);
         res.json(out);
     } catch (err) {
         next(err);
@@ -148,6 +162,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
             sidebarOrder,
             navasanApiKey,
             navasanApiKeyClear,
+            planTier,
         } = body;
 
         if (logoUrl !== undefined) logoUrl = normalizePanelMediaUrl(logoUrl);
@@ -366,7 +381,19 @@ router.put('/', authMiddleware, async (req, res, next) => {
             const { normalizeNavasanApiKey } = require('../lib/navasanApiKey');
             row.navasanApiKey = normalizeNavasanApiKey(navasanApiKey);
         }
+        if (planTier !== undefined) {
+            const envLocked =
+                isPlanTierLockEnabled() && !!normalizePlanTier(process.env.PLAN_TIER);
+            if (!envLocked) {
+                const next = normalizePlanTier(planTier);
+                if (!next) {
+                    return res.status(400).json({ error: 'پلن نامعتبر است' });
+                }
+                row.planTier = next;
+            }
+        }
         await row.save();
+        invalidatePlanCache();
         const telegramTokenAfterSave =
             row.telegramBotToken && String(row.telegramBotToken).trim()
                 ? String(row.telegramBotToken).trim()
@@ -417,6 +444,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
         s.navasanApiKeyFromEnv = !!(
             process.env.NAVASAN_API_KEY && String(process.env.NAVASAN_API_KEY).trim()
         );
+        await attachPlanToSettings(s);
         res.json(s);
     } catch (err) {
         next(err);

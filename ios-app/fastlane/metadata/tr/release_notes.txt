@@ -1,0 +1,1 @@
+İlk sürüm: giriş, gelen kutusu, müşteriler ve personel portalı.

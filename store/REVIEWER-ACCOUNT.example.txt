@@ -1,0 +1,17 @@
+# Reviewer demo account (do not commit real passwords)
+
+Copy this file to `store/REVIEWER-ACCOUNT.local.txt` (gitignored) and fill it.
+Apple App Review and Google Play review **will reject** a staff app without a working login.
+
+```
+server: https://kaya.fxguard.io
+username:
+password:
+totp: none   # or "yes — seed/hint for reviewers"
+notes: Restricted staff role is enough (inbox + customers). Do not give admin.
+```
+
+Then paste the same values into:
+- App Store Connect → App Review Information → Demo account
+- `ios-app/fastlane/metadata/review_information/demo_user.txt` and `demo_password.txt`
+- Play Console → App content → App access

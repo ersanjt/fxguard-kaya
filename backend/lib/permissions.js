@@ -128,6 +128,35 @@ function canManageUsers(user) {
     return !!p[MANAGE_USERS_KEY];
 }
 
+const ROLE_RANK = { owner: 50, admin: 40, manager: 30, supervisor: 20, agent: 10 };
+
+function roleRank(userOrRole) {
+    if (!userOrRole) return 0;
+    if (typeof userOrRole === 'string') return ROLE_RANK[userOrRole] || 0;
+    if (isMainAdmin(userOrRole)) return 100;
+    return ROLE_RANK[userOrRole.role] || 0;
+}
+
+/** مدیر میانی نمی‌تواند مالک/ادمین بسازد یا نقش آن‌ها را بدهد */
+function canAssignRole(actor, role) {
+    const next = String(role || '');
+    if (!ROLE_RANK[next]) return false;
+    if (!actor) return false;
+    if (next === 'owner') return isMainAdmin(actor) || actor.role === 'owner';
+    if (next === 'admin') return isMainAdmin(actor) || actor.role === 'owner' || actor.role === 'admin';
+    return canManageUsers(actor);
+}
+
+/** مالک و ادمین اصلی فقط توسط هم‌سطح یا بالاتر ویرایش/غیرفعال می‌شوند */
+function canMutateUser(actor, target) {
+    if (!actor || !target) return false;
+    if (isMainAdmin(target)) return false;
+    if (isMainAdmin(actor)) return true;
+    if (target.role === 'owner' && actor.role !== 'owner') return false;
+    if (target.role === 'admin' && roleRank(actor) < ROLE_RANK.admin) return false;
+    return canManageUsers(actor);
+}
+
 /** فقط مالک یا ادمین اصلی می‌توانند مشتری را (نرم) از دسترس خارج کنند — پیام‌ها هرگز پاک نمی‌شوند */
 function canDeleteCustomer(user) {
     if (!user) return false;
@@ -212,6 +241,8 @@ module.exports = {
     getPermissions,
     canAccess,
     canManageUsers,
+    canAssignRole,
+    canMutateUser,
     canManageTickets,
     canViewCustomerPhone,
     canBulkMessage,

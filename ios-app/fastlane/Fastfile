@@ -1,0 +1,53 @@
+# frozen_string_literal: true
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Build App Store IPA (requires macOS, Xcode, signing team)"
+  lane :build do
+    build_app(
+      project: "KayaStaff.xcodeproj",
+      scheme: "KayaStaff",
+      configuration: "Release",
+      export_method: "app-store",
+      output_directory: "./build",
+      output_name: "KayaStaff.ipa",
+    )
+  end
+
+  desc "Upload metadata + IPA to App Store Connect (TestFlight)"
+  lane :beta do
+    upload_to_testflight(
+      ipa: "./build/KayaStaff.ipa",
+      skip_waiting_for_build_processing: true,
+      changelog: File.read("metadata/en-US/release_notes.txt"),
+    )
+  end
+
+  desc "Push listing metadata (no binary)"
+  lane :metadata do
+    deliver(
+      skip_binary_upload: true,
+      skip_screenshots: ENV["SKIP_IOS_SCREENSHOTS"] != "0",
+      force: true,
+      precheck_include_in_app_purchases: false,
+      submit_for_review: false,
+    )
+  end
+
+  desc "Submit the latest build for App Store review"
+  lane :release do
+    deliver(
+      ipa: "./build/KayaStaff.ipa",
+      submit_for_review: true,
+      automatic_release: true,
+      force: true,
+      precheck_include_in_app_purchases: false,
+      submission_information: {
+        add_id_info_uses_idfa: false,
+        export_compliance_uses_encryption: false,
+        content_rights_contains_third_party_content: false,
+      },
+    )
+  end
+end

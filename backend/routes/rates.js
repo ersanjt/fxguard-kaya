@@ -12,6 +12,9 @@ const {
     fetchRawNavasan,
     getLastRatesCache
 } = require('../lib/ratesSnapshot');
+const { requireFxModule } = require('../lib/planLimits');
+
+router.use(requireFxModule);
 
 /** لیست ارزها از DB؛ اگر خالی بود از پیش‌فرض برمی‌گرداند */
 async function getRatesKeys() {

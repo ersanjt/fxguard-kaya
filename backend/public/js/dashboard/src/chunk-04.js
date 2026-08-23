@@ -26,8 +26,8 @@
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) {
                 const seePhoneDetail = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
-                const detailName = c.name || (seePhoneDetail ? c.phone : '') || t('customer');
-                const detailPhoneLine = seePhoneDetail
+                const detailName = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || (seePhoneDetail ? c.phone : '') || t('customer'));
+                const detailPhoneLine = seePhoneDetail && c.phone
                     ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—'))
                     : '';
                 cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(detailName) + '</h3>' + (detailPhoneLine ? '<div class="customer-meta">' + detailPhoneLine + '</div>' : '') + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
@@ -38,7 +38,7 @@
             if (!data.data || data.data.length === 0) {
                 list.innerHTML = '<div class="cust-hist-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>' + (t('no_conv_history') || (LANG === 'fa' ? 'هیچ مکالمه‌ای ثبت نشده است.' : 'No conversation history.')) + '</p></div>';
             } else {
-                const safeName = (c.name || c.phone || name || '').replace(/'/g, '&#39;');
+                const safeName = (detailName || name || '').replace(/'/g, '&#39;');
                 const statusColors = { open: 'var(--accent)', waiting: '#f59e0b', closed: 'var(--text-muted)', resolved: '#22c55e', archived: 'var(--text-muted)' };
                 const statusLabels = { open: LANG === 'fa' ? 'باز' : 'Open', waiting: LANG === 'fa' ? 'در انتظار' : 'Waiting', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
                 list.innerHTML = data.data.map(function(conv) {
@@ -590,7 +590,9 @@
         function closeCustomerModal() { const m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
         async function deleteCustomer(custId) {
             if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'فقط مالک یا ادمین اصلی می‌تواند مشتری را از دسترس خارج کند' : 'Only owner/main admin can remove customers', true); return; }
-            const name = (currentCustomerData && currentCustomerData.id === custId) ? (currentCustomerData.name || currentCustomerData.phone) : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || (document.getElementById('customerModalPhone') && document.getElementById('customerModalPhone').value) || custId;
+            const name = (currentCustomerData && currentCustomerData.id === custId)
+                ? (typeof customerUiName === 'function' ? customerUiName(currentCustomerData) : currentCustomerData.name)
+                : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || custId;
             const msg = (LANG === 'fa' ? 'مشتری «' : 'Remove customer "') + (name || custId) + (LANG === 'fa' ? '» از دسترس خارج شود؟ پیام‌ها و سوابق حذف نمی‌شوند؛ فقط از لیست فعال کنار می‌رود.' : '" from active list? Messages and history are preserved.');
             if (!confirm(msg)) return;
             const res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
@@ -643,7 +645,7 @@
                 if (res.ok) {
                     const tagRes = await apiFetch('/api/customers/' + id + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
                     if (tagRes.ok && currentCustomerId === id) currentCustomerData = res.data;
-                    closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers();
+                    closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) showCustomerHistory(id, typeof customerUiName === 'function' ? customerUiName(res.data) : res.data.name); loadCustomers();
                 } else toast((res.data && res.data.error) || t('err_generic'), true);
             } else {
                 const body2 = Object.assign({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
@@ -741,6 +743,7 @@
             });
             const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
+            if (typeof applyPhoneSearchPlaceholders === 'function') applyPhoneSearchPlaceholders();
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         function updateBottomBarVisibility() {
@@ -933,7 +936,10 @@
             const res = await apiFetch('/api/panel-settings', { timeoutMs: 10000 });
             if (res.ok && res.data) {
                 applyBranding(res.data, { full: true });
-                if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
+                window.__kayaPlanLimits = res.data.planLimits || null;
+                if (res.data.navHiddenSections || res.data.hiddenSections) {
+                    applyHiddenSections(res.data.navHiddenSections || res.data.hiddenSections);
+                }
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
@@ -1072,6 +1078,25 @@
                 } else {
                     navasanHint.textContent = t('panel_navasan_key_none_hint');
                 }
+            }
+            const planEl = document.getElementById('panelSettingPlanTier');
+            if (planEl) {
+                const tier = (d.planLimits && d.planLimits.tier) || d.planTier || 'legacy';
+                planEl.value = tier;
+                planEl.disabled = !!(d.planLimits && d.planLimits.locked);
+            }
+            const lockHint = document.getElementById('panelPlanLockHint');
+            if (lockHint) lockHint.style.display = (d.planLimits && d.planLimits.locked) ? '' : 'none';
+            const usageEl = document.getElementById('panelPlanUsage');
+            if (usageEl && d.planLimits) {
+                const p = d.planLimits;
+                const staffCap = p.staffLimit == null ? '∞' : String(p.staffLimit);
+                const branchCap = p.branchLimit == null ? '∞' : String(p.branchLimit);
+                const fx = p.fxEnabled === false ? t('panel_plan_fx_off') : t('panel_plan_fx_on');
+                usageEl.textContent = t('panel_plan_usage')
+                    .replace('{staff}', (p.staffCount != null ? p.staffCount : '—') + ' / ' + staffCap)
+                    .replace('{branches}', (p.branchCount != null ? p.branchCount : '—') + ' / ' + branchCap)
+                    .replace('{fx}', fx);
             }
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
@@ -1604,6 +1629,8 @@
             if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
             payload.iosAppUrl = get('panelSettingIosAppUrl');
             payload.androidAppUrl = get('panelSettingAndroidAppUrl');
+            const planSaveEl = document.getElementById('panelSettingPlanTier');
+            if (planSaveEl && !planSaveEl.disabled) payload.planTier = planSaveEl.value;
             const tgNewToken = get('panelSettingTelegramBotToken');
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
             const navasanNewKey = get('panelSettingNavasanApiKey');
@@ -1628,7 +1655,9 @@
                 const savedFooterStyle = (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
                 if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
                 applyBranding(res.data, { full: true });
-                if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
+                if (res.data.navHiddenSections || res.data.hiddenSections) {
+                    applyHiddenSections(res.data.navHiddenSections || res.data.hiddenSections);
+                }
                 if (res.data.supportedLanguages && window.applySupportedLanguages) {
                     window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 }
@@ -1641,6 +1670,15 @@
                     if (res.data.navasanApiKeySet) navasanHintSaved.textContent = t('panel_navasan_key_saved_hint');
                     else if (res.data.navasanApiKeyFromEnv) navasanHintSaved.textContent = t('panel_navasan_key_env_hint');
                     else navasanHintSaved.textContent = t('panel_navasan_key_none_hint');
+                }
+                const planElSaved = document.getElementById('panelSettingPlanTier');
+                if (planElSaved && res.data && res.data.planLimits) {
+                    planElSaved.value = res.data.planLimits.tier || 'legacy';
+                    planElSaved.disabled = !!res.data.planLimits.locked;
+                }
+                const lockHintSaved = document.getElementById('panelPlanLockHint');
+                if (lockHintSaved && res.data && res.data.planLimits) {
+                    lockHintSaved.style.display = res.data.planLimits.locked ? '' : 'none';
                 }
                 if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : LANG === 'tr' ? 'Kaydedildi' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
             } else {
@@ -1781,24 +1819,39 @@
             }
             if (btn) btn.disabled = false;
         }
-        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
-            initSidebarCollapsedState();
-            const hash = (location.hash || '').replace(/^#/, '');
-            const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
-            showPage(page);
+            try {
+                initSidebarCollapsedState();
+                const hash = (location.hash || '').replace(/^#/, '');
+                const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
+                showPage(page);
+            } catch (e) {
+                console.error('[applyHashRoute]', e);
+                try { showPage('dashboard'); } catch (_) {}
+            }
         }
         function toggleSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
         function closeSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt0 = btn.querySelector('.sidebar-toggle-text'); if (txt0 && typeof t === 'function') txt0.textContent = t('sidebar_toggle_collapse'); return; } if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         /* ========== Kaya CRM chunk-04 | showPage، تنظیمات پنل، تسک/فرایند | docs/CODEBASE-MAP.md ========== */
+        function runPageInit(label, fn) {
+            try { fn(); } catch (e) { console.error('[showPage] ' + label + ' failed:', e); }
+        }
         function showPage(page) {
-            const perms = (currentUser && currentUser.permissions) || {};
             const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
+            const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
+            if (!page || page === 'more' || !ids[page]) page = 'dashboard';
             const section = pageToSection[page];
             if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
-            if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) {
+                var fxLockedNav = window.__kayaPlanLimits && window.__kayaPlanLimits.fxEnabled === false && (page === 'rates' || page === 'rates-charts' || page === 'services');
+                page = 'dashboard';
+                var baseHidden = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
+                try { window.history.replaceState(null, '', baseHidden + '#dashboard'); } catch (e) {}
+                if (fxLockedNav && typeof toast === 'function') toast(t('dash_fx_locked_body'));
+            }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
@@ -1818,39 +1871,46 @@
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
-            const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
             if (ids[page]) {
                 const el = document.getElementById(ids[page]);
                 if (el) el.classList.add('show');
             }
             const content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
-            if (page === 'dashboard') loadDashboard();
-            if (page === 'conversations') { 
+            if (page === 'dashboard') runPageInit('dashboard', function() { loadDashboard(); });
+            if (page === 'conversations') runPageInit('conversations', function() {
                 loadConvFiltersInit();
                 if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
                 if (window._pendingConvQuickTab && typeof applyPendingConvQuickTab === 'function') {
                     applyPendingConvQuickTab(window._pendingConvQuickTab);
                     window._pendingConvQuickTab = null;
                 }
-                loadConversations(); 
-                setTimeout(function() { 
-                    removeAllInlineHandlers(); 
+                loadConversations();
+                setTimeout(function() {
+                    removeAllInlineHandlers();
                     setupConversationEventHandlers();
                     if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
                 }, 250);
-            }
-            if (page === 'customers') {
+            });
+            if (page === 'customers') runPageInit('customers', function() {
                 initCustomerFilters();
                 if (typeof refreshCustomerAdminTabs === 'function') refreshCustomerAdminTabs();
                 loadCustomers();
-            }
-            if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
-            if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
-            if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
-            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
-            if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
-            if (page === 'whatsapp') {
+            });
+            if (page === 'departments') runPageInit('departments', function() { loadDepartments(); loadBranchesForSelect(['deptBranch']); });
+            if (page === 'users') runPageInit('users', function() {
+                var box = document.getElementById('userFormBox');
+                var btnAdd = document.getElementById('btnAddUser');
+                var btnCancel = document.getElementById('btnCancelUserForm');
+                if (box) box.style.display = 'none';
+                if (btnAdd) btnAdd.style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none';
+                if (btnCancel) btnCancel.style.display = 'none';
+                loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs();
+            });
+            if (page === 'tickets') runPageInit('tickets', function() { loadTicketFiltersInit(); loadTickets(); });
+            if (page === 'tasks') runPageInit('tasks', function() { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } });
+            if (page === 'processes') runPageInit('processes', function() { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); });
+            if (page === 'whatsapp') runPageInit('whatsapp', function() {
                 initWhatsappProTabs();
                 switchWhatsappMainTab(_whatsappActiveTab || 'channels', true);
                 loadWhatsappStatus();
@@ -1860,43 +1920,61 @@
                 loadWhatsappOverview();
                 if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
                 if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
-            }
-            if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
-            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
-            if (page === 'rates-charts') initRatesChartsPage();
-            if (page === 'services') { initServicesTabs(); loadServicesPage(); }
-            if (page === 'branches') { loadBranches(); }
-            if (page === 'staff-activity') { 
-                loadStaffActivity(); 
-                startStaffActivityLive(); 
-                setTimeout(function() { 
-                    removeAllInlineHandlers(); 
-                    setupStaffActivityEventHandlers(); 
+            });
+            if (page === 'message-templates') runPageInit('message-templates', function() { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); });
+            if (page === 'rates') runPageInit('rates', function() { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); });
+            if (page === 'rates-charts') runPageInit('rates-charts', function() { initRatesChartsPage(); });
+            if (page === 'services') runPageInit('services', function() { initServicesTabs(); loadServicesPage(); });
+            if (page === 'branches') runPageInit('branches', function() { loadBranches(); });
+            if (page === 'staff-activity') runPageInit('staff-activity', function() {
+                loadStaffActivity();
+                startStaffActivityLive();
+                setTimeout(function() {
+                    removeAllInlineHandlers();
+                    setupStaffActivityEventHandlers();
                 }, 100);
-            } else { 
-                stopStaffActivityLive(); 
+            }); else {
+                stopStaffActivityLive();
             }
-            if (page === 'profile') {
+            if (page === 'profile') runPageInit('profile', function() {
                 loadProfile();
                 setTimeout(function() {
                     removeAllInlineHandlers();
                 }, 100);
-            }
-            if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
-            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); const popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
-            if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
-            if (page === 'system-status') { loadSystemStatus(true); startSystemStatusLive(); } else { stopSystemStatusLive(); }
-            if (page === 'panel-settings') loadPanelSettings();
-            if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
-                const headerEl = document.getElementById('internalChatHeader');
-                const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
-                showInternalChatPopup(currentInternalThreadId, name);
-                const pane = document.getElementById('internalChatPane');
-                if (pane) pane.style.display = 'none';
+            });
+            if (page === 'announcements') runPageInit('announcements', function() {
+                loadAnnouncements();
+                var sendBox = document.getElementById('announcementSendBox');
+                if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) {
+                    if (sendBox) sendBox.style.display = 'block';
+                    loadAnnouncementTargets();
+                } else if (sendBox) sendBox.style.display = 'none';
+            });
+            if (page === 'internal-chat') runPageInit('internal-chat', function() {
+                window.hasNewInternalChat = false;
+                updateNavBadges();
+                const popupTid = currentInternalThreadId || readPersistedInternalThreadId();
+                closeInternalChatPopup();
                 var wrap = document.getElementById('internalChatLayoutWrap');
-                if (wrap) wrap.classList.remove('internal-chat-has-chat', 'internal-chat-mobile-chat-open');
+                if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open');
+                loadInternalThreads().then(function() {
+                    if (popupTid) openInternalThread(popupTid);
+                });
+                loadInternalUsers();
+            });
+            if (page === 'supervision') runPageInit('supervision', function() { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); });
+            if (page === 'system-status') runPageInit('system-status', function() { loadSystemStatus(true); startSystemStatusLive(); }); else { stopSystemStatusLive(); }
+            if (page === 'panel-settings') runPageInit('panel-settings', function() { loadPanelSettings(); });
+            if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
+                runPageInit('internal-chat-leave', function() {
+                    const headerEl = document.getElementById('internalChatHeader');
+                    const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
+                    showInternalChatPopup(currentInternalThreadId, name);
+                    var wrapLeave = document.getElementById('internalChatLayoutWrap');
+                    if (wrapLeave) wrapLeave.classList.remove('internal-chat-has-chat', 'internal-chat-mobile-chat-open');
+                });
             }
-            updateInternalChatFloatingBtn();
+            runPageInit('internal-chat-fab', function() { updateInternalChatFloatingBtn(); });
         }
 
         function toggleTicketForm(forceOpen) {
@@ -2121,7 +2199,7 @@
             if (dueInp && ticket.dueDate) { const d = new Date(ticket.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
             const repliesHtml = (ticket.replies || []).map(function(r) {
                 const att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-                return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + linkifyMessageContent(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
+                return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + linkifyMessageContent(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplayHtml(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="ticket-no-replies text-muted">' + t('no_reply') + '</p>';
             document.getElementById('ticketReplyContent').value = '';

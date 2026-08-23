@@ -1,0 +1,4 @@
+app_identifier("io.fxguard.kaya.staff")
+apple_id(ENV["APPLE_ID"] || "ersanjahedtabrizi@gmail.com")
+itc_team_id(ENV["ITC_TEAM_ID"].to_s)
+team_id(ENV["IOS_TEAM_ID"].to_s)

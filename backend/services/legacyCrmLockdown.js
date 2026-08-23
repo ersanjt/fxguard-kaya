@@ -5,6 +5,7 @@
  */
 const { Op } = require('sequelize');
 const { Conversation, Customer, WhatsappConnection } = require('../models');
+const { normalizePhone } = require('../lib/phoneUtils');
 const logger = require('../config/logger');
 
 function normalizeLinkedNumber(num) {
@@ -58,6 +59,13 @@ function chatIdVariants(id) {
             out.add(`${userDigits}@${host}`);
         }
     }
+    // 912… ↔ 98912… تا مشتری ساخته‌شده از پیام ورودی با همگام‌سازی یکی شود
+    const normalized = normalizePhone(s);
+    if (normalized && !out.has(normalized)) {
+        out.add(normalized);
+        out.add(`${normalized}@c.us`);
+        out.add(`${normalized}@s.whatsapp.net`);
+    }
     return [...out];
 }
 
@@ -72,14 +80,8 @@ async function lockdownExistingCrmData({ reason, before } = {}) {
         custWhere.createdAt = { [Op.lt]: before };
     }
     const [convResult, custResult] = await Promise.all([
-        Conversation.update(
-            { isHiddenFromStaff: true, status: 'archived' },
-            { where: convWhere }
-        ),
-        Customer.update(
-            { isRestrictedFromStaff: true },
-            { where: custWhere }
-        ),
+        Conversation.update({ isHiddenFromStaff: true, status: 'archived' }, { where: convWhere }),
+        Customer.update({ isRestrictedFromStaff: true }, { where: custWhere }),
     ]);
     const conversationsUpdated = Array.isArray(convResult) ? convResult[0] : convResult;
     const customersUpdated = Array.isArray(custResult) ? custResult[0] : custResult;
@@ -199,11 +201,7 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber, opt
         );
     }
     if (archiveIds.length) {
-        await chunked(
-            Conversation,
-            { status: 'archived', isHiddenFromStaff: true },
-            archiveIds
-        );
+        await chunked(Conversation, { status: 'archived', isHiddenFromStaff: true }, archiveIds);
     }
     if (restrictCust.size) {
         await chunked(Customer, { isRestrictedFromStaff: true }, [...restrictCust]);
@@ -280,7 +278,11 @@ async function collectCandidateChatPhones() {
 /** لیست چت زندهٔ Gateway و شمارهٔ متصل */
 async function loadGatewayChatIdsAndNumber() {
     try {
-        const { gatewayGet, gatewayPost, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+        const {
+            gatewayGet,
+            gatewayPost,
+            getWhatsappConnectionConfig,
+        } = require('../lib/gatewayClient');
         const cfg = await getWhatsappConnectionConfig();
         let number = '';
         try {
@@ -443,7 +445,10 @@ async function sweepLeftoverLegacyVisibility(lockdownAt) {
         createdAt: { [Op.lt]: cutAt },
     };
     if (keepIds.length) custWhere.id = { [Op.notIn]: keepIds };
-    const [custResult] = await Customer.update({ isRestrictedFromStaff: true }, { where: custWhere });
+    const [custResult] = await Customer.update(
+        { isRestrictedFromStaff: true },
+        { where: custWhere }
+    );
     const conversationsUpdated = typeof convResult === 'number' ? convResult : 0;
     const customersUpdated = typeof custResult === 'number' ? custResult : 0;
     if (conversationsUpdated || customersUpdated) {
@@ -514,7 +519,12 @@ async function ensureLegacyCutover(linkedNumber, meta = {}) {
                     number: number || prev || null,
                     ...lockdown,
                 });
-                return { changed: true, firstCutover: true, number: number || prev || null, lockdown };
+                return {
+                    changed: true,
+                    firstCutover: true,
+                    number: number || prev || null,
+                    lockdown,
+                };
             }
             if (number) row.lastLinkedGatewayNumber = number;
             row.legacyLockdownAt = new Date();

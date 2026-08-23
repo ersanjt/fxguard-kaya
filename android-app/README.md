@@ -17,8 +17,13 @@ powershell -File scripts/bootstrap-wrapper.ps1
 
 APK: `app/build/outputs/apk/debug/app-debug.apk`
 
+انتشار Play: `docs/STORE-RELEASE.md` — `./gradlew :app:bundleRelease`
+
+
 روی امولاتور، آدرس سرور لوکال را در صفحه ورود روی `http://10.0.2.2:3202` بگذارید. پیش‌فرض production: `https://kaya.fxguard.io`.
 
 ## معماری
 
-`ui/` صفحه‌ها · `data/` HTTP و مدل · `di/AppGraph` ریشهٔ وابستگی · نشست JWT در EncryptedSharedPreferences.
+`ui/` صفحه‌ها · `data/` HTTP و مدل · `di/AppGraph` ریشهٔ وابستگی · نشست JWT در EncryptedSharedPreferences · `push/` نوتیفیکیشن محلی + FCM.
+
+پوش سیستم: بعد از ورود اجازهٔ اعلان را بدهید. برای اعلان وقتی اپ کاملاً بسته است، `google-services.json` از Firebase را در `app/` بگذارید و سرویس‌اکانت را روی بک‌اند تنظیم کنید — `docs/MOBILE-APP.md`.

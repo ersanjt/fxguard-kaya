@@ -20,6 +20,7 @@
 		A10000000000000000000B /* InboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000B /* InboxView.swift */; };
 		A10000000000000000000C /* ListViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000C /* ListViews.swift */; };
 		A10000000000000000000D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000D /* Assets.xcassets */; };
+		A10000000000000000000E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000F /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		B10000000000000000000C /* ListViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViews.swift; sourceTree = "<group>"; };
 		B10000000000000000000D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B10000000000000000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B10000000000000000000F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C100000000000000000001 /* KayaStaff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KayaStaff.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -68,6 +70,7 @@
 				E100000000000000000005 /* Features */,
 				B10000000000000000000D /* Assets.xcassets */,
 				B10000000000000000000E /* Info.plist */,
+				B10000000000000000000F /* PrivacyInfo.xcprivacy */,
 			);
 			path = KayaStaff;
 			sourceTree = "<group>";
@@ -205,6 +208,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000D /* Assets.xcassets in Resources */,
+				A10000000000000000000E /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -283,7 +287,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KayaStaff/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Staff;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kaya Staff";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -310,7 +314,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = KayaStaff/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Staff;
+				INFOPLIST_KEY_CFBundleDisplayName = "Kaya Staff";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

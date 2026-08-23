@@ -244,6 +244,46 @@
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
             if (fo) fo.checked = d.numberFailoverEnabled !== false;
             if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
+            renderWhatsappTrialBanner(d.trial);
+        }
+        function renderWhatsappTrialBanner(trial) {
+            var box = document.getElementById('whatsappTrialBanner');
+            var textEl = document.getElementById('whatsappTrialText');
+            var startBtn = document.getElementById('btnWhatsappTrialStart');
+            var convertBtn = document.getElementById('btnWhatsappTrialConvert');
+            if (!box) return;
+            var tr = trial || { status: 'none', canStart: true, canConvert: false, days: 7 };
+            box.hidden = false;
+            var msg = t('whatsapp_trial_none');
+            if (tr.status === 'active') {
+                var days = tr.remainingDays != null ? tr.remainingDays : tr.days;
+                msg = t('whatsapp_trial_active').replace('{days}', String(days));
+            } else if (tr.status === 'converted') {
+                msg = t('whatsapp_trial_converted');
+            } else if (tr.status === 'expired') {
+                msg = t('whatsapp_trial_expired');
+            }
+            if (textEl) textEl.textContent = msg;
+            if (startBtn) startBtn.style.display = tr.canStart ? '' : 'none';
+            if (convertBtn) convertBtn.style.display = tr.canConvert ? '' : 'none';
+        }
+        async function startWhatsappOwnNumberTrial() {
+            if (!confirm(t('whatsapp_trial_start_confirm'))) return;
+            var res = await apiFetch('/api/whatsapp/trial/start', { method: 'POST', body: JSON.stringify({}) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            toast(t('whatsapp_trial_started'));
+            renderWhatsappTrialBanner(res.data && res.data.trial);
+            if (typeof loadDashboard === 'function') loadDashboard();
+        }
+        async function convertWhatsappOwnNumberTrial() {
+            if (!confirm(t('whatsapp_trial_convert_confirm'))) return;
+            var res = await apiFetch('/api/whatsapp/trial/convert', { method: 'POST', body: JSON.stringify({}) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            toast(t('whatsapp_trial_kept'));
+            renderWhatsappTrialBanner(res.data && res.data.trial);
+            if (typeof loadDashboard === 'function') loadDashboard();
         }
         async function saveWhatsappConnectionSettings() {
             var saveBtn = document.getElementById('btnSaveWhatsappConnection');
@@ -814,7 +854,7 @@
             if (convs.length === 0) { box.style.display = 'none'; return; }
             box.style.display = 'block';
             list.innerHTML = convs.map(function(c) {
-                const name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                const name = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (c.lastMessagePreview || '').slice(0, 50);
                 if (preview.length >= 50) preview += '…';
                 return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
@@ -1257,8 +1297,8 @@
         function insertTemplateIntoChat(content, templateId) {
             if (!content) return;
             const cust = currentConvDetail && currentConvDetail.customer;
-            const custName = (cust && (cust.name || cust.phone)) || '';
-            const custPhone = (cust && cust.phone) || '';
+            const custName = (cust && (typeof customerUiName === 'function' ? customerUiName(cust) : cust.name)) || '';
+            const custPhone = (cust && (typeof customerUiPhone === 'function' ? customerUiPhone(cust) : '')) || '';
             const custEmail = (cust && cust.email) || '';
             const today = new Date();
             const dateStr = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
@@ -1462,7 +1502,7 @@
                 const branch = c.branch ? c.branch.name : '\u2014';
                 const dept = c.department ? c.department.name : '\u2014';
                 const assignee = userDisplay(c.assignee) || '\u2014';
-                const cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; const lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml(cust.name || cust.phone || '\u2014') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '\u2014') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
+                const cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; const lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml((typeof customerUiName === 'function' ? customerUiName(cust) : (cust.name || '')) || '\u2014') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '\u2014') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
             }).join('') + '</tbody></table>';
         }
 
@@ -1836,7 +1876,7 @@
                     html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'مکالمات تخصیص‌یافته (با چه کسانی صحبت کرده)' : 'Assigned conversations (who they talked to)') + '</h4>';
                     html += '<div class="staff-conv-list" style="max-height:200px;overflow-y:auto;">';
                     d.conversations.forEach(function(c) {
-                        const custName = (c.customer && (c.customer.name || c.customer.phone)) ? (c.customer.name || c.customer.phone) : (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const custName = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         const lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
                         const safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(safeName) + '" onclick="var el=event.currentTarget;openChat(el.getAttribute(\'data-convid\'),el.getAttribute(\'data-custname\')||\'\',\'\');showPage(\'conversations\');closeStaffDetailModal();" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
@@ -2120,10 +2160,13 @@
             });
         });
 
-        document.querySelectorAll('.nav-link').forEach(function(link) {
+        document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
-                showPage(this.getAttribute('data-page'));
+                var pg = this.getAttribute('data-page');
+                if (pg && typeof showPage === 'function') {
+                    try { showPage(pg); } catch (err) { console.error('[nav]', err); }
+                }
             });
         });
         (function initNavSectionToggles() {
@@ -2138,8 +2181,10 @@
             });
         })();
         window.addEventListener('hashchange', function() {
-            const appEl = document.getElementById('app');
-            if (appEl && appEl.classList.contains('show')) applyHashRoute();
+            try {
+                const appEl = document.getElementById('app');
+                if (appEl && (appEl.classList.contains('show') || document.documentElement.classList.contains('auth-has-token'))) applyHashRoute();
+            } catch (err) { console.error('[hashchange]', err); }
         });
         window.addEventListener('resize', function() {
             const appEl = document.getElementById('app');
@@ -2200,6 +2245,7 @@
         (function exposeOnclickHandlers() {
             window.logout = logout;
             window.showPage = showPage;
+            window.refreshDashboard = refreshDashboard;
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
@@ -2230,6 +2276,7 @@
             window.toggleTicketEditMode = toggleTicketEditMode;
             window.archiveTicket = archiveTicket;
             window.deleteTicketConfirm = deleteTicketConfirm;
+            window.deleteTaskConfirm = deleteTaskConfirm;
             window.submitTicketReply = submitTicketReply;
             window.startProcessFromTicket = startProcessFromTicket;
             window.saveUserEdit = saveUserEdit;
@@ -2244,6 +2291,9 @@
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.toggleSidebarDesktop = toggleSidebarDesktop;
             window.canViewCustomerPhoneUi = canViewCustomerPhoneUi;
+            window.customerUiName = customerUiName;
+            window.customerUiPhone = customerUiPhone;
+            window.applyPhoneSearchPlaceholders = applyPhoneSearchPlaceholders;
             window.doHeaderSearch = doHeaderSearch;
             let headerSearchModalEscHandler = null;
             window.openHeaderSearchPopup = function() {
@@ -2754,7 +2804,7 @@
                     return '<span class="' + cls + '"></span>';
                 }).join('');
             }
-            if (prevBtn) prevBtn.style.visibility = onboardingStepIndex === 0 ? 'hidden' : 'visible';
+            if (prevBtn) prevBtn.hidden = onboardingStepIndex === 0;
             if (goBtn) goBtn.style.display = step.page ? '' : 'none';
             if (nextBtn) {
                 const last = onboardingStepIndex >= steps.length - 1;

@@ -34,9 +34,11 @@ const { getUserWhatsAppSenderName } = require('../lib/outboundMessagePrefix');
 const {
     redactConversationPhones,
     redactConversationList,
+    redactMessageList,
     publicCustomerSocketPayload,
 } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
+const { dedupeChatRows, findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -245,7 +247,6 @@ router.post('/sync-groups', async (req, res, next) => {
         const {
             applyVisibilityForCurrentGatewayChats,
             promoteExistingGroupConversations,
-            chatIdVariants,
             normalizeLinkedNumber,
             ensureLegacyCutover,
             collectCandidateChatPhones,
@@ -282,10 +283,12 @@ router.post('/sync-groups', async (req, res, next) => {
                         id: (c.id || '').toString().trim(),
                         phone: (c.phone || '').toString().trim() || null,
                         requested: (c.requested || '').toString().trim() || null,
+                        lid: (c.lid || '').toString().trim() || null,
                         name: (c.name || c.subject || c.formattedTitle || '').toString().trim(),
                         isGroup: !!(c.isGroup || String(c.id || '').endsWith('@g.us')),
                         lastPreview: (c.lastPreview || '').toString().trim() || null,
                         timestamp: c.timestamp || null,
+                        profilePicUrl: c.profilePicUrl || null,
                     }))
                     .filter((c) => c.id);
             }
@@ -295,6 +298,7 @@ router.post('/sync-groups', async (req, res, next) => {
                     id: (g.id || '').toString().trim(),
                     phone: null,
                     requested: null,
+                    lid: null,
                     name: (g.name || g.subject || g.formattedTitle || '').toString().trim(),
                     isGroup: true,
                     lastPreview: null,
@@ -309,6 +313,7 @@ router.post('/sync-groups', async (req, res, next) => {
                 if (row.id) ids.push(row.id);
                 if (row.phone) ids.push(row.phone);
                 if (row.requested) ids.push(row.requested);
+                if (row.lid) ids.push(row.lid);
             }
             return ids;
         };
@@ -419,7 +424,9 @@ router.post('/sync-groups', async (req, res, next) => {
             });
         }
 
-        const chatRows = (fetched && fetched.chatRows) || normalizeChatRows(gwRes.data || {});
+        const chatRows = dedupeChatRows(
+            (fetched && fetched.chatRows) || normalizeChatRows(gwRes.data || {})
+        );
         let synced = 0;
         let groupsSynced = 0;
         for (const row of chatRows) {
@@ -428,40 +435,11 @@ router.post('/sync-groups', async (req, res, next) => {
             const isGroup = !!row.isGroup;
             const t = await sequelize.transaction();
             try {
-                let customer = null;
-                const variants = [
-                    ...chatIdVariants(chatId),
-                    ...chatIdVariants(row.phone),
-                    ...chatIdVariants(row.requested),
-                ].filter(Boolean);
-                const uniqueVariants = [...new Set(variants)];
-                customer = await Customer.findOne({
-                    where: { phone: { [Op.in]: uniqueVariants } },
+                const customer = await findOrCreateSyncedCustomer(row, {
                     transaction: t,
+                    chatName,
+                    isGroup,
                 });
-                if (!customer) {
-                    const createPhone = row.phone || row.requested || chatId;
-                    try {
-                        [customer] = await Customer.findOrCreate({
-                            where: { phone: createPhone },
-                            defaults: {
-                                name:
-                                    chatName ||
-                                    (isGroup ? `گروه ${chatId}` : `مشتری ${createPhone}`),
-                                source: 'whatsapp',
-                                isRestrictedFromStaff: false,
-                            },
-                            transaction: t,
-                        });
-                    } catch (e) {
-                        if (e.name === 'SequelizeUniqueConstraintError') {
-                            customer = await Customer.findOne({
-                                where: { phone: { [Op.in]: uniqueVariants } },
-                                transaction: t,
-                            });
-                        } else throw e;
-                    }
-                }
                 if (!customer) {
                     await t.rollback();
                     continue;
@@ -486,6 +464,8 @@ router.post('/sync-groups', async (req, res, next) => {
                     linkedGatewayNumber:
                         gatewayNumber || (meta && meta.linkedGatewayNumber) || null,
                     historicalImport: true,
+                    whatsappLid: row.lid || (meta && meta.whatsappLid) || null,
+                    whatsappChatId: chatId || (meta && meta.whatsappChatId) || null,
                 });
 
                 const applyLivePreview = (target, upd) => {
@@ -1184,7 +1164,7 @@ router.get('/:id/messages', async (req, res, next) => {
 
         const oldestId = messages.length > 0 ? messages[0].id : null;
         res.json({
-            data: messages,
+            data: redactMessageList(messages, req.user),
             total,
             hasMore: messages.length === pageLimit,
             oldestId,

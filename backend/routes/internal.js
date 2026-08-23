@@ -3,12 +3,34 @@ const { InternalThread, InternalMessage, InternalThreadParticipant, User } = req
 const { Op } = require('sequelize');
 const { isValidUUID, safeString } = require('../lib/validation');
 const { logActivity } = require('../services/activityLog');
+const { isPresenceFresh, getConnectedUserIds } = require('../lib/staffPresence');
 
-const USER_PUBLIC_ATTRS = ['id', 'name', 'email', 'avatar', 'status', 'lastLoginAt'];
+const USER_PUBLIC_ATTRS = ['id', 'name', 'email', 'avatar', 'status', 'lastLoginAt', 'lastSeenAt'];
 
-function serializeThread(th, me, unreadCount) {
+function toPlainUser(p) {
+    if (!p) return null;
+    return typeof p.toJSON === 'function' ? p.toJSON() : { ...p };
+}
+
+function decoratePresence(user, connectedIds) {
+    const plain = toPlainUser(user);
+    if (!plain) return null;
+    const id = String(plain.id);
+    const connected = !!(connectedIds && connectedIds.has(id));
+    const fresh = isPresenceFresh(plain.lastSeenAt);
+    if (connected && (!plain.status || plain.status === 'offline')) {
+        plain.status = 'online';
+    } else if (!connected && !fresh) {
+        plain.status = 'offline';
+    }
+    return plain;
+}
+
+function serializeThread(th, me, unreadCount, connectedIds) {
     if (!th) return null;
-    const others = (th.participants || []).filter((p) => String(p.id) !== String(me));
+    const others = (th.participants || [])
+        .map((p) => decoratePresence(p, connectedIds))
+        .filter((p) => p && String(p.id) !== String(me));
     const lastMsg = (th.messages && th.messages[0]) ? th.messages[0] : null;
     const type = th.type === 'group' || others.length > 1 || !!th.name ? 'group' : 'dm';
     const displayName = th.name
@@ -23,9 +45,28 @@ function serializeThread(th, me, unreadCount) {
         createdById: th.createdById || null,
         lastMessageAt: th.lastMessageAt,
         unreadCount: unreadCount || 0,
-        lastMessage: lastMsg ? { content: lastMsg.content, fromUser: lastMsg.fromUser, createdAt: lastMsg.createdAt } : null,
+        lastMessage: lastMsg ? {
+            content: lastMsg.content,
+            fromUser: lastMsg.fromUser,
+            createdAt: lastMsg.createdAt,
+            attachments: Array.isArray(lastMsg.attachments)
+                ? lastMsg.attachments.map((a) => ({ name: a && a.name, url: a && a.url }))
+                : []
+        } : null,
         participants: others
     };
+}
+
+function emitThreadUpdated(io, threadId, action, name, userIds, exceptUserId) {
+    if (!io || !userIds || !userIds.length) return;
+    userIds.forEach((uid) => {
+        if (exceptUserId && String(uid) === String(exceptUserId)) return;
+        io.to(`user_${uid}`).emit('internal_thread_updated', {
+            threadId,
+            action,
+            name: name || null
+        });
+    });
 }
 
 async function assertParticipant(threadId, userId) {
@@ -47,6 +88,7 @@ function createInternalRouter(io) {
     // لیست تردهای چت داخلی من
     router.get('/threads', async (req, res, next) => {
         try {
+            const connectedIds = getConnectedUserIds(io);
             const threads = await InternalThreadParticipant.findAll({
                 where: { userId: req.userId },
                 include: [
@@ -57,6 +99,7 @@ function createInternalRouter(io) {
                             {
                                 model: InternalMessage,
                                 as: 'messages',
+                                separate: true,
                                 limit: 1,
                                 order: [['createdAt', 'DESC']],
                                 include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'avatar'] }]
@@ -76,7 +119,7 @@ function createInternalRouter(io) {
                 const th = t.thread;
                 if (!th) continue;
                 const unreadCount = await countUnread(th.id, req.userId, t.lastReadAt);
-                list.push(serializeThread(th, req.userId, unreadCount));
+                list.push(serializeThread(th, req.userId, unreadCount, connectedIds));
             }
             list.sort((a, b) => (new Date(b.lastMessageAt || 0)) - (new Date(a.lastMessageAt || 0)));
             const totalUnread = list.reduce((s, x) => s + (x.unreadCount || 0), 0);
@@ -92,11 +135,20 @@ function createInternalRouter(io) {
             const userIds = req.body.userIds || (req.body.userId ? [req.body.userId] : []);
             if (!userIds.length) return res.status(400).json({ error: 'حداقل یک کاربر لازم است' });
             const me = req.userId;
-            const targetIds = [...new Set(userIds.map(String).filter((id) => id && id !== String(me)))].sort();
+            const targetIds = [...new Set(userIds.map(String).filter((id) => id && id !== String(me) && isValidUUID(id)))].sort();
             if (!targetIds.length) return res.status(400).json({ error: 'حداقل یک کاربر دیگر لازم است' });
+
+            const foundUsers = await User.findAll({
+                where: { id: { [Op.in]: targetIds }, isActive: true },
+                attributes: ['id']
+            });
+            if (foundUsers.length !== targetIds.length) {
+                return res.status(400).json({ error: 'یک یا چند کاربر نامعتبر است' });
+            }
 
             const groupName = safeString(req.body.name, 120) || null;
             const wantGroup = !!groupName || targetIds.length > 1 || req.body.type === 'group';
+            const connectedIds = getConnectedUserIds(io);
 
             // DM بدون نام: همان مجموعهٔ افراد → همان ترد
             if (!groupName && targetIds.length === 1) {
@@ -117,7 +169,7 @@ function createInternalRouter(io) {
                         const withParticipants = await InternalThread.findByPk(thread.id, {
                             include: [{ model: User, as: 'participants', attributes: USER_PUBLIC_ATTRS, through: { attributes: [] } }]
                         });
-                        return res.status(201).json(serializeThread(withParticipants, me, 0));
+                        return res.json(serializeThread(withParticipants, me, 0, connectedIds));
                     }
                 }
             }
@@ -144,17 +196,9 @@ function createInternalRouter(io) {
                 metadata: { participantIds: targetIds, type: wantGroup ? 'group' : 'dm', name: groupName }
             }).catch(() => {});
 
-            if (io && wantGroup) {
-                targetIds.forEach((uid) => {
-                    io.to(`user_${uid}`).emit('internal_thread_updated', {
-                        threadId: thread.id,
-                        action: 'created',
-                        name: groupName
-                    });
-                });
-            }
+            emitThreadUpdated(io, thread.id, 'created', groupName, targetIds, me);
 
-            res.status(201).json(serializeThread(withParticipants, me, 0));
+            res.status(201).json(serializeThread(withParticipants, me, 0, connectedIds));
         } catch (err) {
             next(err);
         }
@@ -180,16 +224,9 @@ function createInternalRouter(io) {
                     where: { threadId: req.params.id },
                     attributes: ['userId']
                 });
-                parts.forEach((p) => {
-                    if (String(p.userId) === String(req.userId)) return;
-                    io.to(`user_${p.userId}`).emit('internal_thread_updated', {
-                        threadId: req.params.id,
-                        action: 'renamed',
-                        name
-                    });
-                });
+                emitThreadUpdated(io, req.params.id, 'renamed', name, parts.map((p) => p.userId), req.userId);
             }
-            res.json(serializeThread(withParticipants, req.userId, 0));
+            res.json(serializeThread(withParticipants, req.userId, 0, getConnectedUserIds(io)));
         } catch (err) {
             next(err);
         }
@@ -205,7 +242,7 @@ function createInternalRouter(io) {
             if (!thread) return res.status(404).json({ error: 'گفتگو یافت نشد' });
             const userIds = (req.body.userIds || (req.body.userId ? [req.body.userId] : []))
                 .map(String)
-                .filter((id) => id && id !== String(req.userId));
+                .filter((id) => id && id !== String(req.userId) && isValidUUID(id));
             if (!userIds.length) return res.status(400).json({ error: 'حداقل یک کاربر لازم است' });
 
             const existing = await InternalThreadParticipant.findAll({
@@ -223,16 +260,8 @@ function createInternalRouter(io) {
             const withParticipants = await InternalThread.findByPk(req.params.id, {
                 include: [{ model: User, as: 'participants', attributes: USER_PUBLIC_ATTRS, through: { attributes: [] } }]
             });
-            if (io) {
-                toAdd.forEach((uid) => {
-                    io.to(`user_${uid}`).emit('internal_thread_updated', {
-                        threadId: req.params.id,
-                        action: 'added',
-                        name: thread.name
-                    });
-                });
-            }
-            res.json(serializeThread(withParticipants, req.userId, 0));
+            emitThreadUpdated(io, req.params.id, 'added', thread.name, toAdd, req.userId);
+            res.json(serializeThread(withParticipants, req.userId, 0, getConnectedUserIds(io)));
         } catch (err) {
             next(err);
         }
@@ -255,6 +284,11 @@ function createInternalRouter(io) {
             await InternalThreadParticipant.destroy({
                 where: { threadId: req.params.id, userId: targetId }
             });
+            const remaining = await InternalThreadParticipant.findAll({
+                where: { threadId: req.params.id },
+                attributes: ['userId']
+            });
+            emitThreadUpdated(io, req.params.id, 'removed', thread && thread.name, remaining.map((p) => p.userId).concat([targetId]), req.userId);
             res.json({ ok: true });
         } catch (err) {
             next(err);
@@ -333,6 +367,17 @@ function createInternalRouter(io) {
                     message: withUser,
                     fromUser: withUser.fromUser
                 }));
+                try {
+                    const pushNotificationService = require('../services/pushNotificationService');
+                    const fromName = (withUser.fromUser && (withUser.fromUser.name || withUser.fromUser.email)) || 'چت داخلی';
+                    const preview = String(content || '').trim().slice(0, 180) || (attachments.length ? 'پیوست' : 'پیام جدید');
+                    pushNotificationService.notifyInternalMessage({
+                        userIds: recipientIds,
+                        fromName,
+                        preview,
+                        threadId: req.params.id
+                    }).catch(() => {});
+                } catch (_) {}
             }
             logActivity({
                 userId: req.userId,
@@ -360,12 +405,13 @@ function createInternalRouter(io) {
             ) {
                 where.branchId = req.user.branchId;
             }
+            const connectedIds = getConnectedUserIds(io);
             const users = await User.findAll({
                 where,
                 attributes: USER_PUBLIC_ATTRS,
                 order: [['name', 'ASC']]
             });
-            res.json({ data: users });
+            res.json({ data: users.map((u) => decoratePresence(u, connectedIds)) });
         } catch (err) {
             next(err);
         }

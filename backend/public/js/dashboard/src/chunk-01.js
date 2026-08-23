@@ -1051,7 +1051,7 @@
             const res = await apiFetch('/api/customers?limit=500');
             const list = (res.data && res.data.data) || [];
             const curVal = sel.value;
-            sel.innerHTML = '<option value="">' + escapeHtml(uiLang() === 'fa' ? 'همه مشتریان' : (uiLang() === 'tr' ? 'Tüm müşteriler' : 'All customers')) + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            sel.innerHTML = '<option value="">' + escapeHtml(uiLang() === 'fa' ? 'همه مشتریان' : (uiLang() === 'tr' ? 'Tüm müşteriler' : 'All customers')) + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(typeof customerUiName === 'function' ? customerUiName(c) : (c.name || '')) + '</option>'; }).join('');
             if (curVal) sel.value = curVal;
         }
         function loadServicesPage() {
@@ -1237,7 +1237,7 @@
                 const amt = parseFloat(tx.amount) || 0;
                 const desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
                 const ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
-                const custName = (tx.customer && (tx.customer.name || tx.customer.phone)) ? escapeHtml(tx.customer.name || tx.customer.phone) : '';
+                const custName = (tx.customer && (typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || ''))) ? escapeHtml(typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || '')) : '';
                 const custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
                 const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
                 let actions = '<div class="tx-row-actions">';
@@ -1410,7 +1410,11 @@
             const list = (res.data && res.data.data) || [];
             const sel = document.getElementById('txModalCustomer');
             if (!sel) return;
-            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون مشتری' : 'No customer') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + escapeHtml(c.name || c.phone || '') + (c.phone ? ' · ' + escapeHtml(c.phone) : '') + '</option>'; }).join('');
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون مشتری' : 'No customer') + '</option>' + list.map(function(c) {
+                const label = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || '');
+                const phoneBit = typeof customerUiPhone === 'function' ? customerUiPhone(c) : '';
+                return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + escapeHtml(label) + (phoneBit ? ' · ' + escapeHtml(phoneBit) : '') + '</option>';
+            }).join('');
         }
         (function(){ const el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
         (function(){ const m = document.getElementById('transactionModal'); if (m) m.addEventListener('click', function(e) { if (e.target === m) closeTransactionModal(); }); })();
@@ -1599,7 +1603,7 @@
                 (tx.toCashBox ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'به صندوق' : 'To Cash Box') + '</span><span class="tx-detail-value">' + escapeHtml(tx.toCashBox.name) + '</span></div>' : '') +
                 (tx.fromBankAccount ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'از بانک' : 'From Bank') + '</span><span class="tx-detail-value">' + escapeHtml(tx.fromBankAccount.name) + '</span></div>' : '') +
                 (tx.toBankAccount ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'به بانک' : 'To Bank') + '</span><span class="tx-detail-value">' + escapeHtml(tx.toBankAccount.name) + '</span></div>' : '') +
-                (tx.customer ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مشتری' : 'Customer') + '</span><span class="tx-detail-value">' + escapeHtml(tx.customer.name || tx.customer.phone || '') + '</span></div>' : '') +
+                (tx.customer ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مشتری' : 'Customer') + '</span><span class="tx-detail-value">' + escapeHtml(typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || '')) + '</span></div>' : '') +
                 (tx.user ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'ثبت‌کننده' : 'Created by') + '</span><span class="tx-detail-value">' + escapeHtml(tx.user.name) + '</span></div>' : '') +
                 '</div>';
             const m = document.getElementById('accountBalanceModal');
@@ -1673,7 +1677,7 @@
             const res = await apiFetch('/api/customers?limit=500');
             const list = (res.data && res.data.data) || [];
             const curVal = sel.value;
-            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(typeof customerUiName === 'function' ? customerUiName(c) : (c.name || '')) + '</option>'; }).join('');
             if (curVal) sel.value = curVal;
         }
 
@@ -2023,6 +2027,9 @@
             try {
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });
+                    socket.on('session_revoked', function() {
+                        if (typeof logout === 'function') logout();
+                    });
                     socket.on('staff_presence', handleStaffPresence);
                     socket.on('user_status', function() {
                         const active = document.querySelector('.nav-link.active');
@@ -2063,7 +2070,7 @@
                         const viewingConv = onConv && currentConvId === convId;
                         if (onConv) { debouncedLoadConversations(800); updateNavBadges(); }
                         if (viewingConv && convId) loadMessages(convId);
-                        else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
+                        else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || t('customer'))), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);
                     });
                     socket.on('user_login', function(data) {
@@ -2080,10 +2087,10 @@
                         if (preview.length > 50) preview += '…';
                         const active = document.querySelector('.nav-link.active');
                         const onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
-                        const viewingThread = currentInternalThreadId === data.threadId;
+                        const viewingThread = String(currentInternalThreadId || '') === String(data.threadId || '');
                         const popup = document.getElementById('internalChatPopup');
                         const popupOpen = popup && popup.style.display !== 'none';
-                        const popupViewingThread = popupOpen && currentInternalThreadId === data.threadId;
+                        const popupViewingThread = popupOpen && viewingThread;
                         if (onInternalPage && viewingThread) {
                             appendInternalMessage(data.message);
                             loadInternalThreads();

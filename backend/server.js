@@ -24,6 +24,9 @@ const { connectRabbitMQ, getRabbitChannel } = require('./services/rabbitmq');
 const { checkUnansweredConversations } = require('./jobs/unansweredConversations');
 const { startDailyRatesJob, stopDailyRatesJob } = require('./jobs/dailyRates');
 const { startScheduledBackupJob, stopScheduledBackupJob } = require('./jobs/scheduledBackup');
+const { startStaffPresenceJob, stopStaffPresenceJob } = require('./jobs/staffPresence');
+const { startWhatsappTrialJob, stopWhatsappTrialJob } = require('./jobs/whatsappTrial');
+const { expireStalePresence } = require('./lib/staffPresence');
 const telegramBotService = require('./services/telegramBotService');
 const { getPanelSettings, getPanelAlertConfig } = require('./services/panelSettingsLoader');
 const models = require('./models');
@@ -85,6 +88,13 @@ async function startServer() {
 
         await connectRabbitMQ({ io, redisClient, logger });
 
+        try {
+            const n = await expireStalePresence(models.User, io);
+            if (n) logger.info(`Presence: marked ${n} stale staff offline`);
+        } catch (presErr) {
+            logger.warn('Presence expire on startup:', presErr.message);
+        }
+
         unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
 
         try {
@@ -98,6 +108,8 @@ async function startServer() {
 
         startDailyRatesJob();
         startScheduledBackupJob();
+        startStaffPresenceJob(io);
+        startWhatsappTrialJob();
 
         const PORT = process.env.PORT || 3002;
         await new Promise((resolve, reject) => {
@@ -139,6 +151,8 @@ async function gracefulShutdown(signal) {
     telegramBotService.stopPolling();
     stopDailyRatesJob();
     stopScheduledBackupJob();
+    stopStaffPresenceJob();
+    stopWhatsappTrialJob();
 
     const forceExitTimer = setTimeout(() => {
         logger.warn('Graceful shutdown timed out — forcing exit');

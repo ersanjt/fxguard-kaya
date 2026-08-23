@@ -87,7 +87,13 @@ module.exports = (sequelize) => {
         sidebarOrder: { type: DataTypes.TEXT, allowNull: true, comment: 'ترتیب منو (JSON array از data-section)' },
         iosAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ iOS (App Store/TestFlight/itms-services)' },
         androidAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ Android (Play Store یا APK)' },
-        navasanApiKey: { type: DataTypes.TEXT, allowNull: true, comment: 'کلید API نوسان (navasan.tech) — جایگزین NAVASAN_API_KEY در env' }
+        navasanApiKey: { type: DataTypes.TEXT, allowNull: true, comment: 'کلید API نوسان (navasan.tech) — جایگزین NAVASAN_API_KEY در env' },
+        planTier: {
+            type: DataTypes.STRING(32),
+            allowNull: true,
+            defaultValue: null,
+            comment: 'پلن تجاری: خالی=legacy یا PLAN_TIER از env | start | business | multi | license | managed'
+        }
     }, {
         timestamps: true,
         tableName: 'panel_settings'

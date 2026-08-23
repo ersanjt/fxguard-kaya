@@ -96,8 +96,9 @@
                         <div id="internalThreadMembersList" class="internal-thread-members-list"></div>
                     </div>
                     <div class="form-group" id="internalThreadAddMembersWrap">
-                        <label for="internalThreadAddMembers" data-i18n="add_members">افزودن عضو</label>
-                        <select id="internalThreadAddMembers" multiple style="min-height:88px;width:100%;"></select>
+                        <label for="internalThreadAddSearch" data-i18n="add_members">افزودن عضو</label>
+                        <input type="search" id="internalThreadAddSearch" class="internal-new-chat-search" data-i18n-ph="search_people" placeholder="جستجوی نام..." autocomplete="off">
+                        <div id="internalThreadAddList" class="internal-new-chat-user-list internal-thread-add-list" role="listbox" aria-multiselectable="true"></div>
                         <button type="button" class="btn-secondary btn-sm" id="btnInternalAddMembers" style="margin-top:8px;" data-i18n="add_members">افزودن عضو</button>
                     </div>
                     <div class="form-group" style="margin-top:16px;">
@@ -608,7 +609,7 @@
             <div class="onboarding-tour-footer">
                 <button type="button" class="btn-secondary" id="btnOnboardingLater" data-i18n="onboarding_later">بعداً</button>
                 <div class="onboarding-tour-nav">
-                    <button type="button" class="btn-secondary" id="btnOnboardingPrev" data-i18n="onboarding_prev">قبلی</button>
+                    <button type="button" class="btn-secondary" id="btnOnboardingPrev" hidden data-i18n="onboarding_prev">قبلی</button>
                     <button type="button" class="btn-secondary" id="btnOnboardingGo" data-i18n="onboarding_go">برو به این بخش</button>
                     <button type="button" class="btn-primary" id="btnOnboardingNext" data-i18n="onboarding_next">بعدی</button>
                 </div>

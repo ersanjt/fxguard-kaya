@@ -54,13 +54,45 @@
         let taskListPage = 1;
         let taskListTotal = 0;
         function renderTaskItem(task) {
-            const assign = task.assignedToDepartmentId && task.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(task.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(task.assignee) || '\u2014';
+            const assign = task.assignedToDepartmentId && task.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(task.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplayHtml(task.assignee) || '\u2014';
             const due = task.dueDate ? fmtTZ(task.dueDate, 'date') : '';
             const isOverdue = task.dueDate && (task.status === 'pending' || task.status === 'in_progress') && new Date(task.dueDate) < new Date();
             const overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
             const prioBadge = task.priority && task.priority !== 'normal' ? '<span class="badge ' + task.priority + '">' + escapeHtml(taskPriorityLabel(task.priority)) + '</span>' : '';
             const dueLabel = t('due_label') || (LANG === 'fa' ? 'مهلت: ' : 'Due: ');
-            return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" data-task-id="' + escapeHtml(task.id) + '" role="button" tabindex="0"><div class="task-item-body"><span class="name">' + escapeHtml(task.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(task.status) + (due ? ' \u00B7 ' + dueLabel + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (task.status || '') + '">' + taskStatusLabel(task.status) + '</span></div></div>';
+            const safeId = escapeHtml(task.id || '');
+            const deleteBtn = canDeleteThisTask(task)
+                ? '<button type="button" class="btn-danger btn-sm task-card-delete" data-task-id="' + safeId + '">' + (t('btn_delete') || (LANG === 'fa' ? 'حذف' : 'Delete')) + '</button>'
+                : '';
+            return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" data-task-id="' + safeId + '" role="button" tabindex="0"><div class="task-item-body"><span class="name">' + escapeHtml(task.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(task.status) + (due ? ' \u00B7 ' + dueLabel + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (task.status || '') + '">' + taskStatusLabel(task.status) + '</span>' + deleteBtn + '</div></div>';
+        }
+        function canDeleteTasks() {
+            if (!currentUser) return false;
+            var role = currentUser.role || '';
+            return role === 'owner' || role === 'admin' || role === 'manager';
+        }
+        function canDeleteThisTask(task) {
+            if (canDeleteTasks()) return true;
+            if (task && currentUser && task.createdBy && String(task.createdBy) === String(currentUser.id)) return true;
+            return false;
+        }
+        function deleteTaskConfirm(id) {
+            var tid = id || currentTaskId;
+            if (!tid) return;
+            if (!confirm(t('task_delete_confirm') || (LANG === 'fa' ? 'آیا از حذف این تسک مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Delete this task? This cannot be undone.'))) return;
+            deleteTask(tid);
+        }
+        async function deleteTask(id) {
+            const res = await apiFetch('/api/tasks/' + id, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) {
+                toast(t('toast_task_deleted') || (LANG === 'fa' ? 'تسک حذف شد' : 'Task deleted'));
+                showTaskList();
+                loadTasks();
+                loadTasksSummary();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
         }
         async function loadTasks(append) {
             const list = document.getElementById('taskList');
@@ -177,6 +209,8 @@
             document.getElementById('taskDetailBox').style.display = 'none';
             document.getElementById('taskList').style.display = 'block';
             currentTaskId = null;
+            const delBtn = document.getElementById('taskDeleteBtn');
+            if (delBtn) delBtn.style.display = 'none';
             loadTasks();
         }
         function toggleTaskDetailAssign() {
@@ -246,12 +280,14 @@
                 (taskData.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(taskData.description) + '</p>' : '') +
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('th_branch') + ': ' + branchName + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(taskData.priority) + '</p>' + editHtml;
             const updates = (taskData.updates || []).map(function(u) {
-                return '<div class="msg in" style="margin:8px 0;"><div>' + linkifyMessageContent(u.content || '') + '</div><div class="time">' + userDisplay(u.user) + ' \u00B7 ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
+                return '<div class="msg in" style="margin:8px 0;"><div>' + linkifyMessageContent(u.content || '') + '</div><div class="time">' + userDisplayHtml(u.user) + ' \u00B7 ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
             document.getElementById('taskUpdateContent').value = '';
             const detailAssignType = document.getElementById('taskDetailAssignType');
             if (detailAssignType) { detailAssignType.onchange = null; detailAssignType.addEventListener('change', toggleTaskDetailAssign); }
+            const delBtn = document.getElementById('taskDeleteBtn');
+            if (delBtn) delBtn.style.display = canDeleteThisTask(taskData) ? '' : 'none';
         }
         async function updateTaskStatus() {
             if (!currentTaskId) return;
@@ -332,7 +368,7 @@
             list.innerHTML = data.map(function(i) {
                 const statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
                 const templateName = (i.template && i.template.name) ? i.template.name : '�';
-                const assignee = userDisplay(i.assignee) || '\u2014';
+                const assignee = userDisplayHtml(i.assignee) || '\u2014';
                 return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
             }).join('');
         }
@@ -355,15 +391,15 @@
             const stages = template.stages || [];
             const currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
             const currentStageName = (stages[currentIdx] && stages[currentIdx].name) ? stages[currentIdx].name : t('process_current_stage');
-            const assignee = userDisplay(i.assignee) || '\u2014';
-            const creator = userDisplay(i.creator) || '\u2014';
+            const assignee = userDisplayHtml(i.assignee) || '\u2014';
+            const creator = userDisplayHtml(i.creator) || '\u2014';
             const stepsHtml = (i.steps || []).map(function(s) {
                 const done = s.completedAt ? '\u2713 ' : '';
-                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' \u2014 ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' \u22C6 ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' \u2014 ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
+                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' \u2014 ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplayHtml(s.assignee) + ' \u22C6 ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' \u2014 ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('processInstanceDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(i.title) + '</h3>' +
-                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + assignee + ' | ' + t('process_current_stage') + ': ' + escapeHtml(currentStageName) + '</p>' +
+                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + creator + ' | ' + t('assignee_label') + ' ' + assignee + ' | ' + t('process_current_stage') + ': ' + escapeHtml(currentStageName) + '</p>' +
                 '<h4 style="font-size:1rem; margin:12px 0;">' + t('history') + '</h4>' + (stepsHtml || '<p class="text-muted">' + (t('no_updates') || '') + '</p>') + '</div>';
             const advanceBox = document.getElementById('processInstanceAdvanceBox');
             if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
@@ -655,9 +691,10 @@
             const box = document.getElementById('userFormBox');
             const btnAdd = document.getElementById('btnAddUser');
             const btnCancel = document.getElementById('btnCancelUserForm');
+            if (!box) return;
             const visible = box.style.display === 'block';
             box.style.display = visible ? 'none' : 'block';
-            btnAdd.style.display = visible ? '' : 'none';
+            if (btnAdd) btnAdd.style.display = visible ? '' : 'none';
             if (btnCancel) btnCancel.style.display = visible ? 'none' : '';
         }
         function initUserAddPerms() {
@@ -674,11 +711,12 @@
         }
         async function loadUsers() {
             const list = document.getElementById('userList');
+            if (!list) return;
             setLoading('userList', 4);
             const res = await apiFetch('/api/users');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            const data = res.data;
+            const data = res.data || {};
             userListData = data.data || [];
             if (userListData.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
             filterAndRenderUsers();
@@ -687,12 +725,16 @@
         var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', system_status: 'section_system_status', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
         const permGroups = [
             { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone', 'bulk_messaging'] },
-            { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
+            { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision', 'system_status'] },
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
         ];
         function sectionLabel(k) { const lbl = t(sectionLabels[k] || k); return (lbl && String(lbl).trim()) ? lbl : (sectionLabels[k] || k); }
-        function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
+        function closeUserEditModal() {
+            const modal = document.getElementById('userEditModal');
+            if (modal) modal.style.display = 'none';
+            currentEditUserId = null;
+        }
         function userPermsSelectAll(checked) {
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) { cb.checked = !!checked; });
         }
@@ -756,7 +798,7 @@
                 html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
-                    const checked = perms[k] !== false ? ' checked' : '';
+                    const checked = perms[k] ? ' checked' : '';
                     const lbl = sectionLabel(k);
                     html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + (isProtected ? ' disabled' : '') + '><span class="user-edit-perm-label">' + escapeHtml(lbl) + '</span></label>';
                 });
@@ -1045,22 +1087,31 @@
             if (st === 'online') return t('status_online') || (LANG === 'fa' ? 'آنلاین' : 'Online');
             if (st === 'busy') return t('status_busy') || (LANG === 'fa' ? 'مشغول' : 'Busy');
             if (st === 'away') return t('status_away') || (LANG === 'fa' ? 'دور' : 'Away');
-            if (user.lastLoginAt && typeof fmtTZ === 'function') {
-                return (t('last_seen') || (LANG === 'fa' ? 'آخرین بازدید' : 'Last seen')) + ': ' + fmtTZ(user.lastLoginAt, 'datetime');
+            if (user.lastSeenAt && typeof formatInternalListTime === 'function') {
+                return (t('last_seen') || (LANG === 'fa' ? 'آخرین بازدید' : 'Last seen')) + ': ' + formatInternalListTime(user.lastSeenAt);
+            }
+            if (user.lastLoginAt && typeof formatInternalListTime === 'function') {
+                return (t('last_seen') || (LANG === 'fa' ? 'آخرین بازدید' : 'Last seen')) + ': ' + formatInternalListTime(user.lastLoginAt);
             }
             return t('status_offline') || (LANG === 'fa' ? 'آفلاین' : 'Offline');
         }
         function updateInternalChatHeaderPresence(thread) {
             var statusEl = document.getElementById('internalChatHeaderStatus');
+            var avatarEl = document.getElementById('internalChatHeaderAvatar');
             if (!statusEl) return;
             var others = (thread && thread.participants) || currentInternalThreadParticipants || [];
             if (thread && thread.isGroup) {
                 var online = others.filter(function (p) { return p.status === 'online'; }).length;
                 statusEl.textContent = (others.length + ' ' + (t('members') || (LANG === 'fa' ? 'عضو' : 'members')))
                     + (online ? (' · ' + online + ' ' + (t('status_online') || 'online')) : '');
+                statusEl.classList.toggle('is-online', online > 0);
+                if (avatarEl) avatarEl.classList.remove('is-online');
                 return;
             }
-            statusEl.textContent = formatPresenceLabel(others[0]);
+            var other = others[0];
+            statusEl.textContent = formatPresenceLabel(other);
+            statusEl.classList.toggle('is-online', !!(other && other.status === 'online'));
+            if (avatarEl) avatarEl.classList.toggle('is-online', !!(other && other.status === 'online'));
         }
         function threadDisplayName(th) {
             if (!th) return t('chat') || 'Chat';
@@ -1159,28 +1210,87 @@
                 window.hasNewInternalChat = res.data.totalUnread > 0;
                 if (typeof updateNavBadges === 'function') updateNavBadges();
             }
-            renderInternalThreadList(data);
+            refreshInternalThreadList();
             updateInternalChatFloatingBtn();
+        }
+        function formatInternalListTime(iso) {
+            if (!iso) return '';
+            var dt = new Date(iso);
+            if (isNaN(dt.getTime())) return '';
+            var now = new Date();
+            var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var startThat = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+            var diff = Math.round((startToday - startThat) / 86400000);
+            if (diff === 0) return fmtTZ(iso, 'time');
+            if (diff === 1) return t('yesterday') || (LANG === 'fa' ? 'دیروز' : (LANG === 'tr' ? 'Dün' : 'Yesterday'));
+            return fmtTZ(iso, 'date');
+        }
+        function formatInternalDayLabel(iso) {
+            if (!iso) return '';
+            var dt = new Date(iso);
+            if (isNaN(dt.getTime())) return '';
+            var now = new Date();
+            var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            var startThat = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+            var diff = Math.round((startToday - startThat) / 86400000);
+            if (diff === 0) return t('preset_today') || (LANG === 'fa' ? 'امروز' : 'Today');
+            if (diff === 1) return t('yesterday') || (LANG === 'fa' ? 'دیروز' : (LANG === 'tr' ? 'Dün' : 'Yesterday'));
+            return fmtTZ(iso, 'date');
+        }
+        function internalDayKey(iso) {
+            var dt = new Date(iso);
+            if (isNaN(dt.getTime())) return '';
+            return dt.getFullYear() + '-' + (dt.getMonth() + 1) + '-' + dt.getDate();
+        }
+        function internalChatEmptyVisualHtml() {
+            return '<div class="empty-visual" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div>';
+        }
+        function internalLastMessagePreview(th) {
+            const m = th && th.lastMessage;
+            if (!m) return '\u2014';
+            const atts = m.attachments || [];
+            const placeholder = typeof isInternalPlaceholderContent === 'function' && isInternalPlaceholderContent(m.content);
+            if ((placeholder || !String(m.content || '').trim()) && atts.length) {
+                const a = atts[0];
+                const kind = a && typeof internalAttachmentKind === 'function' ? internalAttachmentKind(a) : '';
+                if (kind === 'image') return t('internal_photo') || (LANG === 'fa' ? 'تصویر' : 'Photo');
+                if (kind === 'video') return t('internal_video') || (LANG === 'fa' ? 'ویدیو' : 'Video');
+                if (kind === 'audio') return t('internal_audio') || (LANG === 'fa' ? 'صوت' : 'Audio');
+                if (kind === 'pdf') return t('internal_document') || (LANG === 'fa' ? 'سند' : 'Document');
+                return (a && a.name) || (t('file') || 'File');
+            }
+            return String(m.content || '').replace(/\s+/g, ' ').trim() || '\u2014';
+        }
+        function refreshInternalThreadList() {
+            const q = document.getElementById('internalChatSearch');
+            filterInternalThreads(q ? q.value : '');
         }
         function renderInternalThreadList(data) {
             const list = document.getElementById('internalThreadList');
             if (!list) return;
             list.classList.remove('empty');
-            if (data.length === 0) { list.innerHTML = '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || (LANG === 'fa' ? 'گفتگویی را انتخاب کنید یا گفتگوی جدید شروع کنید.' : 'Select a conversation or start a new one.')) + '</p></div>'; return; }
+            if (data.length === 0) {
+                list.innerHTML = '<div class="internal-chat-empty-state">' + internalChatEmptyVisualHtml() + '<p>' + escapeHtml(t('start_chat_hint') || '') + '</p><button type="button" class="btn-primary internal-chat-empty-new-btn">' + escapeHtml(t('start_chat')) + '</button></div>';
+                return;
+            }
             const me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(th) {
                 const participants = th.participants || [];
                 const title = threadDisplayName(th);
                 const first = participants[0];
+                const online = !th.isGroup && first && first.status === 'online';
                 const initial = th.isGroup ? '\uD83D\uDC65' : ((first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F');
                 const avatarUrl = !th.isGroup ? resolveAvatarUrl(first && first.avatar) : '';
                 const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                const last = th.lastMessage ? (th.lastMessage.content || '').slice(0, 45) + ((th.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
-                const timeStr = th.lastMessageAt ? fmtTZ(th.lastMessageAt, 'time') : '';
-                const fromLabel = th.lastMessage && th.lastMessage.fromUser && String(th.lastMessage.fromUser.id) !== String(me) ? (th.lastMessage.fromUser.name || '') + ': ' : '';
+                const lastRaw = internalLastMessagePreview(th);
+                const mine = th.lastMessage && th.lastMessage.fromUser && String(th.lastMessage.fromUser.id) === String(me);
+                const fromLabel = th.lastMessage ? (mine ? ((t('you') || (LANG === 'fa' ? 'شما' : 'You')) + ': ') : ((th.lastMessage.fromUser && th.lastMessage.fromUser.name) ? (th.lastMessage.fromUser.name + ': ') : '')) : '';
+                const timeStr = th.lastMessageAt ? formatInternalListTime(th.lastMessageAt) : '';
                 const unread = th.unreadCount > 0 ? '<span class="internal-chat-unread-pill">' + (th.unreadCount > 99 ? '99+' : th.unreadCount) + '</span>' : '';
                 const groupBadge = th.isGroup ? '<span class="internal-chat-group-badge">' + escapeHtml(t('group_chat') || (LANG === 'fa' ? 'گروه' : 'Group')) + '</span>' : '';
-                return '<div class="list-item internal-chat-thread-item' + (th.unreadCount > 0 ? ' has-unread' : '') + '" data-id="' + escapeHtml(th.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + groupBadge + escapeHtml(title) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-meta-end"><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span>' + unread + '</span></div>';
+                const selected = currentInternalThreadId && String(th.id) === String(currentInternalThreadId) ? ' is-active' : '';
+                const currentAttr = selected ? ' aria-current="true"' : '';
+                return '<div class="list-item internal-chat-thread-item' + (th.unreadCount > 0 ? ' has-unread' : '') + selected + '" data-id="' + escapeHtml(th.id) + '" role="button" tabindex="0"' + currentAttr + '><div class="list-item-avatar internal-chat-thread-avatar' + (online ? ' is-online' : '') + '">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + groupBadge + escapeHtml(title) + '</span><div class="meta">' + escapeHtml(fromLabel + lastRaw) + '</div></div><span class="internal-chat-thread-meta-end"><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span>' + unread + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
@@ -1188,9 +1298,16 @@
             if (!q) { renderInternalThreadList(internalThreadsCache); return; }
             const filtered = internalThreadsCache.filter(function(th) {
                 const names = threadDisplayName(th).toLowerCase() + ' ' + (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
-                const last = (th.lastMessage && th.lastMessage.content) ? th.lastMessage.content.toLowerCase() : '';
+                const last = internalLastMessagePreview(th).toLowerCase();
                 return names.indexOf(q) >= 0 || last.indexOf(q) >= 0;
             });
+            if (!filtered.length) {
+                const list = document.getElementById('internalThreadList');
+                if (!list) return;
+                list.classList.remove('empty');
+                list.innerHTML = '<div class="internal-chat-empty-state">' + internalChatEmptyVisualHtml() + '<p>' + escapeHtml(t('internal_no_match') || (LANG === 'fa' ? 'گفتگویی پیدا نشد' : 'No conversations found')) + '</p></div>';
+                return;
+            }
             renderInternalThreadList(filtered);
         }
         function updateInternalChatFloatingBtn() {
@@ -1218,7 +1335,7 @@
             } else { openInternalChatPopupPicker(); }
         }
         function selectThreadInPopup(threadId) {
-            const t = (internalThreadsCache || []).find(function(x) { return String(x.id) === String(threadId); });
+            const t = (internalThreadsCache || []).find(function(x) { return sameInternalId(x.id, threadId); });
             const names = (t && (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ')) || (LANG === 'fa' ? 'چت' : 'Chat');
             showInternalChatPopup(threadId, names);
         }
@@ -1252,7 +1369,7 @@
                     const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
                     const avatarUrl = resolveAvatarUrl(first && first.avatar);
                     const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                    const last = th.lastMessage ? (th.lastMessage.content || '').slice(0, 35) + ((th.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
+                    const last = internalLastMessagePreview(th);
                     const timeStr = th.lastMessageAt ? fmtTZ(th.lastMessageAt, 'time') : '';
                     return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(th.id) + '"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
                 }).join('');
@@ -1262,15 +1379,148 @@
                 listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>';
             }
         }
+        let internalUsersCache = [];
+        let internalNewChatSelected = new Set();
+        function sameInternalId(a, b) {
+            return String(a || '') === String(b || '');
+        }
+        function persistInternalThreadId(threadId) {
+            try { if (threadId) sessionStorage.setItem('kaya_internal_thread', String(threadId)); } catch (_e) {}
+        }
+        function readPersistedInternalThreadId() {
+            try { return sessionStorage.getItem('kaya_internal_thread') || ''; } catch (_e) { return ''; }
+        }
+        function getNewChatSelectedIds() {
+            return Array.from(internalNewChatSelected);
+        }
+        function updateInternalComposerState() {
+            const el = document.getElementById('internalChatInput');
+            const fileInput = document.getElementById('internalChatFile');
+            const send = document.querySelector('#pageInternalChat .internal-chat-send-btn-sm');
+            if (el && el.tagName === 'TEXTAREA') {
+                el.style.height = 'auto';
+                el.style.height = Math.min(Math.max(el.scrollHeight, 36), 120) + 'px';
+            }
+            const hasText = !!(el && String(el.value || '').trim());
+            const hasFile = !!(fileInput && fileInput.files && fileInput.files[0]);
+            if (send) send.classList.toggle('is-idle', !hasText && !hasFile);
+        }
+        function updateInternalFileChip() {
+            const fi = document.getElementById('internalChatFile');
+            const chip = document.getElementById('internalChatFileChip');
+            const nameEl = document.getElementById('internalChatFileChipName');
+            const has = !!(fi && fi.files && fi.files[0]);
+            if (chip) {
+                if (has) chip.removeAttribute('hidden');
+                else chip.setAttribute('hidden', '');
+            }
+            if (nameEl) nameEl.textContent = has ? fi.files[0].name : '';
+            const thumb = document.getElementById('internalChatFileChipThumb');
+            if (thumb) {
+                if (thumb._objectUrl) { try { URL.revokeObjectURL(thumb._objectUrl); } catch (_e) {} thumb._objectUrl = ''; }
+                if (has && fi.files[0].type && fi.files[0].type.indexOf('image/') === 0) {
+                    thumb._objectUrl = URL.createObjectURL(fi.files[0]);
+                    thumb.src = thumb._objectUrl;
+                    thumb.removeAttribute('hidden');
+                } else {
+                    thumb.removeAttribute('src');
+                    thumb.setAttribute('hidden', '');
+                }
+            }
+            updateInternalComposerState();
+        }
+        function updateInternalNewChatSelectionBar() {
+            const wrap = document.getElementById('internalNewChatSelected');
+            const btn = document.getElementById('btnInternalStartChat');
+            const ids = getNewChatSelectedIds();
+            if (wrap) {
+                if (!ids.length) { wrap.setAttribute('hidden', ''); wrap.innerHTML = ''; }
+                else {
+                    wrap.removeAttribute('hidden');
+                    wrap.innerHTML = ids.map(function(id) {
+                        const u = (internalUsersCache || []).find(function(x) { return String(x.id) === String(id); });
+                        const name = (u && (u.name || u.email)) || id;
+                        return '<span class="internal-new-chat-chip">' + escapeHtml(name) + '<button type="button" class="internal-new-chat-chip-remove" data-user-id="' + escapeHtml(String(id)) + '" aria-label="remove">&times;</button></span>';
+                    }).join('');
+                }
+            }
+            if (btn) {
+                const base = t('start_chat') || (LANG === 'fa' ? 'شروع چت' : 'Start chat');
+                btn.textContent = ids.length ? (base + ' (' + ids.length + ')') : base;
+                btn.disabled = ids.length === 0;
+            }
+        }
+        function setInternalNewChatUserSelected(id, on) {
+            id = String(id || '');
+            if (!id) return;
+            if (on) internalNewChatSelected.add(id);
+            else internalNewChatSelected.delete(id);
+            const row = document.querySelector('.internal-new-chat-user[value="' + id.replace(/"/g, '') + '"]');
+            if (row) {
+                row.checked = !!on;
+                const wrap = row.closest('.internal-new-chat-user-row');
+                if (wrap) wrap.classList.toggle('is-selected', !!on);
+            }
+            updateInternalNewChatSelectionBar();
+        }
+        function renderInternalNewChatUsers(users, query) {
+            const list = document.getElementById('internalNewChatUserList');
+            if (!list) return;
+            const q = String(query || '').trim().toLowerCase();
+            const filtered = (users || []).filter(function(u) {
+                if (!q) return true;
+                const hay = ((u.name || '') + ' ' + (u.email || '')).toLowerCase();
+                return hay.indexOf(q) >= 0;
+            });
+            if (!filtered.length) {
+                list.innerHTML = '<div class="empty">' + escapeHtml(t('no_users') || (LANG === 'fa' ? 'کاربری یافت نشد' : 'No users found')) + '</div>';
+                updateInternalNewChatSelectionBar();
+                return;
+            }
+            list.innerHTML = filtered.map(function(u) {
+                const id = String(u.id);
+                const name = u.name || u.email || id;
+                const initial = (name && String(name).trim()[0]) ? String(name).trim()[0].toUpperCase() : '?';
+                const pic = resolveAvatarUrl(u.avatar);
+                const avatar = pic
+                    ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">'
+                    : escapeHtml(initial);
+                const online = u.status === 'online';
+                const statusText = formatPresenceLabel(u);
+                const checked = internalNewChatSelected.has(id) ? ' checked' : '';
+                const selCls = internalNewChatSelected.has(id) ? ' is-selected' : '';
+                return '<label class="internal-new-chat-user-row' + selCls + '"><input type="checkbox" class="internal-new-chat-user" value="' + escapeHtml(id) + '"' + checked + '><span class="internal-new-chat-user-avatar' + (online ? ' is-online' : '') + '">' + avatar + '</span><span class="internal-new-chat-user-meta"><span class="internal-new-chat-user-name">' + escapeHtml(name) + '</span><span class="internal-new-chat-user-status' + (online ? ' is-online' : '') + '">' + escapeHtml(statusText) + '</span></span></label>';
+            }).join('');
+            updateInternalNewChatSelectionBar();
+        }
+        function filterInternalNewChatUsers(q) {
+            renderInternalNewChatUsers(internalUsersCache, q);
+        }
         async function loadInternalUsers() {
             const res = await apiFetch('/api/internal/users');
             if (res.needLogin || !res.ok) return;
-            const sel = document.getElementById('internalNewChatUser');
             const data = (res.data && res.data.data) || [];
-            sel.innerHTML = '<option value="">' + t('select_user') + '</option>' + data.map(function(u) { return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+            internalUsersCache = Array.isArray(data) ? data : [];
+            const searchEl = document.getElementById('internalNewChatSearch');
+            renderInternalNewChatUsers(internalUsersCache, searchEl ? searchEl.value : '');
         }
-        function showNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'block'; loadInternalUsers(); }
-        function hideNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'none'; }
+        function showNewChatForm() {
+            const form = document.getElementById('internalNewChatForm');
+            if (!form) return;
+            internalNewChatSelected = new Set();
+            form.style.display = 'flex';
+            const searchEl = document.getElementById('internalNewChatSearch');
+            if (searchEl) searchEl.value = '';
+            const nameEl = document.getElementById('internalNewChatName');
+            if (nameEl) nameEl.value = '';
+            loadInternalUsers();
+            updateInternalNewChatSelectionBar();
+            setTimeout(function() { if (searchEl) searchEl.focus(); }, 50);
+        }
+        function hideNewChatForm() {
+            const form = document.getElementById('internalNewChatForm');
+            if (form) form.style.display = 'none';
+        }
         function showInternalCallModal(statusText, showAccept) {
             const modal = document.getElementById('internalCallModal');
             const statusEl = document.getElementById('internalCallStatus');
@@ -1560,9 +1810,7 @@
             toast((LANG === 'fa' ? 'دعوت ارسال شد' : 'Invite sent'));
         }
         async function startInternalChat() {
-            const sel = document.getElementById('internalNewChatUser');
-            const opts = sel ? Array.from(sel.selectedOptions || []) : [];
-            const userIds = opts.map(function(o) { return o.value; }).filter(function(v) { return v; });
+            const userIds = getNewChatSelectedIds();
             if (!userIds.length) { toast(t('select_user_first'), true); return; }
             const nameEl = document.getElementById('internalNewChatName');
             const groupName = nameEl ? String(nameEl.value || '').trim() : '';
@@ -1571,40 +1819,57 @@
                 body.type = 'group';
                 if (groupName) body.name = groupName;
             }
-            const res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) {
-                hideNewChatForm();
-                if (nameEl) nameEl.value = '';
-                openInternalThread(res.data.id);
-                loadInternalThreads();
-            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            const btn = document.getElementById('btnInternalStartChat');
+            if (btn) btn.disabled = true;
+            try {
+                const res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify(body) });
+                if (res.needLogin) return;
+                if (res.ok) {
+                    hideNewChatForm();
+                    if (nameEl) nameEl.value = '';
+                    const thread = (res.data && res.data.id) ? res.data : (res.data && res.data.data);
+                    const tid = thread && thread.id;
+                    if (tid) {
+                        if (thread && thread.participants) {
+                            const exists = (internalThreadsCache || []).some(function(x) { return sameInternalId(x.id, tid); });
+                            if (!exists) internalThreadsCache = [thread].concat(internalThreadsCache || []);
+                        }
+                        openInternalThread(tid);
+                    }
+                    loadInternalThreads();
+                } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
         function backToInternalChatList() {
             const wrap = document.getElementById('internalChatLayoutWrap');
-            const pane = document.getElementById('internalChatPane');
             if (wrap) { wrap.classList.remove('internal-chat-mobile-chat-open', 'internal-chat-has-chat'); }
-            if (pane) pane.style.display = 'none';
-        }
-        function isInternalChatMobile() { return window.matchMedia('(max-width: 900px)').matches; }
-        async function openInternalThread(threadId) {
-            currentInternalThreadId = threadId;
+            currentInternalThreadId = null;
             currentInternalThreadOtherUserId = null;
-            const pane = document.getElementById('internalChatPane');
+            currentInternalThreadParticipants = [];
+            try { sessionStorage.removeItem('kaya_internal_thread'); } catch (_e) {}
+            refreshInternalThreadList();
+        }
+        function isInternalChatMobile() { return window.matchMedia('(max-width: 768px)').matches; }
+        async function openInternalThread(threadId) {
+            if (!threadId) return;
+            currentInternalThreadId = threadId;
+            persistInternalThreadId(threadId);
+            currentInternalThreadOtherUserId = null;
             const wrap = document.getElementById('internalChatLayoutWrap');
-            if (pane) pane.style.display = 'flex';
             if (wrap) { wrap.classList.add('internal-chat-has-chat'); if (isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open'); }
-            let thread = (internalThreadsCache || []).find(function(x) { return x.id === threadId; });
+            let thread = (internalThreadsCache || []).find(function(x) { return sameInternalId(x.id, threadId); });
             if (!thread) {
                 const partRes = await apiFetch('/api/internal/threads');
                 if (partRes.ok && partRes.data && partRes.data.data) {
                     internalThreadsCache = partRes.data.data;
-                    thread = internalThreadsCache.find(function(x) { return x.id === threadId; });
+                    thread = internalThreadsCache.find(function(x) { return sameInternalId(x.id, threadId); });
                 }
             }
             const headerEl = document.getElementById('internalChatHeader');
             if (headerEl) headerEl.textContent = threadDisplayName(thread);
-            const others = thread && thread.participants ? thread.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
+            const others = thread && thread.participants ? thread.participants.filter(function(p) { return !sameInternalId(p.id, currentUser && currentUser.id); }) : [];
             currentInternalThreadOtherUserId = others.length ? others[0].id : null;
             currentInternalThreadParticipants = others;
             updateInternalChatHeaderPresence(thread);
@@ -1625,9 +1890,20 @@
             callBtns && callBtns.querySelectorAll('[data-call-type]').forEach(function(btn) {
                 btn.style.display = others.length ? '' : 'none';
             });
+            var unreadHint = 0;
+            (internalThreadsCache || []).forEach(function(th) {
+                if (sameInternalId(th.id, threadId)) {
+                    unreadHint = th.unreadCount || 0;
+                    th.unreadCount = 0;
+                }
+            });
+            refreshInternalThreadList();
             apiFetch('/api/internal/threads/' + threadId + '/read', { method: 'POST' }).catch(function(){});
-            loadInternalMessages(threadId);
-            loadInternalThreads();
+            loadInternalMessages(threadId, unreadHint);
+            setTimeout(function() {
+                const inp = document.getElementById('internalChatInput');
+                if (inp && !isInternalChatMobile()) inp.focus();
+            }, 40);
         }
         function closeInternalThreadManageModal() {
             const modal = document.getElementById('internalThreadManageModal');
@@ -1635,7 +1911,7 @@
         }
         async function showInternalThreadManageModal() {
             if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
-            const thread = (internalThreadsCache || []).find(function(x) { return x.id === currentInternalThreadId; });
+            const thread = (internalThreadsCache || []).find(function(x) { return sameInternalId(x.id, currentInternalThreadId); });
             const modal = document.getElementById('internalThreadManageModal');
             if (!modal) return;
             const renameWrap = document.getElementById('internalThreadRenameGroup');
@@ -1652,30 +1928,82 @@
             const me = currentUser || {};
             const others = (thread && thread.participants) || currentInternalThreadParticipants || [];
             const isCreator = thread && String(thread.createdById) === String(me.id);
-            const rows = [{ id: me.id, name: (me.name || me.email || '') + ' (' + (t('you') || (LANG === 'fa' ? 'شما' : 'You')) + ')', status: me.status || 'online', isMe: true }]
-                .concat(others.map(function(p) { return { id: p.id, name: p.name || p.email || '', status: p.status, isMe: false }; }));
+            const rows = [{ id: me.id, name: (me.name || me.email || '') + ' (' + (t('you') || (LANG === 'fa' ? 'شما' : 'You')) + ')', status: me.status || 'online', avatar: me.avatar, isMe: true }]
+                .concat(others.map(function(p) { return { id: p.id, name: p.name || p.email || '', status: p.status, avatar: p.avatar, lastSeenAt: p.lastSeenAt, isMe: false }; }));
             list.innerHTML = rows.map(function(p) {
                 const canRemove = !p.isMe && isCreator;
                 const removeBtn = canRemove
                     ? '<button type="button" class="btn-secondary btn-sm internal-thread-remove-member" data-user-id="' + escapeHtml(String(p.id)) + '">' + escapeHtml(t('remove') || (LANG === 'fa' ? 'حذف' : 'Remove')) + '</button>'
                     : '';
-                return '<div class="internal-thread-member-row"><span class="internal-thread-member-name">' + escapeHtml(p.name || '') + '</span><span class="internal-thread-member-status">' + escapeHtml(formatPresenceLabel(p)) + '</span>' + removeBtn + '</div>';
+                const initial = (p.name && String(p.name).trim()[0]) ? String(p.name).trim()[0].toUpperCase() : '?';
+                const pic = resolveAvatarUrl(p.avatar);
+                const avatar = pic
+                    ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">'
+                    : escapeHtml(initial);
+                const online = p.status === 'online';
+                return '<div class="internal-thread-member-row"><span class="internal-thread-member-avatar' + (online ? ' is-online' : '') + '">' + avatar + '</span><span class="internal-thread-member-name">' + escapeHtml(p.name || '') + '</span><span class="internal-thread-member-status' + (online ? ' is-online' : '') + '">' + escapeHtml(formatPresenceLabel(p)) + '</span>' + removeBtn + '</div>';
             }).join('');
         }
+        let internalThreadAddSelected = new Set();
+        let internalThreadAddUsersCache = [];
+        function setInternalThreadAddUserSelected(id, on) {
+            id = String(id || '');
+            if (!id) return;
+            if (on) internalThreadAddSelected.add(id);
+            else internalThreadAddSelected.delete(id);
+            const row = document.querySelector('.internal-thread-add-user[value="' + id.replace(/"/g, '') + '"]');
+            if (row) {
+                row.checked = !!on;
+                const wrap = row.closest('.internal-new-chat-user-row');
+                if (wrap) wrap.classList.toggle('is-selected', !!on);
+            }
+            const btn = document.getElementById('btnInternalAddMembers');
+            if (btn) btn.disabled = internalThreadAddSelected.size === 0;
+        }
+        function renderInternalThreadAddList(users, query) {
+            const list = document.getElementById('internalThreadAddList');
+            if (!list) return;
+            const q = String(query || '').trim().toLowerCase();
+            const filtered = (users || []).filter(function(u) {
+                if (!q) return true;
+                return ((u.name || '') + ' ' + (u.email || '')).toLowerCase().indexOf(q) >= 0;
+            });
+            if (!filtered.length) {
+                list.innerHTML = '<div class="empty">' + escapeHtml(t('no_users') || (LANG === 'fa' ? 'کاربری برای افزودن نیست' : 'No users to add')) + '</div>';
+                return;
+            }
+            list.innerHTML = filtered.map(function(u) {
+                const id = String(u.id);
+                const name = u.name || u.email || id;
+                const initial = (name && String(name).trim()[0]) ? String(name).trim()[0].toUpperCase() : '?';
+                const pic = resolveAvatarUrl(u.avatar);
+                const avatar = pic
+                    ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">'
+                    : escapeHtml(initial);
+                const online = u.status === 'online';
+                const checked = internalThreadAddSelected.has(id) ? ' checked' : '';
+                const selCls = internalThreadAddSelected.has(id) ? ' is-selected' : '';
+                return '<label class="internal-new-chat-user-row' + selCls + '"><input type="checkbox" class="internal-thread-add-user" value="' + escapeHtml(id) + '"' + checked + '><span class="internal-new-chat-user-avatar' + (online ? ' is-online' : '') + '">' + avatar + '</span><span class="internal-new-chat-user-meta"><span class="internal-new-chat-user-name">' + escapeHtml(name) + '</span><span class="internal-new-chat-user-status' + (online ? ' is-online' : '') + '">' + escapeHtml(formatPresenceLabel(u)) + '</span></span></label>';
+            }).join('');
+        }
+        function filterInternalThreadAddMembers(q) {
+            renderInternalThreadAddList(internalThreadAddUsersCache, q);
+        }
         async function loadInternalThreadAddMembersSelect(thread) {
-            const sel = document.getElementById('internalThreadAddMembers');
-            if (!sel) return;
+            internalThreadAddSelected = new Set();
+            const searchEl = document.getElementById('internalThreadAddSearch');
+            if (searchEl) searchEl.value = '';
+            const btn = document.getElementById('btnInternalAddMembers');
+            if (btn) btn.disabled = true;
             const existing = new Set(((thread && thread.participants) || []).map(function(p) { return String(p.id); }));
             if (currentUser && currentUser.id) existing.add(String(currentUser.id));
             const res = await apiFetch('/api/internal/users');
-            if (!res.ok) { sel.innerHTML = ''; return; }
+            if (!res.ok) { internalThreadAddUsersCache = []; renderInternalThreadAddList([]); return; }
             const users = (res.data && res.data.data) || res.data || [];
-            const available = (Array.isArray(users) ? users : []).filter(function(u) { return !existing.has(String(u.id)); });
-            sel.innerHTML = available.length
-                ? available.map(function(u) {
-                    return '<option value="' + escapeHtml(String(u.id)) + '">' + escapeHtml(u.name || u.email || '') + '</option>';
-                }).join('')
-                : '<option value="" disabled>' + escapeHtml(t('no_users') || (LANG === 'fa' ? 'کاربری برای افزودن نیست' : 'No users to add')) + '</option>';
+            internalThreadAddUsersCache = (Array.isArray(users) ? users : []).filter(function(u) { return !existing.has(String(u.id)); });
+            const wrap = document.getElementById('internalThreadAddMembersWrap');
+            if (wrap) wrap.style.display = internalThreadAddUsersCache.length ? '' : 'none';
+            renderInternalThreadAddList(internalThreadAddUsersCache, '');
         }
         async function renameInternalThread() {
             if (!currentInternalThreadId) return;
@@ -1692,9 +2020,7 @@
         }
         async function addInternalThreadMembers() {
             if (!currentInternalThreadId) return;
-            const sel = document.getElementById('internalThreadAddMembers');
-            const opts = sel ? Array.from(sel.selectedOptions || []) : [];
-            const userIds = opts.map(function(o) { return o.value; }).filter(Boolean);
+            const userIds = Array.from(internalThreadAddSelected);
             if (!userIds.length) { toast(t('select_user_first'), true); return; }
             const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/participants', {
                 method: 'POST',
@@ -1732,11 +2058,13 @@
         }
         function insertInternalChatQuickReply(text) {
             const inp = document.getElementById('internalChatInput');
-            if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); }
+            if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); if (typeof updateInternalComposerState === 'function') updateInternalComposerState(); }
         }
-        async function loadInternalMessages(threadId) {
+        async function loadInternalMessages(threadId, unreadHint) {
             const list = document.getElementById('internalChatMessages');
             if (!list) return;
+            bindInternalChatScroll();
+            internalChatStickBottom = true;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             const res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
             if (res.needLogin) return;
@@ -1752,10 +2080,41 @@
                     quickEl.querySelectorAll('.internal-quick-reply-chip').forEach(function(btn) { btn.onclick = function() { insertInternalChatQuickReply(this.getAttribute('data-reply') || ''); }; });
                 } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             }
-            list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
-                return buildInternalMessageHtml(m, me);
-            }).join('');
-            list.scrollTop = list.scrollHeight;
+            var html = '';
+            if (data.length === 0) {
+                html = '<div class="empty internal-chat-empty-state">' + internalChatEmptyVisualHtml() + '<p>' + t('start_chat_hint') + '</p></div>';
+            } else {
+                var unreadLeft = unreadHint || 0;
+                var unreadStartIdx = -1;
+                if (unreadLeft > 0) {
+                    for (var i = data.length - 1; i >= 0; i--) {
+                        if (String(data[i].fromUserId) !== String(me)) {
+                            unreadLeft--;
+                            unreadStartIdx = i;
+                            if (unreadLeft <= 0) break;
+                        }
+                    }
+                }
+                var prevFrom = '';
+                var prevDay = '';
+                data.forEach(function(m, idx) {
+                    if (idx === unreadStartIdx) {
+                        html += '<div class="internal-chat-unread-sep"><span>' + escapeHtml(t('internal_unread_sep') || (LANG === 'fa' ? 'پیام‌های خوانده‌نشده' : 'Unread messages')) + '</span></div>';
+                        prevFrom = '';
+                    }
+                    var day = internalDayKey(m.createdAt);
+                    if (day && day !== prevDay) {
+                        html += '<div class="internal-chat-day-sep"><span>' + escapeHtml(formatInternalDayLabel(m.createdAt)) + '</span></div>';
+                        prevDay = day;
+                        prevFrom = '';
+                    }
+                    html += buildInternalMessageHtml(m, me, !!(prevFrom && String(prevFrom) === String(m.fromUserId)));
+                    prevFrom = m.fromUserId;
+                });
+            }
+            list.innerHTML = html;
+            scrollInternalChatToBottom(true);
+            if (typeof updateInternalComposerState === 'function') updateInternalComposerState();
         }
         function appendTicketReply(r) {
             const list = document.getElementById('ticketReplies');
@@ -1764,29 +2123,36 @@
             if (noReply) noReply.remove();
             const isOut = String(r.userId) === String(currentUser && currentUser.id);
             const att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + linkifyMessageContent(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
+            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + linkifyMessageContent(r.content || '') + '</div>' + att + '<div class="time">' + userDisplayHtml(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
         async function sendInternalMessage() {
             if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
-            const content = (document.getElementById('internalChatInput') && document.getElementById('internalChatInput').value) || '';
+            const inputEl = document.getElementById('internalChatInput');
+            const content = (inputEl && inputEl.value) || '';
             const fileInput = document.getElementById('internalChatFile');
             const allowDownload = !(document.getElementById('internalChatAllowDownload') && !document.getElementById('internalChatAllowDownload').checked);
             const attachments = [];
             if (fileInput && fileInput.files && fileInput.files[0]) {
-                const formData = new FormData();
-                formData.append('file', fileInput.files[0]);
-                const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
-                const upData = await up.json();
-                if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
+                try {
+                    const formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
+                    const upData = await up.json();
+                    if (!up.ok || !upData.url) { toast((upData && upData.error) || t('err_generic'), true); return; }
+                    attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
+                } catch (_e) {
+                    toast(t('err_generic'), true);
+                    return;
+                }
             }
             if (!content.trim() && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
             const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پیوست)', attachments: attachments }) });
             if (res.needLogin) return;
             if (res.ok) {
-                document.getElementById('internalChatInput').value = '';
-                if (fileInput) { fileInput.value = ''; toggleInternalFileOption(); }
+                if (inputEl) { inputEl.value = ''; updateInternalComposerState(); }
+                if (fileInput) { fileInput.value = ''; if (typeof toggleInternalFileOption === 'function') toggleInternalFileOption(); }
                 const msg = res.data;
                 if (msg) { msg.fromUserId = msg.fromUserId || (msg.fromUser && msg.fromUser.id); appendInternalMessage(msg); }
                 loadInternalThreads();
@@ -1814,7 +2180,10 @@
             if (popup) { popup.style.display = 'none'; popup.classList.remove('minimized'); }
             const btn = document.getElementById('internalChatFloatingBtn');
             if (btn) btn.classList.remove('internal-chat-floating-btn-open');
-            currentInternalThreadId = null;
+            const onInternalPage = document.querySelector('.nav-link.active');
+            if (!onInternalPage || onInternalPage.getAttribute('data-page') !== 'internal-chat') {
+                currentInternalThreadId = null;
+            }
         }
         function toggleInternalChatPopupMinimize() {
             const popup = document.getElementById('internalChatPopup');

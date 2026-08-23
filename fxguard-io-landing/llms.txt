@@ -1,0 +1,43 @@
+# FXGuard — llms.txt
+# https://fxguard.io/llms.txt
+# Last updated: 2026-08-24
+
+> FXGuard is a WhatsApp CRM for exchange, remittance and finance desks (and other teams we tailor). Marketing site: https://fxguard.io — Staff panel: https://app.fxguard.io
+
+## Primary pages (English canonical; add ?lang=fa|tr|ar|ru for translations)
+
+- Home: https://fxguard.io/
+- WhatsApp CRM product: https://fxguard.io/whatsapp-crm
+- Pricing (Cloud from $49/mo): https://fxguard.io/pricing
+- Live demo: https://fxguard.io/live-demo
+- Products overview: https://fxguard.io/products
+- Self-hosted license: https://fxguard.io/self-hosted
+- Managed hosting: https://fxguard.io/managed-hosting
+- Contact / sales: https://fxguard.io/contact
+- Blog: https://fxguard.io/blog
+- Procurement / security one-pager: https://fxguard.io/procurement
+
+## Market landings (GEO-specific HTML, not language variants)
+
+- Turkey: https://fxguard.io/tr/
+- UAE: https://fxguard.io/ae/
+- Iran: https://fxguard.io/ir/
+- Europe: https://fxguard.io/eu/
+
+## Legal (app store requirements)
+
+- Privacy: https://fxguard.io/privacy
+- Terms: https://fxguard.io/terms
+- Account deletion: https://fxguard.io/account-deletion
+
+## Key facts for assistants
+
+- Cloud Start: $49/month, 1 branch, up to 3 staff, inbox/tickets/tasks — FX rates module not included on this tier.
+- No public shared demo password on the marketing site; book a guided demo or start a 7-day trial on your own number.
+- WhatsApp: two honest paths — QR/Web gateway (informal session) or official Meta Cloud API for serious broadcast use.
+- Seller: ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti. (product brand: FXGuard), Esenyurt / Istanbul.
+- Sales: sales@fxguard.io · Support: support@fxguard.io · WhatsApp: +90 501 067 6486
+
+## Sitemap
+
+https://fxguard.io/sitemap.xml

@@ -10,7 +10,8 @@ const { canAccessConversationAsync } = require('../lib/conversationAccess');
 const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('../lib/outboundMessagePrefix');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
-const { asCallId, callUserRoom, normalizeCallSignal } = require('../lib/internalCallSignaling');
+const { asCallId, callUserRoom, normalizeCallSignal, canRelayCallSignal } = require('../lib/internalCallSignaling');
+const { countUserSockets } = require('../lib/staffPresence');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -60,13 +61,18 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 const connectedUser = await User.findByPk(socket.userId, {
                     attributes: ['id', 'name', 'email', 'username', 'role', 'departmentId', 'branchId', 'status'],
                 });
-                if (connectedUser && connectedUser.status === 'offline') {
-                    await connectedUser.update({ status: 'online' });
-                    await notifyStaffPresence(io, connectedUser, {
-                        event: 'online',
-                        status: 'online',
-                        previousStatus: 'offline',
-                    });
+                if (connectedUser) {
+                    const prev = connectedUser.status;
+                    const updates = { lastSeenAt: new Date() };
+                    if (prev === 'offline') updates.status = 'online';
+                    await connectedUser.update(updates);
+                    if (prev === 'offline') {
+                        await notifyStaffPresence(io, connectedUser, {
+                            event: 'online',
+                            status: 'online',
+                            previousStatus: 'offline',
+                        });
+                    }
                 }
             } catch (e) {
                 logger.warn('Socket connect presence update:', e.message);
@@ -173,25 +179,38 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
             }
         });
 
-        socket.on('call_offer', (data) => {
+        socket.on('call_offer', async (data) => {
             const sig = normalizeCallSignal(data, socket.userId);
             if (!sig || !sig.sdp) return;
+            if (!(await canRelayCallSignal(sig.fromUserId, sig.toUserId, sig.threadId))) return;
             if (!callRooms[sig.threadId]) {
                 callRooms[sig.threadId] = { participants: new Set(), type: sig.type, createdAt: Date.now() };
             }
             callRooms[sig.threadId].participants.add(sig.fromUserId);
             const dest = callUserRoom(sig.toUserId);
             if (dest) io.to(dest).emit('call_offer', { fromUserId: sig.fromUserId, threadId: sig.threadId, type: sig.type, sdp: sig.sdp });
+            try {
+                const pushNotificationService = require('../services/pushNotificationService');
+                User.findByPk(sig.fromUserId, { attributes: ['name', 'email'] }).then((fromUser) => {
+                    const fromName = (fromUser && (fromUser.name || fromUser.email)) || '';
+                    return pushNotificationService.notifyCallPush({
+                        userId: sig.toUserId,
+                        fromName,
+                        threadId: sig.threadId,
+                        callType: sig.type
+                    });
+                }).catch(() => {});
+            } catch (_) {}
         });
-        socket.on('call_answer', (data) => {
+        socket.on('call_answer', async (data) => {
             const sig = normalizeCallSignal(data, socket.userId);
             if (!sig || !sig.sdp) return;
+            if (!(await canRelayCallSignal(sig.fromUserId, sig.toUserId, sig.threadId))) return;
             const room = callRooms[sig.threadId];
             const alreadyIn = room ? Array.from(room.participants) : [];
             if (room) room.participants.add(sig.fromUserId);
             const dest = callUserRoom(sig.toUserId);
             if (dest) io.to(dest).emit('call_answer', { fromUserId: sig.fromUserId, threadId: sig.threadId, sdp: sig.sdp });
-            // Mesh: other people already in the call must connect to the answerer
             alreadyIn.forEach((uid) => {
                 if (uid !== sig.toUserId && uid !== sig.fromUserId) {
                     const peerRoom = callUserRoom(uid);
@@ -199,9 +218,10 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }
             });
         });
-        socket.on('call_ice', (data) => {
+        socket.on('call_ice', async (data) => {
             const sig = normalizeCallSignal(data, socket.userId);
             if (!sig) return;
+            if (!(await canRelayCallSignal(sig.fromUserId, sig.toUserId, sig.threadId))) return;
             const dest = callUserRoom(sig.toUserId);
             if (dest) io.to(dest).emit('call_ice', { fromUserId: sig.fromUserId, threadId: sig.threadId, candidate: sig.candidate });
         });
@@ -219,15 +239,17 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 if (room.participants.size === 0) delete callRooms[threadId];
             }
         });
-        socket.on('call_reject', (data) => {
+        socket.on('call_reject', async (data) => {
             const sig = normalizeCallSignal(data, socket.userId);
             if (!sig) return;
+            if (!(await canRelayCallSignal(sig.fromUserId, sig.toUserId, sig.threadId))) return;
             const dest = callUserRoom(sig.toUserId);
             if (dest) io.to(dest).emit('call_reject', { fromUserId: sig.fromUserId, threadId: sig.threadId });
         });
         socket.on('call_invite', async (data) => {
             const sig = normalizeCallSignal(data, socket.userId);
             if (!sig) return;
+            if (!(await canRelayCallSignal(sig.fromUserId, sig.toUserId, sig.threadId))) return;
             const room = callRooms[sig.threadId];
             if (!room || !room.participants.has(sig.fromUserId)) return;
             const fromUser = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
@@ -242,13 +264,28 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     participantIds: sig.participantIds || Array.from(room.participants)
                 });
             }
+            try {
+                const pushNotificationService = require('../services/pushNotificationService');
+                pushNotificationService.notifyCallPush({
+                    userId: sig.toUserId,
+                    fromName: fromUserName,
+                    threadId: sig.threadId,
+                    callType: (data && data.type) || room.type || 'voice'
+                }).catch(() => {});
+            } catch (_) {}
         });
-        socket.on('call_invite_accept', (data) => {
+        socket.on('call_invite_accept', async (data) => {
             const threadId = asCallId(data && data.threadId);
             if (!threadId) return;
+            const me = asCallId(socket.userId);
+            const { InternalThreadParticipant } = require('../models');
+            const member = await InternalThreadParticipant.findOne({
+                where: { threadId, userId: me },
+                attributes: ['userId'],
+            });
+            if (!member) return;
             const room = callRooms[threadId];
             if (!room) return;
-            const me = asCallId(socket.userId);
             const participants = Array.from(room.participants);
             room.participants.add(me);
             participants.forEach((uid) => {
@@ -309,6 +346,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     delete statusDebounceTimers[socket.userId];
                 }
                 try {
+                    if (countUserSockets(io, socket.userId, socket.id) > 0) return;
                     const disconnectUser = await User.findByPk(socket.userId, {
                         attributes: ['id', 'status', 'name', 'email', 'username', 'role', 'departmentId', 'branchId'],
                     });

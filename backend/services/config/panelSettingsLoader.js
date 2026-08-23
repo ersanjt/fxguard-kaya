@@ -46,6 +46,7 @@ const DEFAULT = {
     iosAppUrl: null,
     androidAppUrl: null,
     navasanApiKey: null,
+    planTier: null,
 };
 
 const MODE_TO_LANGUAGES = {
@@ -140,6 +141,7 @@ async function getPanelSettings() {
         iosAppUrl: row.iosAppUrl || null,
         androidAppUrl: row.androidAppUrl || null,
         navasanApiKey: row.navasanApiKey || null,
+        planTier: row.planTier || null,
     };
 }
 

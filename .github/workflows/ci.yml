@@ -94,3 +94,6 @@ jobs:
       - name: Assemble debug
         working-directory: android-app
         run: ./gradlew :app:assembleDebug --no-daemon
+      - name: Lint debug
+        working-directory: android-app
+        run: ./gradlew :app:lintDebug --no-daemon

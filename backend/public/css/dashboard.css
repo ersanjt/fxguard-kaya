@@ -217,6 +217,29 @@
         .dashboard-attention { padding: 12px 16px; margin-bottom: 16px; background: var(--danger-soft); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius); font-size: 0.9rem; color: var(--text-primary); }
         .dashboard-attention-link { color: var(--accent); font-weight: 600; text-decoration: none; margin: 0 4px; }
         .dashboard-attention-link:hover { text-decoration: underline; }
+        .dashboard-product-fit { margin: 0 0 20px; }
+        .dashboard-commercial-banner { margin: 0 0 16px; }
+        .commercial-home-card { padding: 16px 18px; border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); background: var(--bg-card); }
+        .commercial-home-card h3 { margin: 0 0 8px; font-size: 0.98rem; }
+        .commercial-home-card p { margin: 0 0 12px; font-size: 0.9rem; color: var(--text-secondary); }
+        .commercial-home-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .dashboard-card--locked { cursor: default; opacity: 0.95; border-style: dashed; }
+        .product-fit-card { padding: 16px 18px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); }
+        .product-fit-card--warn { border-color: rgba(245, 158, 11, 0.45); }
+        .whatsapp-trial-banner {
+            margin: 0 0 16px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--bg-card);
+        }
+        .whatsapp-trial-text { margin: 0 0 10px; font-size: 0.92rem; }
+        .contact-funnel-list { list-style: none; margin: 8px 0 0; padding: 0; }
+        .contact-funnel-list li { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 0.88rem; }
+        .product-fit-title { font-size: 0.95rem; margin: 0 0 8px; }
+        .product-fit-share { font-weight: 600; margin: 0 0 6px; }
+        .product-fit-hint, .product-fit-ask { margin: 0 0 10px; font-size: 0.85rem; }
+        .product-fit-actions { display: flex; flex-wrap: wrap; gap: 8px; }
         .dashboard-cards-wrap { margin-top: 8px; }
         .dashboard-load-error { padding: 20px; text-align: center; color: var(--text-secondary); background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; }
         .dashboard-card-group { margin-bottom: 24px; }

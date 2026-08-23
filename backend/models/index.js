@@ -92,6 +92,8 @@ const models = {
     NotificationPreference: require('./NotificationPreference')(sequelize),
     StaffResourceGrant: require('./StaffResourceGrant')(sequelize),
     DevicePushToken: require('./DevicePushToken')(sequelize),
+    ProductFitSurvey: require('./ProductFitSurvey')(sequelize),
+    ContactLead: require('./ContactLead')(sequelize),
 };
 
 // تعریف روابط

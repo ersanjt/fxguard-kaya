@@ -3,6 +3,8 @@
  */
 const express = require('express');
 const rateLimit = require('express-rate-limit');
+const { ContactLead } = require('../models');
+const { normalizeContactPurpose } = require('../lib/contactLead');
 
 const contactLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -42,11 +44,21 @@ function createContactRouter(logger) {
             return res.status(400).json({ error: 'پیام بیش از حد مجاز است.' });
         }
 
-        const purposeVal = ['purchase', 'quote', 'support', 'other'].includes(purpose)
-            ? purpose
-            : 'other';
+        const purposeVal = normalizeContactPurpose(purpose);
 
         try {
+            try {
+                await ContactLead.create({
+                    purpose: purposeVal,
+                    name: nameStr,
+                    email: emailStr,
+                    phone: phone ? String(phone).trim().slice(0, 50) : null,
+                    message: messageStr.slice(0, 2000),
+                    source: 'landing',
+                });
+            } catch (leadErr) {
+                logger.warn('Contact form: lead persist failed', { error: leadErr.message });
+            }
             const emailService = require('../services/emailService');
             const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
             const panelSettings = await getPanelSettings();

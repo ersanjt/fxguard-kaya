@@ -4,6 +4,7 @@
 const models = require('../models');
 const { sequelize, Conversation, Customer, User, Department, WhatsappConfig } = models;
 const { Op } = require('sequelize');
+const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 
 let _cfgCache = null;
 let _cfgCacheAt = 0;
@@ -77,7 +78,7 @@ async function checkUnansweredConversations(io, logger) {
                     });
                     io.emit('conversation_escalated', {
                         conversationId: conv.id,
-                        customer: conv.customer,
+                        customer: publicCustomerSocketPayload(conv.customer),
                         department: targetDeptCache.name,
                         minutesWaiting: minsWaiting
                     });
@@ -86,7 +87,7 @@ async function checkUnansweredConversations(io, logger) {
             } else if (lastIn < alertThreshold && (!conv.unansweredAlertSentAt || new Date(conv.unansweredAlertSentAt) < lastIn)) {
                 const payload = {
                     conversationId: conv.id,
-                    customer: conv.customer,
+                    customer: publicCustomerSocketPayload(conv.customer),
                     minutesWaiting: minsWaiting,
                     assignee: conv.assignee,
                     department: conv.department

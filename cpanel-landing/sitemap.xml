@@ -6,9 +6,39 @@
     <xhtml:link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/?lang=fa"/>
     <xhtml:link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/?lang=tr"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://kaya.fxguard.io/"/>
-    <lastmod>2026-02-23</lastmod>
+    <lastmod>2026-08-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://kaya.fxguard.io/pricing</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaya.fxguard.io/pricing?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/pricing?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/pricing?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kaya.fxguard.io/pricing"/>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://kaya.fxguard.io/whatsapp-crm</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaya.fxguard.io/whatsapp-crm?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/whatsapp-crm?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/whatsapp-crm?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kaya.fxguard.io/whatsapp-crm"/>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://kaya.fxguard.io/procurement</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://kaya.fxguard.io/procurement?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/procurement?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/procurement?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://kaya.fxguard.io/procurement"/>
+    <lastmod>2026-08-18</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://kaya.fxguard.io/contact</loc>

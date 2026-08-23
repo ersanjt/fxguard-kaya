@@ -51,13 +51,17 @@ class SessionStore(context: Context) {
     var token: String?
         get() = secure.getString(KEY_TOKEN, null)
         set(value) {
-            secure.edit().putString(KEY_TOKEN, value).apply()
+            val editor = secure.edit()
+            if (value.isNullOrBlank()) editor.remove(KEY_TOKEN) else editor.putString(KEY_TOKEN, value)
+            editor.apply()
         }
 
     var userJson: String?
         get() = prefs.getString(KEY_USER, null)
         set(value) {
-            prefs.edit().putString(KEY_USER, value).apply()
+            val editor = prefs.edit()
+            if (value.isNullOrBlank()) editor.remove(KEY_USER) else editor.putString(KEY_USER, value)
+            editor.apply()
         }
 
     val isLoggedIn: Boolean get() = !token.isNullOrBlank()

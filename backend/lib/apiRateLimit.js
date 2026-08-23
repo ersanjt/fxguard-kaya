@@ -15,6 +15,7 @@ const STAFF_READ_SKIP_PATHS = new Set([
     '/customers',
     '/conversations',
     '/analytics/dashboard',
+    '/analytics/product-fit',
     '/rates',
     '/rates/ticker-config',
     '/panel-settings/public/branding',
@@ -107,16 +108,17 @@ function normalizeApiPath(req) {
     }
 }
 
-function hasStaffCredential(req) {
-    return Boolean(extractApiBearerOrCookie(req));
-}
-
 function shouldSkipStaffApiRateLimit(req) {
     if (!req || String(req.method || '').toUpperCase() !== 'GET') return false;
     if (!STAFF_READ_SKIP_PATHS.has(normalizeApiPath(req))) return false;
-    // Cookie/Bearer present is enough — do not require a verifiable user id.
-    // JWT_SECRET mismatch or an expired token must not send KPI GETs into the write bucket.
-    return hasStaffCredential(req) || Boolean(userIdFromRequest(req));
+    const token = extractApiBearerOrCookie(req);
+    if (!token || !process.env.JWT_SECRET) return false;
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        return !!(decoded && decoded.id && !decoded.totpStep);
+    } catch (_) {
+        return false;
+    }
 }
 
 function resolveApiRateMax() {

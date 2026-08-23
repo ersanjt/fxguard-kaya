@@ -1,2 +1,16 @@
-# Kaya staff — keep Gson models if minify is enabled later
+# Kaya staff — R8 / Play release
+-keepattributes Signature
+-keepattributes *Annotation*
 -keepclassmembers class io.fxguard.kaya.data.models.** { <fields>; }
+-keep class io.fxguard.kaya.data.models.** { *; }
+-keep class io.fxguard.kaya.push.** { *; }
+-keep class io.socket.** { *; }
+-keep class androidx.security.crypto.** { *; }
+-keep class com.google.firebase.** { *; }
+-keep class com.google.gson.** { *; }
+-keep class okhttp3.** { *; }
+-keep class okio.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-dontwarn org.json.**

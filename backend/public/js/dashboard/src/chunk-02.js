@@ -9,7 +9,7 @@
                     });
                     socket.on('unanswered_alert', function(data) {
                         playInternalChatSound();
-                        const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         const mins = data.minutesWaiting || 0;
                         const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
                         const msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + ' — ' + waitStr;
@@ -19,7 +19,7 @@
                     });
                     socket.on('conversation_escalated', function(data) {
                         playInternalChatSound();
-                        const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         const dept = data.department || (LANG === 'fa' ? 'پشتیبانی' : 'Support');
                         const msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
                         toast(msg, 10000);
@@ -72,12 +72,12 @@
             try {
                 if (!('Notification' in window) || Notification.permission === 'denied') return;
                 if (Notification.permission === 'default') { Notification.requestPermission(function(p) { if (p === 'granted' && data) showDesktopNotification(data); }); return; }
-                const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
                 const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/brand/kaya-favicon-32.png';
                 const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: notifIcon });
-                n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, data.customer && data.customer.phone, data.customer && data.customer.profilePic); }, 200); } };
+                n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, typeof customerUiPhone === 'function' ? customerUiPhone(data.customer) : '', data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
         }
 
@@ -228,13 +228,42 @@
             const showText = !isInternalPlaceholderContent(m && m.content) || atts.length === 0;
             return (showText ? '<div>' + linkifyMessageContent((m && m.content) || '') + '</div>' : '') + attHtml;
         }
-        function buildInternalMessageHtml(m, me) {
-            const isOut = m.fromUserId === me;
-            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body">' + internalMessageInnerHtml(m) + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+        function buildInternalMessageHtml(m, me, clustered) {
+            const isOut = String(m.fromUserId) === String(me);
+            const avatarHtml = clustered ? '<span class="msg-avatar" aria-hidden="true"></span>' : internalMsgAvatarHtml(m.fromUser);
+            const nameBit = (!isOut && !clustered && m.fromUser && m.fromUser.name) ? (escapeHtml(m.fromUser.name) + ' · ') : '';
+            const timeStr = nameBit + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            const day = (typeof internalDayKey === 'function') ? internalDayKey(m.createdAt) : '';
+            return '<div class="msg ' + (isOut ? 'out' : 'in') + (clustered ? ' is-clustered' : '') + '" data-from="' + escapeHtml(String(m.fromUserId || '')) + '" data-day="' + escapeHtml(day) + '">' + avatarHtml + '<div class="msg-body">' + internalMessageInnerHtml(m) + '<div class="time">' + timeStr + '</div></div></div>';
+        }
+        let internalChatStickBottom = true;
+        function updateInternalChatJumpBtn() {
+            const list = document.getElementById('internalChatMessages');
+            const jump = document.getElementById('internalChatJumpLatest');
+            if (!jump) return;
+            if (!list || internalChatStickBottom) jump.setAttribute('hidden', '');
+            else jump.removeAttribute('hidden');
+        }
+        function bindInternalChatScroll() {
+            const list = document.getElementById('internalChatMessages');
+            if (!list || list._internalScrollBound) return;
+            list._internalScrollBound = true;
+            list.addEventListener('scroll', function() {
+                const gap = list.scrollHeight - list.scrollTop - list.clientHeight;
+                internalChatStickBottom = gap < 72;
+                updateInternalChatJumpBtn();
+            }, { passive: true });
+        }
+        function scrollInternalChatToBottom(force) {
+            const list = document.getElementById('internalChatMessages');
+            if (!list) return;
+            if (!force && !internalChatStickBottom) { updateInternalChatJumpBtn(); return; }
+            list.scrollTop = list.scrollHeight;
+            internalChatStickBottom = true;
+            updateInternalChatJumpBtn();
         }
         function toggleInternalFileOption() {
+            if (typeof updateInternalFileChip === 'function') { updateInternalFileChip(); return; }
             const fi = document.getElementById('internalChatFile');
             const opt = document.getElementById('internalChatFileOption');
             if (opt) opt.style.display = (fi && fi.files && fi.files[0]) ? 'inline' : 'none';
@@ -245,9 +274,17 @@
             const emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
             const me = (currentUser && currentUser.id) || '';
-            const html = buildInternalMessageHtml(m, me);
+            const last = list.querySelector('.msg:last-of-type');
+            const day = (typeof internalDayKey === 'function') ? internalDayKey(m.createdAt) : '';
+            const lastDay = last ? last.getAttribute('data-day') : '';
+            const clustered = !!(last && last.getAttribute('data-from') === String(m.fromUserId || '') && lastDay === day);
+            var html = '';
+            if (day && day !== lastDay && typeof formatInternalDayLabel === 'function') {
+                html += '<div class="internal-chat-day-sep"><span>' + escapeHtml(formatInternalDayLabel(m.createdAt)) + '</span></div>';
+            }
+            html += buildInternalMessageHtml(m, me, clustered);
             list.insertAdjacentHTML('beforeend', html);
-            list.scrollTop = list.scrollHeight;
+            scrollInternalChatToBottom(String(m.fromUserId) === String(me));
         }
         const STAFF_ACTIVITY_INTERVAL_VISIBLE = 15000;
         const STAFF_ACTIVITY_INTERVAL_HIDDEN = 30000;
@@ -918,6 +955,7 @@
             return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>';
         }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
+        function userDisplayHtml(u) { return escapeHtml(userDisplay(u)); }
 
         function refreshDashboard() {
             const btn = document.getElementById('dashboardRefreshBtn');
@@ -927,7 +965,7 @@
             }).catch(function() { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } });
         }
         function setDashboardError(container, cardsTitleEl, message) {
-            if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || t('loading_err')) + '</div>';
+            if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(message || t('loading_err')) + '</div>';
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         function dashFormatNum(v) {
@@ -978,8 +1016,15 @@
             if (!container) return;
             const seq = ++_loadDashboardSeq;
             if (!currentUser || !currentUser.id) {
+                if (kpiPrimaryEl && !kpiPrimaryEl.innerHTML) kpiPrimaryEl.innerHTML = typeof dashboardSummarySkeleton === 'function' ? dashboardSummarySkeleton(4) : '';
+                if (summaryEl && !summaryEl.innerHTML) summaryEl.innerHTML = typeof dashboardSummarySkeleton === 'function' ? dashboardSummarySkeleton(6) : '';
                 if ((_attempt || 0) < 20) {
                     setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 500);
+                } else {
+                    var waitMsg = LANG === 'fa' ? 'نشست تأیید نشد. صفحه را رفرش کنید.' : 'Session not ready. Please refresh.';
+                    if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + waitMsg + '</div>';
+                    if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
+                    setDashboardError(container, cardsTitleEl, waitMsg);
                 }
                 return;
             }
@@ -1010,6 +1055,7 @@
                 { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user' },
                 { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat' },
                 { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart' },
+                { page: 'system-status', section: 'system_status', title: t('nav_system_status'), icon: 'icon-chart' },
                 { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online' },
                 { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings' }
             ];
@@ -1017,7 +1063,7 @@
                 { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
                 { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
                 { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
-                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'staff-activity', 'announcements'] },
+                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity', 'announcements'] },
                 { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'panel-settings'] }
             ];
             function cardStatText(c, stats) {
@@ -1038,17 +1084,23 @@
                 stats = stats || {};
                 const defByPage = {};
                 CARD_DEFS.forEach(function(c) { defByPage[c.page] = c; });
+                const fxLocked = stats.planLimits && stats.planLimits.fxEnabled === false;
+                const hidden = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
                 let html = '';
                 CARD_GROUPS.forEach(function(grp) {
                     let groupHtml = '';
                     grp.pages.forEach(function(page) {
                         const c = defByPage[page];
                         if (!c || !can(c.section)) return;
+                        if (hidden.indexOf(page) >= 0 || (page === 'rates-charts' && hidden.indexOf('rates') >= 0)) return;
                         const stat = cardStatText(c, stats);
                         const badgeWarn = c.badgeWarn && c.statKey === 'unreadConversations' && n(stats.unreadConversations) > 0;
                         const badge = stat ? ('<span class="card-badge' + (badgeWarn ? ' warn' : '') + '">' + escapeHtml(stat) + '</span>') : '';
                         groupHtml += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (stat ? '<p class="card-meta">' + escapeHtml(stat) + '</p>' : '') + badge + '</a>';
                     });
+                    if (!groupHtml && grp.key === 'finance' && fxLocked && can('rates')) {
+                        groupHtml = '<div class="dashboard-card dashboard-card--locked"><div class="card-title">' + escapeHtml(t('dash_fx_locked_title')) + '</div><p class="card-meta">' + escapeHtml(t('dash_fx_locked_body')) + '</p></div>';
+                    }
                     if (groupHtml) {
                         html += '<section class="dashboard-card-group"><h4 class="dashboard-group-title" data-i18n="' + grp.titleKey + '">' + t(grp.titleKey) + '</h4><div class="dashboard-cards-in-group">' + groupHtml + '</div></section>';
                     }
@@ -1140,6 +1192,109 @@
             }
             paintCards(stats);
             updateNavBadges(stats);
+            renderProductFitCard(stats.productFit);
+            renderContactFunnelCard(stats.contactFunnel);
+            renderCommercialBanner(stats.planLimits, stats.whatsappTrial);
+        }
+
+        function commercialHomeKind(plan, trial) {
+            var status = trial && trial.status;
+            if (status === 'active') return 'trial_active';
+            if (status === 'expired') return 'trial_expired';
+            if (plan && plan.tier === 'start') return 'start';
+            return 'none';
+        }
+
+        function renderCommercialBanner(plan, trial) {
+            var el = document.getElementById('dashboardCommercialBanner');
+            if (!el) return;
+            var kind = commercialHomeKind(plan, trial);
+            if (kind === 'none') {
+                el.hidden = true;
+                el.innerHTML = '';
+                return;
+            }
+            var title = '';
+            var body = '';
+            var actions = '';
+            if (kind === 'trial_active') {
+                title = t('dash_trial_title');
+                body = t('whatsapp_trial_active').replace('{days}', String(trial.remainingDays != null ? trial.remainingDays : trial.days));
+                actions = '<a href="#whatsapp" class="btn-secondary btn-sm">' + escapeHtml(t('dash_trial_open_wa')) + '</a>';
+                if (trial.canConvert) {
+                    actions += '<button type="button" class="btn-primary btn-sm" id="btnDashTrialConvert">' + escapeHtml(t('whatsapp_trial_convert')) + '</button>';
+                }
+            } else if (kind === 'trial_expired') {
+                title = t('dash_trial_expired_title');
+                body = t('whatsapp_trial_expired');
+                actions = '<a href="#whatsapp" class="btn-secondary btn-sm">' + escapeHtml(t('dash_trial_open_wa')) + '</a>';
+            } else {
+                title = t('dash_plan_start_title');
+                var staffCap = plan.staffLimit == null ? '∞' : String(plan.staffLimit);
+                var branchCap = plan.branchLimit == null ? '∞' : String(plan.branchLimit);
+                var staff = (plan.staffCount != null ? plan.staffCount : '—') + ' / ' + staffCap;
+                var branches = (plan.branchCount != null ? plan.branchCount : '—') + ' / ' + branchCap;
+                body = t('dash_plan_start_body').replace('{staff}', staff).replace('{branches}', branches);
+                if (typeof canAccessSection === 'function' && canAccessSection('panel_settings')) {
+                    actions += '<a href="#panel-settings" class="btn-secondary btn-sm">' + escapeHtml(t('dash_plan_open_settings')) + '</a>';
+                }
+                actions += '<a href="/procurement" target="_blank" rel="noopener" class="btn-secondary btn-sm">' + escapeHtml(t('dash_plan_procurement')) + '</a>';
+            }
+            el.innerHTML = '<div class="commercial-home-card"><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(body) + '</p><div class="commercial-home-actions">' + actions + '</div></div>';
+            el.hidden = false;
+        }
+
+        function renderContactFunnelCard(funnel) {
+            var el = document.getElementById('dashboardContactFunnel');
+            if (!el) return;
+            if (!funnel) { el.hidden = true; el.innerHTML = ''; return; }
+            var by = funnel.byPurpose || {};
+            var keys = ['demo', 'trial', 'purchase', 'quote', 'license', 'managed', 'support', 'other'];
+            var rows = keys.map(function(k) {
+                var n = by[k] || 0;
+                return '<li><span>' + escapeHtml(t('lead_purpose_' + k)) + '</span><strong>' + n + '</strong></li>';
+            }).join('');
+            el.innerHTML = '<div class="product-fit-card">' +
+                '<h3 class="product-fit-title">' + escapeHtml(t('contact_funnel_title')) + '</h3>' +
+                '<p class="product-fit-share">' + escapeHtml(String(funnel.total || 0)) + ' — ' + escapeHtml(t('contact_funnel_total')) + '</p>' +
+                (funnel.stripePaid ? ('<p class="product-fit-hint text-muted">' + escapeHtml(String(funnel.stripePaid)) + ' — ' + escapeHtml(t('contact_funnel_stripe')) + '</p>') : '') +
+                '<ul class="contact-funnel-list">' + rows + '</ul>' +
+                '</div>';
+            el.hidden = false;
+        }
+
+        function renderProductFitCard(fit) {
+            var el = document.getElementById('dashboardProductFit');
+            if (!el) return;
+            if (!fit) { el.hidden = true; el.innerHTML = ''; return; }
+            var pct = fit.panelSharePct;
+            var shareLine = (pct == null)
+                ? escapeHtml(t('product_fit_none'))
+                : (escapeHtml(String(pct)) + '% — ' + escapeHtml(t('product_fit_share')));
+            var warn = pct != null && fit.panelShareOk === false;
+            var html = '<div class="product-fit-card' + (warn ? ' product-fit-card--warn' : '') + '">' +
+                '<h3 class="product-fit-title">' + escapeHtml(t('product_fit_title')) + '</h3>' +
+                '<p class="product-fit-share">' + shareLine + '</p>' +
+                '<p class="product-fit-hint text-muted">' + escapeHtml(t('product_fit_target')) + '</p>';
+            if (fit.seanEllis && fit.seanEllis.ask) {
+                html += '<p class="product-fit-ask">' + escapeHtml(t('product_fit_ask')) + '</p>' +
+                    '<div class="product-fit-actions">' +
+                    '<button type="button" class="btn-secondary btn-sm" data-fit-answer="very">' + escapeHtml(t('product_fit_very')) + '</button>' +
+                    '<button type="button" class="btn-secondary btn-sm" data-fit-answer="somewhat">' + escapeHtml(t('product_fit_somewhat')) + '</button>' +
+                    '<button type="button" class="btn-secondary btn-sm" data-fit-answer="not">' + escapeHtml(t('product_fit_not')) + '</button>' +
+                    '</div>';
+            }
+            html += '</div>';
+            el.innerHTML = html;
+            el.hidden = false;
+            el.querySelectorAll('[data-fit-answer]').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var answer = btn.getAttribute('data-fit-answer');
+                    apiFetch('/api/analytics/product-fit/survey', { method: 'POST', body: JSON.stringify({ answer: answer }) }).then(function(res) {
+                        if (res.ok && res.data && res.data.productFit) renderProductFitCard(res.data.productFit);
+                    });
+                });
+            });
         }
 
         window._marqueeAnnouncements = [];
@@ -1571,6 +1726,24 @@
                     }
                     return;
                 }
+                // سایدبار و تب موبایل — بعد از حذف onclick توسط CSP هم باید کار کنند
+                const mobileMore = targetEl && targetEl.closest && targetEl.closest('.mobile-tab-item[data-page="more"]');
+                if (mobileMore) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof toggleSidebarMobile === 'function') toggleSidebarMobile();
+                    return;
+                }
+                const navGo = targetEl && targetEl.closest && targetEl.closest('.sidebar .nav-link[data-page], .mobile-tab-item[data-page]');
+                if (navGo && typeof showPage === 'function') {
+                    var navPage = navGo.getAttribute('data-page') || '';
+                    if (navPage && navPage !== 'more') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showPage(navPage);
+                        return;
+                    }
+                }
                 // داشبورد — کارت‌ها، آمار، اقدام سریع، نوار «نیاز به توجه» (بدون inline onclick)
                 const dashCard = targetEl && targetEl.closest && targetEl.closest('.dashboard-card[data-page]');
                 if (dashCard && typeof showPage === 'function') {
@@ -1732,9 +1905,19 @@
                     e.preventDefault(); e.stopPropagation(); submitTicketReply();
                     return;
                 }
+                const taskCardDelete = target.closest('.task-card-delete[data-task-id]');
+                if (taskCardDelete && typeof deleteTaskConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    deleteTaskConfirm(taskCardDelete.getAttribute('data-task-id'));
+                    return;
+                }
+                if (target.closest('#taskDeleteBtn') && typeof deleteTaskConfirm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); deleteTaskConfirm();
+                    return;
+                }
                 // کلیک روی آیتم تسک — باز کردن جزئیات
                 const taskItem = target.closest('.task-list-item[data-task-id]');
-                if (taskItem && typeof loadTaskDetail === 'function') {
+                if (taskItem && !target.closest('.task-card-delete') && typeof loadTaskDetail === 'function') {
                     var tid = taskItem.getAttribute('data-task-id');
                     if (tid) { e.preventDefault(); e.stopPropagation(); loadTaskDetail(tid); }
                     return;
@@ -1810,6 +1993,8 @@
                 if (target.closest('#btnStartWhatsApp') && typeof startWhatsAppClient === 'function') { e.preventDefault(); e.stopPropagation(); startWhatsAppClient(); return; }
                 if (target.closest('#btnRefreshStatus') && typeof refreshWhatsappStatusDebounced === 'function') { e.preventDefault(); e.stopPropagation(); refreshWhatsappStatusDebounced(); return; }
                 if (target.closest('#btnDisconnectWhatsApp') && typeof disconnectWhatsApp === 'function') { e.preventDefault(); e.stopPropagation(); disconnectWhatsApp(); return; }
+                if (target.closest('#btnWhatsappTrialStart') && typeof startWhatsappOwnNumberTrial === 'function') { e.preventDefault(); e.stopPropagation(); startWhatsappOwnNumberTrial(); return; }
+                if (target.closest('#btnWhatsappTrialConvert, #btnDashTrialConvert') && typeof convertWhatsappOwnNumberTrial === 'function') { e.preventDefault(); e.stopPropagation(); convertWhatsappOwnNumberTrial(); return; }
                 if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }
                 if (target.closest('#whatsappEditDeptsLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('departments'); return; }
                 // ذخیره تنظیمات واتساپ
@@ -1863,9 +2048,17 @@
                 }
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی
                 if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
+                if (target.closest('.internal-chat-empty-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
+                if (target.id === 'internalNewChatForm' && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
+                if ((target.closest('#btnInternalCancelChat') || target.closest('#btnInternalCancelChatX')) && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
+                if (target.id === 'internalNewChatForm' && typeof hideNewChatForm === 'function') { e.preventDefault(); hideNewChatForm(); return; }
                 if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
+                if (target.closest('#internalChatJumpLatest') && typeof scrollInternalChatToBottom === 'function') { e.preventDefault(); e.stopPropagation(); scrollInternalChatToBottom(true); return; }
                 if (target.closest('.internal-chat-attach-btn-sm')) { e.preventDefault(); e.stopPropagation(); const f = document.getElementById('internalChatFile'); if (f) f.click(); return; }
-                if (target.closest('.internal-chat-send-btn-sm') && typeof sendInternalMessage === 'function') { e.preventDefault(); e.stopPropagation(); sendInternalMessage(); return; }
+                if (target.closest('.internal-chat-send-btn-sm') && typeof sendInternalMessage === 'function') {
+                    if (target.closest('.internal-chat-send-btn-sm').classList.contains('is-idle')) { e.preventDefault(); return; }
+                    e.preventDefault(); e.stopPropagation(); sendInternalMessage(); return;
+                }
                 if (target.closest('#internalChatFloatingBtn') && typeof toggleInternalChatFloating === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatFloating(); return; }
                 if (target.closest('.internal-chat-popup-minimize') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
                 if (target.closest('.internal-chat-popup-expand') && typeof openInternalChatFromPopup === 'function') { e.preventDefault(); e.stopPropagation(); openInternalChatFromPopup(); return; }
@@ -1876,10 +2069,29 @@
                 if (internalThreadItem && typeof openInternalThread === 'function') { var tid = internalThreadItem.getAttribute('data-id'); if (tid) { e.preventDefault(); e.stopPropagation(); openInternalThread(tid); } return; }
                 const popupThreadItem = target.closest('.internal-chat-popup-thread-item[data-id]');
                 if (popupThreadItem && typeof selectThreadInPopup === 'function') { const pid = popupThreadItem.getAttribute('data-id'); if (pid) { e.preventDefault(); e.stopPropagation(); selectThreadInPopup(pid); } return; }
-                if (target.closest('.internal-chat-popup-new-btn')) { e.preventDefault(); e.stopPropagation(); if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup(); if (typeof showPage === 'function') showPage('internal-chat'); return; }
+                if (target.closest('.internal-chat-popup-new-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup();
+                    if (typeof showPage === 'function') showPage('internal-chat');
+                    setTimeout(function() { if (typeof showNewChatForm === 'function') showNewChatForm(); }, 200);
+                    return;
+                }
                 if (target.closest('#btnInternalStartChat') && typeof startInternalChat === 'function') { e.preventDefault(); e.stopPropagation(); startInternalChat(); return; }
-                if (target.closest('#btnInternalCancelChat') && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
-                if (target.closest('#internalChatManageBtn') && typeof showInternalThreadManageModal === 'function') { e.preventDefault(); e.stopPropagation(); showInternalThreadManageModal(); return; }
+                if ((target.closest('#internalChatHeaderPerson') || target.closest('#internalChatManageBtn') || target.closest('[data-action="manage-thread"]')) && typeof showInternalThreadManageModal === 'function') { e.preventDefault(); e.stopPropagation(); showInternalThreadManageModal(); return; }
+                if (target.closest('#internalChatFileChipClear')) {
+                    e.preventDefault(); e.stopPropagation();
+                    const f = document.getElementById('internalChatFile');
+                    if (f) f.value = '';
+                    if (typeof toggleInternalFileOption === 'function') toggleInternalFileOption();
+                    return;
+                }
+                const chipRm = target.closest('.internal-new-chat-chip-remove[data-user-id]');
+                if (chipRm && typeof setInternalNewChatUserSelected === 'function') {
+                    e.preventDefault(); e.stopPropagation();
+                    setInternalNewChatUserSelected(chipRm.getAttribute('data-user-id'), false);
+                    return;
+                }
                 if (target.closest('#btnInternalRenameThread') && typeof renameInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); renameInternalThread(); return; }
                 if (target.closest('#btnInternalAddMembers') && typeof addInternalThreadMembers === 'function') { e.preventDefault(); e.stopPropagation(); addInternalThreadMembers(); return; }
                 if (target.closest('#btnInternalLeaveThread') && typeof leaveInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); leaveInternalThread(); return; }
@@ -2058,6 +2270,14 @@
                     if (typeof deleteTicketConfirm === 'function') deleteTicketConfirm();
                     return;
                 }
+                else if (target.closest('.task-card-delete[data-task-id]') || target.closest('#taskDeleteBtn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var taskDel = target.closest('.task-card-delete[data-task-id]');
+                    var taskDelId = taskDel ? taskDel.getAttribute('data-task-id') : null;
+                    if (typeof deleteTaskConfirm === 'function') deleteTaskConfirm(taskDelId);
+                    return;
+                }
                 else if (target.closest('#btnTicketReplySubmit') || target.matches('[onclick*="submitTicketReply"]')) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -2106,6 +2326,22 @@
                 }
             }, true); // Use capturing phase to catch before other handlers
             document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    const manage = document.getElementById('internalThreadManageModal');
+                    if (manage && manage.style.display === 'flex' && typeof closeInternalThreadManageModal === 'function') {
+                        e.preventDefault(); closeInternalThreadManageModal(); return;
+                    }
+                    if (typeof hideNewChatForm === 'function') {
+                        const form = document.getElementById('internalNewChatForm');
+                        if (form && form.style.display !== 'none') { e.preventDefault(); hideNewChatForm(); return; }
+                    }
+                    const wrap = document.getElementById('internalChatLayoutWrap');
+                    if (wrap && wrap.classList.contains('internal-chat-mobile-chat-open') && typeof backToInternalChatList === 'function') {
+                        e.preventDefault(); backToInternalChatList();
+                    }
+                }
+            }, true);
+            document.addEventListener('keydown', function(e) {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 const active = document.activeElement;
                 if (!active || !active.closest) return;
@@ -2124,9 +2360,15 @@
                     return;
                 }
                 const taskItem = active.closest('.task-list-item[data-task-id]');
-                if (taskItem && typeof loadTaskDetail === 'function') {
+                if (taskItem && !active.closest('.task-card-delete') && typeof loadTaskDetail === 'function') {
                     const tid = taskItem.getAttribute('data-task-id');
                     if (tid) { e.preventDefault(); loadTaskDetail(tid); }
+                }
+                const threadKey = active.closest('.internal-chat-thread-item[data-id]');
+                if (threadKey && typeof openInternalThread === 'function') {
+                    const tid = threadKey.getAttribute('data-id');
+                    if (tid) { e.preventDefault(); openInternalThread(tid); }
+                    return;
                 }
                 // چت داخلی — Enter برای ارسال پیام
                 if (active.id === 'internalChatInput' && e.key === 'Enter' && !e.shiftKey && typeof sendInternalMessage === 'function') { e.preventDefault(); sendInternalMessage(); return; }
@@ -2135,8 +2377,21 @@
             }, true);
             document.addEventListener('input', function(e) {
                 if (e.target.id === 'internalChatSearch' && typeof filterInternalThreads === 'function') filterInternalThreads(e.target.value);
+                if (e.target.id === 'internalNewChatSearch' && typeof filterInternalNewChatUsers === 'function') filterInternalNewChatUsers(e.target.value);
+                if (e.target.id === 'internalThreadAddSearch' && typeof filterInternalThreadAddMembers === 'function') filterInternalThreadAddMembers(e.target.value);
+                if (e.target.id === 'internalChatInput' && typeof updateInternalComposerState === 'function') updateInternalComposerState();
             }, true);
             document.addEventListener('change', function(e) {
+                if (e.target.classList && e.target.classList.contains('internal-new-chat-user')) {
+                    if (typeof setInternalNewChatUserSelected === 'function') setInternalNewChatUserSelected(e.target.value, e.target.checked);
+                    else {
+                        const row = e.target.closest('.internal-new-chat-user-row');
+                        if (row) row.classList.toggle('is-selected', e.target.checked);
+                    }
+                }
+                if (e.target.classList && e.target.classList.contains('internal-thread-add-user') && typeof setInternalThreadAddUserSelected === 'function') {
+                    setInternalThreadAddUserSelected(e.target.value, e.target.checked);
+                }
                 if (e.target.id === 'internalChatFile' && typeof toggleInternalFileOption === 'function') toggleInternalFileOption();
                 if (e.target.id === 'internalChatPopupFile') {
                     const f = e.target.files && e.target.files[0];
@@ -2147,6 +2402,24 @@
                     const f = e.target.files && e.target.files[0];
                     const label = document.getElementById('ticketReplyAttachments');
                     if (label) label.textContent = f ? f.name : '';
+                }
+            }, true);
+            document.addEventListener('paste', function(e) {
+                if (!e.target || e.target.id !== 'internalChatInput') return;
+                const items = e.clipboardData && e.clipboardData.items;
+                if (!items) return;
+                for (var i = 0; i < items.length; i++) {
+                    if (items[i].kind === 'file' && items[i].type && items[i].type.indexOf('image/') === 0) {
+                        const file = items[i].getAsFile();
+                        const fi = document.getElementById('internalChatFile');
+                        if (fi && file && typeof DataTransfer !== 'undefined') {
+                            const dt = new DataTransfer();
+                            dt.items.add(file);
+                            fi.files = dt.files;
+                            if (typeof toggleInternalFileOption === 'function') toggleInternalFileOption();
+                        }
+                        break;
+                    }
                 }
             }, true);
         }

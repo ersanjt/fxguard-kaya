@@ -1,0 +1,16 @@
+Kaya Staff, yetkili Kaya CRM çalışanları için resmi iPhone ve iPad portalıdır.
+
+Web panelindeki aynı hesapla giriş yapın. WhatsApp sohbetleri, müşteriler, talepler ve görevler cebinizde.
+
+Bu bir iş aracıdır. Uygulamayı indirmek müşteri hesabı açmaz ve bir kuruluşun verisine erişim vermez. Hesabı yönetici oluşturur.
+
+Özellikler
+• E-posta veya kullanıcı adı, parola, isteğe bağlı TOTP
+• Canlı gelen kutusu, arama ve yanıt
+• Müşteri listesi ve sohbet
+• Mobil web ile aynı gösterge paneli
+• فارسی / English / Türkçe
+• Sunucu URL si (varsayılan https://kaya.fxguard.io)
+
+Gizlilik: jeton Keychain’de, reklam yok.
+https://kaya.fxguard.io/privacy

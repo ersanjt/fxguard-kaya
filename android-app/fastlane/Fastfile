@@ -1,0 +1,40 @@
+# frozen_string_literal: true
+
+default_platform(:android)
+
+platform :android do
+  desc "Build a signed Play App Bundle"
+  lane :bundle do
+    gradle(
+      task: "bundle",
+      build_type: "Release",
+      project_dir: ".",
+    )
+  end
+
+  desc "Upload AAB + listing metadata to Play Internal testing"
+  lane :internal do
+    upload_to_play_store(
+      track: "internal",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: ENV["PLAY_JSON_KEY"] || "fastlane/play-service-account.json",
+      skip_upload_changelogs: false,
+      skip_upload_images: ENV["SKIP_PLAY_IMAGES"] != "0",
+      skip_upload_screenshots: ENV["SKIP_PLAY_SCREENSHOTS"] != "0",
+      release_status: "draft",
+    )
+  end
+
+  desc "Promote Internal track to production (still draft until you publish in Console)"
+  lane :production do
+    upload_to_play_store(
+      track: "production",
+      aab: "app/build/outputs/bundle/release/app-release.aab",
+      json_key: ENV["PLAY_JSON_KEY"] || "fastlane/play-service-account.json",
+      skip_upload_changelogs: false,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      release_status: "draft",
+    )
+  end
+end

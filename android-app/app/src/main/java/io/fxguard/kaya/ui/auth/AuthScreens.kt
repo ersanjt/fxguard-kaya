@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -39,7 +40,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -64,6 +68,7 @@ fun LoginScreen(
     serverUrl: String,
     loading: Boolean,
     error: String?,
+    errorOk: Boolean = false,
     onLang: (String) -> Unit,
     onServer: (String) -> Unit,
     onSubmit: (String, String) -> Unit,
@@ -72,17 +77,23 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var showPass by remember { mutableStateOf(false) }
-    var showServer by remember { mutableStateOf(false) }
     var forgotMode by remember { mutableStateOf(false) }
     val t = { k: String -> L10n.t(lang, k) }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val uriHandler = LocalUriHandler.current
+    val privacyUrl = serverUrl.trimEnd('/') + "/privacy"
+    val submitLogin = {
+        keyboard?.hide()
+        onSubmit(email.trim(), pass)
+    }
 
     KayaBackdrop {
         Column(
             Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.Center,
+                .padding(horizontal = 20.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
@@ -125,25 +136,35 @@ fun LoginScreen(
 
                 if (forgotMode) {
                     KayaField(email, { email = it }, t("login_email"), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-                    ErrorText(error)
+                    ErrorText(error, success = errorOk)
                     Spacer(Modifier.height(14.dp))
-                    KayaPrimaryButton(t("forgot_send"), loading) { onForgot(email.trim()) }
+                    KayaPrimaryButton(t("forgot_send"), loading) {
+                        keyboard?.hide()
+                        onForgot(email.trim())
+                    }
                     TextButton(onClick = { forgotMode = false }) { Text(t("back"), color = KayaColors.Text2) }
                 } else {
                     Text(t("login_title"), color = KayaColors.Text, fontSize = 18.sp, fontWeight = FontWeight.Medium)
                     Spacer(Modifier.height(14.dp))
-                    KayaField(email, { email = it }, t("login_email"))
+                    KayaField(
+                        email,
+                        { email = it },
+                        t("login_email"),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                    )
                     Spacer(Modifier.height(12.dp))
                     KayaField(
                         value = pass,
                         onValueChange = { pass = it },
                         label = t("login_pass"),
                         visualTransformation = if (showPass) VisualTransformation.None else PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { submitLogin() }),
                         trailing = {
                             IconButton(onClick = { showPass = !showPass }) {
                                 Icon(
                                     if (showPass) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                                    contentDescription = null,
+                                    contentDescription = if (showPass) t("toggle_hide") else t("toggle_show"),
                                     tint = KayaColors.Text2,
                                 )
                             }
@@ -152,14 +173,12 @@ fun LoginScreen(
                     ErrorText(error)
                     Spacer(Modifier.height(16.dp))
                     KayaPrimaryButton(if (loading) t("login_loading") else t("login_btn"), loading) {
-                        onSubmit(email.trim(), pass)
+                        submitLogin()
                     }
                     TextButton(onClick = { forgotMode = true }) { Text(t("forgot"), color = KayaColors.Accent) }
-                    TextButton(onClick = { showServer = !showServer }) {
-                        Text(t("server"), color = KayaColors.Text3, fontSize = 12.sp)
-                    }
-                    if (showServer) {
-                        KayaField(serverUrl, onServer, t("server"))
+                    KayaField(serverUrl, onServer, t("server"))
+                    TextButton(onClick = { uriHandler.openUri(privacyUrl) }) {
+                        Text(t("privacy"), color = KayaColors.Text3, fontSize = 12.sp)
                     }
                 }
             }

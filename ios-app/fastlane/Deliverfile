@@ -1,0 +1,9 @@
+privacy_url("https://kaya.fxguard.io/privacy")
+support_url("https://kaya.fxguard.io/contact")
+marketing_url("https://kaya.fxguard.io/")
+app_identifier("io.fxguard.kaya.staff")
+submission_information({
+  add_id_info_uses_idfa: false,
+  export_compliance_uses_encryption: false,
+  content_rights_contains_third_party_content: false
+})

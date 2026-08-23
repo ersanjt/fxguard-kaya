@@ -1,0 +1,1 @@
+Kaya Staff 1.1.0: staff sign-in, live inbox, customers, team portal, and push notifications for new work items.

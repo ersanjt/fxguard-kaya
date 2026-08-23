@@ -1,0 +1,24 @@
+Kaya Staff is the official mobile portal for authorized Kaya CRM employees.
+
+Sign in with the same account you use on the web panel. Review WhatsApp conversations, look up customers, check tickets and tasks, and stay aligned with your team while you are away from the desk.
+
+Who it is for
+• Staff of an organization that already uses Kaya CRM
+• Not a public consumer messenger and not a way to create a customer account
+
+What you can do
+• Sign in with email or username, password, and optional authenticator (TOTP)
+• Open the live inbox, search conversations, and reply
+• Browse customers and start a chat from a profile
+• See dashboard stats and the same panel sections as the mobile web app
+• Switch language: فارسی, English, Türkçe
+• Point the app at your organization’s server (default https://kaya.fxguard.io)
+
+Privacy
+The app stores your session token in Android encrypted preferences. There are no ads and no third-party analytics SDKs. Full policy: https://kaya.fxguard.io/privacy
+
+Access
+You need a staff account created by an administrator. Downloading the app does not grant access to any company’s data.
+
+Support: https://kaya.fxguard.io/contact
+Account deletion: https://kaya.fxguard.io/account-deletion

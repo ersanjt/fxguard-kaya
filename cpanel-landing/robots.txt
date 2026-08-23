@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /billing/
 
 Sitemap: https://kaya.fxguard.io/sitemap.xml

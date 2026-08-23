@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { getPermissions, canAccess, canManageUsers, canManageTickets, canViewCustomerPhone, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations, canViewHiddenConversations } = require('../lib/permissions');
+const { assertMatchingTokenVersion } = require('../lib/staffSession');
 
 const { COOKIE_NAME } = require('../lib/authCookie');
 
@@ -54,6 +55,7 @@ async function resolveUserFromToken(token) {
         err.code = 'INACTIVE';
         throw err;
     }
+    assertMatchingTokenVersion(decoded, user);
     return user;
 }
 
@@ -85,6 +87,9 @@ async function authMiddleware(req, res, next) {
     }
     if (lastErr && lastErr.code === 'INACTIVE') {
         return res.status(401).json({ error: 'کاربر مسدود یا نامعتبر است' });
+    }
+    if (lastErr && lastErr.code === 'REVOKED') {
+        return res.status(401).json({ error: 'نشست باطل شده است. دوباره وارد شوید' });
     }
     return res.status(401).json({ error: 'توکن نامعتبر یا منقضی' });
 }

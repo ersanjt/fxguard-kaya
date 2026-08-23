@@ -123,13 +123,13 @@ test('mounted /api/analytics/dashboard GET is skipped when a staff cookie is pre
     })), true);
 });
 
-test('dashboard GET is skipped even if JWT verify fails, as long as a credential exists', () => {
+test('dashboard GET is not skipped for a forged cookie', () => {
     assert.strictEqual(shouldSkipStaffApiRateLimit(reqWith({
         method: 'GET',
         path: '/analytics/dashboard',
         originalUrl: '/api/analytics/dashboard',
         cookies: { crm_token: 'not-a-valid-jwt' }
-    })), true);
+    })), false);
 });
 
 test('default staff API ceiling is high enough for a small office', () => {

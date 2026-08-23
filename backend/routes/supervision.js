@@ -10,6 +10,8 @@ const {
     applyVisibleUserFilter,
     applyVisibleUserIdFilter,
 } = require('../lib/staffSupervision');
+const { mergeLivePresenceWhere, ACTIVE_PRESENCE_STATUSES } = require('../lib/staffPresence');
+const { redactCustomerPhone, redactConversationList } = require('../lib/customerPhoneVisibility');
 
 function ownerOnly(req, res, next) {
     if (!req.canAccess('supervision')) return res.status(403).json({ error: 'دسترسی به بخش نظارت ندارید' });
@@ -58,8 +60,12 @@ router.get('/logins', canViewStaffActivity, async (req, res, next) => {
 router.get('/online', canViewStaffActivity, async (req, res, next) => {
     try {
         const visibleIds = await getVisibleStaffUserIds(req.user, User);
+        const io = req.app && req.app.get('io');
         const where = applyVisibleUserFilter(
-            { isActive: true, status: ['online', 'away', 'busy'] },
+            mergeLivePresenceWhere(
+                { isActive: true, status: { [Op.in]: ACTIVE_PRESENCE_STATUSES } },
+                io
+            ),
             visibleIds
         );
         const users = await User.findAll({
@@ -180,7 +186,12 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res, next) 
             id: c.id,
             status: c.status,
             lastMessageAt: c.lastMessageAt,
-            customer: c.customer ? { id: c.customer.id, name: c.customer.name, phone: c.customer.phone } : null
+            customer: c.customer
+                ? redactCustomerPhone(
+                      { id: c.customer.id, name: c.customer.name, phone: c.customer.phone },
+                      req.user
+                  )
+                : null
         }));
 
         res.json({
@@ -237,7 +248,7 @@ router.get('/conversations', async (req, res, next) => {
             limit,
             offset
         });
-        res.json({ data: rows, total: count, page });
+        res.json({ data: redactConversationList(rows, req.user), total: count, page });
     } catch (err) {
         next(err);
     }

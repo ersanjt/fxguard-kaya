@@ -22,10 +22,11 @@ const {
     PasswordResetToken,
     sequelize,
 } = require('../models');
-const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone, canManageConversations } = require('../lib/permissions');
+const { getPermissions, isMainAdmin, canAssignRole, canMutateUser, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone, canManageConversations } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
 const { normalizePhone, isKnownPhoneDigits, canonicalizePhoneDigits } = require('../lib/phoneUtils');
+const { assertCanAddStaff, planErrorPayload } = require('../lib/planLimits');
 const {
     snapshotUser,
     resolveNames,
@@ -188,6 +189,17 @@ async function patchMe(req, res, next) {
         delete u.totpSecret;
         delete u.telegramLinkToken;
         delete u.telegramLinkTokenExpiry;
+        if (password) {
+            const { issueStaffToken, disconnectStaffSockets } = require('../lib/staffSession');
+            const token = issueStaffToken(user);
+            const { setAuthCookie } = require('../lib/authCookie');
+            setAuthCookie(res, token);
+            u.token = token;
+            try {
+                const io = req.app && req.app.get('io');
+                await disconnectStaffSockets(io, user.id);
+            } catch (_) {}
+        }
         res.json(u);
     } catch (err) {
         next(err);
@@ -253,10 +265,20 @@ async function create(req, res, next) {
         }
         const validRoles = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
         if (role && !validRoles.includes(role)) return res.status(400).json({ error: 'نقش نامعتبر است' });
+        if (role && !canAssignRole(req.user, role)) {
+            return res.status(403).json({ error: 'اجازهٔ اختصاص این نقش را ندارید' });
+        }
         if (departmentId && !isValidUUID(departmentId)) {
             return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
         }
         if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        try {
+            await assertCanAddStaff();
+        } catch (limitErr) {
+            const payload = planErrorPayload(limitErr);
+            if (payload) return res.status(403).json(payload);
+            throw limitErr;
+        }
         const finalBranchId = req.canManageUsers() ? (branchId || null) : (req.user.branchId || null);
         const user = await User.create({
             name,
@@ -321,6 +343,9 @@ async function update(req, res, next) {
                 error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.',
             });
         }
+        if (!canMutateUser(req.user, user)) {
+            return res.status(403).json({ error: 'اجازهٔ ویرایش این کاربر را ندارید' });
+        }
         const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName, whatsappHonorific, phone } = req.body;
         const beforeNames = await resolveNames(user.departmentId, user.branchId);
         const beforeSnap = snapshotUser(user, beforeNames);
@@ -372,6 +397,9 @@ async function update(req, res, next) {
         if (role !== undefined) {
             const validRoles = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
             if (!validRoles.includes(role)) return res.status(400).json({ error: 'نقش نامعتبر است' });
+            if (!canAssignRole(req.user, role)) {
+                return res.status(403).json({ error: 'اجازهٔ اختصاص این نقش را ندارید' });
+            }
             if (user.id === req.userId && req.user.role === 'owner' && role !== 'owner') {
                 return res.status(400).json({ error: 'مالک نمی‌تواند نقش خود را تغییر دهد' });
             }
@@ -389,7 +417,12 @@ async function update(req, res, next) {
             }
             user.branchId = branchId || null;
         }
-        if (isActive !== undefined) user.isActive = !!isActive;
+        if (isActive !== undefined) {
+            if (user.id === req.userId && !isActive) {
+                return res.status(400).json({ error: 'نمی‌توانید حساب خود را غیرفعال کنید' });
+            }
+            user.isActive = !!isActive;
+        }
         if (req.body.password) {
             const pwdCheck = validatePassword(req.body.password);
             if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
@@ -410,6 +443,15 @@ async function update(req, res, next) {
             user.settings = settings;
         }
         await user.save();
+        if (passwordChanged || (isActive !== undefined && !user.isActive)) {
+            try {
+                const { disconnectStaffSockets } = require('../lib/staffSession');
+                const io = req.app && req.app.get('io');
+                await disconnectStaffSockets(io, user.id);
+                const { DevicePushToken } = require('../models');
+                if (DevicePushToken) await DevicePushToken.destroy({ where: { userId: user.id } });
+            } catch (_) {}
+        }
         const actor = req.user;
         setImmediate(async () => {
             try {

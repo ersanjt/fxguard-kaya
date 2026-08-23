@@ -5,7 +5,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>fa</string>
     <key>CFBundleDisplayName</key>
-    <string>Staff</string>
+    <string>Kaya Staff</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -20,13 +20,19 @@
     <string>1.0.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>NSAppTransportSecurity</key>
     <dict>
-        <key>NSAllowsArbitraryLoads</key>
+        <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>برای ارسال پیام صوتی در مکالمات واتساپ به میکروفون نیاز است.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>برای پیوست تصویر و ویدیو از گالری به مکالمه.</string>
     <key>UILaunchScreen</key>
     <dict>
         <key>UIColorName</key>

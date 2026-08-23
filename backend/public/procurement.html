@@ -1,0 +1,89 @@
+<!-- Kaya CRM | Ersan Jahed Tabrizi | docs/CODEBASE-MAP.md | Procurement / security summary -->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <title>Security &amp; procurement summary | Kaya CRM</title>
+    <meta name="description" content="Short security and commercial summary for Kaya CRM invoices: hosting, 2FA, roles, WhatsApp channel paths, subprocessors, and how to request a PO.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://kaya.fxguard.io/procurement">
+    <link rel="alternate" hreflang="en" href="https://kaya.fxguard.io/procurement?lang=en">
+    <link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/procurement?lang=fa">
+    <link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/procurement?lang=tr">
+    <link rel="icon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/legal.css">
+</head>
+<body>
+    <header>
+        <div class="wrap head">
+            <a class="logo" href="/">Kaya CRM</a>
+            <nav class="langs" aria-label="Language">
+                <button type="button" data-lang="en">EN</button>
+                <button type="button" data-lang="fa">فا</button>
+                <button type="button" data-lang="tr">TR</button>
+            </nav>
+        </div>
+    </header>
+    <main class="wrap legal">
+        <p class="meta">Effective 18 August 2026 · Last updated 18 August 2026</p>
+        <h1 data-i18n="h1">Security and procurement summary</h1>
+        <p data-i18n="intro">This one-pager is for finance and IT reviewers who need an invoice or PO. It is not a SOC 2 / ISO certificate. It describes how the hosted product at <a href="https://kaya.fxguard.io">kaya.fxguard.io</a> is run today.</p>
+        <p><button type="button" class="print-btn" data-i18n="print">Print / save PDF</button></p>
+
+        <h2 data-i18n="who_h">Vendor</h2>
+        <p data-i18n="who_p">Operator: <strong>Ersan Jahed Tabrizi</strong> (Kaya CRM). Sales: <a href="mailto:sales@kaya.fxguard.io">sales@kaya.fxguard.io</a> · Support: <a href="mailto:support@kaya.fxguard.io">support@kaya.fxguard.io</a> · WhatsApp: <a href="https://wa.me/905010676486">+90 501 067 6486</a>. Product focus: WhatsApp operations for exchange and remittance desks in Turkey.</p>
+
+        <h2 data-i18n="buy_h">How to buy</h2>
+        <ul>
+            <li data-i18n="buy_1"><strong>Cloud Start — $49 / month</strong> — 1 branch, up to 3 staff. Card checkout when Stripe is enabled; otherwise WhatsApp. Inbox, tickets and tasks. FX rates module is not included.</li>
+            <li data-i18n="buy_2"><strong>Cloud Business — from $249 / month</strong> — up to 3 branches, 10 staff, FX module. Invoice.</li>
+            <li data-i18n="buy_3"><strong>Cloud Multi-branch — from $499 / month</strong> — more branches, written SLA on request. Invoice.</li>
+            <li data-i18n="buy_4"><strong>Self-hosted license — from $4,000 one-time</strong> — your servers. Invoice.</li>
+            <li data-i18n="buy_5"><strong>Managed dedicated — from $800 / month</strong> — we operate a dedicated instance. Invoice.</li>
+        </ul>
+        <p data-i18n="buy_note">Floors are published so procurement is not guessing. Final commercial numbers can be negotiated. New tiers apply to new signups; existing hosted desks are not silently recapped.</p>
+
+        <h2 data-i18n="inv_h">Invoice and PO</h2>
+        <p data-i18n="inv_p">Send company name, billing email, tax ID (if any), plan, and seat/branch count via <a href="/contact">the contact form</a> (purpose: commercial quote / invoice) or WhatsApp. We reply on business days within 24 hours with a written quote. Payment is by invoice for Business and above. Card is only for Cloud Start self-serve. A paid Start checkout does not auto-create a tenant; we provision after the receipt, usually within one business day.</p>
+
+        <h2 data-i18n="sec_h">Access and audit</h2>
+        <ul>
+            <li data-i18n="sec_1"><strong>Staff accounts only.</strong> No public self-signup. Roles from owner through agent. Branch separation.</li>
+            <li data-i18n="sec_2"><strong>2FA:</strong> TOTP (Google Authenticator) on staff accounts.</li>
+            <li data-i18n="sec_3"><strong>Sessions:</strong> JWT in an httpOnly cookie over HTTPS. Production builds do not allow cleartext HTTP.</li>
+            <li data-i18n="sec_4"><strong>Audit:</strong> activity logs on staff actions. Quoted FX rates can be timestamped in the Business plan.</li>
+            <li data-i18n="sec_5"><strong>Customer book:</strong> chats, tags and notes stay on the company panel — not on a personal phone.</li>
+        </ul>
+
+        <h2 data-i18n="wa_h">WhatsApp channel — stated honestly</h2>
+        <p data-i18n="wa_p">Two paths exist. We will not pretend every deployment is a Meta Business Solution Provider.</p>
+        <ul>
+            <li data-i18n="wa_1"><strong>QR / WhatsApp Web gateway</strong> — unofficial session, faster, no Meta Business verification. Bulk/broadcast raises ban risk.</li>
+            <li data-i18n="wa_2"><strong>Official Meta Cloud API</strong> — verified WhatsApp Business API, templates outside the 24-hour window. Required for serious bulk and for buyers who need a compliant channel.</li>
+        </ul>
+
+        <h2 data-i18n="data_h">Data location and subprocessors</h2>
+        <p data-i18n="data_p">Hosted data for kaya.fxguard.io is processed on the production host used for that domain. Self-hosted license customers keep data on their own servers. We do not sell personal data. Typical subprocessors (only as needed to run the service):</p>
+        <ul>
+            <li data-i18n="data_1">Hosting / DNS / TLS for kaya.fxguard.io</li>
+            <li data-i18n="data_2">Email delivery (transactional and sales inbox)</li>
+            <li data-i18n="data_3">Stripe, only if you pay Cloud Start by card — card data stays with Stripe, not on our servers</li>
+            <li data-i18n="data_4">Meta, only if you connect WhatsApp Cloud API</li>
+            <li data-i18n="data_5">Firebase Cloud Messaging, only for the optional staff mobile apps</li>
+        </ul>
+        <p data-i18n="data_no">No advertising SDKs on the staff apps. We do not claim SOC 2 or ISO 27001 on this page. Ask sales if you need a longer questionnaire.</p>
+
+        <h2 data-i18n="trial_h">Trial</h2>
+        <p data-i18n="trial_p">The public panel is for browsing screens. A live WhatsApp line is a guided session (~10 minutes) or a 7-day own-number trial that the owner starts from the WhatsApp page. The trial does not start just because a QR is scanned. After 7 days the unofficial gateway session is logged out unless the owner keeps the line.</p>
+
+        <h2 data-i18n="contact_h">Next step</h2>
+        <p data-i18n="contact_p"><a href="/contact">Request an invoice</a> · <a href="/pricing">Plans</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://wa.me/905010676486">WhatsApp sales</a></p>
+    </main>
+    <footer class="wrap"><p>© 2026 Kaya CRM</p></footer>
+    <script src="/js/legal.js"></script>
+</body>
+</html>

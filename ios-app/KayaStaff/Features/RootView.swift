@@ -21,11 +21,7 @@ struct RootView: View {
             case .totp:
                 TotpView()
             case .app:
-                if model.openChat != nil {
-                    ChatView()
-                } else {
-                    MainShellView()
-                }
+                MainShellView()
             }
         }
         .environment(\.layoutDirection, L10n.isRtl(model.session.language) ? .rightToLeft : .leftToRight)

@@ -55,10 +55,47 @@
         return (num > 0 ? '+' : '−') + out;
     }
 
+    function looksLikePhone(val) {
+        const s = String(val || '').trim();
+        if (!s || /@g\.us$/i.test(s)) return false;
+        const stripped = s
+            .replace(/^مشتری\s+/i, '')
+            .replace(/^customer\s+/i, '')
+            .replace(/^müşteri\s+/i, '')
+            .trim();
+        const compact = stripped.replace(/[\s.()+-]/g, '');
+        if (/^\d{8,15}$/.test(compact)) return true;
+        const digitCount = (stripped.match(/\d/g) || []).length;
+        if (/^\+?\d[\d\s\-()]{7,22}$/.test(stripped) && digitCount >= 8) return true;
+        return false;
+    }
+
+    function customerDisplayName(cust, opts) {
+        opts = opts || {};
+        const seePhone = !!opts.seePhone;
+        const fallback = opts.fallback || 'مشتری';
+        const c = cust || {};
+        const rawName = String(c.name || '').trim();
+        const phone = String(c.phone || '').trim();
+        if (rawName && (seePhone || !looksLikePhone(rawName))) return rawName;
+        if (seePhone && phone && !/@g\.us$/i.test(phone)) return phone;
+        return fallback;
+    }
+
+    function visibleCustomerPhone(cust, seePhone) {
+        if (!seePhone) return '';
+        const p = String((cust && cust.phone) || '').trim();
+        if (!p || /@g\.us$/i.test(p)) return '';
+        return p;
+    }
+
     window.CRM = window.CRM || {};
     window.CRM.Utils = {
         escapeHtml: escapeHtml,
         formatPrice: formatPrice,
         formatChange: formatChange,
+        looksLikePhone: looksLikePhone,
+        customerDisplayName: customerDisplayName,
+        visibleCustomerPhone: visibleCustomerPhone,
     };
 })();

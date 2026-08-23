@@ -1,0 +1,19 @@
+Kaya Staff is a workplace portal for employees of organizations that already use Kaya CRM (https://kaya.fxguard.io). It is not a consumer messenger.
+
+Sign-in
+• Default server: https://kaya.fxguard.io (already filled).
+• Demo reviewer account is in the Demo Account fields. If those are empty, the build cannot be reviewed — contact support@kaya.fxguard.io.
+• Optional TOTP: if the demo user has 2FA, the TOTP hint is shown on the next screen.
+
+Account creation / deletion
+• The app does not create accounts (Guideline 5.1.1(v)). Administrators provision users on the web panel.
+• Public deletion instructions: https://kaya.fxguard.io/account-deletion
+
+Disabled UI
+• Attach and voice buttons in chat are visible for parity with the web app but are disabled; they do not request Photos or Microphone.
+
+Encryption
+• Standard HTTPS only. ITSAppUsesNonExemptEncryption is false.
+
+Contact
+• support@kaya.fxguard.io · +90 501 067 6486

@@ -4,6 +4,7 @@
 const { Branch, User, Department } = require('../models');
 const { isMainAdmin } = require('../lib/permissions');
 const { isValidUUID } = require('../lib/validation');
+const { assertCanAddBranch, planErrorPayload } = require('../lib/planLimits');
 
 async function list(req, res, next) {
     try {
@@ -80,6 +81,13 @@ async function create(req, res, next) {
         }
         if (timezone && String(timezone).trim().length > 60) {
             return res.status(400).json({ error: 'نام timezone نامعتبر است' });
+        }
+        try {
+            await assertCanAddBranch();
+        } catch (limitErr) {
+            const payload = planErrorPayload(limitErr);
+            if (payload) return res.status(403).json(payload);
+            throw limitErr;
         }
         const branch = await Branch.create({
             name: name.trim(),

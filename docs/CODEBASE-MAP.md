@@ -48,6 +48,10 @@
 | استایل پنل | `backend/public/css/dashboard.css` | — | bump `?v=` در partial-01 و partial-06 |
 | صفحه ورود حرفه‌ای | `backend/public/login.html` + `css/login.css` + `js/login.js` | — | bump `?v=` در login.html |
 | حریم خصوصی / شرایط / حذف حساب | `backend/public/privacy.html` · `terms.html` · `account-deletion.html` + `css/legal.css` + `js/legal.js` | مسیرهای `/privacy` `/terms` `/account-deletion` | بعد از دیپلوی برای ریویو استور |
+| تدارکات / خلاصه امنیت | `backend/public/procurement.html` (+ کپی `cpanel-landing/`) | `/procurement` | چاپ PDF برای فاکتور |
+| لندینگ **kaya.fxguard.io** | `cpanel-landing/` سپس همگام `backend/public/` | `/` `/pricing` `/whatsapp-crm` `/contact` | `LANDING-SYNC.md` — پنل کارکنان |
+| ویترین **fxguard.io** | `fxguard-io-landing/` | cPanel جدا (`public_html`) | آپلود روی fxguard.io؛ `.well-known/` سرور را نگه دارید. `cpanel-landing/` را اینجا نریزید |
+| چک‌اوت Cloud Start | `backend/lib/billingCheckout.js` · `routes/billing.js` | `/api/billing/*` · `/api/webhook/stripe` | بدون کلید Stripe دکمه واتساپ می‌ماند |
 | ترجمه فارسی/انگلیسی/ترکی | `backend/public/js/i18n-fa.js` و … | — | bump `?v=` در html-part-06 |
 | ماژول‌های مشترک JS | `backend/public/js/modules/*.js` | — | bump `?v=` |
 
@@ -76,7 +80,7 @@
 | لیست چت / حباب پیام | `chunk-03.js` + `html-part-02/03` | `#conversations`, `#chatMessages` |
 | آواتار مخاطب واتساپ | `chunk-02.js` (`customerAvatarDisplaySrc`) + `routes/customerAvatar.js` + gateway `GET /api/contacts/profile-pic` | Store `eurl`؛ placeholder یعنی واکشی شکست |
 | ارسال ویس/فایل | `chunk-03.js` + `backend/lib/conversationOutbound.js` + `lib/audioConverter.js` | |
-| چت داخلی (صفحه) | `chunk-05.js` + `html-part-02/03` + `routes/internal.js` | `#internal-chat`, `#internalChatPane`, مودال گفتگوی جدید |
+| چت داخلی (صفحه) | `chunk-05.js` + `html-part-02/03` + `html-part-06` + `routes/internal.js` | `#internal-chat`, `#internalChatPane`, مودال گفتگوی جدید / مدیریت اعضا |
 | پیوست چت داخلی | `chunk-02.js` → `renderInternalAttachment` | تصویر/ویدیو اینلاین؛ ذخیره فقط با `allowDownload` |
 | پیام خودکار «کارشناس X» | `backend/services/autoMessages.js` + `routes/conversations.js` | |
 | کاربران / کارت کاربر | `chunk-05.js` + `html-part-04` | `#users`, `renderUserList` |
@@ -113,6 +117,7 @@ backend/
 | مسیر API | فایل route | سرویس/منطق اصلی |
 |----------|------------|------------------|
 | `/api/auth/*` | `routes/auth.js` | ورود، me، TOTP، کوکی `crm_token` |
+| `/api/devices/push-token` | `routes/devices.js` | ثبت/حذف توکن FCM اپ کارکنان |
 | `/api/conversations/*` | `routes/conversations.js` | `lib/conversationOutbound.js`, `services/autoMessages.js` |
 | `/api/customers/*` | `routes/customers.js` | مدل `Customer` |
 | `/api/customers/:id/avatar` | `routes/customerAvatar.js` | `lib/customerAvatar.js` — محلی یا Store واتساپ |
@@ -121,12 +126,15 @@ backend/
 | `/api/tasks/*` | `routes/tasks.js` | |
 | `/api/users/*` | `routes/users.js` | `lib/permissions.js` |
 | `/api/departments/*` | `routes/departments.js` | |
-| `/api/whatsapp/*` | `routes/whatsapp.js` | `models/WhatsappConfig.js` |
-| `/api/panel-settings/*` | `routes/panelSettings.js` | `services/config/panelSettingsLoader.js` |
-| `/api/rates/*` | `routes/rates.js` | `jobs/dailyRates.js` |
+| `/api/whatsapp/*` | `routes/whatsapp.js` | `models/WhatsappConfig.js` · آزمایش ۷روزه QR |
+| `/api/panel-settings/*` | `routes/panelSettings.js` | `services/config/panelSettingsLoader.js` · سقف پلن `lib/planLimits.js` |
+| `/api/rates/*` | `routes/rates.js` | `jobs/dailyRates.js` · قفل پلن شروع |
+| `/api/analytics/*` | `routes/analytics.js` | KPI داشبورد + `product-fit` + قیف فرم تماس |
+| `/api/billing/*` | `routes/billing.js` | چک‌اوت Stripe Cloud Start (اختیاری) · `lib/billingCheckout.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |
 | `/api/supervision/*` | `routes/supervision.js` | آنلاین زنده: `lib/staffPresence.js` |
 | Webhook واتساپ Cloud | `routes/api.js` | `services/incomingMessage.js` |
+| Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — فقط سرنخ paid؛ tenant خودکار ساخته نمی‌شود |
 
 ### ۴.۲ مدل‌های دادهٔ مهم
 
@@ -135,8 +143,11 @@ backend/
 | مکالمه | `models/Conversation.js` | `assignedTo`, `departmentId`, `status` |
 | پیام | همان فایل (Message) | `userId`, `direction`, `isAutoReply` |
 | کاربر | `models/User.js` | `role`, `departmentId`, `permissions`, `status`, `lastSeenAt` |
-| تنظیمات واتساپ | `models/WhatsappConfig.js` | پیام‌های خودکار، AI |
-| تنظیمات پنل | `models/PanelSetting.js` | برندینگ، SMTP، زبان |
+| تنظیمات واتساپ | `models/WhatsappConfig.js` | پیام‌های خودکار، AI، `trialStatus` |
+| تنظیمات پنل | `models/PanelSetting.js` | برندینگ، SMTP، زبان، `planTier` |
+| توکن پوش دستگاه | `models/DevicePushToken.js` | FCM برای اپ کارکنان |
+| نظرسنجی تناسب | `models/ProductFitSurvey.js` | Sean Ellis: very / somewhat / not |
+| سرنخ لندینگ | `models/ContactLead.js` | purpose فرم تماس |
 
 ### ۴.۳ جریان پیام واتساپ
 

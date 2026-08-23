@@ -68,6 +68,22 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
             comment: 'فعال بودن پیام‌های خودکار تخصیص دپارتمان و معرفی کارمند'
+        },
+        trialStatus: {
+            type: DataTypes.STRING(16),
+            allowNull: true,
+            defaultValue: null,
+            comment: 'آزمایش شماره: خالی/none | active | converted | expired — پیش‌فرض بدون تایمر'
+        },
+        trialStartedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'شروع آزمایش ۷روزه (فقط با دکمهٔ اختیاری)'
+        },
+        trialEndsAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'پایان آزمایش؛ پس از آن نشست Gateway قطع می‌شود'
         }
     }, {
         timestamps: true,
