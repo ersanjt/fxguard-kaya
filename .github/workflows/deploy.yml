@@ -170,6 +170,10 @@ jobs:
               exit 1
             fi
 
+            echo "🌐 همگام‌سازی ویترین fxguard.io به public_html ..."
+            rsync -a --delete --exclude '.well-known' fxguard-io-landing/ /home/fxguard/public_html/
+            echo "  ✅ fxguard.io public_html به‌روز شد"
+
             # پوشه‌های موبایل عمداً دیپلوی نمی‌شوند — باقی‌ماندهٔ قدیمی روی سرور را پاک کن
             echo "🧹 حذف android-app و ios-app از سرور (دیپلوی نمی‌شوند) ..."
             rm -rf android-app ios-app
