@@ -945,7 +945,11 @@ function killOrphanChromeSync(sessionPath) {
     // فقط Chrome با همین user-data-dir — الگوی مسیر sessions اسکریپت SSH/دیپلوی را هم match می‌کند
     const chromeFlag = `--user-data-dir=${userDataDir}`;
     try {
-        execFileSync('pkill', ['-9', '-f', chromeFlag], { stdio: 'ignore', timeout: 5000 });
+        // `--` لازم است وگرنه الگوی --user-data-dir به‌عنوان آپشن pkill خوانده می‌شود
+        execFileSync('pkill', ['-9', '-f', '--', chromeFlag], {
+            stdio: 'ignore',
+            timeout: 5000,
+        });
     } catch (_) {
         /* exit 1 = هیچ پروسه‌ای نبود */
     }
@@ -1070,6 +1074,8 @@ function attachClientEvents(c) {
             redisClient.set('whatsapp:qr', qrImage, { EX: 60 }).catch(() => {});
             redisClient.set('whatsapp:status', 'qr').catch(() => {});
             connectionPhase = 'qr';
+            // تا اسکن نشه، health/reconnect دوباره Chrome را بالا نیاورد
+            isClientStarting = true;
         } catch (e) {
             logger.error('QR event error', { error: e?.message });
         }
@@ -1633,7 +1639,8 @@ async function notifyBackendStatus(event, reason, extra = {}) {
 
 /** زمانبندی اتصال مجدد با exponential backoff — بی‌نهایت تلاش می‌کند */
 function scheduleReconnect() {
-    if (isClientReady || isClientStarting) return;
+    // منتظر اسکن QR — initialize دوباره = «browser is already running»
+    if (isClientReady || isClientStarting || connectionPhase === 'qr') return;
 
     const maxBeforeLongWait = CONFIG.reconnectMaxRetries;
     if (reconnectAttemptCount >= maxBeforeLongWait) {
@@ -1644,7 +1651,7 @@ function scheduleReconnect() {
         reconnectAttemptCount = 0;
         setTimeout(
             () => {
-                if (isClientReady || isClientStarting) return;
+                if (isClientReady || isClientStarting || connectionPhase === 'qr') return;
                 logger.info('🔄 Long-interval reconnect attempt...');
                 client = null;
                 startWhatsApp().catch((e) =>
@@ -1667,7 +1674,7 @@ function scheduleReconnect() {
         delayMs: Math.round(delay),
     });
     setTimeout(() => {
-        if (isClientReady || isClientStarting) return;
+        if (isClientReady || isClientStarting || connectionPhase === 'qr') return;
         logger.info('🔄 Attempting auto-reconnect...');
         startWhatsApp()
             .then(() => {
@@ -1767,6 +1774,9 @@ function isSafeMediaUrl(url) {
 async function startWhatsApp() {
     if (isClientReady) return { ok: true, status: 'already_ready' };
     if (isClientStarting) return { ok: true, status: 'starting' };
+    if (connectionPhase === 'qr' && client?.pupPage) {
+        return { ok: true, status: 'awaiting_qr_scan' };
+    }
 
     // اگر صفحهٔ کروم هنوز زنده است، اول بازیابی کن — initialize مجدد سشن آماده را خراب می‌کند
     if (client?.pupPage) {
@@ -1881,6 +1891,13 @@ app.get('/api/status', async (req, res) => {
         } catch (_) {}
     }
     if (connectionPhase) body.phase = connectionPhase;
+    // پنل یک درخواست status بزند و همان‌جا QR را هم ببیند (بدون race با /api/qr)
+    if (connectionPhase === 'qr' && lastQrImageDataUrl) {
+        body.qr = lastQrImageDataUrl;
+        body.qrAvailable = true;
+    } else if (connectionPhase === 'qr') {
+        body.qrAvailable = true;
+    }
     res.json(body);
 });
 
@@ -4365,7 +4382,7 @@ function startServer() {
         // ✅ Health check هر ۵ دقیقه — تشخیص قطع بی‌صدا و راه‌اندازی مجدد
         cron.schedule('*/5 * * * *', async () => {
             try {
-                if (isClientStarting) return; // در حال اتصال است — دست نزن
+                if (isClientStarting || connectionPhase === 'qr') return; // QR/اتصال — دست نزن
                 if (waOpsBusy > 0) return; // لیست گروه/عملیات سنگین — ping کاذب timeout ندهد
 
                 if (!isClientReady) {

@@ -12,6 +12,7 @@
 | [tech-and-team-overview.html](tech-and-team-overview.html) | همان نمای کلی به‌صورت صفحهٔ HTML |
 | [DASHBOARD-REFACTOR.md](DASHBOARD-REFACTOR.md) | تاریخچهٔ سبک‌سازی داشبورد و i18n |
 | [DEPLOY-SERVER.md](DEPLOY-SERVER.md) / [DEPLOY-SETUP.md](DEPLOY-SETUP.md) | استقرار |
+| **[DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)** | **Production kaya.fxguard.io — پورت‌های 3202/3201، PM2، deploy** |
 | [DEPLOY-GITHUB-SECRETS.md](DEPLOY-GITHUB-SECRETS.md) | Secrets دیپلوی (اجباری بعد از به‌روزرسانی workflow) |
 | [PRODUCTION-PUSH-CHECKLIST.md](PRODUCTION-PUSH-CHECKLIST.md) | قبل از push به master |
 | [WHATSAPP-GATEWAY.md](WHATSAPP-GATEWAY.md) | عیب‌یابی Gateway واتساپ (QR) |

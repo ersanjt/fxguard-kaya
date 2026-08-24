@@ -92,6 +92,7 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['androidAppUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['loginLogoUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['navasanApiKey', { type: DataTypes.TEXT, allowNull: true }],
+            ['planTier', { type: DataTypes.STRING(32), allowNull: true }],
         ];
         for (const [name, def] of newThemeCols) {
             if (desc && desc[name] === undefined) {
@@ -117,6 +118,22 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             } catch (e) {
                 if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
                     logger.warn('whatsapp_configs.conversationEndedMessage', e.message);
+            }
+        }
+        const waTrialCols = [
+            ['trialStatus', { type: DataTypes.STRING(16), allowNull: true }],
+            ['trialStartedAt', { type: DataTypes.DATE, allowNull: true }],
+            ['trialEndsAt', { type: DataTypes.DATE, allowNull: true }],
+        ];
+        for (const [name, def] of waTrialCols) {
+            if (waDesc && waDesc[name] === undefined) {
+                try {
+                    await qi.addColumn('whatsapp_configs', name, def);
+                    logger.info('✅ whatsapp_configs: ' + name + ' column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('whatsapp_configs.' + name, e.message);
+                }
             }
         }
     } catch (e) {

@@ -194,7 +194,16 @@ html[dir="rtl"] .wa-float { right: auto; left: max(20px, env(safe-area-inset-lef
 .sticky-buy-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .sticky-btn { padding: 8px 14px !important; font-size: 0.85rem !important; }
 @media (min-width: 900px) {
-    .sticky-buy { display: none !important; }
+    .sticky-buy {
+        left: 50%;
+        right: auto;
+        width: min(720px, calc(100% - 48px));
+        transform: translateX(-50%);
+        bottom: 16px;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+        border-radius: 14px;
+        padding-bottom: 10px;
+    }
 }
 @media (max-width: 899px) {
     .wa-float { bottom: calc(72px + env(safe-area-inset-bottom)); }
@@ -516,8 +525,23 @@ html[dir="rtl"] .hero-bg {
     padding-bottom: 32px;
     padding-inline-end: 28px;
 }
+.hero-desk::before {
+    content: "";
+    position: absolute;
+    inset: 6% 4% 20% 4%;
+    background: rgba(16, 185, 129, 0.22);
+    filter: blur(42px);
+    z-index: 0;
+    pointer-events: none;
+}
 .hero-browser {
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    position: relative;
+    z-index: 1;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1e293b;
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(16, 185, 129, 0.28);
 }
 .hero-phone {
     position: absolute;

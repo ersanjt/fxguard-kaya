@@ -214,6 +214,7 @@ jobs:
             node scripts/add-ai-columns.js
             node scripts/add-conversation-indexes.js
             node scripts/add-customer-profile-fields.js
+            node scripts/add-plan-tier-trial-columns.js
             echo "  ✅ migration scripts اجرا شد"
             cd ..
 
@@ -271,6 +272,17 @@ jobs:
               pm2 logs crm-backend-kaya --lines 40 --nostream || true
               pm2 logs crm-gateway-kaya --lines 20 --nostream || true
               exit 1
+            fi
+
+            GW_PORT=$(grep "^PORT=" gateway/.env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+            if [ -z "$GW_PORT" ]; then GW_PORT=3201; fi
+            GW_SECRET=$(grep "^GATEWAY_API_SECRET=" gateway/.env 2>/dev/null | cut -d= -f2-)
+            echo "⏳ بررسی Gateway روی پورت ${GW_PORT} ..."
+            if [ -n "$GW_SECRET" ] && curl -sf --max-time 10 -H "X-Gateway-Secret: ${GW_SECRET}" "http://127.0.0.1:${GW_PORT}/test" > /dev/null; then
+              echo "✅ Gateway HTTP پاسخ می‌دهد (پورت ${GW_PORT})"
+            else
+              echo "⚠️ Gateway روی ${GW_PORT} پاسخ نداد — PORT در gateway/.env و GATEWAY_URL در backend/.env را بررسی کنید"
+              pm2 logs crm-gateway-kaya --lines 15 --nostream || true
             fi
 
             echo "🔒 آرشیو شمارهٔ قبلی / فقط شمارهٔ فعلی واتساپ ..."

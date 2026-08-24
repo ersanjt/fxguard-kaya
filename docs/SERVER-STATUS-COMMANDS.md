@@ -1,10 +1,38 @@
 # دستورات بررسی وضعیت روی سرور
 
-وقتی داخل سرور (SSH) هستی، با این دستورات می‌توانی وضعیت سرویس‌ها را ببینی.
+---
+
+## Production: kaya.fxguard.io (اولویت)
+
+مسیر: `/var/www/kayaCRM-kaya` · PM2: `crm-backend-kaya` + `crm-gateway-kaya`
+
+| سرویس | پورت |
+|--------|------|
+| Backend CRM | **3202** |
+| WhatsApp Gateway | **3201** |
+
+> پورت **3001** = حسابداری (`kaya-accounting`) — برای Gateway کایا استفاده **نکن**.
+
+جزئیات کامل: [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)
+
+```bash
+cd /var/www/kayaCRM-kaya/backend
+BACKEND_PORT=$(grep '^PORT=' .env | cut -d= -f2 | tr -d ' "')
+BACKEND_PORT=${BACKEND_PORT:-3202}
+GW_PORT=$(grep '^PORT=' ../gateway/.env | cut -d= -f2 | tr -d ' "')
+GW_PORT=${GW_PORT:-3201}
+SECRET=$(grep '^GATEWAY_API_SECRET=' ../gateway/.env | cut -d= -f2-)
+
+pm2 list
+curl -sS "http://127.0.0.1:${BACKEND_PORT}/health?deep=1" | python3 -m json.tool
+curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" | python3 -m json.tool
+pm2 logs crm-backend-kaya --lines 30 --nostream
+pm2 logs crm-gateway-kaya --lines 30 --nostream
+```
 
 ---
 
-## ۱. اگر با PM2 اجرا کرده‌ای
+## ۱. اگر با PM2 اجرا کرده‌ای (توسعه / tenant عمومی)
 
 از **ریشهٔ پروژه** (همان پوشه‌ای که `ecosystem.config.js` هست):
 
@@ -132,3 +160,5 @@ curl -s http://localhost:3002/health | jq
 ```
 
 اول ببین پروسس‌ها بالا هستند (`pm2 list`)، بعد سلامت Backend و دیتابیس را با `/health` چک کن.
+
+**Production کایا:** از بخش اول این سند (پورت‌های 3202 / 3201) استفاده کن.

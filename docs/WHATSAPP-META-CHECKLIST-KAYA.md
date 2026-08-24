@@ -9,6 +9,10 @@
 | **Health** | `https://kaya.fxguard.io/health` |
 | **مسیر deploy** | `/var/www/kayaCRM-kaya` |
 | **PM2** | `crm-backend-kaya`, `crm-gateway-kaya` |
+| **Backend (local)** | `http://127.0.0.1:3202` |
+| **Gateway (local)** | `http://127.0.0.1:3201` — `GATEWAY_URL` در `backend/.env` |
+
+> جزئیات پورت‌ها و deploy: [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)
 
 > **اولویت:** برای حفظ شماره و ارسال انبوه امن، **Meta Cloud** را کامل کنید. Gateway (QR) فقط fallback یا توسعه است — هر دو روی یک شماره همزمان کار نمی‌کنند.
 

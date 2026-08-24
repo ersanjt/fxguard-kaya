@@ -1,5 +1,11 @@
             if (!waAlive()) return;
-            if (res.needLogin) return;
+            if (res.needLogin) {
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = LANG === 'fa' ? 'نشست منقضی شد — دوباره وارد شوید' : 'Session expired — sign in again';
+                setWhatsappStatusBadge('disconnected');
+                if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
+                return;
+            }
             // No payload at all = network error or timeout. Never leave the UI stuck
             // on "checking"; show a clear error and keep retry/start buttons usable.
             if (!res.ok && !res.data) {
@@ -40,7 +46,9 @@
                         : (t('whatsapp_connected') || 'Connected') + ' (Gateway)'))
                 : (cloudReadyHint
                     ? (LANG === 'fa' ? 'Cloud آماده — برای گروه‌ها Gateway/QR لازم است' : 'Cloud ready — Gateway/QR needed for groups')
-                    : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))));
+                    : (phase === 'qr'
+                        ? (LANG === 'fa' ? 'QR آماده — با گوشی اسکن کنید' : 'QR ready — scan with phone')
+                        : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected')))));
             const statusText = t('whatsapp_status') + ' ' + statusLabel + (isCloudApi && fullyReady ? '' : (' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'))));
             st.textContent = statusText;
             const authFailureEl = document.getElementById('whatsappAuthFailure');
@@ -115,7 +123,7 @@
                 }
             }
             if (!waAlive()) return;
-            setWhatsappStatusBadge(data && data.starting ? 'starting' : 'disconnected');
+            setWhatsappStatusBadge(data && (data.starting || phase === 'qr') ? 'starting' : 'disconnected');
             if (lastCard) lastCard.style.display = 'none';
             if (btnDisconnect) { btnDisconnect.disabled = true; btnDisconnect.style.display = 'inline-flex'; }
             const openWebBtnEl = document.querySelector('.whatsapp-actions a[href="https://web.whatsapp.com"]');
@@ -123,6 +131,23 @@
             const cloudApiInfoEl = document.getElementById('whatsappCloudApiInfo');
             if (cloudApiInfoEl) cloudApiInfoEl.style.display = 'none';
             if (waAlive()) loadWhatsappDeptRouting();
+            // QR همراه status آمده — بدون درخواست دوم نشان بده
+            if (data && data.qr && typeof data.qr === 'string' && data.qr.indexOf('data:image') === 0) {
+                qrImg.src = data.qr;
+                qrBox.style.display = 'block';
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
+                if (qrWaitingMsg) {
+                    qrWaitingMsg.style.display = 'block';
+                    qrWaitingMsg.textContent = LANG === 'fa'
+                        ? 'QR را با واتساپ گوشی اسکن کنید'
+                        : 'Scan this QR with WhatsApp on your phone';
+                }
+                if (btn) btn.style.display = 'none';
+                if (btnStartClient) btnStartClient.style.display = 'none';
+                isWhatsappPolling = true;
+                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, 1500);
+                return;
+            }
             const qrRes = await apiFetch('/api/gateway/qr', { timeoutMs: 13000 });
             if (!waAlive()) return;
             if (qrRes.needLogin) return;
@@ -131,7 +156,13 @@
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
-                if (phase === 'authenticated' && qrWaitingMsg) { qrWaitingMsg.style.display = 'block'; qrWaitingMsg.textContent = t('whatsapp_syncing'); } else if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
+                if (phase === 'authenticated' && qrWaitingMsg) { qrWaitingMsg.style.display = 'block'; qrWaitingMsg.textContent = t('whatsapp_syncing'); }
+                else if (phase === 'qr' && qrWaitingMsg) {
+                    qrWaitingMsg.style.display = 'block';
+                    qrWaitingMsg.textContent = LANG === 'fa'
+                        ? 'QR را با واتساپ گوشی اسکن کنید'
+                        : 'Scan this QR with WhatsApp on your phone';
+                } else if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
                 const pollMs = 1500;
                 qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, pollMs);

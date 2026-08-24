@@ -1,6 +1,8 @@
 # راه‌اندازی Deploy خودکار با Git Push
 
-وقتی به شاخه `master` push می‌کنید، سرور VPS به‌صورت خودکار به‌روزرسانی می‌شود.
+وقتی به شاخه `main` push می‌کنید، سرور production **kaya.fxguard.io** به‌صورت خودکار به‌روزرسانی می‌شود.
+
+> **Production کایا:** مسیر `/var/www/kayaCRM-kaya` · PM2: `crm-backend-kaya` / `crm-gateway-kaya` · پورت‌ها 3202/3201 — [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)
 
 ---
 
@@ -14,7 +16,7 @@
    | `SSH_PRIVATE_KEY` | کلید خصوصی SSH برای اتصال به سرور | محتوای فایل `~/.ssh/id_rsa` |
    | `DEPLOY_HOST` | IP یا دامنه سرور | `92.205.58.83` |
    | `DEPLOY_USER` | نام کاربر SSH | `fxguard` یا `root` |
-   | `DEPLOY_PATH` | مسیر پروژه روی سرور | `/var/www/fxguard-kaya` |
+   | `DEPLOY_PATH` | مسیر پروژه روی سرور | `/var/www/kayaCRM-kaya` |
 
 2. **روی سرور:**  
    پروژه باید قبلاً کلون شده و با PM2 اجرا شده باشد (طبق `docs/DEPLOY-SERVER.md`).

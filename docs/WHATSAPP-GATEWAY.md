@@ -1,5 +1,21 @@
 # واتساپ Gateway — وقتی «روشن نیست» یا قطع/وصل کند است
 
+## Production kaya.fxguard.io (سرور FXGuard)
+
+| مورد | مقدار |
+|------|--------|
+| PM2 | `crm-gateway-kaya` |
+| پورت Gateway | **3201** (`gateway/.env` → `PORT=3201`) |
+| Backend | **3202** · `GATEWAY_URL=http://127.0.0.1:3201` |
+| مسیر | `/var/www/kayaCRM-kaya` |
+
+> **پورت 3001** روی همان سرور = **حسابداری** (`kaya-accounting`)، نه Gateway CRM. برای تست:  
+> `curl -H "X-Gateway-Secret: …" http://127.0.0.1:3201/api/status`
+
+راهنمای کامل: [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)
+
+---
+
 ## خطای `listen EADDRINUSE: address already in use :::3002` روی Gateway
 
 یعنی در **`gateway/.env`** مقدار **`PORT=3002`** گذاشته شده (اشتباه؛ آن پورت برای Backend است). Gateway باید **`PORT=3001`** باشد. بعد از اصلاح: `pm2 restart crm-gateway --update-env`.
@@ -38,4 +54,4 @@
 2. اگر `getChat()` برای LID خطا بدهد، پیام نباید دور ریخته شود؛ با `from` / `id.remote` ادامه می‌دهد. شمارهٔ خودِ خط (`to`) را مشتری حساب نکن؛ جواب `@lid` باید به همان مکالمهٔ شمارهٔ واقعی بچسبد.
 3. اگر هر دو رویداد واتساپ ساکت بمانند، Gateway از `Store.Msg` و خواندن دوره‌ای unread همان پیام را برمی‌دارد. در لاگ باید `Store inbound message hook attached` یا `via: store_poll` دیده شود.
 4. برای ویس/استیکر/تصویر: اگر `downloadMedia` یا Store blob خالی باشد، Gateway با `mediaKey` + `directPath` فایل رمزشده را از CDN واتساپ می‌گیرد و در Node رمزگشایی می‌کند. در لاگ موفق باید `hasMediaBytes: true` یا `Inbound media decrypted from CDN` دیده شود؛ پیام‌های قدیمی که فقط به‌صورت «پیام صوتی» / «استیکر» ذخیره شده‌اند فایل ندارند و باید دوباره ارسال شوند.
-5. روی سرور: `pm2 logs crm-gateway-kaya --lines 80` را برای `📨 Message received` یا `getChat failed` ببینید. بعد از به‌روزرسانی کد، Gateway را **یک‌بار** با stop → خواب ۳ ثانیه → حذف Singleton* → start بالا بیاورید و تا `WhatsApp Client Ready` صبر کنید.
+5. روی سرور: `pm2 logs crm-gateway-kaya --lines 80` را برای `📨 Message received` یا `getChat failed` ببینید. بعد از به‌روزرسانی کد، Gateway را **یک‌بار** با stop → خواب ۳ ثانیه → `pkill -9 -f -- '--user-data-dir=…/sessions/session'` → حذف Singleton* → start بالا بیاورید و تا `WhatsApp Client Ready` صبر کنید. اگر لاگ فقط `QR Code Generated` می‌دهد، در پنل اسکن کنید و دوباره ری‌استارت نکنید.

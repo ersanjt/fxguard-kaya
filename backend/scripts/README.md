@@ -5,6 +5,7 @@
 | نوع فایل | کاربرد |
 |-----------|--------|
 | `add-*.js` | برای دیتابیس‌های **قدیمی** یا زمانی که auto-migrate اجرا نشده؛ معمولاً دیگر لازم نیست مگر عیب‌یابی. |
+| `add-plan-tier-trial-columns.js` | `panel_settings.planTier` و `whatsapp_configs.trial*` — در deploy GitHub Actions هم اجرا می‌شود. |
 | `check-env.js` | بررسی متغیرهای محیطی قبل از اجرا. |
 | `backup-database.js` | پشتیبان‌گیری دستی. |
 | `send-test-email.js`، `set-panel-smtp.js` | ایمیل و SMTP. |
