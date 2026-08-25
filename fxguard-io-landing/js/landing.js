@@ -937,6 +937,15 @@
         return /^\/(ir|tr|ae|eu)(\/|$)/i.test(location.pathname || '');
     }
 
+    function langFromGeoPath() {
+        var p = String(location.pathname || '').toLowerCase().replace(/\/+$/, '') || '/';
+        if (p === '/ir') return 'fa';
+        if (p === '/tr') return 'tr';
+        if (p === '/ae') return 'ar';
+        if (p === '/eu') return 'en';
+        return null;
+    }
+
     function canonicalForLang(lang) {
         var origin = 'https://fxguard.io';
         var path = location.pathname || '/';
@@ -970,21 +979,24 @@
     }
 
     function updateSeoMeta(lang) {
-        var meta = SEO_META[lang] || SEO_META.en;
-        applyMetaTags(meta);
-        syncDiscoveryTags(lang);
         var html = document.documentElement;
         if (html && lang) {
             html.lang = lang;
             html.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
         }
+        if (isGeoPath()) return;
+        var meta = SEO_META[lang] || SEO_META.en;
+        applyMetaTags(meta);
+        syncDiscoveryTags(lang);
     }
 
 
         var FOOTER_I18N = {"en": {"footer_about": "FXGuard is a WhatsApp CRM: one company number, a shared team panel, customer history stays with the business. We customize it for your trade.", "footer_who": "For exchange offices, remittance desks and finance firms — Cloud Start works without the FX pack.", "footer_trust": "AI-assisted engineering · optional smart replies · 7-day money-back on first Cloud Start month", "footer_markets": "Turkey · UAE · Europe · Iran", "footer_col_product": "Products", "footer_col_solutions": "Solutions", "footer_col_company": "Company", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Pricing &amp; Packages", "footer_self_hosted": "Self-hosted License", "footer_managed": "Managed Hosting", "footer_open_panel": "Open Panel", "footer_updates": "System Updates", "footer_blog": "Blog &amp; Articles", "footer_tagline": "WhatsApp CRM — tailored to your business", "footer_demo": "Demo"}, "fa": {"footer_about": "FXGuard یک واتساپ CRM است: یک شماره سازمانی، پنل مشترک تیم، تاریخچه مشتری مال شرکت می‌ماند. برای صنف شما اختصاصی می‌شود.", "footer_who": "مناسب تیم فروش، فروشگاه، مطب، شرکت، صرافی و حواله — و هر کسب‌وکاری که برایتان اختصاصی شود.", "footer_trust": "مهندسی با کمک هوش مصنوعی · پاسخ هوشمند اختیاری · بازگشت وجه ۷روزه ماه اول ابر شروع", "footer_markets": "ترکیه · امارات · اروپا · ایران", "footer_col_product": "محصولات", "footer_col_solutions": "راه‌حل‌ها", "footer_col_company": "شرکت", "footer_whatsapp_crm": "واتساپ سی‌آرام", "footer_pricing": "قیمت و پکیج‌ها", "footer_self_hosted": "لایسنس خودمیزبان", "footer_managed": "هاست مدیریت‌شده", "footer_open_panel": "ورود به پنل", "footer_updates": "آپدیت‌های سیستم", "footer_blog": "وبلاگ و مقالات", "footer_tagline": "واتساپ CRM — اختصاصی برای کسب‌وکار شما", "footer_demo": "دمو"}, "tr": {"footer_about": "FXGuard bir WhatsApp CRM’dir: şirket numarası, ortak panel, müşteri geçmişi işletmede kalır. İşinize göre uyarlanır.", "footer_who": "Satış ekipleri, dükkanlar, klinikler, şirketler, döviz büroları — ve uyarladığımız her işletme.", "footer_trust": "Yapay zekâ destekli mühendislik · isteğe bağlı akıllı yanıt · ilk Cloud Start ayında 7 gün iade", "footer_markets": "Türkiye · BAE · Avrupa · İran", "footer_col_product": "Ürünler", "footer_col_solutions": "Çözümler", "footer_col_company": "Şirket", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Fiyat &amp; Paketler", "footer_self_hosted": "Self-hosted Lisans", "footer_managed": "Yönetilen Hosting", "footer_open_panel": "Panele Git", "footer_updates": "Sistem Güncellemeleri", "footer_blog": "Blog &amp; Yazılar", "footer_tagline": "WhatsApp CRM — işinize göre uyarlanır", "footer_demo": "Demo"}, "ar": {"footer_about": "FXGuard هو واتساب CRM: رقم شركة واحد، لوحة مشتركة، سجل العملاء يبقى للعمل. نخصّصه لمهنتكم.", "footer_who": "لفرق المبيعات والمتاجر والعيادات والشركات ومكاتب الصرافة — وأي عمل نخصّصه.", "footer_trust": "هندسة بمساعدة الذكاء الاصطناعي · ردود ذكية اختيارية · استرداد 7 أيام لأول شهر بدء سحابي", "footer_markets": "تركيا · الإمارات · أوروبا · إيران", "footer_col_product": "المنتجات", "footer_col_solutions": "الحلول", "footer_col_company": "الشركة", "footer_whatsapp_crm": "واتساب CRM", "footer_pricing": "الأسعار والباقات", "footer_self_hosted": "ترخيص ذاتي الاستضافة", "footer_managed": "استضافة مُدارة", "footer_open_panel": "فتح اللوحة", "footer_updates": "تحديثات النظام", "footer_blog": "المدونة والمقالات", "footer_tagline": "واتساب CRM — مخصّص لعملك", "footer_demo": "عرض"}, "ru": {"footer_about": "FXGuard — WhatsApp CRM: один корпоративный номер, общая панель, история клиентов остаётся в компании. Настраиваем под отрасль.", "footer_who": "Для продаж, магазинов, клиник, компаний, обменных столов — и любого бизнеса, который настроим.", "footer_trust": "AI-assisted инженерия · опциональные умные ответы · 7 дней возврата за первый месяц Cloud Start", "footer_markets": "Турция · ОАЭ · Европа · Иран", "footer_col_product": "Продукты", "footer_col_solutions": "Решения", "footer_col_company": "Компания", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Цены и пакеты", "footer_self_hosted": "Self-hosted лицензия", "footer_managed": "Managed-хостинг", "footer_open_panel": "Открыть панель", "footer_updates": "Обновления системы", "footer_blog": "Блог и статьи", "footer_tagline": "WhatsApp CRM — под ваш бизнес", "footer_demo": "Демо"}};
     function mergeFooterI18n(t, lang) {
         var extra = FOOTER_I18N[lang] || FOOTER_I18N.en;
-        for (var k in extra) if (Object.prototype.hasOwnProperty.call(extra, k)) t[k] = extra[k];
+        for (var k in extra) {
+            if (Object.prototype.hasOwnProperty.call(extra, k) && (t[k] == null || t[k] === '')) t[k] = extra[k];
+        }
         return t;
     }
 
@@ -1065,6 +1077,8 @@
     }
 
     function detectPreferredLang() {
+        var pathLang = langFromGeoPath();
+        if (pathLang) return pathLang;
         var params = new URLSearchParams(window.location.search);
         var urlLang = params.get('lang');
         if (urlLang && SUPPORTED_LANGS.indexOf(urlLang) !== -1) return urlLang;
@@ -1218,6 +1232,12 @@
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var lang = this.getAttribute('data-lang');
+            var pathLang = langFromGeoPath();
+            if (pathLang && lang && lang !== pathLang) {
+                try { localStorage.setItem('landing_lang', lang); } catch (e) {}
+                window.location.href = '/?lang=' + encodeURIComponent(lang);
+                return;
+            }
             applyLang(lang);
             var url = new URL(window.location.href);
             url.searchParams.set('lang', lang);

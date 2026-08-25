@@ -48,6 +48,36 @@ body {
 }
 
 html[dir="rtl"] body { font-family: 'Vazirmatn', 'Noto Sans Arabic', 'Outfit', sans-serif; }
+html[dir="rtl"] .footer-col h3,
+html[dir="rtl"] .section-eyebrow,
+html[dir="rtl"] .hero-audience-label {
+    letter-spacing: 0;
+    text-transform: none;
+}
+html[dir="rtl"] .header-inner .nav {
+    justify-content: flex-start;
+}
+@media (min-width: 1100px) and (max-width: 1400px) {
+    html[dir="rtl"] .header-inner .nav > a:not(.btn) {
+        padding: 8px 6px;
+        font-size: 0.74rem;
+    }
+    html[dir="rtl"] .header-inner .nav .btn {
+        padding: 8px 10px;
+        font-size: 0.74rem;
+    }
+}
+html[dir="rtl"] .browser-url,
+html[dir="rtl"] .browser-bar {
+    direction: ltr;
+    text-align: left;
+}
+html[dir="rtl"] .hero-visual img,
+html[dir="rtl"] .browser-content img,
+html[dir="rtl"] .phone-screen img,
+html[dir="rtl"] .shot-card img {
+    transform: none;
+}
 html[data-lang="ar"] body { font-family: 'Noto Sans Arabic', 'Vazirmatn', 'Outfit', sans-serif; }
 html[data-lang="ru"] body { font-family: 'Noto Sans', 'Outfit', system-ui, sans-serif; }
 
@@ -495,6 +525,16 @@ html[dir="rtl"] .hero-bg {
     letter-spacing: 0.02em;
     color: var(--accent-light);
 }
+.geo-crumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin: 0 0 14px;
+}
+.geo-crumb a { color: var(--accent); text-decoration: none; }
+.geo-crumb a:hover { text-decoration: underline; }
 .hero h1 {
     font-size: clamp(1.85rem, 4.2vw, 3.05rem);
     font-weight: 700;
