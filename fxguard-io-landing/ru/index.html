@@ -1,30 +1,33 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ru" dir="ltr" data-lang="ru">
 <head>
 <meta charset="UTF-8">
 <script>
     (function () {
-      document.documentElement.lang = 'en';
-      document.documentElement.dir = 'ltr';
-      document.documentElement.setAttribute('data-lang', 'en');
+      try {
+        document.documentElement.lang = 'ru';
+        document.documentElement.dir = 'ltr';
+        document.documentElement.setAttribute('data-lang', 'ru');
+        try { localStorage.setItem('landing_lang', 'ru'); } catch (e) {}
+      } catch (e2) {}
     })();
     </script>
 
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    <title>FXGuard | WhatsApp CRM for exchange, remittance and finance desks</title>
-    <meta name="description" content="Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo inbox. Business from $249 with the FX pack. License from $4,000.">
-    <meta name="keywords" content="WhatsApp CRM for exchange offices, remittance WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM, WhatsApp CRM Istanbul, döviz WhatsApp CRM, واتساپ CRM صرافی">
+    <title>WhatsApp CRM для обменников и переводов | FXGuard</title>
+    <meta name="description" content="Курс на той же панели, что и WhatsApp. Книга клиентов остаётся в компании. Cloud Start $49/мес. Business от $249 с FX.">
+    <meta name="keywords" content="WhatsApp CRM обменник, CRM для обменных пунктов, WhatsApp для денежных переводов, FXGuard">
     <meta name="author" content="FXGuard">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
     <meta name="googlebot" content="index, follow">
     <meta name="theme-color" content="#059669">
     <meta name="color-scheme" content="dark">
-    <meta name="geo.region" content="TR">
-    <meta name="geo.placename" content="Istanbul">
+    <meta name="geo.region" content="RU">
+    <meta name="geo.placename" content="Russia / CIS">
     <meta name="format-detection" content="telephone=yes">
     <meta name="application-name" content="FXGuard">
-    <link rel="canonical" href="https://fxguard.io/">
+        <link rel="canonical" href="https://fxguard.io/ru/">
     <link rel="alternate" hreflang="x-default" href="https://fxguard.io/">
     <link rel="alternate" hreflang="en" href="https://fxguard.io/">
     <link rel="alternate" hreflang="en-GB" href="https://fxguard.io/eu/">
@@ -35,26 +38,26 @@
     <link rel="alternate" hreflang="ar" href="https://fxguard.io/ae/">
     <link rel="alternate" hreflang="ar-AE" href="https://fxguard.io/ae/">
     <link rel="alternate" hreflang="ru" href="https://fxguard.io/ru/">
-    <meta property="og:locale" content="en_US">
+    <meta property="og:locale" content="ru_RU">
     <meta property="og:locale:alternate" content="fa_IR">
     <meta property="og:locale:alternate" content="tr_TR">
     <meta property="og:locale:alternate" content="ar_AE">
     <meta property="og:locale:alternate" content="ru_RU">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://fxguard.io/">
+    <meta property="og:url" content="https://fxguard.io/ru/">
     <meta property="og:site_name" content="FXGuard">
-    <meta property="og:title" content="FXGuard — WhatsApp CRM for exchange, remittance and finance desks">
-    <meta property="og:description" content="FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49 inbox. Business from $249 with the FX pack.">
+    <meta property="og:title" content="WhatsApp CRM для обменников и переводов | FXGuard">
+    <meta property="og:description" content="Назовите курс в WhatsApp. Книга клиентов остаётся в компании. Cloud Start $49.">
     <meta property="og:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
-    <meta property="og:image:alt" content="FXGuard WhatsApp CRM desktop dashboard">
+    <meta property="og:image:alt" content="Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране">
     <meta property="og:image:width" content="1024">
     <meta property="og:image:height" content="507">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:url" content="https://fxguard.io/">
-    <meta name="twitter:title" content="FXGuard — WhatsApp CRM for FX and finance desks">
-    <meta name="twitter:description" content="Rates on the same panel as the chat. Company-owned book. Cloud Start $49. Business from $249 with the FX pack.">
+    <meta name="twitter:url" content="https://fxguard.io/ru/">
+    <meta name="twitter:title" content="WhatsApp CRM для обменников и переводов | FXGuard">
+    <meta name="twitter:description" content="Назовите курс в WhatsApp. Книга клиентов остаётся в компании. Cloud Start $49.">
     <meta name="twitter:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
-    <meta name="twitter:image:alt" content="FXGuard WhatsApp CRM desktop dashboard">
+    <meta name="twitter:image:alt" content="Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране">
     <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -168,9 +171,9 @@
     },
     {
       "@type": "WebPage",
-      "@id": "https://fxguard.io/#webpage",
-      "url": "https://fxguard.io/",
-      "name": "FXGuard — WhatsApp CRM for exchange, remittance and finance desks",
+      "@id": "https://fxguard.io/ru/#webpage",
+      "url": "https://fxguard.io/ru/",
+      "name": "WhatsApp CRM для обменников и переводов | FXGuard",
       "description": "Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo. Business from $249 with the FX pack.",
       "isPartOf": {
         "@id": "https://fxguard.io/#website"
@@ -632,7 +635,7 @@
 </a>
 <header id="header" role="banner">
   <div class="container header-inner">
-    <a href="/" class="logo" aria-label="FXGuard">
+    <a href="/ru/" class="logo" aria-label="FXGuard">
       <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
       <span>FXGuard</span>
     </a>
@@ -679,15 +682,20 @@
             <div class="hero-bg" aria-hidden="true"></div>
             <div class="container hero-split">
                 <div class="hero-copy">
-                    <p class="hero-kicker" data-i18n="hero_badge">Exchange · remittance · finance</p>
-                    <h1 id="hero-heading" data-i18n="hero_title">Quote the rate on WhatsApp. Keep the customer book.</h1>
-                    <p class="hero-desc" data-i18n="hero_desc">One company number. Staff reply from the panel. When someone leaves, chats and quoted prices stay with you — not on a personal phone.</p>
+                    <nav class="geo-crumb" aria-label="breadcrumb">
+                      <a href="/">fxguard.io</a>
+                      <span aria-hidden="true">/</span>
+                      <span aria-current="page">Русский</span>
+                    </nav>
+                    <p class="hero-kicker" data-i18n="hero_badge">Обмен · переводы · финансы</p>
+                    <h1 id="hero-heading" data-i18n="hero_title">Назовите курс в WhatsApp. Книга клиентов остаётся в компании.</h1>
+                    <p class="hero-desc" data-i18n="hero_desc">Один номер компании. Сотрудники отвечают с панели. Если кто-то уходит, чаты и названная цена остаются у вас — не в личном телефоне.</p>
                     <div class="hero-btns">
-                        <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="hero_cta_wa">Buy on WhatsApp</a>
-                        <a href="/live-demo" class="btn btn-primary btn-lg" data-i18n="hero_cta_demo">See the panel</a>
-                        <a href="/pricing" class="btn btn-outline btn-lg" data-i18n="hero_cta_packages">Prices</a>
+                        <a href="https://wa.me/905010676486" class="btn btn-wa btn-lg js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="hero_cta_wa">Купить в WhatsApp</a>
+                        <a href="/live-demo" class="btn btn-primary btn-lg" data-i18n="hero_cta_demo">Смотреть панель</a>
+                        <a href="/pricing" class="btn btn-outline btn-lg" data-i18n="hero_cta_packages">Цены</a>
                     </div>
-                    <p class="hero-offer" data-i18n="hero_offer">From <strong>$49/mo</strong> · guided demo · 7-day money-back on first Cloud month</p>
+                    <p class="hero-offer" data-i18n="hero_offer">от <strong>$49/мес</strong> · демо с гидом · 7 дней возврата за первый месяц Cloud</p>
                 </div>
                 <figure class="hero-visual">
                     <div class="hero-desk">
@@ -697,7 +705,7 @@
                                 <div class="browser-url">app.fxguard.io</div>
                             </div>
                             <div class="browser-content">
-                                <img src="/images/Desktop-Dashboard.png" width="1024" height="507" alt="FXGuard panel: WhatsApp inbox and rates on one desktop screen" fetchpriority="high">
+                                <img src="/images/Desktop-Dashboard.png" width="1024" height="507" alt="Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране" fetchpriority="high">
                             </div>
                         </div>
                         <div class="hero-phone" aria-hidden="true">
@@ -709,7 +717,7 @@
                             </div>
                         </div>
                     </div>
-                    <figcaption data-i18n="hero_shot_caption">The panel your teller actually uses — chat and rates together.</figcaption>
+                    <figcaption data-i18n="hero_shot_caption">Панель, которой пользуется кассир — чат и курсы рядом.</figcaption>
                 </figure>
             </div>
         </section>
@@ -1567,7 +1575,7 @@
     <footer class="site-footer" role="contentinfo">
   <div class="container footer-grid">
     <div class="footer-brand">
-      <a href="/" class="logo footer-logo">
+      <a href="/ru/" class="logo footer-logo">
         <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
         <span data-i18n="logo">FXGuard</span>
       </a>

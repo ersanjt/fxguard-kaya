@@ -934,23 +934,37 @@
     }
 
     function isGeoPath() {
-        return /^\/(ir|tr|ae|eu)(\/|$)/i.test(location.pathname || '');
+        return /^\/(ir|tr|ae|eu|ru|fa|ar)(\/|$)/i.test(location.pathname || '');
     }
 
     function langFromGeoPath() {
         var p = String(location.pathname || '').toLowerCase().replace(/\/+$/, '') || '/';
-        if (p === '/ir') return 'fa';
+        if (p === '/ir' || p === '/fa') return 'fa';
         if (p === '/tr') return 'tr';
-        if (p === '/ae') return 'ar';
+        if (p === '/ae' || p === '/ar') return 'ar';
         if (p === '/eu') return 'en';
+        if (p === '/ru') return 'ru';
         return null;
+    }
+
+    var LANG_HOME = { en: '/', fa: '/ir/', tr: '/tr/', ar: '/ae/', ru: '/ru/' };
+
+    function isLangHomePath() {
+        var p = String(location.pathname || '').replace(/\/+$/, '') || '/';
+        return p === '/' || p === '/ir' || p === '/tr' || p === '/ae' || p === '/eu' || p === '/ru' || p === '/fa' || p === '/ar';
+    }
+
+    function isHomepagePath() {
+        var p = String(location.pathname || '').replace(/\/+$/, '') || '/';
+        return p === '/' || p === '/index.html';
     }
 
     function canonicalForLang(lang) {
         var origin = 'https://fxguard.io';
         var path = location.pathname || '/';
         if (path === '/index.html') path = '/';
-        if (isGeoPath()) return origin + path;
+        if (isGeoPath()) return origin + (path.endsWith('/') ? path : path + '/');
+        if (isHomepagePath()) return origin + '/';
         if (!lang || lang === 'en') return origin + path;
         return origin + path + '?lang=' + encodeURIComponent(lang);
     }
@@ -1033,6 +1047,12 @@
             try {
                 var url = new URL(href, location.origin);
                 if (url.origin !== location.origin) return;
+                if (/^\/(ir|tr|ae|eu|ru|fa|ar)(\/)?$/i.test(url.pathname.replace(/\/+$/, '') + '/') || url.pathname === '/') {
+                    if (/^\/(ir|tr|ae|eu|ru|fa|ar)(\/|$)/i.test(url.pathname)) {
+                        a.setAttribute('href', url.pathname.replace(/\/?$/, '/') + url.hash);
+                        return;
+                    }
+                }
                 if (lang === 'en') url.searchParams.delete('lang');
                 else url.searchParams.set('lang', lang);
                 var next = url.pathname + url.search + url.hash;
@@ -1079,6 +1099,7 @@
     function detectPreferredLang() {
         var pathLang = langFromGeoPath();
         if (pathLang) return pathLang;
+        if (isHomepagePath()) return 'en';
         var params = new URLSearchParams(window.location.search);
         var urlLang = params.get('lang');
         if (urlLang && SUPPORTED_LANGS.indexOf(urlLang) !== -1) return urlLang;
@@ -1086,17 +1107,6 @@
             var saved = localStorage.getItem('landing_lang');
             if (saved && SUPPORTED_LANGS.indexOf(saved) !== -1) return saved;
         } catch (e) {}
-        var langs = [];
-        if (navigator.languages && navigator.languages.length) {
-            for (var i = 0; i < navigator.languages.length; i++) langs.push(navigator.languages[i]);
-        }
-        langs.push(navigator.language || navigator.userLanguage || 'en');
-        for (var j = 0; j < langs.length; j++) {
-            var hit = guessLangFromLocale(langs[j]);
-            if (hit) return hit;
-        }
-        var byTz = guessLangFromTimezone();
-        if (byTz) return byTz;
         return 'en';
     }
 
@@ -1232,15 +1242,16 @@
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var lang = this.getAttribute('data-lang');
-            var pathLang = langFromGeoPath();
-            if (pathLang && lang && lang !== pathLang) {
-                try { localStorage.setItem('landing_lang', lang); } catch (e) {}
-                window.location.href = '/?lang=' + encodeURIComponent(lang);
+            if (!lang || SUPPORTED_LANGS.indexOf(lang) === -1) return;
+            try { localStorage.setItem('landing_lang', lang); } catch (e) {}
+            if (isLangHomePath()) {
+                window.location.href = LANG_HOME[lang] || '/';
                 return;
             }
             applyLang(lang);
             var url = new URL(window.location.href);
-            url.searchParams.set('lang', lang);
+            if (lang === 'en') url.searchParams.delete('lang');
+            else url.searchParams.set('lang', lang);
             if (window.history.replaceState) window.history.replaceState({}, '', url.toString());
         });
     });

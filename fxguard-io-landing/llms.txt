@@ -1,10 +1,10 @@
 # FXGuard — llms.txt
 # https://fxguard.io/llms.txt
-# Last updated: 2026-08-24
+# Last updated: 2026-08-26
 
 > FXGuard is a WhatsApp CRM for exchange, remittance and finance desks (and other teams we tailor). Marketing site: https://fxguard.io — Staff panel: https://app.fxguard.io
 
-## Primary pages (English canonical; add ?lang=fa|tr|ar|ru for translations)
+## Primary pages (English canonical)
 
 - Home: https://fxguard.io/
 - WhatsApp CRM product: https://fxguard.io/whatsapp-crm
@@ -17,12 +17,21 @@
 - Blog: https://fxguard.io/blog
 - Procurement / security one-pager: https://fxguard.io/procurement
 
-## Market landings (GEO-specific HTML, not language variants)
+## Language homepages (hreflang)
 
-- Turkey: https://fxguard.io/tr/
-- UAE: https://fxguard.io/ae/
-- Iran: https://fxguard.io/ir/
-- Europe: https://fxguard.io/eu/
+- English (x-default): https://fxguard.io/
+- Persian: https://fxguard.io/ir/  (alias https://fxguard.io/fa/ → /ir/)
+- Turkish: https://fxguard.io/tr/
+- Arabic: https://fxguard.io/ae/  (alias https://fxguard.io/ar/ → /ae/)
+- Russian: https://fxguard.io/ru/
+- Inner pages keep ?lang=fa|tr|ar|ru (example: https://fxguard.io/pricing?lang=fa)
+
+## Market landings
+
+- Turkey (also Turkish language home): https://fxguard.io/tr/
+- UAE (also Arabic language home): https://fxguard.io/ae/
+- Iran (also Persian language home): https://fxguard.io/ir/
+- Europe (en-GB, invoice/DPA): https://fxguard.io/eu/
 
 ## Legal (app store requirements)
 
