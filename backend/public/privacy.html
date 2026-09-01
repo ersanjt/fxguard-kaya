@@ -8,6 +8,7 @@
     <meta name="description" content="Privacy policy for the Kaya Staff mobile apps and the Kaya CRM staff portal at kaya.fxguard.io.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://kaya.fxguard.io/privacy">
+    <meta name="theme-color" content="#080d1a">
     <link rel="icon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="/css/legal.css">
 </head>
 <body>
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">Kaya CRM</a>
@@ -25,7 +27,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <p class="meta">Effective 18 August 2026 · Last updated 18 August 2026</p>
         <h1 data-i18n="h1">Privacy Policy</h1>
         <p data-i18n="intro">This policy explains how the <strong>Kaya Staff</strong> iOS and Android apps and the staff portal at <a href="https://kaya.fxguard.io">kaya.fxguard.io</a> handle information. The apps are a <strong>staff portal</strong> for authorized employees — not a consumer social app.</p>
@@ -67,7 +69,16 @@
         <p data-i18n="contact_p">Privacy and support: <a href="mailto:support@kaya.fxguard.io">support@kaya.fxguard.io</a> · Owner: <a href="mailto:ersanjahedtabrizi@gmail.com">ersanjahedtabrizi@gmail.com</a> · WhatsApp: <a href="https://wa.me/905010676486">+90 501 067 6486</a> · <a href="/contact">Contact page</a>.</p>
         <p><a href="/terms" data-i18n="terms_link">Terms of Use</a> · <a href="/" data-i18n="home">Home</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 Kaya CRM</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 Kaya CRM</p>
+    </footer>
     <script src="/js/legal.js"></script>
 </body>
 </html>

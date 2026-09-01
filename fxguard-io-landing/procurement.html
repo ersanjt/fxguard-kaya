@@ -13,12 +13,16 @@
     <link rel="alternate" hreflang="ar" href="https://fxguard.io/procurement?lang=ar">
     <link rel="alternate" hreflang="ru" href="https://fxguard.io/procurement?lang=ru">
     <link rel="alternate" hreflang="x-default" href="https://fxguard.io/procurement">
+    <meta name="theme-color" content="#080d1a">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Vazirmatn:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/legal.css">
 </head>
-<body>
+<body data-page="procurement">
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">FXGuard</a>
@@ -31,7 +35,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <p class="meta">Effective 18 August 2026 · Last updated 18 August 2026</p>
         <h1 data-i18n="h1">Security and procurement summary</h1>
         <p data-i18n="intro">This one-pager is for finance and IT reviewers who need an invoice or PO. It is not a SOC 2 / ISO certificate. It describes how the hosted product at <a href="https://app.fxguard.io">app.fxguard.io</a> is run today. Marketing site: <a href="https://fxguard.io">fxguard.io</a>.</p>
@@ -85,7 +89,16 @@
         <h2 data-i18n="contact_h">Next step</h2>
         <p data-i18n="contact_p"><a href="/contact">Request an invoice</a> · <a href="/pricing">Plans</a> · <a href="/whatsapp-crm">Channel</a> · <a href="https://wa.me/905010676486">WhatsApp sales</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 FXGuard</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 FXGuard</p>
+    </footer>
     <script src="/js/procurement.js"></script>
 </body>
 </html>

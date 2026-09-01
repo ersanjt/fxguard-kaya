@@ -19,11 +19,31 @@ const CONTACT_PURPOSES = [
     'other',
 ];
 
+const CONTACT_PURPOSE_ALIASES = {
+    cloud_subscribe: 'purchase',
+    buy_license: 'license',
+    managed_hosting: 'managed',
+    guided: 'demo',
+    'guided-demo': 'demo',
+    'guided_demo': 'demo',
+};
+
+const CONTACT_LANGS = ['en', 'fa', 'tr', 'ar', 'ru'];
+
 function normalizeContactPurpose(raw) {
     const v = String(raw || '')
         .trim()
         .toLowerCase();
-    return CONTACT_PURPOSES.indexOf(v) >= 0 ? v : 'other';
+    const mapped = CONTACT_PURPOSE_ALIASES[v] || v;
+    return CONTACT_PURPOSES.indexOf(mapped) >= 0 ? mapped : 'other';
+}
+
+function normalizeContactLang(raw) {
+    const v = String(raw || '')
+        .trim()
+        .toLowerCase()
+        .slice(0, 8);
+    return CONTACT_LANGS.indexOf(v) >= 0 ? v : 'en';
 }
 
 function emptyPurposeCounts() {
@@ -45,7 +65,10 @@ function tallyPurposeCounts(rows) {
 
 module.exports = {
     CONTACT_PURPOSES,
+    CONTACT_PURPOSE_ALIASES,
+    CONTACT_LANGS,
     normalizeContactPurpose,
+    normalizeContactLang,
     emptyPurposeCounts,
     tallyPurposeCounts,
 };

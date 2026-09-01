@@ -181,6 +181,7 @@ window.__I18N_EN = {
     conv_sync_groups: 'Sync chats & groups',
     conv_tab_groups: 'Groups',
     conv_search_ph: 'Search name or phone...',
+    conv_search_aria: 'Search customer name or phone',
     conv_search_ph_no_phone: 'Search name...',
     conv_list_title: 'Conversations',
     more_filters: 'More filters',

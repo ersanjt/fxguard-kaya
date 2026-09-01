@@ -4,6 +4,14 @@
 (function () {
     var SUPPORTED = ['en', 'fa', 'tr', 'ar', 'ru'];
 
+    var FOOT = {
+        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
+        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
+        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' },
+        ar: { skip: 'تخطّ إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'اتصل', home: 'الرئيسية' },
+        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', home: 'Главная' }
+    };
+
     var T = {
         privacy: {
             en: {
@@ -319,7 +327,11 @@
 
     function apply(lang) {
         if (SUPPORTED.indexOf(lang) === -1) lang = 'en';
-        var dict = (T[page] && T[page][lang]) || (T[page] && T[page].en) || {};
+        var dict = Object.assign(
+            {},
+            FOOT[lang] || FOOT.en,
+            (T[page] && T[page][lang]) || (T[page] && T[page].en) || {}
+        );
         document.documentElement.lang = lang;
         document.documentElement.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
         document.querySelectorAll('[data-i18n]').forEach(function (el) {

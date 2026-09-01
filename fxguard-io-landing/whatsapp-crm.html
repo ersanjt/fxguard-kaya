@@ -48,7 +48,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>WhatsApp CRM for exchange, remittance and finance desks | FXGuard</title>
     <meta name="description" content="Company-owned customer book, roles and branches. Customized per business. Optional FX module. Two honest WhatsApp paths: QR gateway or official Meta Cloud API.">
-    <meta name="keywords" content="WhatsApp CRM, WhatsApp CRM for sales teams, WhatsApp for shops, WhatsApp for clinics, customized WhatsApp CRM, company inbox">
+    <meta name="keywords" content="WhatsApp CRM for exchange, remittance WhatsApp, FX rates CRM, company WhatsApp inbox, QR vs Cloud API">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
     <meta name="author" content="FXGuard">
     <meta name="theme-color" content="#059669">
@@ -63,13 +63,13 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://fxguard.io/whatsapp-crm">
     <meta property="og:site_name" content="FXGuard">
-    <meta property="og:title" content="WhatsApp CRM for sales teams, shops and companies | FXGuard">
-    <meta property="og:description" content="Customer book stays with the company. Quoted FX rates are timestamped. Roles and branches are enforced. Two honest WhatsApp paths: QR gateway or Meta Cloud API.">
+    <meta property="og:title" content="WhatsApp CRM for exchange, remittance and finance desks | FXGuard">
+    <meta property="og:description" content="Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles and branches. Two honest WhatsApp paths: QR gateway or Meta Cloud API.">
     <meta property="og:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
     <meta property="og:image:alt" content="FXGuard WhatsApp CRM">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="WhatsApp CRM for sales teams, shops and companies | FXGuard">
-    <meta name="twitter:description" content="Customer book, roles and branches. Customized for shops, clinics, sales teams and companies — not a generic inbox.">
+    <meta name="twitter:title" content="WhatsApp CRM for exchange, remittance and finance desks | FXGuard">
+    <meta name="twitter:description" content="Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles and branches.">
     <meta name="twitter:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
     <script type="application/ld+json">
 {
@@ -121,8 +121,8 @@
         <link rel="dns-prefetch" href="https://app.fxguard.io">
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preconnect" href="https://app.fxguard.io" crossorigin>
-    <link rel="preload" as="script" href="/js/pages-i18n.js">
-    <link rel="preload" as="script" href="/js/landing.js">
+    <link rel="preload" as="script" href="/js/pages-i18n.js?v=20260901a">
+    <link rel="preload" as="script" href="/js/landing.js?v=20260901a">
     <link rel="dns-prefetch" href="https://app.fxguard.io">
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,8 +136,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="/css/style.css?v=20260819">
-    <link rel="stylesheet" href="/css/landing.css?v=20260819b">
-    <link rel="stylesheet" href="/css/seo-pages.css">
+    <link rel="stylesheet" href="/css/landing.css?v=20260901a">
+    <link rel="stylesheet" href="/css/seo-pages.css?v=20260901a">
 </head>
 <body class="seo-page" data-page="whatsapp-crm">
         <a href="#main" class="skip-link" data-i18n="skip_link">Skip to content</a>
@@ -160,22 +160,27 @@
       <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
       <span>FXGuard</span>
     </a>
-    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
-      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
-      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
-      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
-      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
-      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    <div class="lang-dropdown header-lang">
+      <button type="button" class="lang-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="aria_lang" aria-label="Language">
+        <span class="lang-dropdown-code">EN</span>
+        <svg class="lang-dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="lang-switch lang-dropdown-menu" role="listbox" hidden>
+        <button type="button" data-lang="en" title="English" aria-label="English">English</button>
+        <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">فارسی</button>
+        <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">Türkçe</button>
+        <button type="button" data-lang="ar" title="العربية" aria-label="العربية">العربية</button>
+        <button type="button" data-lang="ru" title="Русский" aria-label="Русский">Русский</button>
+      </div>
     </div>
     <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
       <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
       <a href="/whatsapp-crm" data-nav="product" class="is-active" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
       <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
       <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
-      <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanel" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+      <a href="/live-demo" class="btn btn-primary" id="btnPanel" data-i18n="nav_try_demo">Demo</a>
+      <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
     </nav>
     <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
   </div>
@@ -184,12 +189,11 @@
   <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
   <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
   <a href="/whatsapp-crm" data-nav="product" class="is-active" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
   <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
   <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
-  <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanelMob" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+  <a href="/live-demo" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_try_demo">Demo</a>
+  <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
   <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
     <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
     <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
@@ -224,11 +228,23 @@
                     </article>
                 </div>
                 <p><a class="btn btn-primary" href="/pricing" data-i18n="crm_cta_packages">See packages</a>
-                   <a class="btn btn-outline" href="/live-demo" data-i18n="seo_open_demo">Open Live Demo</a></p>
+                   <a class="btn btn-outline" href="/live-demo" data-i18n="seo_open_demo">Book guided demo</a></p>
+                <section class="seo-deep">
+                    <h2 data-i18n="crm_who_h2">Built for exchange, remittance and finance desks</h2>
+                    <p data-i18n="crm_who_p">FXGuard is not a generic ads inbox. The usual buyer is a money desk: one company WhatsApp number, quoted FX rates on the same panel as the chat, a customer book that stays when staff leave, and roles per branch. Other teams can run Cloud Start without the FX pack.</p>
+                    <h2 data-i18n="crm_channel_h2">Two honest WhatsApp paths</h2>
+                    <p data-i18n="crm_channel_p">Unofficial QR (WhatsApp Web session) is faster to start and is not Meta-certified. Official Cloud API is the path when you need a documented business line. We say which one you would actually run — we do not sell “official WhatsApp” on a QR session.</p>
+                    <h2 data-i18n="crm_start_h2">Cloud Start $49 vs Business from $249</h2>
+                    <p data-i18n="crm_start_p">Start is 1 branch, 3 staff, inbox/tickets/tasks — no FX rates module. Business adds FX, more seats and branches. License and Managed are quoted from published floors. Accounting and exchange websites are separate products.</p>
+                    <h2 data-i18n="crm_faq_h2">Product questions</h2>
+                    <h3 data-i18n="crm_faq_q1">Is there a public shared demo password?</h3>
+                    <p data-i18n="crm_faq_a1">No. Book a 10-minute guided demo or a 7-day trial on your own number. Details on the live-demo page.</p>
+                </section>
                 <aside class="seo-cta" aria-label="Next steps">
                     <h2 data-i18n="seo_next">Next step</h2>
                     <div class="seo-cta-btns">
-                        <a class="btn btn-primary" href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="seo_open_demo">Open Live Demo</a>
+                        <a class="btn btn-primary" href="/live-demo" data-i18n="seo_open_demo">Open Live Demo</a>
+                        <a class="btn btn-wa" href="/pay" data-i18n="seo_pay">Pay $49</a>
                         <a class="btn btn-outline" href="/contact" data-i18n="seo_contact_sales">Contact Sales</a>
                         <a class="btn btn-wa js-wa-link" data-wa="buy" href="https://wa.me/905010676486" target="_blank" rel="noopener" data-i18n="seo_whatsapp">WhatsApp</a>
                     </div>
@@ -257,28 +273,31 @@
         <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
         <span data-i18n="logo">FXGuard</span>
       </a>
-      <p data-i18n="footer_about">FXGuard builds digital products for exchange, finance and support teams. Start with WhatsApp CRM today — Accounting is coming next.</p>
-      <p class="footer-markets" data-i18n="footer_markets">Serving teams in Turkey · UAE / Dubai · Europe · Iran</p>
+      <p data-i18n="footer_about">FXGuard is a WhatsApp CRM for exchange, remittance and finance desks: one company number, FX rates on the same panel as the chat, customer book stays with the business.</p>
+      <p class="footer-who" data-i18n="footer_who">Primary: exchange, remittance, finance. Other teams can run Cloud Start without the FX pack.</p>
+      <p class="footer-trust" data-i18n="footer_trust">Optional OpenAI first-replies (your key) · staff close the deal · 7-day money-back on first Cloud Start month</p>
+      <p class="footer-markets" data-i18n="footer_markets">Turkey · UAE · Europe · Iran</p>
       <nav class="footer-market-links" aria-label="Markets">
-        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
-        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
-        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
-        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+        <a href="/tr/" data-no-lang data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-no-lang data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-no-lang data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-no-lang data-i18n="mkt_ir">Iran</a>
       </nav>
     </div>
     <nav class="footer-col" aria-label="Product">
       <h3 data-i18n="footer_col_product">Products</h3>
       <a href="/products" data-i18n="footer_products">All products</a>
       <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
-            <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
       <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
       <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
-      <a href="/live-demo" data-i18n="footer_demo">Live Demo</a>
-      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+      <a href="/live-demo" data-i18n="footer_demo">Demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Staff login</a>
     </nav>
     <nav class="footer-col" aria-label="Solutions">
       <h3 data-i18n="footer_col_solutions">Solutions</h3>
       <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/procurement" data-i18n="footer_procurement">Security / invoice pack</a>
       <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
       <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
       <a href="/#services" data-i18n="footer_services">Support &amp; Backups</a>
@@ -286,6 +305,9 @@
     <nav class="footer-col" aria-label="Company">
       <h3 data-i18n="footer_col_company">Company</h3>
       <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/privacy" data-i18n="footer_privacy">Privacy</a>
+      <a href="/terms" data-i18n="footer_terms">Terms</a>
+      <a href="/account-deletion" data-i18n="footer_account_deletion">Account deletion</a>
       <a href="/#faq" data-i18n="footer_faq">FAQ</a>
       <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
       <a href="mailto:support@fxguard.io">support@fxguard.io</a>
@@ -293,24 +315,28 @@
     </nav>
   </div>
   <div class="container footer-bottom">
-    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">Digital products for Exchange, Finance &amp; Support Teams</span></p>
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">WhatsApp CRM — tailored to your business</span></p>
     <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
     <p class="footer-legal">
+      <a href="/privacy" data-i18n="footer_privacy">Privacy</a> ·
+      <a href="/terms" data-i18n="footer_terms">Terms</a> ·
+      <a href="/account-deletion" data-i18n="footer_account_deletion">Account deletion</a> ·
       <a href="/">fxguard.io</a> ·
       <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
     </p>
   </div>
 </footer>
-<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+<div class="sticky-buy" id="stickyBuy" role="region" data-i18n-aria="sticky_aria" aria-label="Demo, Cloud Start or quote">
   <p class="sticky-buy-text" data-i18n="sticky_text">From $49/mo · Free demo</p>
-  <div class="sticky-buy-actions">
-    <a href="https://app.fxguard.io/" class="btn btn-outline sticky-btn js-panel-link" target="_blank" rel="noopener" data-i18n="sticky_demo">Demo</a>
+    <div class="sticky-buy-actions">
+    <a href="/live-demo" class="btn btn-outline sticky-btn" data-i18n="sticky_demo">Demo</a>
+    <a href="/pay" class="btn btn-primary sticky-btn" data-i18n="sticky_pay">$49</a>
     <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Buy</a>
   </div>
 </div>
-<script src="/js/pages-i18n.js?v=20260822a" defer></script>
-<script src="/js/gtm-i18n.js?v=20260822a" defer></script>
-<script src="/js/landing.js?v=20260819n" defer></script>
-<script src="/js/site-yield.js" defer></script>
+<script src="/js/pages-i18n.js?v=20260901a" defer></script>
+<script src="/js/gtm-i18n.js?v=20260901a" defer></script>
+<script src="/js/landing.js?v=20260901a" defer></script>
+<script src="/js/site-yield.js?v=20260901a" defer></script>
 </body>
 </html>

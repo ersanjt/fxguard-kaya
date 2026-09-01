@@ -13,13 +13,16 @@
     <link rel="alternate" hreflang="ar" href="https://fxguard.io/privacy?lang=ar">
     <link rel="alternate" hreflang="ru" href="https://fxguard.io/privacy?lang=ru">
     <link rel="alternate" hreflang="x-default" href="https://fxguard.io/privacy">
+    <meta name="theme-color" content="#080d1a">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
     <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Vazirmatn:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/legal.css">
 </head>
-<body data-legal-page="privacy">
+<body data-legal-page="privacy" data-page="privacy">
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">FXGuard</a>
@@ -32,7 +35,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <p class="meta">Effective 24 August 2026 · Last updated 24 August 2026</p>
         <h1 data-i18n="h1">Privacy Policy</h1>
         <p data-i18n="intro">This policy explains how the <strong>FXGuard Staff</strong> iOS and Android apps and the staff panel at <a href="https://app.fxguard.io">app.fxguard.io</a> handle information. The apps are a <strong>staff portal</strong> for authorized employees — not a consumer social app.</p>
@@ -74,7 +77,16 @@
         <p data-i18n="contact_p">Privacy and support: <a href="mailto:support@fxguard.io">support@fxguard.io</a> · Sales: <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> · WhatsApp: <a href="https://wa.me/905010676486">+90 501 067 6486</a>.</p>
         <p><a href="/terms" data-i18n="terms_link">Terms of Use</a> · <a href="/" data-i18n="home">Home</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 FXGuard · ERST IT Solutions</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 FXGuard · ERST IT Solutions</p>
+    </footer>
     <script src="/js/legal.js"></script>
 </body>
 </html>

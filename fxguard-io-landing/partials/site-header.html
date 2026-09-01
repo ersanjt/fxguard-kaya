@@ -22,19 +22,24 @@
     <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
       <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
       <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
       <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
       <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
       <a href="/live-demo" class="btn btn-primary" id="btnPanel" data-i18n="nav_try_demo">Demo</a>
+      <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
     </nav>
-    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
-      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
-      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
-      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
-      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
-      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    <div class="lang-dropdown header-lang">
+      <button type="button" class="lang-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="aria_lang" aria-label="Language">
+        <span class="lang-dropdown-code">EN</span>
+        <svg class="lang-dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="lang-switch lang-dropdown-menu" role="listbox" hidden>
+        <button type="button" data-lang="en" title="English" aria-label="English">English</button>
+        <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">فارسی</button>
+        <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">Türkçe</button>
+        <button type="button" data-lang="ar" title="العربية" aria-label="العربية">العربية</button>
+        <button type="button" data-lang="ru" title="Русский" aria-label="Русский">Русский</button>
+      </div>
     </div>
     <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
   </div>
@@ -43,12 +48,11 @@
   <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
   <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
   <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
   <a href="/blog" data-nav="blog" data-i18n="nav_blog">Blog</a>
   <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
   <a href="/live-demo" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_try_demo">Demo</a>
+  <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
   <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
     <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
     <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>

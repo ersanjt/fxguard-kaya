@@ -116,18 +116,24 @@
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
-                window.SUPPORT_URL = c.supportUrl;
+                var su = String(c.supportUrl).trim();
+                var low = su.toLowerCase();
+                var supportOk = (low.indexOf('https://') === 0 || low.indexOf('http://') === 0 || low.indexOf('mailto:') === 0 || (su.charAt(0) === '/' && su.charAt(1) !== '/')) &&
+                    low.indexOf('javascript:') !== 0 && low.indexOf('data:') !== 0 && low.indexOf('vbscript:') !== 0;
+                if (supportOk) {
+                window.SUPPORT_URL = su;
                 const setSupportLink = function(wrapId, linkId) {
                     const wrap = document.getElementById(wrapId);
                     const link = document.getElementById(linkId);
                     if (wrap && link) {
-                        link.href = c.supportUrl;
-                        link.target = c.supportUrl.startsWith('mailto:') ? '_self' : '_blank';
-                        link.rel = c.supportUrl.startsWith('mailto:') ? '' : 'noopener';
+                        link.href = su;
+                        link.target = su.indexOf('mailto:') === 0 ? '_self' : '_blank';
+                        link.rel = su.indexOf('mailto:') === 0 ? '' : 'noopener';
                     }
                 };
                 setSupportLink('loginSupportWrap', 'loginSupportLink');
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
+                }
             }
         }).catch(function(){});
         let _dashboardStatsInflight = null;

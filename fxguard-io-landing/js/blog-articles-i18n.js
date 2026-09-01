@@ -168,7 +168,7 @@
         ],
         body: `<p>FXGuard is an enterprise <a href="/whatsapp-crm">WhatsApp CRM</a> for exchange, finance and support teams. Buyers typically choose one of three ownership models. All three include the same core modules: shared inbox, customers, tickets, tasks, roles, branches, FX tools and 2FA.</p>
 
-<div class="blog-callout">Fast path: <a href="https://app.fxguard.io/" target="_blank" rel="noopener">try the live demo</a>, then <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">buy on WhatsApp</a> or open <a href="/pricing">packages</a>.</div>
+<div class="blog-callout">Fast path: <a href="/live-demo">book a guided demo</a>, then <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">buy on WhatsApp</a> or open <a href="/pricing">packages</a>.</div>
 
 <figure class="blog-inline-shot">
   <img src="/images/Desktop-Dashboard.png" alt="FXGuard live dashboard screenshot" width="1024" height="507" loading="lazy">
@@ -198,7 +198,7 @@
 
 <h2 id="how-to-buy">How to buy today</h2>
 <ol>
-  <li>Open the <a href="/live-demo">live demo</a> — user <code>demo</code>, password <code>guided demo</code></li>
+  <li>Book a <a href="/live-demo">10-minute guided demo</a> — we do not publish a shared password on this site</li>
   <li>Pick Cloud, License or Managed on <a href="/pricing">/pricing</a></li>
   <li>Message sales on WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> or use <a href="/contact">/contact</a></li>
 </ol>
@@ -207,7 +207,7 @@
 <h3>Do all packages include the same features?</h3>
 <p>Yes — core CRM modules are the same. The difference is who hosts and operates the system.</p>
 <h3>Is the demo free?</h3>
-<p>Yes. Public demo credentials are published on <a href="/live-demo">/live-demo</a>. Nothing you change is saved.</p>`
+<p>Yes. Book a 10-minute guided demo or a 7-day own-number trial. We do not publish a shared password. Details: <a href="/live-demo">/live-demo</a>.</p>`
       },
       fa: {
         title: `خرید واتساپ CRM: کلود در برابر لایسنس خودمیزبان و مدیریت‌شده`,
@@ -222,7 +222,7 @@
         ],
         body: `<p>FXGuard یک <a href="/whatsapp-crm">واتساپ CRM</a> سازمانی است، برای تیم‌های صرافی، مالی و پشتیبانی که دیگر نمی‌خواهند گفتگوی مشتری روی گوشی شخصی گم شود. خریداران معمولاً یکی از سه مدل مالکیت را انتخاب می‌کنند؛ هر سه با همان امکانات اصلی: اینباکس تیمی، مشتریان، تیکت، تسک، نقش‌ها، شعب، ابزارهای ارز و ۲FA.</p>
 
-<div class="blog-callout">راه سریع: اول <a href="https://app.fxguard.io/" target="_blank" rel="noopener">دموی زنده را ببینید</a>، بعد <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">از واتساپ خرید کنید</a> یا سری به <a href="/pricing">پکیج‌ها</a> بزنید.</div>
+<div class="blog-callout">راه سریع: اول <a href="/live-demo">دموی هدایت‌شده رزرو کنید</a>، بعد <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">از واتساپ خرید کنید</a> یا سری به <a href="/pricing">پکیج‌ها</a> بزنید.</div>
 
 <figure class="blog-inline-shot">
   <img src="/images/Desktop-Dashboard.png" alt="تصویر داشبورد زنده FXGuard" width="1024" height="507" loading="lazy">
@@ -252,7 +252,7 @@
 
 <h2 id="how-to-buy">همین امروز چطور بخریم</h2>
 <ol>
-  <li><a href="/live-demo">دموی زنده</a> را باز کنید؛ نام کاربری <code>demo</code>، رمز <code>guided demo</code></li>
+  <li>یک <a href="/live-demo">دموی هدایت‌شده ۱۰ دقیقه‌ای</a> رزرو کنید — رمز مشترک عمومی در این سایت منتشر نمی‌شود</li>
   <li>در <a href="/pricing">صفحه قیمت‌گذاری</a> بین کلود، لایسنس یا مدیریت‌شده انتخاب کنید</li>
   <li>در واتساپ با فروش صحبت کنید: <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a>، یا از فرم <a href="/contact">تماس با ما</a> استفاده کنید</li>
 </ol>
@@ -261,7 +261,7 @@
 <h3>آیا همه پکیج‌ها امکانات یکسانی دارند؟</h3>
 <p>بله. ماژول‌های اصلی CRM در هر سه مدل یکسان است؛ تنها فرق در این است که چه کسی سیستم را میزبانی و اداره می‌کند.</p>
 <h3>آیا دمو رایگان است؟</h3>
-<p>بله، کاملاً. اطلاعات ورود دموی عمومی در <a href="/live-demo">صفحه دموی زنده</a> منتشر شده و هیچ تغییری که در آن ایجاد کنید ذخیره نمی‌شود.</p>`
+<p>بله. دموی هدایت‌شده ۱۰ دقیقه‌ای یا آزمایش ۷روزه با شماره خودتان. رمز مشترک منتشر نمی‌شود. جزئیات: <a href="/live-demo">صفحه دمو</a>.</p>`
       },
       tr: {
         title: `WhatsApp CRM Satın Alın: Cloud vs Self-hosted Lisans vs Managed`,
@@ -276,7 +276,7 @@
         ],
         body: `<p>FXGuard; döviz, finans ve destek ekipleri için kurumsal bir <a href="/whatsapp-crm">WhatsApp CRM</a>'dir. Alıcılar genelde üç sahiplik modelinden birini seçer, üçü de aynı çekirdek modülleri içerir: ortak gelen kutusu, müşteriler, ticket, görev, roller, şubeler, döviz araçları ve 2FA.</p>
 
-<div class="blog-callout">Hızlı yol: önce <a href="https://app.fxguard.io/" target="_blank" rel="noopener">canlı demoya bakın</a>, sonra <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">WhatsApp'tan satın alın</a> ya da <a href="/pricing">paketlere</a> göz atın.</div>
+<div class="blog-callout">Hızlı yol: önce <a href="/live-demo">rehberli demo alın</a>, sonra <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">WhatsApp'tan satın alın</a> ya da <a href="/pricing">paketlere</a> göz atın.</div>
 
 <figure class="blog-inline-shot">
   <img src="/images/Desktop-Dashboard.png" alt="FXGuard canlı dashboard ekran görüntüsü" width="1024" height="507" loading="lazy">
@@ -306,7 +306,7 @@
 
 <h2 id="how-to-buy">Bugün nasıl satın alınır</h2>
 <ol>
-  <li><a href="/live-demo">Canlı demoyu</a> açın: kullanıcı <code>demo</code>, şifre <code>guided demo</code></li>
+  <li><a href="/live-demo">10 dakikalık rehberli demo</a> alın — bu sitede ortak şifre yayımlanmaz</li>
   <li><a href="/pricing">Fiyatlandırma sayfasında</a> Cloud, Lisans veya Managed'ı seçin</li>
   <li>WhatsApp'tan satışla konuşun: <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a>, ya da <a href="/contact">iletişim formunu</a> kullanın</li>
 </ol>
@@ -315,7 +315,7 @@
 <h3>Tüm paketlerde aynı özellikler mi var?</h3>
 <p>Evet, çekirdek CRM modülleri hepsinde birebir aynı. Değişen tek şey, sistemi kimin barındırıp işlettiği.</p>
 <h3>Demo gerçekten ücretsiz mi?</h3>
-<p>Evet. Herkese açık demo bilgileri <a href="/live-demo">demo sayfasında</a> yayında; orada yaptığınız hiçbir değişiklik kaydedilmez.</p>`
+<p>Evet. 10 dakikalık rehberli demo veya 7 günlük kendi-numara denemesi. Ortak şifre yayımlanmaz. Ayrıntı: <a href="/live-demo">demo sayfası</a>.</p>`
       },
       ar: {
         title: `اشترِ واتساب CRM: سحابة مقابل ترخيص ذاتي مقابل مُدار`,
@@ -330,7 +330,7 @@
         ],
         body: `<p>FXGuard منصة <a href="/whatsapp-crm">واتساب CRM</a> للمؤسسات، مصمّمة لفرق الصرافة والمالية والدعم. عادة يختار المشترون أحد ثلاثة نماذج ملكية، وكلها تتضمن نفس الأدوات الأساسية: صندوق وارد مشترك، عملاء، تذاكر، مهام، أدوار، فروع، أدوات صرف، وتحقق ثنائي.</p>
 
-<div class="blog-callout">الطريق الأسرع: جرّب <a href="https://app.fxguard.io/" target="_blank" rel="noopener">العرض الحي</a> أولًا، ثم <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">اشترِ مباشرة عبر واتساب</a> أو تصفّح <a href="/pricing">الباقات</a>.</div>
+<div class="blog-callout">الطريق الأسرع: <a href="/live-demo">احجز عرضًا موجّهًا</a> أولًا، ثم <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">اشترِ مباشرة عبر واتساب</a> أو تصفّح <a href="/pricing">الباقات</a>.</div>
 
 <figure class="blog-inline-shot">
   <img src="/images/Desktop-Dashboard.png" alt="لقطة شاشة حقيقية للوحة تحكم FXGuard" width="1024" height="507" loading="lazy">
@@ -360,7 +360,7 @@
 
 <h2 id="how-to-buy">خطوات الشراء اليوم</h2>
 <ol>
-  <li>افتح <a href="/live-demo">العرض الحي</a>: المستخدم <code>demo</code>، كلمة المرور <code>guided demo</code></li>
+  <li>احجز <a href="/live-demo">عرضًا موجّهًا لـ 10 دقائق</a> — لا ننشر كلمة مرور مشتركة هنا</li>
   <li>اختر السحابة أو الترخيص أو المُدار من <a href="/pricing">صفحة الأسعار</a></li>
   <li>راسل فريق المبيعات على واتساب <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a>، أو استخدم <a href="/contact">صفحة التواصل</a></li>
 </ol>
@@ -369,7 +369,7 @@
 <h3>هل تحتوي كل الباقات على نفس الميزات؟</h3>
 <p>نعم، وحدات CRM الأساسية متطابقة تمامًا في الباقات الثلاث. الفرق الوحيد هو من يستضيف النظام ويشغّله.</p>
 <h3>هل التجربة مجانية حقًا؟</h3>
-<p>نعم، تمامًا. بيانات العرض العام منشورة على <a href="/live-demo">صفحة العرض الحي</a>، ولا يُحفظ أي تغيير تجريه هناك.</p>`
+<p>نعم. احجزوا عرضًا موجّهًا لـ 10 دقائق أو تجربة 7 أيام على رقمكم. لا كلمة مرور مشتركة. التفاصيل: <a href="/live-demo">صفحة العرض</a>.</p>`
       },
       ru: {
         title: `Купить WhatsApp CRM: Cloud vs Self-hosted vs Managed`,
@@ -384,7 +384,7 @@
         ],
         body: `<p>FXGuard — корпоративный <a href="/whatsapp-crm">WhatsApp CRM</a> для обменных, финансовых и support-команд. Покупатели обычно выбирают одну из трёх моделей владения, и во всех трёх — одинаковый набор модулей: общий inbox, клиенты, тикеты, задачи, роли, филиалы, инструменты по валюте и 2FA.</p>
 
-<div class="blog-callout">Быстрый путь: сначала <a href="https://app.fxguard.io/" target="_blank" rel="noopener">посмотрите live-демо</a>, затем <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">купите прямо в WhatsApp</a> или откройте <a href="/pricing">пакеты</a>.</div>
+<div class="blog-callout">Быстрый путь: сначала <a href="/live-demo">запишитесь на демо с гидом</a>, затем <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard.%20Please%20send%20Cloud%20%2449%2C%20License%20and%20Managed%20options." target="_blank" rel="noopener">купите прямо в WhatsApp</a> или откройте <a href="/pricing">пакеты</a>.</div>
 
 <figure class="blog-inline-shot">
   <img src="/images/Desktop-Dashboard.png" alt="Скриншот реального дашборда FXGuard" width="1024" height="507" loading="lazy">
@@ -414,7 +414,7 @@
 
 <h2 id="how-to-buy">Как купить прямо сегодня</h2>
 <ol>
-  <li>Откройте <a href="/live-demo">live-демо</a>: логин <code>demo</code>, пароль <code>guided demo</code></li>
+  <li>Запишитесь на <a href="/live-demo">10-минутное демо с гидом</a> — общий пароль на сайте не публикуем</li>
   <li>Выберите Cloud, License или Managed на странице <a href="/pricing">тарифов</a></li>
   <li>Напишите продажам в WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> или используйте <a href="/contact">форму связи</a></li>
 </ol>
@@ -423,245 +423,252 @@
 <h3>Во всех пакетах одинаковый функционал?</h3>
 <p>Да, базовые модули CRM полностью идентичны. Разница только в том, кто хостит и обслуживает систему.</p>
 <h3>Демо действительно бесплатное?</h3>
-<p>Да, полностью. Данные для входа в публичное демо опубликованы на <a href="/live-demo">странице демо</a>, а всё, что вы там измените, не сохраняется.</p>`
+<p>Да. 10-минутное демо с гидом или 7-дневный trial на своём номере. Общий пароль не публикуем. Подробности: <a href="/live-demo">страница демо</a>.</p>`
       }
     },
 
     'how-to-try-fxguard-live-demo': {
       en: {
-        title: `How to Try the FXGuard Live Demo (Free) Before You Buy`,
-        lead: `You do not need a sales call to evaluate FXGuard. The public live demo is the real product — here is exactly how to open it, what to click, and how to buy after.`,
+        title: `How to try FXGuard before you buy (guided demo, not a public password)`,
+        lead: `There is no shared public login on this site. Book a 10-minute walkthrough of rates, inbox, roles and branches — or a 7-day trial on your own WhatsApp number.`,
         toc: [
-          [`#credentials`, `Demo URL and credentials`],
-          [`#what-to-test`, `What to test in 10 minutes`],
+          [`#how`, `Two ways to try FXGuard`],
+          [`#what-to-test`, `What we show in 10 minutes`],
           [`#after-demo`, `After the demo — how to buy`],
           [`#faq`, `FAQ`]
         ],
-        body: `<p>Most buyers ask for a walkthrough video. FXGuard gives you something better: a public panel. Follow this checklist, then decide how to purchase.</p>
+        body: `<p>Most buyers ask for a walkthrough video or a published demo password. FXGuard does neither on the marketing site. You evaluate the real panel in a booked session, then you choose Cloud Start, Business, license or Managed.</p>
 
-<h2 id="credentials">Demo URL and credentials</h2>
+<h2 id="how">Two ways to try FXGuard</h2>
 <ul>
-  <li><strong>URL:</strong> <a href="https://app.fxguard.io/" target="_blank" rel="noopener">https://app.fxguard.io/</a></li>
-  <li><strong>Username:</strong> <code>demo</code></li>
-  <li><strong>Password:</strong> <code>guided demo</code></li>
+  <li><strong>10-minute guided demo</strong> on WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> — rates, customer book, roles, branches, and which WhatsApp path you would actually run (QR vs official Cloud API).</li>
+  <li><strong>7-day trial on your own number</strong> — we connect your WhatsApp, your team sees real traffic, then you disconnect it. It is not unlimited production Cloud Start.</li>
 </ul>
-<p>Full instructions also live on <a href="/live-demo">/live-demo</a>.</p>
+<p>Full booking steps: <a href="/live-demo">/live-demo</a>. We do not list a shared username and password here.</p>
 
 <figure class="blog-inline-shot">
-  <img src="/images/Mobile-Conversations.png" alt="FXGuard mobile conversations screenshot from the live demo" width="429" height="924" loading="lazy">
-  <figcaption>Mobile conversations view — explore the same screens on desktop and phone layouts.</figcaption>
+  <img src="/images/Mobile-Conversations.png" alt="FXGuard mobile conversations screenshot from a guided demo" width="429" height="924" loading="lazy">
+  <figcaption>Mobile conversations view — the same screens you will see on desktop in a booked session.</figcaption>
 </figure>
 
-<h2 id="what-to-test">What to test in 10 minutes</h2>
+<h2 id="what-to-test">What we show in 10 minutes</h2>
 <ol>
-  <li><strong>Dashboard</strong> — overview metrics and quick actions</li>
-  <li><strong>Conversations</strong> — shared WhatsApp team inbox filters</li>
-  <li><strong>Customers</strong> — history instead of starting from zero</li>
-  <li><strong>Users &amp; roles</strong> — Owner → Agent separation (<a href="/blog/whatsapp-crm-security-2fa">security guide</a>)</li>
-  <li><strong>Profile / 2FA</strong> — how staff secure their accounts</li>
+  <li><strong>Quoted FX rates</strong> on the same panel as the chat (Business and above — Cloud Start has no FX module)</li>
+  <li><strong>Customer book</strong> — history stays with the company, not a personal phone</li>
+  <li><strong>Roles, branches, 2FA</strong> — Owner vs Agent (<a href="/blog/whatsapp-crm-security-2fa">security guide</a>)</li>
+  <li><strong>Shared inbox</strong> — included, not the product</li>
+  <li><strong>Channel honesty</strong> — unofficial QR vs Meta Cloud API</li>
 </ol>
-<div class="blog-callout">Tip: nothing you change in the public demo is saved — explore freely, then contact sales when ready to buy.</div>
+<div class="blog-callout">Do not paste real customer secrets into any shared environment. For a live line, book the session.</div>
 
 <h2 id="after-demo">After the demo — how to buy</h2>
-<p>If the panel fits your team:</p>
+<p>If the panel fits your desk:</p>
 <ul>
-  <li>Start with <a href="/pricing">Hosted Cloud from $49/mo</a> for fastest go-live</li>
-  <li>Or request a <a href="/self-hosted">Self-hosted License</a> / <a href="/managed-hosting">Managed Dedicated</a> quote</li>
-  <li>Message WhatsApp <a href="https://wa.me/905010676486?text=Hi%2C%20I%20tried%20the%20FXGuard%20demo%20and%20want%20to%20buy." target="_blank" rel="noopener">+90 501 067 6486</a></li>
+  <li><a href="/pricing">Cloud Start $49/mo</a> — 1 branch, 3 staff, inbox/tickets/tasks, no FX module</li>
+  <li>Business from $249 — FX rates, more seats and branches, invoice</li>
+  <li><a href="/self-hosted">Self-hosted license from $4,000</a> or <a href="/managed-hosting">Managed from $800/mo</a></li>
+  <li>WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> or <a href="/contact">/contact</a></li>
 </ul>
-<p>Read the buyer guide: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud vs License vs Managed</a>.</p>
+<p>Buyer guide: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud vs License vs Managed</a>.</p>
 
 <h2 id="faq">FAQ</h2>
-<h3>Will my demo data be private?</h3>
-<p>No — the public demo is shared. Do not enter real customer secrets. For a private instance, buy Hosted Cloud or Managed Dedicated.</p>`
+<h3>Is there a public demo password?</h3>
+<p>No. A shared login is not published on fxguard.io. Book a guided demo or an own-number trial.</p>
+<h3>Is the guided demo free?</h3>
+<p>Yes. Ten minutes. Cloud Start is self-serve after that; commercial plans need a written quote.</p>`
       },
       fa: {
-        title: `چگونه دموی زنده FXGuard را رایگان قبل از خرید امتحان کنید`,
-        lead: `لازم نیست برای ارزیابی FXGuard در جلسه فروش بنشینید؛ دموی عمومی زنده همان محصول واقعی است. اینجا دقیقاً می‌گوییم کجا بروید، چه چیزی را کلیک کنید و بعدش چطور خرید کنید.`,
+        title: `چگونه FXGuard را قبل از خرید امتحان کنید (دموی هدایت‌شده، نه رمز عمومی)`,
+        lead: `رمز ورود مشترک عمومی در این سایت منتشر نمی‌شود. یک مرور ۱۰ دقیقه‌ای از نرخ، اینباکس، نقش و شعبه رزرو کنید — یا آزمایش ۷روزه روی شماره واتساپ خودتان.`,
         toc: [
-          [`#credentials`, `آدرس دمو و اطلاعات ورود`],
-          [`#what-to-test`, `در ۱۰ دقیقه چه چیزی را امتحان کنیم`],
+          [`#how`, `دو راه برای امتحان FXGuard`],
+          [`#what-to-test`, `در ۱۰ دقیقه چه چیزی نشان می‌دهیم`],
           [`#after-demo`, `بعد از دمو، چطور بخریم`],
           [`#faq`, `سوالات متداول`]
         ],
-        body: `<p>اغلب خریداران دنبال یک ویدیوی معرفی می‌گردند؛ FXGuard چیز بهتری به شما می‌دهد: یک پنل واقعی و در دسترس همه. این چک‌لیست را دنبال کنید، بعد تصمیم بگیرید چطور بخرید.</p>
+        body: `<p>بیشتر خریداران ویدیوی معرفی یا رمز دموی منتشرشده می‌خواهند. FXGuard هیچ‌کدام را روی سایت بازاریابی نمی‌گذارد. پنل واقعی را در جلسه رزروشده می‌بینید، بعد بین ابر شروع، تجاری، لایسنس یا مدیریت‌شده انتخاب می‌کنید.</p>
 
-<h2 id="credentials">آدرس دمو و اطلاعات ورود</h2>
+<h2 id="how">دو راه برای امتحان FXGuard</h2>
 <ul>
-  <li><strong>آدرس:</strong> <a href="https://app.fxguard.io/" target="_blank" rel="noopener">https://app.fxguard.io/</a></li>
-  <li><strong>نام کاربری:</strong> <code>demo</code></li>
-  <li><strong>رمز عبور:</strong> <code>guided demo</code></li>
+  <li><strong>دموی هدایت‌شده ۱۰ دقیقه‌ای</strong> در واتساپ <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> — نرخ، دفتر مشتری، نقش، شعبه، و اینکه واقعاً کدام مسیر واتساپ را می‌روید (QR یا Cloud API رسمی).</li>
+  <li><strong>آزمایش ۷روزه با شماره خودتان</strong> — شماره را وصل می‌کنیم، تیم ترافیک واقعی می‌بیند، بعد قطع می‌کنید. این ابر شروع نامحدود نیست.</li>
 </ul>
-<p>راهنمای کامل هم در <a href="/live-demo">صفحه دموی زنده</a> در دسترس است.</p>
+<p>مراحل رزرو: <a href="/live-demo">صفحه دمو</a>. نام کاربری و رمز مشترک اینجا نیست.</p>
 
 <figure class="blog-inline-shot">
-  <img src="/images/Mobile-Conversations.png" alt="تصویر گفتگوهای موبایل FXGuard از دموی زنده" width="429" height="924" loading="lazy">
-  <figcaption>نمای گفتگوها روی موبایل؛ همان صفحات را هم روی دسکتاپ هم روی گوشی ببینید.</figcaption>
+  <img src="/images/Mobile-Conversations.png" alt="تصویر گفتگوهای موبایل FXGuard از دموی هدایت‌شده" width="429" height="924" loading="lazy">
+  <figcaption>نمای گفتگوها روی موبایل؛ همان صفحات را در جلسه رزروشده روی دسکتاپ هم می‌بینید.</figcaption>
 </figure>
 
-<h2 id="what-to-test">در ۱۰ دقیقه چه چیزی را امتحان کنیم</h2>
+<h2 id="what-to-test">در ۱۰ دقیقه چه چیزی نشان می‌دهیم</h2>
 <ol>
-  <li><strong>داشبورد</strong>؛ یک نگاه کلی به آمار و دسترسی سریع به کارها</li>
-  <li><strong>گفتگوها</strong>؛ فیلترهای اینباکس تیمی مشترک واتساپ</li>
-  <li><strong>مشتریان</strong>؛ تاریخچه کامل، نه شروع از صفر</li>
-  <li><strong>کاربران و نقش‌ها</strong>؛ تفکیک مالک از اپراتور (بیشتر در <a href="/blog/whatsapp-crm-security-2fa">راهنمای امنیت</a>)</li>
-  <li><strong>پروفایل و ۲FA</strong>؛ کارکنان چطور حساب‌شان را ایمن می‌کنند</li>
+  <li><strong>نرخ ارز اعلام‌شده</strong> روی همان پنل چت (تجاری به بالا — ابر شروع ماژول نرخ ندارد)</li>
+  <li><strong>دفتر مشتری</strong> — تاریخچه مال شرکت می‌ماند، نه گوشی شخصی</li>
+  <li><strong>نقش، شعبه، ۲FA</strong> — مالک در برابر اپراتور (<a href="/blog/whatsapp-crm-security-2fa">راهنمای امنیت</a>)</li>
+  <li><strong>اینباکس مشترک</strong> — هست، محصول اصلی نیست</li>
+  <li><strong>صداقت کانال</strong> — QR غیررسمی در برابر Cloud API متا</li>
 </ol>
-<div class="blog-callout">نکته: هیچ تغییری در دموی عمومی ذخیره نمی‌شود؛ پس با خیال راحت همه‌جا را بگردید و وقتی آماده خرید بودید، با فروش تماس بگیرید.</div>
+<div class="blog-callout">رمز مشتری واقعی را در محیط مشترک نگذارید. برای خط زنده جلسه رزرو کنید.</div>
 
 <h2 id="after-demo">بعد از دمو، چطور بخریم</h2>
-<p>اگر پنل با نیاز تیم شما جور بود:</p>
+<p>اگر پنل با میز شما جور بود:</p>
 <ul>
-  <li>برای سریع‌ترین راه‌اندازی از <a href="/pricing">کلود میزبانی‌شده، از ۴۹ دلار در ماه</a> شروع کنید</li>
-  <li>یا برای <a href="/self-hosted">لایسنس خودمیزبان</a> / <a href="/managed-hosting">اختصاصی مدیریت‌شده</a> استعلام قیمت بگیرید</li>
-  <li>در واتساپ پیام دهید: <a href="https://wa.me/905010676486?text=Hi%2C%20I%20tried%20the%20FXGuard%20demo%20and%20want%20to%20buy." target="_blank" rel="noopener">+90 501 067 6486</a></li>
+  <li><a href="/pricing">ابر شروع ۴۹$/ماه</a> — ۱ شعبه، ۳ نفر، اینباکس/تیکت/تسک، بدون ماژول نرخ</li>
+  <li>تجاری از ۲۴۹$ — نرخ ارز، صندلی و شعبه بیشتر، فاکتور</li>
+  <li><a href="/self-hosted">لایسنس خودمیزبان از ۴۰۰۰$</a> یا <a href="/managed-hosting">مدیریت‌شده از ۸۰۰$/ماه</a></li>
+  <li>واتساپ <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> یا <a href="/contact">تماس</a></li>
 </ul>
-<p>راهنمای کامل خرید را هم بخوانید: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">کلود، لایسنس یا مدیریت‌شده؟</a></p>
+<p>راهنمای خرید: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">کلود، لایسنس یا مدیریت‌شده؟</a></p>
 
 <h2 id="faq">سوالات متداول</h2>
-<h3>آیا داده‌های من در دمو خصوصی می‌ماند؟</h3>
-<p>نه؛ دموی عمومی مشترک بین همه بازدیدکنندگان است، پس هیچ اطلاعات واقعی مشتری وارد نکنید. اگر محیط اختصاصی می‌خواهید، کلود میزبانی‌شده یا اختصاصی مدیریت‌شده را بخرید.</p>`
+<h3>رمز دموی عمومی هست؟</h3>
+<p>نه. ورود مشترک روی fxguard.io منتشر نمی‌شود. دموی هدایت‌شده یا آزمایش با شماره خودتان رزرو کنید.</p>
+<h3>دموی هدایت‌شده رایگان است؟</h3>
+<p>بله. ده دقیقه. بعد ابر شروع سلف‌سرویس است؛ پلن تجاری پیش‌فاکتور می‌خواهد.</p>`
       },
       tr: {
-        title: `FXGuard Canlı Demoyu Satın Almadan Önce Nasıl Ücretsiz Denerim`,
-        lead: `FXGuard'ı değerlendirmek için satış görüşmesine gerek yok; herkese açık canlı demo zaten gerçek ürünün kendisi. İşte tam olarak nereye tıklayacağınız ve demodan sonra nasıl satın alacağınız.`,
+        title: `FXGuard’ı satın almadan nasıl denersiniz (rehberli demo, ortak şifre yok)`,
+        lead: `Bu sitede herkese açık ortak giriş yoktur. Kur, gelen kutusu, roller ve şubeler için 10 dakikalık tur alın — veya kendi WhatsApp numaranızda 7 günlük deneme.`,
         toc: [
-          [`#credentials`, `Demo adresi ve giriş bilgileri`],
-          [`#what-to-test`, `10 dakikada nelere bakmalısınız`],
-          [`#after-demo`, `Demodan sonra satın alma adımları`],
+          [`#how`, `FXGuard’ı denemenin iki yolu`],
+          [`#what-to-test`, `10 dakikada ne gösteriyoruz`],
+          [`#after-demo`, `Demodan sonra satın alma`],
           [`#faq`, `Sık sorulan sorular`]
         ],
-        body: `<p>Çoğu alıcı bir tanıtım videosu bekler; FXGuard size daha iyisini sunuyor: herkesin girebildiği gerçek bir panel. Bu listeyi takip edin, sonra nasıl satın alacağınıza karar verin.</p>
+        body: `<p>Çoğu alıcı tanıtım videosu veya yayımlanmış demo şifresi ister. FXGuard pazarlama sitesinde ikisini de vermez. Gerçek paneli rezerve oturumda görürsünüz; sonra Cloud Start, Business, lisans veya Managed seçersiniz.</p>
 
-<h2 id="credentials">Demo adresi ve giriş bilgileri</h2>
+<h2 id="how">FXGuard’ı denemenin iki yolu</h2>
 <ul>
-  <li><strong>Adres:</strong> <a href="https://app.fxguard.io/" target="_blank" rel="noopener">https://app.fxguard.io/</a></li>
-  <li><strong>Kullanıcı adı:</strong> <code>demo</code></li>
-  <li><strong>Şifre:</strong> <code>guided demo</code></li>
+  <li><strong>10 dakikalık rehberli demo</strong> WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> — kurlar, müşteri defteri, roller, şubeler ve gerçekten hangi WhatsApp yolunu kullanacağınız (QR vs resmi Cloud API).</li>
+  <li><strong>Kendi numaranızda 7 günlük deneme</strong> — numarayı bağlarız, ekip gerçek trafiği görür, sonra kesersiniz. Sınırsız üretim Cloud Start değildir.</li>
 </ul>
-<p>Ayrıntılı yönergeler <a href="/live-demo">demo sayfasında</a> da var.</p>
+<p>Rezervasyon: <a href="/live-demo">/live-demo</a>. Ortak kullanıcı adı ve şifre burada yoktur.</p>
 
 <figure class="blog-inline-shot">
-  <img src="/images/Mobile-Conversations.png" alt="Canlı demodan FXGuard mobil sohbet ekranı görüntüsü" width="429" height="924" loading="lazy">
-  <figcaption>Mobil sohbet ekranı; aynı sayfaları hem telefonda hem masaüstünde inceleyebilirsiniz.</figcaption>
+  <img src="/images/Mobile-Conversations.png" alt="Rehberli demodan FXGuard mobil sohbet ekranı" width="429" height="924" loading="lazy">
+  <figcaption>Mobil sohbet ekranı — aynı sayfalar rezerve oturumda masaüstünde de görünür.</figcaption>
 </figure>
 
-<h2 id="what-to-test">10 dakikada nelere bakmalısınız</h2>
+<h2 id="what-to-test">10 dakikada ne gösteriyoruz</h2>
 <ol>
-  <li><strong>Dashboard</strong>: genel tabloya ve hızlı işlemlere bir göz atın</li>
-  <li><strong>Sohbetler</strong>: ortak WhatsApp gelen kutusundaki filtreleri deneyin</li>
-  <li><strong>Müşteriler</strong>: sıfırdan başlamak yerine geçmişin nasıl göründüğüne bakın</li>
-  <li><strong>Kullanıcılar ve roller</strong>: Sahip ile Temsilci ayrımı (ayrıntı: <a href="/blog/whatsapp-crm-security-2fa">güvenlik rehberi</a>)</li>
-  <li><strong>Profil / 2FA</strong>: personel hesabını nasıl güvene alıyor</li>
+  <li><strong>Teklif edilen döviz kurları</strong> sohbetle aynı panelde (Business ve üzeri — Cloud Start’ta FX modülü yok)</li>
+  <li><strong>Müşteri defteri</strong> — geçmiş şirkette kalır, kişisel telefonda değil</li>
+  <li><strong>Roller, şubeler, 2FA</strong> (<a href="/blog/whatsapp-crm-security-2fa">güvenlik rehberi</a>)</li>
+  <li><strong>Ortak gelen kutusu</strong> — dahildir, ürünün kendisi değildir</li>
+  <li><strong>Dürüst kanal</strong> — resmi olmayan QR vs Meta Cloud API</li>
 </ol>
-<div class="blog-callout">İpucu: herkese açık demoda yaptığınız hiçbir şey kaydedilmez, rahatça gezin; satın almaya hazır olduğunuzda satış ekibine yazın.</div>
+<div class="blog-callout">Gerçek müşteri sırlarını paylaşılan ortama yazmayın. Canlı hat için oturum alın.</div>
 
-<h2 id="after-demo">Demodan sonra satın alma adımları</h2>
-<p>Panel ekibinize uyduysa:</p>
+<h2 id="after-demo">Demodan sonra satın alma</h2>
 <ul>
-  <li>En hızlı başlangıç için <a href="/pricing">$49/aydan Hosted Cloud</a> ile başlayın</li>
-  <li>Ya da <a href="/self-hosted">Self-hosted Lisans</a> / <a href="/managed-hosting">Managed Dedicated</a> için fiyat teklifi isteyin</li>
-  <li>WhatsApp'tan yazın: <a href="https://wa.me/905010676486?text=Hi%2C%20I%20tried%20the%20FXGuard%20demo%20and%20want%20to%20buy." target="_blank" rel="noopener">+90 501 067 6486</a></li>
+  <li><a href="/pricing">Cloud Start $49/ay</a> — 1 şube, 3 personel, gelen kutusu/ticket/görev, FX yok</li>
+  <li>Business $249’dan — FX kurları, daha fazla koltuk ve şube, fatura</li>
+  <li><a href="/self-hosted">Self-hosted lisans $4.000’dan</a> veya <a href="/managed-hosting">Managed $800/ay’dan</a></li>
+  <li>WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> veya <a href="/contact">iletişim</a></li>
 </ul>
-<p>Satın alma rehberini de okuyun: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud mu, Lisans mı, Managed mı?</a></p>
+<p>Alıcı rehberi: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud mu, Lisans mı, Managed mı?</a></p>
 
 <h2 id="faq">Sık sorulan sorular</h2>
-<h3>Demoda girdiğim veriler özel mi kalır?</h3>
-<p>Hayır, herkese açık demo ortak kullanılıyor; gerçek müşteri bilgisi girmeyin. Kendinize özel bir ortam istiyorsanız Hosted Cloud ya da Managed Dedicated satın alın.</p>`
+<h3>Herkese açık demo şifresi var mı?</h3>
+<p>Hayır. fxguard.io’da ortak giriş yayımlanmaz. Rehberli demo veya kendi-numara denemesi alın.</p>
+<h3>Rehberli demo ücretsiz mi?</h3>
+<p>Evet. On dakika. Sonra Cloud Start self-servis; ticari planlar yazılı teklif ister.</p>`
       },
       ar: {
-        title: `كيف تجرّب عرض FXGuard الحي مجانًا قبل الشراء`,
-        lead: `لا تحتاج مكالمة مبيعات لتقييم FXGuard؛ العرض الحي العام هو المنتج الحقيقي بذاته. إليك بالضبط أين تذهب، وماذا تجرّب، وكيف تشتري بعدها.`,
+        title: `كيف تجرّب FXGuard قبل الشراء (عرض موجّه، بلا كلمة مرور عامة)`,
+        lead: `لا يوجد دخول عام مشترك على هذا الموقع. احجز جولة 10 دقائق للأسعار والصندوق والأدوار والفروع — أو تجربة 7 أيام على رقم واتسابكم.`,
         toc: [
-          [`#credentials`, `رابط العرض وبيانات الدخول`],
-          [`#what-to-test`, `ما تجربه خلال 10 دقائق`],
-          [`#after-demo`, `بعد التجربة: خطوات الشراء`],
+          [`#how`, `طريقان لتجربة FXGuard`],
+          [`#what-to-test`, `ماذا نعرض في 10 دقائق`],
+          [`#after-demo`, `بعد العرض: كيف تشتري`],
           [`#faq`, `الأسئلة الشائعة`]
         ],
-        body: `<p>معظم المشترين يطلبون فيديو شرح؛ FXGuard يمنحك ما هو أفضل: لوحة حقيقية مفتوحة للجميع. اتبع هذه الخطوات، ثم قرر طريقة الشراء.</p>
+        body: `<p>معظم المشترين يطلبون فيديو أو كلمة مرور منشورة. FXGuard لا يضع أيهما على موقع التسويق. ترى اللوحة الحقيقية في جلسة محجوزة، ثم تختار بدء سحابي أو أعمال أو ترخيص أو مُدار.</p>
 
-<h2 id="credentials">رابط العرض وبيانات الدخول</h2>
+<h2 id="how">طريقان لتجربة FXGuard</h2>
 <ul>
-  <li><strong>الرابط:</strong> <a href="https://app.fxguard.io/" target="_blank" rel="noopener">https://app.fxguard.io/</a></li>
-  <li><strong>اسم المستخدم:</strong> <code>demo</code></li>
-  <li><strong>كلمة المرور:</strong> <code>guided demo</code></li>
+  <li><strong>عرض موجّه 10 دقائق</strong> على واتساب <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> — الأسعار ودفتر العملاء والأدوار والفروع وأي مسار واتساب ستشغّلونه فعلاً (QR أو Cloud API الرسمية).</li>
+  <li><strong>تجربة 7 أيام على رقمكم</strong> — نربط الرقم، يرى الفريق حركة حقيقية، ثم تفصلونه. ليست بدءًا سحابيًا بلا حد.</li>
 </ul>
-<p>التعليمات الكاملة موجودة أيضًا في <a href="/live-demo">صفحة العرض الحي</a>.</p>
+<p>خطوات الحجز: <a href="/live-demo">/live-demo</a>. لا اسم مستخدم وكلمة مرور مشتركة هنا.</p>
 
 <figure class="blog-inline-shot">
-  <img src="/images/Mobile-Conversations.png" alt="لقطة شاشة لمحادثات FXGuard على الجوال من العرض الحي" width="429" height="924" loading="lazy">
-  <figcaption>واجهة المحادثات على الجوال؛ استكشف نفس الشاشات على الجوال والحاسوب.</figcaption>
+  <img src="/images/Mobile-Conversations.png" alt="لقطة محادثات FXGuard على الجوال من عرض موجّه" width="429" height="924" loading="lazy">
+  <figcaption>واجهة المحادثات على الجوال — الشاشات نفسها على الحاسوب في الجلسة المحجوزة.</figcaption>
 </figure>
 
-<h2 id="what-to-test">ما تجربه خلال 10 دقائق</h2>
+<h2 id="what-to-test">ماذا نعرض في 10 دقائق</h2>
 <ol>
-  <li><strong>لوحة التحكم:</strong> نظرة سريعة على المؤشرات والإجراءات الجاهزة</li>
-  <li><strong>المحادثات:</strong> فلاتر صندوق الوارد المشترك لفريق واتساب</li>
-  <li><strong>العملاء:</strong> سجل كامل بدل البدء من الصفر في كل مرة</li>
-  <li><strong>المستخدمون والأدوار:</strong> الفرق بين صلاحية المالك والوكيل (التفاصيل في <a href="/blog/whatsapp-crm-security-2fa">دليل الأمان</a>)</li>
-  <li><strong>الملف الشخصي والتحقق الثنائي:</strong> كيف يؤمّن الموظفون حساباتهم</li>
+  <li><strong>أسعار الصرف المعلنة</strong> على نفس لوحة الدردشة (الأعمال فما فوق — البدء السحابي بلا وحدة أسعار)</li>
+  <li><strong>دفتر العملاء</strong> — السجل يبقى للشركة لا للهاتف الشخصي</li>
+  <li><strong>أدوار وفروع و2FA</strong> (<a href="/blog/whatsapp-crm-security-2fa">دليل الأمان</a>)</li>
+  <li><strong>صندوق وارد مشترك</strong> — مشمول، ليس المنتج</li>
+  <li><strong>قناة صادقة</strong> — QR غير رسمي مقابل Cloud API من ميتا</li>
 </ol>
-<div class="blog-callout">نصيحة: لا يُحفظ أي تغيير في العرض العام، فاستكشف بحرية تامة، وتواصل مع المبيعات فقط حين تصبح جاهزًا للشراء.</div>
+<div class="blog-callout">لا تدخلوا أسرار عملاء حقيقيين في بيئة مشتركة. للخط الحي احجزوا الجلسة.</div>
 
-<h2 id="after-demo">بعد التجربة: خطوات الشراء</h2>
-<p>إذا كانت اللوحة مناسبة لفريقك:</p>
+<h2 id="after-demo">بعد العرض: كيف تشتري</h2>
 <ul>
-  <li>ابدأ بـ <a href="/pricing">السحابة المستضافة من 49$ شهريًا</a> لأسرع انطلاقة</li>
-  <li>أو اطلب عرض سعر لـ <a href="/self-hosted">الترخيص ذاتي الاستضافة</a> / <a href="/managed-hosting">المخصص المُدار</a></li>
-  <li>راسلنا على واتساب: <a href="https://wa.me/905010676486?text=Hi%2C%20I%20tried%20the%20FXGuard%20demo%20and%20want%20to%20buy." target="_blank" rel="noopener">+90 501 067 6486</a></li>
+  <li><a href="/pricing">بدء سحابي 49$/شهر</a> — فرع واحد و3 موظفين وصندوق/تذاكر/مهام بلا وحدة أسعار</li>
+  <li>أعمال من 249$ — أسعار صرف ومقاعد وفروع أكثر وفاتورة</li>
+  <li><a href="/self-hosted">ترخيص ذاتي من 4000$</a> أو <a href="/managed-hosting">مُدار من 800$/شهر</a></li>
+  <li>واتساب <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> أو <a href="/contact">تواصل</a></li>
 </ul>
-<p>اقرأ أيضًا دليل الشراء الكامل: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">السحابة أم الترخيص أم المُدار؟</a></p>
+<p>دليل الشراء: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">سحابة أم ترخيص أم مُدار؟</a></p>
 
 <h2 id="faq">الأسئلة الشائعة</h2>
-<h3>هل تبقى بياناتي في العرض التجريبي خاصة بي؟</h3>
-<p>لا، العرض العام مشترك بين كل الزوار، فلا تُدخل أي بيانات حقيقية لعملائك. إذا أردت بيئة خاصة، اشترِ السحابة المستضافة أو المخصص المُدار.</p>`
+<h3>هل توجد كلمة مرور عامة للعرض؟</h3>
+<p>لا. لا يُنشر دخول مشترك على fxguard.io. احجز عرضًا موجّهًا أو تجربة على رقمكم.</p>
+<h3>هل العرض الموجّه مجاني؟</h3>
+<p>نعم. عشر دقائق. بعدها البدء السحابي خدمة ذاتية؛ الخطط التجارية تحتاج عرضًا مكتوبًا.</p>`
       },
       ru: {
-        title: `Как бесплатно попробовать live-демо FXGuard до покупки`,
-        lead: `Чтобы оценить FXGuard, звонок в отдел продаж не нужен — публичное live-демо и есть сам продукт. Вот точный план: куда зайти, что нажать и как купить после.`,
+        title: `Как попробовать FXGuard до покупки (демо с гидом, без публичного пароля)`,
+        lead: `Общего публичного логина на этом сайте нет. Запишитесь на 10-минутный разбор курсов, inbox, ролей и филиалов — или на 7-дневный trial на своём WhatsApp-номере.`,
         toc: [
-          [`#credentials`, `Адрес демо и данные для входа`],
-          [`#what-to-test`, `Что проверить за 10 минут`],
-          [`#after-demo`, `После демо: как оформить покупку`],
+          [`#how`, `Два способа попробовать FXGuard`],
+          [`#what-to-test`, `Что показываем за 10 минут`],
+          [`#after-demo`, `После демо: как купить`],
           [`#faq`, `Часто задаваемые вопросы`]
         ],
-        body: `<p>Большинство покупателей просят видео-презентацию; FXGuard даёт кое-что получше — реальную панель в открытом доступе. Пройдите этот чек-лист, а затем решите, как купить.</p>
+        body: `<p>Большинство покупателей просят видео или опубликованный пароль демо. FXGuard не публикует ни то ни другое на маркетинговом сайте. Реальную панель вы видите на сессии по записи, затем выбираете Cloud Start, Business, лицензию или Managed.</p>
 
-<h2 id="credentials">Адрес демо и данные для входа</h2>
+<h2 id="how">Два способа попробовать FXGuard</h2>
 <ul>
-  <li><strong>Адрес:</strong> <a href="https://app.fxguard.io/" target="_blank" rel="noopener">https://app.fxguard.io/</a></li>
-  <li><strong>Логин:</strong> <code>demo</code></li>
-  <li><strong>Пароль:</strong> <code>guided demo</code></li>
+  <li><strong>10-минутное демо с гидом</strong> в WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> — курсы, книга клиентов, роли, филиалы и какой путь WhatsApp вы реально запустите (QR vs официальный Cloud API).</li>
+  <li><strong>7-дневный trial на своём номере</strong> — подключаем номер, команда видит живой трафик, затем отключаете. Это не безлимитный production Cloud Start.</li>
 </ul>
-<p>Подробная инструкция есть также на странице <a href="/live-demo">демо</a>.</p>
+<p>Как записаться: <a href="/live-demo">/live-demo</a>. Общих логина и пароля здесь нет.</p>
 
 <figure class="blog-inline-shot">
-  <img src="/images/Mobile-Conversations.png" alt="Скриншот мобильных переписок FXGuard из live-демо" width="429" height="924" loading="lazy">
-  <figcaption>Экран переписок на мобильном — те же самые экраны доступны и на десктопе.</figcaption>
+  <img src="/images/Mobile-Conversations.png" alt="Скриншот мобильных переписок FXGuard с демо с гидом" width="429" height="924" loading="lazy">
+  <figcaption>Экран переписок на мобильном — те же экраны на десктопе в сессии по записи.</figcaption>
 </figure>
 
-<h2 id="what-to-test">Что проверить за 10 минут</h2>
+<h2 id="what-to-test">Что показываем за 10 минут</h2>
 <ol>
-  <li><strong>Дашборд</strong> — сводка по метрикам и быстрые действия</li>
-  <li><strong>Переписки</strong> — фильтры общего WhatsApp-inbox команды</li>
-  <li><strong>Клиенты</strong> — история вместо старта с чистого листа</li>
-  <li><strong>Пользователи и роли</strong> — разница между Владельцем и Агентом (подробнее в <a href="/blog/whatsapp-crm-security-2fa">гайде по безопасности</a>)</li>
-  <li><strong>Профиль и 2FA</strong> — как сотрудники защищают свои аккаунты</li>
+  <li><strong>Котируемые курсы FX</strong> на той же панели, что и чат (Business и выше — в Cloud Start модуля курсов нет)</li>
+  <li><strong>Книга клиентов</strong> — история остаётся у компании, не на личном телефоне</li>
+  <li><strong>Роли, филиалы, 2FA</strong> (<a href="/blog/whatsapp-crm-security-2fa">гайд по безопасности</a>)</li>
+  <li><strong>Общий inbox</strong> — включён, это не сам продукт</li>
+  <li><strong>Честный канал</strong> — неофициальный QR vs Meta Cloud API</li>
 </ol>
-<div class="blog-callout">Совет: ничего из изменённого в публичном демо не сохраняется, так что исследуйте смело — а к продажам обращайтесь, когда будете готовы купить.</div>
+<div class="blog-callout">Не вводите секреты реальных клиентов в общее окружение. Для боевой линии запишите сессию.</div>
 
-<h2 id="after-demo">После демо: как оформить покупку</h2>
-<p>Если панель подошла вашей команде:</p>
+<h2 id="after-demo">После демо: как купить</h2>
 <ul>
-  <li>Начните с <a href="/pricing">Hosted Cloud от $49 в месяц</a> для самого быстрого запуска</li>
-  <li>Или запросите КП на <a href="/self-hosted">Self-hosted License</a> / <a href="/managed-hosting">Managed Dedicated</a></li>
-  <li>Напишите в WhatsApp: <a href="https://wa.me/905010676486?text=Hi%2C%20I%20tried%20the%20FXGuard%20demo%20and%20want%20to%20buy." target="_blank" rel="noopener">+90 501 067 6486</a></li>
+  <li><a href="/pricing">Cloud Start $49/мес</a> — 1 филиал, 3 сотрудника, inbox/тикеты/задачи, без модуля FX</li>
+  <li>Business от $249 — курсы FX, больше мест и филиалов, счёт</li>
+  <li><a href="/self-hosted">Self-hosted лицензия от $4 000</a> или <a href="/managed-hosting">Managed от $800/мес</a></li>
+  <li>WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> или <a href="/contact">контакт</a></li>
 </ul>
-<p>Почитайте и полный гид покупателя: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud, License или Managed?</a></p>
+<p>Гид покупателя: <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">Cloud, License или Managed?</a></p>
 
 <h2 id="faq">Часто задаваемые вопросы</h2>
-<h3>Мои данные в демо останутся приватными?</h3>
-<p>Нет, публичное демо общее для всех посетителей, поэтому не вводите реальные данные клиентов. Для приватного окружения купите Hosted Cloud или Managed Dedicated.</p>`
+<h3>Есть ли публичный пароль демо?</h3>
+<p>Нет. Общий вход на fxguard.io не публикуется. Запишитесь на демо с гидом или trial на своём номере.</p>
+<h3>Демо с гидом бесплатное?</h3>
+<p>Да. Десять минут. Дальше Cloud Start — self-serve; коммерческие планы требуют письменного КП.</p>`
       }
     },
 
@@ -1144,7 +1151,7 @@
 
 <h2 id="buy">How to purchase</h2>
 <ol>
-  <li>Confirm fit in the free demo (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>Confirm fit in a <a href="/live-demo">guided demo</a> — no public shared password</li>
   <li>Choose Cloud vs License vs Managed — <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">buyer guide</a></li>
   <li>Pay / quote via <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a></li>
 </ol>
@@ -1197,7 +1204,7 @@
 
 <h2 id="buy">مراحل خرید</h2>
 <ol>
-  <li>اول در دموی رایگان مطمئن شوید که با کارتان جور است (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>اول در <a href="/live-demo">دموی هدایت‌شده</a> مطمئن شوید که با کارتان جور است — رمز عمومی منتشر نمی‌شود</li>
   <li>بین کلود، لایسنس یا مدیریت‌شده انتخاب کنید؛ <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">راهنمای خرید</a> کمکتان می‌کند</li>
   <li>پرداخت یا استعلام قیمت را از <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">واتساپ +90 501 067 6486</a> پیگیری کنید</li>
 </ol>
@@ -1250,7 +1257,7 @@
 
 <h2 id="buy">Satın alma adımları</h2>
 <ol>
-  <li>Önce ücretsiz demoda uyumu doğrulayın (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>Önce <a href="/live-demo">rehberli demoda</a> uyumu doğrulayın — ortak şifre yayımlanmaz</li>
   <li>Cloud, Lisans ya da Managed'dan birini seçin; <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">alıcı rehberi</a> yardımcı olur</li>
   <li>Ödemeyi ya da teklifi <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a> üzerinden yapın</li>
 </ol>
@@ -1303,7 +1310,7 @@
 
 <h2 id="buy">خطوات الشراء</h2>
 <ol>
-  <li>تأكد من الملاءمة أولًا في العرض المجاني (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>تأكد من الملاءمة أولًا في <a href="/live-demo">عرض موجّه</a> — بلا كلمة مرور عامة</li>
   <li>اختر بين السحابة أو الترخيص أو المُدار؛ استعن بـ<a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">دليل الشراء</a></li>
   <li>أكمل الدفع أو اطلب عرض السعر عبر <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">واتساب +90 501 067 6486</a></li>
 </ol>
@@ -1356,7 +1363,7 @@
 
 <h2 id="buy">Порядок покупки</h2>
 <ol>
-  <li>Сначала убедитесь, что всё подходит, в бесплатном демо (<code>demo</code> / <code>guided demo</code>)</li>
+  <li>Сначала убедитесь, что всё подходит, на <a href="/live-demo">демо с гидом</a> — общий пароль не публикуем</li>
   <li>Выберите между Cloud, License и Managed — поможет <a href="/blog/buy-whatsapp-crm-cloud-vs-license-vs-managed">гид покупателя</a></li>
   <li>Оплатите или запросите КП через <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20FXGuard%20pricing%20and%20to%20buy%20Cloud%20or%20get%20a%20quote." target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a></li>
 </ol>
@@ -1383,7 +1390,7 @@
 <p>Accounts can enable Google Authenticator 2FA from profile / security settings. Stolen passwords alone should not open your customer inbox — especially on Hosted Cloud and Managed deployments where we also apply infrastructure hygiene.</p>
 <h2 id="section-3">Auditability</h2>
 <p>Activity logs help answer "who did what and when?" — critical for regulated exchange offices and multi-branch support. Combine that with <a href="/#services">backups and monitoring</a> on plans we operate.</p>
-<p>Evaluate security yourself in the <a href="https://app.fxguard.io/" target="_blank" rel="noopener">public demo panel</a> (a booked guided demo), then talk to <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> about your compliance needs.</p>`
+<p>Evaluate security yourself in the <a href="/live-demo">guided demo</a>, then talk to <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> about your compliance needs.</p>`
       },
       fa: {
         title: `امنیت واتساپ CRM: نقش‌ها، ۲FA و لاگ‌های ممیزی سازمانی`,
@@ -1400,7 +1407,7 @@
 <p>هر حساب می‌تواند ۲FA با گوگل اثنتیکیتور را از تنظیمات پروفایل و امنیت فعال کند. یک رمز عبور دزدیده‌شده به‌تنهایی نباید در اینباکس مشتری‌های شما را باز کند؛ به‌خصوص روی کلود میزبانی‌شده و مدیریت‌شده که بهداشت زیرساخت را هم خودمان اعمال می‌کنیم.</p>
 <h2 id="section-3">قابلیت ممیزی</h2>
 <p>لاگ فعالیت جواب «کی، چه‌کاری، کِی انجام داد؟» را می‌دهد؛ برای دفاتر صرافی تحت نظارت و پشتیبانی چندشعبه، این حیاتی است. این را با <a href="/#services">بکاپ و مانیتورینگ</a> روی پلن‌هایی که خودمان اداره می‌کنیم، جمع کنید.</p>
-<p>امنیت را خودتان در <a href="https://app.fxguard.io/" target="_blank" rel="noopener">پنل دموی عمومی</a> (a booked guided demo) بسنجید، بعد درباره نیازهای مربوط به انطباق سازمانی‌تان با <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> صحبت کنید.</p>`
+<p>امنیت را خودتان در <a href="/live-demo">دموی هدایت‌شده</a> بسنجید، بعد درباره نیازهای مربوط به انطباق سازمانی‌تان با <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> صحبت کنید.</p>`
       },
       tr: {
         title: `WhatsApp CRM Güvenliği: Roller, 2FA ve Denetim Logları`,
@@ -1417,7 +1424,7 @@
 <p>Her hesap, profil / güvenlik ayarlarından Google Authenticator ile 2FA'yı açabilir. Çalınan bir şifre tek başına müşteri gelen kutunuzu açmamalı; özellikle altyapı hijyenini de bizim üstlendiğimiz Hosted Cloud ve Managed kurulumlarında.</p>
 <h2 id="section-3">Denetlenebilirlik</h2>
 <p>Aktivite logları "kim, ne zaman, ne yaptı" sorusunu yanıtlar; denetime tabi döviz ofisleri ve çok şubeli destek için bu kritik. Bunu, işlettiğimiz planlardaki <a href="/#services">yedekleme ve izleme</a> ile birlikte düşünün.</p>
-<p>Güvenliği kendiniz test etmek isterseniz <a href="https://app.fxguard.io/" target="_blank" rel="noopener">herkese açık demo paneline</a> girin (a booked guided demo), sonra uyumluluk ihtiyaçlarınızı <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> ile konuşun.</p>`
+<p>Güvenliği kendiniz test etmek isterseniz <a href="/live-demo">rehberli demoda</a> bakın, sonra uyumluluk ihtiyaçlarınızı <a href="mailto:sales@fxguard.io">sales@fxguard.io</a> ile konuşun.</p>`
       },
       ar: {
         title: `أمان واتساب CRM: الأدوار و2FA وسجلات التدقيق`,
@@ -1434,7 +1441,7 @@
 <p>يمكن لكل حساب تفعيل التحقق بخطوتين عبر Google Authenticator من إعدادات الملف الشخصي والأمان. كلمة مرور مسروقة لا يجب أن تكون كافية وحدها لفتح صندوق وارد عملائك، خاصة في نشرات السحابة المستضافة والمُدارة حيث نطبّق أيضًا معايير أمان صارمة على البنية التحتية.</p>
 <h2 id="section-3">القدرة على التدقيق</h2>
 <p>سجلات النشاط تجيب على سؤال «من فعل ماذا، ومتى؟»، وهو أمر بالغ الأهمية لمكاتب الصرافة الخاضعة للرقابة وللدعم متعدد الفروع. اجمع ذلك مع <a href="/#services">النسخ الاحتياطي والمراقبة</a> في الخطط التي نديرها لك.</p>
-<p>جرّب تقييم الأمان بنفسك في <a href="https://app.fxguard.io/" target="_blank" rel="noopener">لوحة العرض العامة</a> (a booked guided demo)، ثم ناقش متطلبات الامتثال الخاصة بمؤسستك مع <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>.</p>`
+<p>جرّب تقييم الأمان بنفسك في <a href="/live-demo">عرض موجّه</a>، ثم ناقش متطلبات الامتثال الخاصة بمؤسستك مع <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>.</p>`
       },
       ru: {
         title: `Безопасность WhatsApp CRM: роли, 2FA и audit logs`,
@@ -1451,7 +1458,7 @@
 <p>Любой аккаунт может включить 2FA через Google Authenticator в настройках профиля и безопасности. Один украденный пароль не должен открывать доступ к вашему клиентскому inbox — особенно на Hosted Cloud и Managed, где мы дополнительно следим за гигиеной инфраструктуры.</p>
 <h2 id="section-3">Возможность провести аудит</h2>
 <p>Журналы активности отвечают на вопрос «кто, что и когда сделал», а это критично для регулируемых обменных офисов и multi-branch поддержки. Сочетайте это с <a href="/#services">бэкапами и мониторингом</a> на планах, которые обслуживаем мы.</p>
-<p>Оцените безопасность сами в <a href="https://app.fxguard.io/" target="_blank" rel="noopener">публичной демо-панели</a> (a booked guided demo), а затем обсудите свои требования по комплаенсу с <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>.</p>`
+<p>Оцените безопасность сами в <a href="/live-demo">демо с гидом</a>, а затем обсудите свои требования по комплаенсу с <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>.</p>`
       }
     },
 
@@ -1474,7 +1481,7 @@
 </ul>
 <h2 id="section-2">What a team inbox changes</h2>
 <p>A <a href="/whatsapp-crm">WhatsApp CRM</a> keeps one business number, but routes conversations into a panel your whole team can use. Agents filter unread or assigned chats, managers see the pipeline, and customers keep talking to the same brand number.</p>
-<p>In FXGuard that loop includes customers, tickets and tasks — not just chat bubbles. Try it on the <a href="/live-demo">live demo</a> or open the panel at <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>.</p>
+<p>In FXGuard that loop includes customers, tickets and tasks — not just chat bubbles. Try it on the <a href="/live-demo">live demo</a> — book it on <a href="/live-demo">/live-demo</a>.</p>
 <h2 id="section-3">When to switch</h2>
 <p>If you already have more than one person touching WhatsApp, or you operate more than one branch, personal phones are already costing you leads. Compare <a href="/pricing">packages</a> — Hosted Cloud for speed, or <a href="/self-hosted">Self-hosted License</a> if data must stay on your servers.</p>`
       },
@@ -1496,7 +1503,7 @@
 </ul>
 <h2 id="section-2">اینباکس تیمی چه چیزی را عوض می‌کند</h2>
 <p>یک <a href="/whatsapp-crm">واتساپ CRM</a> همان یک شماره تجاری را حفظ می‌کند، اما گفتگوها را به پنلی می‌فرستد که کل تیم به آن دسترسی دارد. اپراتور فقط چت‌های خوانده‌نشده یا اختصاص‌یافته به خودش را فیلتر می‌کند، مدیر کل جریان کار را می‌بیند و مشتری هم همچنان با همان شماره برند صحبت می‌کند.</p>
-<p>در FXGuard این چرخه شامل مشتریان، تیکت‌ها و تسک‌ها هم می‌شود؛ نه فقط حباب‌های چت. همین حالا در <a href="/live-demo">دموی زنده</a> امتحانش کنید یا پنل را مستقیم در <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a> باز کنید.</p>
+<p>در FXGuard این چرخه شامل مشتریان، تیکت‌ها و تسک‌ها هم می‌شود؛ نه فقط حباب‌های چت. همین حالا در <a href="/live-demo">دموی زنده</a> امتحانش کنید — رزرو در <a href="/live-demo">صفحه دمو</a>.</p>
 <h2 id="section-3">چه زمانی باید عوض کنیم</h2>
 <p>اگر همین الان بیش از یک نفر با واتساپ سروکار دارد، یا بیش از یک شعبه اداره می‌کنید، گوشی‌های شخصی از همین حالا دارند مشتری از دستتان می‌گیرند. <a href="/pricing">پکیج‌ها</a> را مقایسه کنید؛ کلود میزبانی‌شده برای سرعت، یا اگر داده باید حتماً روی سرورهای خودتان بماند، <a href="/self-hosted">لایسنس خودمیزبان</a>.</p>`
       },
@@ -1518,7 +1525,7 @@
 </ul>
 <h2 id="section-2">Ekip gelen kutusu ne değiştiriyor</h2>
 <p>Bir <a href="/whatsapp-crm">WhatsApp CRM</a>, tek bir iş numarasını korurken sohbetleri tüm ekibinizin kullanabildiği bir panele taşır. Temsilciler okunmamış ya da kendine atanmış sohbeti filtreler, yöneticiler tüm akışı görür, müşteri de hep aynı marka numarasıyla konuşmaya devam eder.</p>
-<p>FXGuard'da bu döngüye müşteriler, ticketlar ve görevler de dahildir; sadece sohbet balonları değil. <a href="/live-demo">Canlı demoda</a> deneyin ya da paneli <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>'dan açın.</p>
+<p>FXGuard'da bu döngüye müşteriler, ticketlar ve görevler de dahildir; sadece sohbet balonları değil. <a href="/live-demo">Canlı demoda</a> deneyin — rezervasyon: <a href="/live-demo">/live-demo</a>.</p>
 <h2 id="section-3">Geçiş zamanı geldi mi</h2>
 <p>WhatsApp'a dokunan birden fazla kişiniz varsa ya da birden fazla şube işletiyorsanız, kişisel telefonlar size zaten müşteri kaybettiriyor demektir. <a href="/pricing">Paketleri</a> karşılaştırın: hız için Hosted Cloud, veri sunucunuzda kalmalıysa <a href="/self-hosted">Self-hosted Lisans</a>.</p>`
       },
@@ -1540,7 +1547,7 @@
 </ul>
 <h2 id="section-2">ما الذي يتغيّر مع صندوق الفريق</h2>
 <p>واتساب CRM يحافظ على رقم عمل واحد فقط، لكنه يوجّه كل المحادثات إلى لوحة يستخدمها فريقك بأكمله. يصفّي الوكلاء المحادثات غير المقروءة أو المُسندة لهم، يرى المديرون سير العمل كاملًا، ويستمر العميل بالتحدث إلى نفس رقم العلامة التجارية دون أن يشعر بأي تغيير.</p>
-<p>في FXGuard، هذه الحلقة تشمل العملاء والتذاكر والمهام أيضًا، وليس مجرد فقاعات محادثة. جرّبها في <a href="/live-demo">العرض الحي</a> أو افتح اللوحة مباشرة على <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>.</p>
+<p>في FXGuard، هذه الحلقة تشمل العملاء والتذاكر والمهام أيضًا، وليس مجرد فقاعات محادثة. جرّبها في <a href="/live-demo">العرض الحي</a> — الحجز على <a href="/live-demo">/live-demo</a>.</p>
 <h2 id="section-3">متى حان وقت التحول</h2>
 <p>إذا كان أكثر من شخص يتعامل مع واتساب لديك، أو تدير أكثر من فرع واحد، فالهاتف الشخصي يكلفك فرصًا ضائعة بالفعل. قارن <a href="/pricing">الباقات</a>: السحابة المستضافة للانطلاق السريع، أو <a href="/self-hosted">الترخيص ذاتي الاستضافة</a> إن وجب أن تبقى البيانات على خوادمك.</p>`
       },
@@ -1562,7 +1569,7 @@
 </ul>
 <h2 id="section-2">Что меняет командный inbox</h2>
 <p><a href="/whatsapp-crm">WhatsApp CRM</a> сохраняет тот же единственный номер бизнеса, но направляет переписки в панель, которой пользуется вся команда. Агенты фильтруют непрочитанные или назначенные им чаты, менеджер видит всю воронку целиком, а клиент как писал в один номер бренда, так и продолжает писать.</p>
-<p>В FXGuard в этот же цикл входят клиенты, тикеты и задачи, а не только сами сообщения. Попробуйте это на <a href="/live-demo">live-демо</a> или откройте панель прямо на <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>.</p>
+<p>В FXGuard в этот же цикл входят клиенты, тикеты и задачи, а не только сами сообщения. Попробуйте это на <a href="/live-demo">live-демо</a> — запись на <a href="/live-demo">/live-demo</a>.</p>
 <h2 id="section-3">Когда пора переходить</h2>
 <p>Если с WhatsApp у вас уже работает больше одного человека или вы ведёте больше одного филиала, личные телефоны уже сейчас стоят вам упущенных клиентов. Сравните <a href="/pricing">тарифы</a>: Hosted Cloud — для скорости, Self-hosted License — если данные обязаны остаться на ваших серверах.</p>`
       }

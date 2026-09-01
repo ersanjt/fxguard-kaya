@@ -59,20 +59,49 @@
     return parts.length ? '\n[' + parts.join(' | ') + ']' : '';
   }
 
-  function enhanceWhatsAppLinks(utm) {
+  function enhanceWhatsAppLinks(utm, force) {
     var suffix = utmSuffix(utm);
     if (!suffix) return;
     qsa('a[href*="wa.me"], a[href*="whatsapp.com"]').forEach(function (a) {
-      if (a.getAttribute('data-utm-applied') === '1') return;
+      if (!force && a.getAttribute('data-utm-applied') === '1') return;
       try {
         var url = new URL(a.href);
         var text = url.searchParams.get('text') || '';
-        if (text.indexOf('[src=') !== -1) return;
+        if (text.indexOf('[src=') !== -1) {
+          a.setAttribute('data-utm-applied', '1');
+          return;
+        }
         url.searchParams.set('text', text + suffix);
         a.href = url.toString();
         a.setAttribute('data-utm-applied', '1');
       } catch (e) {}
     });
+  }
+
+  function fillLeadFields() {
+    var utm = {};
+    try { utm = JSON.parse(safeGet(STORAGE_UTM) || '{}') || {}; } catch (e) { utm = {}; }
+    qsa('form').forEach(function (form) {
+      function setHidden(name, value) {
+        var el = form.querySelector('input[name="' + name + '"]');
+        if (el) el.value = value || '';
+      }
+      setHidden('utm_source', utm.utm_source);
+      setHidden('utm_medium', utm.utm_medium);
+      setHidden('utm_campaign', utm.utm_campaign);
+      setHidden('landing_path', utm.landing || w.location.pathname);
+      var langEl = form.querySelector('input[name="lang"]');
+      if (langEl) langEl.value = d.documentElement.getAttribute('data-lang') || d.documentElement.lang || 'en';
+    });
+  }
+
+  function reapplyWa() {
+    var utm = {};
+    try { utm = JSON.parse(safeGet(STORAGE_UTM) || '{}') || {}; } catch (e) { utm = {}; }
+    qsa('a[href*="wa.me"], a[href*="whatsapp.com"]').forEach(function (a) {
+      a.removeAttribute('data-utm-applied');
+    });
+    enhanceWhatsAppLinks(utm, true);
   }
 
   function trackCtas(utm) {
@@ -83,10 +112,12 @@
       var kind = 'link';
       if (a.classList.contains('js-wa-link') || href.indexOf('wa.me') !== -1) kind = 'whatsapp';
       else if (a.classList.contains('js-panel-link') || href.indexOf('app.fxguard.io') !== -1) kind = 'demo';
+      else if (href.indexOf('/pay') !== -1) kind = 'pay';
       else if (href.indexOf('/pricing') !== -1) kind = 'pricing';
       else if (href.indexOf('/contact') !== -1) kind = 'contact';
       else if (href.indexOf('/procurement') !== -1) kind = 'procurement';
       else if (href.indexOf('/live-demo') !== -1) kind = 'live_demo';
+      else if (href.indexOf('/thanks') !== -1) kind = 'thanks';
       else if (a.classList.contains('btn-wa') || a.classList.contains('btn-primary')) kind = 'cta';
       else return;
       pushEvent('cta_click', {
@@ -100,7 +131,7 @@
 
   function idlePrefetch() {
     if (navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || ''))) return;
-    var targets = ['/pricing', '/live-demo', '/contact', '/whatsapp-crm', '/procurement'];
+    var targets = ['/pricing', '/live-demo', '/contact', '/whatsapp-crm', '/pay'];
     var path = w.location.pathname.replace(/\/$/, '') || '/';
     var run = function () {
       targets.forEach(function (url) {
@@ -125,15 +156,13 @@
     });
   }
 
-    function ensureStickyBuy() {
+  function ensureStickyBuy() {
     if (qs('#stickyBuy')) return;
-    /* Shared footer chrome already injects sticky bar on main pages */
     return;
   }
 
   function ensureWaFloat() {
     if (qs('.wa-float')) return;
-    /* Shared header chrome already injects WhatsApp float */
     return;
   }
 
@@ -156,13 +185,21 @@
     ensureWaFloat();
     contentVisibility();
     idlePrefetch();
+    fillLeadFields();
 
-    // Re-apply UTM after i18n rewrites WA hrefs
-    setTimeout(function () { enhanceWhatsAppLinks(utm); }, 800);
+    if (d.body && d.body.getAttribute('data-page') === 'thanks') {
+      var purpose = '';
+      try { purpose = new URLSearchParams(w.location.search).get('purpose') || ''; } catch (e) {}
+      pushEvent('lead_thanks', { purpose: purpose, utm_source: utm.utm_source || null });
+    }
+
+    setTimeout(function () { reapplyWa(); fillLeadFields(); }, 800);
     w.FXG_YIELD = {
       getUtm: function () { try { return JSON.parse(safeGet(STORAGE_UTM) || '{}'); } catch (e) { return {}; } },
       getEvents: function () { try { return JSON.parse(safeGet(STORAGE_EVENTS) || '[]'); } catch (e) { return []; } },
-      track: pushEvent
+      track: pushEvent,
+      reapplyWa: reapplyWa,
+      fillLeadFields: fillLeadFields
     };
   }
 

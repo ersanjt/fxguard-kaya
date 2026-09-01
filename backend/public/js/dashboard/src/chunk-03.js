@@ -3935,7 +3935,16 @@
         var currentCustomerId = null;
         let currentCustomerData = null;
         async function showCustomerHistory(custId, fallbackName) {
+            var uuidRe = (window.CRM && window.CRM.Constants && window.CRM.Constants.UUID_RE) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRe.test(String(custId || '').trim())) {
+                try { sessionStorage.removeItem('crm_customer_detail_id'); } catch (_) {}
+                if (typeof showPage === 'function') showPage('customers');
+                return;
+            }
             currentCustomerId = custId;
+            try { sessionStorage.setItem('crm_customer_detail_id', String(custId)); } catch (_) {}
+            var detailBase = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
+            try { window.history.replaceState(null, '', detailBase + '#customer-detail/' + encodeURIComponent(custId)); } catch (_) {}
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const detailPage = document.getElementById('pageCustomerDetail');
             if (detailPage) detailPage.classList.add('show');
@@ -3967,12 +3976,16 @@
             const firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
             const lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
             if (quickActionsEl) {
-                const qName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                const qPhone = ((typeof customerUiPhone === 'function' ? customerUiPhone(c) : '') || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
-                const grantBtn = canViewHiddenConversations() ? '<button type="button" class="btn-secondary customer-detail-action-btn" id="custGrantAccessBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('access_grant_btn') || 'Grant access') + '</button>' : '';
+                const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                    ? window.CRM.Utils.escapeAttr
+                    : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+                const qId = attrEsc(c.id);
+                const qName = attrEsc(name || '');
+                const qPhone = attrEsc((typeof customerUiPhone === 'function' ? customerUiPhone(c) : '') || '');
+                const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + qId + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
+                const grantBtn = canViewHiddenConversations() ? '<button type="button" class="btn-secondary customer-detail-action-btn" id="custGrantAccessBtn" data-cust-id="' + qId + '">' + escapeHtml(t('access_grant_btn') || 'Grant access') + '</button>' : '';
                 const restrictedBadge = c.isRestrictedFromStaff ? '<span class="badge" style="margin-inline-start:8px;">' + escapeHtml(t('customer_restricted_badge') || 'Restricted') + '</span>' : '';
-                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + grantBtn + delBtn + restrictedBadge;
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + qId + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + qId + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + qId + '">' + escapeHtml(t('transaction_add')) + '</button>' + grantBtn + delBtn + restrictedBadge;
                 setTimeout(function() {
                     const chatBtn = document.getElementById('custChatBtn');
                     const editBtn = document.getElementById('custEditBtn');

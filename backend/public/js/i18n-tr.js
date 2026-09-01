@@ -181,6 +181,7 @@ window.__I18N_TR = {
     conv_sync_groups: 'Sohbetleri ve grupları senkronize et',
     conv_tab_groups: 'Gruplar',
     conv_search_ph: 'İsim veya telefon ara...',
+    conv_search_aria: 'Müşteri adı veya telefon ara',
     conv_search_ph_no_phone: 'İsim ara...',
     conv_list_title: 'Konuşmalar',
     more_filters: 'Daha fazla filtre',

@@ -19,10 +19,13 @@
                     }
                 }, 50);
             }
+            const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                ? window.CRM.Utils.escapeAttr
+                : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
             const detailRawPic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             const detailPicSrc = customerAvatarDisplaySrc(c);
             const avatarClickable = customerAvatarShowsImage(c);
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : initial;
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + attrEsc(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) {
                 const seePhoneDetail = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
@@ -30,7 +33,7 @@
                 const detailPhoneLine = seePhoneDetail && c.phone
                     ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—'))
                     : '';
-                cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(detailName) + '</h3>' + (detailPhoneLine ? '<div class="customer-meta">' + detailPhoneLine + '</div>' : '') + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
+                cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + attrEsc(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(detailName) + '</h3>' + (detailPhoneLine ? '<div class="customer-meta">' + detailPhoneLine + '</div>' : '') + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             }            const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -38,7 +41,10 @@
             if (!data.data || data.data.length === 0) {
                 list.innerHTML = '<div class="cust-hist-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>' + (t('no_conv_history') || (LANG === 'fa' ? 'هیچ مکالمه‌ای ثبت نشده است.' : 'No conversation history.')) + '</p></div>';
             } else {
-                const safeName = (detailName || name || '').replace(/'/g, '&#39;');
+                const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                    ? window.CRM.Utils.escapeAttr
+                    : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+                const safeName = attrEsc(detailName || name || '');
                 const statusColors = { open: 'var(--accent)', waiting: '#f59e0b', closed: 'var(--text-muted)', resolved: '#22c55e', archived: 'var(--text-muted)' };
                 const statusLabels = { open: LANG === 'fa' ? 'باز' : 'Open', waiting: LANG === 'fa' ? 'در انتظار' : 'Waiting', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
                 list.innerHTML = data.data.map(function(conv) {
@@ -55,7 +61,7 @@
                     if (assignee) metaParts.push((LANG === 'fa' ? 'مسئول: ' : 'By: ') + assignee);
                     if (dept) metaParts.push(dept);
                     if (date) metaParts.push(date);
-                    return '<div class="cust-hist-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)" role="button" tabindex="0">' +
+                    return '<div class="cust-hist-item" data-convid="' + attrEsc(conv.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)" role="button" tabindex="0">' +
                         '<div class="cust-hist-icon">' + (isGrp ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') + '</div>' +
                         '<div class="cust-hist-body">' +
                             '<div class="cust-hist-top"><span class="cust-hist-title">' + (isGrp ? (LANG === 'fa' ? 'گفتگوی گروهی' : 'Group Chat') : (LANG === 'fa' ? 'مکالمه' : 'Conversation')) + '</span>' +
@@ -1824,6 +1830,28 @@
             try {
                 initSidebarCollapsedState();
                 const hash = (location.hash || '').replace(/^#/, '');
+                const customerMatch = hash.match(/^customer-detail(?:\/(.+))?$/);
+                if (customerMatch) {
+                    if (typeof canAccessSection === 'function' && !canAccessSection('customers')) {
+                        showPage('dashboard');
+                        return;
+                    }
+                    var uuidRe = (window.CRM && window.CRM.Constants && window.CRM.Constants.UUID_RE) || /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    var cid = customerMatch[1] ? decodeURIComponent(customerMatch[1]) : '';
+                    if (!cid) {
+                        try { cid = sessionStorage.getItem('crm_customer_detail_id') || ''; } catch (_) {}
+                    }
+                    if (cid && !uuidRe.test(String(cid).trim())) {
+                        try { sessionStorage.removeItem('crm_customer_detail_id'); } catch (_) {}
+                        cid = '';
+                    }
+                    if (cid && typeof showCustomerHistory === 'function') {
+                        showCustomerHistory(cid);
+                        return;
+                    }
+                    showPage('customers');
+                    return;
+                }
                 const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
                 showPage(page);
             } catch (e) {

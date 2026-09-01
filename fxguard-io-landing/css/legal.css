@@ -1,7 +1,7 @@
-/* FXGuard storefront — procurement / print one-pager */
+/* FXGuard storefront — privacy / terms / account-deletion / procurement */
 :root {
-    --bg: #0a0e17;
-    --card: #111827;
+    --bg: #080d1a;
+    --card: #10182c;
     --accent: #10b981;
     --text: #f3f4f6;
     --muted: #9ca3af;
@@ -15,10 +15,24 @@ body {
     line-height: 1.7;
 }
 body[dir="rtl"] { font-family: Vazirmatn, Outfit, sans-serif; }
+.skip-link {
+    position: absolute;
+    top: -50px;
+    inset-inline-start: 16px;
+    padding: 12px 20px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 8px;
+    z-index: 1000;
+    text-decoration: none;
+    transition: top 0.2s;
+}
+.skip-link:focus { top: 16px; outline: 2px solid #fff; outline-offset: 2px; }
 .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
 header {
     position: sticky; top: 0; z-index: 10;
-    background: rgba(10, 14, 23, 0.96);
+    background: rgba(8, 13, 26, 0.96);
     border-bottom: 1px solid var(--border);
 }
 .head { display: flex; justify-content: space-between; align-items: center; min-height: 64px; gap: 12px; }
@@ -29,10 +43,11 @@ header {
     border-radius: 8px; padding: 6px 10px; cursor: pointer; font: inherit;
 }
 .langs button[aria-current="true"] { color: var(--text); border-color: var(--accent); }
-.legal { padding: 40px 20px 80px; }
+.legal { padding: 48px 20px 96px; }
+.legal:focus { outline: none; }
 .meta { color: var(--muted); font-size: 0.9rem; margin-bottom: 8px; }
-h1 { font-size: 1.85rem; margin-bottom: 16px; }
-h2 { font-size: 1.15rem; margin: 28px 0 10px; }
+h1 { font-size: clamp(1.6rem, 3vw, 2rem); margin-bottom: 16px; letter-spacing: -0.02em; }
+h2 { font-size: 1.15rem; margin: 32px 0 10px; }
 p, li { color: var(--muted); margin-bottom: 10px; }
 ul, ol { padding-inline-start: 1.25rem; margin-bottom: 12px; }
 a { color: var(--accent); }
@@ -42,9 +57,16 @@ code { color: var(--text); }
     border-radius: 8px; padding: 8px 14px; cursor: pointer; font: inherit;
 }
 @media print {
-    header, .langs, .print-btn, footer { display: none !important; }
+    header, .langs, .print-btn, footer, .skip-link { display: none !important; }
     body { background: #fff; color: #111; }
     p, li { color: #222; }
     a { color: #111; text-decoration: none; }
 }
 footer { border-top: 1px solid var(--border); padding: 24px 20px 40px; color: var(--muted); font-size: 0.9rem; }
+.legal-foot-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+    margin-bottom: 12px;
+}
+.legal-foot-nav a { text-decoration: none; }

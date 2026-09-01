@@ -13,13 +13,16 @@
     <link rel="alternate" hreflang="ar" href="https://fxguard.io/account-deletion?lang=ar">
     <link rel="alternate" hreflang="ru" href="https://fxguard.io/account-deletion?lang=ru">
     <link rel="alternate" hreflang="x-default" href="https://fxguard.io/account-deletion">
+    <meta name="theme-color" content="#080d1a">
+    <link rel="icon" href="/favicon.png" type="image/png" sizes="32x32">
     <link rel="icon" href="/images/logo.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&amp;family=Vazirmatn:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/legal.css">
 </head>
-<body data-legal-page="deletion">
+<body data-legal-page="deletion" data-page="account-deletion">
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">FXGuard</a>
@@ -32,7 +35,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <h1 data-i18n="h1">Staff account deletion</h1>
         <p data-i18n="intro">FXGuard Staff does <strong>not</strong> create accounts inside the app. Your administrator creates each user. Apple and Google still require a public deletion path.</p>
 
@@ -48,7 +51,16 @@
 
         <p><a href="/privacy" data-i18n="privacy">Privacy Policy</a> · <a href="/contact" data-i18n="contact">Contact</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 FXGuard · ERST IT Solutions</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 FXGuard · ERST IT Solutions</p>
+    </footer>
     <script src="/js/legal.js"></script>
 </body>
 </html>

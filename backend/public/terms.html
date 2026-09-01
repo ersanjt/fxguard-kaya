@@ -8,6 +8,7 @@
     <meta name="description" content="Terms of use for the Kaya Staff mobile apps and the Kaya CRM staff portal.">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://kaya.fxguard.io/terms">
+    <meta name="theme-color" content="#080d1a">
     <link rel="icon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,6 +16,7 @@
     <link rel="stylesheet" href="/css/legal.css">
 </head>
 <body>
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">Kaya CRM</a>
@@ -25,7 +27,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <p class="meta">Effective 17 August 2026</p>
         <h1 data-i18n="h1">Terms of Use</h1>
         <p data-i18n="intro">These terms apply to the <strong>Kaya Staff</strong> iOS and Android applications and the staff web portal. By signing in you agree to them.</p>
@@ -49,7 +51,16 @@
         <p data-i18n="t6_p">Privacy is described in the <a href="/privacy">Privacy Policy</a>. Account removal is described at <a href="/account-deletion">account deletion</a>. Questions: <a href="mailto:support@kaya.fxguard.io">support@kaya.fxguard.io</a>.</p>
         <p><a href="/" data-i18n="home">Home</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 Kaya CRM</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 Kaya CRM</p>
+    </footer>
     <script src="/js/legal.js"></script>
 </body>
 </html>

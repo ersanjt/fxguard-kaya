@@ -4,7 +4,7 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { ContactLead } = require('../models');
-const { normalizeContactPurpose } = require('../lib/contactLead');
+const { normalizeContactPurpose, normalizeContactLang } = require('../lib/contactLead');
 
 const contactLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -45,6 +45,8 @@ function createContactRouter(logger) {
         }
 
         const purposeVal = normalizeContactPurpose(purpose);
+        const langVal = normalizeContactLang(req.body && req.body.lang);
+        const sourceVal = ('landing:' + langVal).slice(0, 64);
 
         try {
             try {
@@ -54,7 +56,7 @@ function createContactRouter(logger) {
                     email: emailStr,
                     phone: phone ? String(phone).trim().slice(0, 50) : null,
                     message: messageStr.slice(0, 2000),
-                    source: 'landing',
+                    source: sourceVal,
                 });
             } catch (leadErr) {
                 logger.warn('Contact form: lead persist failed', { error: leadErr.message });
@@ -77,6 +79,7 @@ function createContactRouter(logger) {
                 email: emailStr,
                 phone: phone ? String(phone).trim().slice(0, 50) : '',
                 message: messageStr,
+                lang: langVal,
                 emailConfig: panelEmailConfig
             });
             res.json({ ok: true, message: 'پیام ارسال شد. به زودی با شما تماس می‌گیریم.' });

@@ -64,6 +64,7 @@
             reset_fail:           'خطا در تغییر رمز عبور.',
             cant_signin:          'نمی‌توانید وارد شوید؟',
             contact_support:      'با پشتیبانی تماس بگیرید',
+            skip_link:            'رفتن به فرم ورود',
             forgot_email_ph:      'email@example.com',
             reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
@@ -120,6 +121,7 @@
             reset_fail:           'Failed to reset password.',
             cant_signin:          "Can't sign in?",
             contact_support:      'Contact support',
+            skip_link:            'Skip to sign in',
             forgot_email_ph:      'you@example.com',
             reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
@@ -176,6 +178,7 @@
             reset_fail:           'Şifre sıfırlama başarısız.',
             cant_signin:          'Giriş yapamıyor musunuz?',
             contact_support:      'Destekle iletişime geçin',
+            skip_link:            'Giriş formuna geç',
             forgot_email_ph:      'ornek@email.com',
             reset_new_ph:         'En az 8 karakter, bir harf ve bir rakam',
             reset_confirm_ph:     'Şifre tekrar',
@@ -548,21 +551,34 @@
     var LP_DEFAULT_FAVICON = '/brand/kaya-favicon-32.png?v=2';
     var LP_DEFAULT_APPLE = '/brand/kaya-apple-touch.png?v=2';
 
+    function lpSafeHref(raw, fallback) {
+        var s = String(raw || '').trim();
+        if (!s) return fallback || '';
+        var lower = s.toLowerCase();
+        if (lower.indexOf('javascript:') === 0 || lower.indexOf('data:') === 0 || lower.indexOf('vbscript:') === 0) {
+            return fallback || '';
+        }
+        if (/^https?:\/\//i.test(s) || /^mailto:/i.test(s)) return s;
+        if (s.charAt(0) === '/' && s.charAt(1) !== '/') return s;
+        return fallback || '';
+    }
+
     function lpResolveFaviconHref(d) {
         if (!d) return LP_DEFAULT_FAVICON;
         var fav = d.faviconUrl && String(d.faviconUrl).trim();
-        if (fav) return fav;
+        if (fav) return lpSafeHref(fav, LP_DEFAULT_FAVICON);
         var logo = d.logoUrl && String(d.logoUrl).trim();
-        if (logo) return logo;
+        if (logo) return lpSafeHref(logo, LP_DEFAULT_FAVICON);
         return LP_DEFAULT_FAVICON;
     }
     function lpResolveLoginLogoSrc(d) {
         if (!d) return LP_DEFAULT_LOGO;
         var a = d.loginLogoUrl && String(d.loginLogoUrl).trim();
-        if (a) return a;
+        if (a) return lpSafeHref(a, LP_DEFAULT_LOGO);
         var logo = d.logoUrl && String(d.logoUrl).trim();
-        if (logo) return logo;
-        return (d.faviconUrl && String(d.faviconUrl).trim()) || LP_DEFAULT_LOGO;
+        if (logo) return lpSafeHref(logo, LP_DEFAULT_LOGO);
+        var fav = d.faviconUrl && String(d.faviconUrl).trim();
+        return lpSafeHref(fav, LP_DEFAULT_LOGO) || LP_DEFAULT_LOGO;
     }
     function lpApplyLoginLogo(src, siteName) {
         var logoWrap = document.getElementById('lpLogoWrap');
@@ -598,11 +614,11 @@
                 d = d || {};
                 lpApplyLoginLogo(lpResolveLoginLogoSrc(d), d.siteName || 'KAYA');
 
-                var favHref = lpResolveFaviconHref(d);
+                var favHref = lpSafeHref(lpResolveFaviconHref(d), LP_DEFAULT_FAVICON);
                 var fav = document.getElementById('lpFavicon');
                 if (fav) fav.href = favHref;
                 var lpApple = document.getElementById('lpAppleTouch');
-                if (lpApple) lpApple.href = favHref || LP_DEFAULT_APPLE;
+                if (lpApple) lpApple.href = lpSafeHref(favHref, LP_DEFAULT_APPLE) || LP_DEFAULT_APPLE;
 
                 var pt = d.pageTitle && String(d.pageTitle).trim();
                 var lt = d.loginTitle && String(d.loginTitle).trim();
@@ -630,7 +646,10 @@
                 }
 
                 var supportLink = document.getElementById('lpSupportLink');
-                if (supportLink && d.supportUrl) supportLink.href = d.supportUrl;
+                if (supportLink && d.supportUrl) {
+                    var safeSupport = lpSafeHref(d.supportUrl, '');
+                    if (safeSupport) supportLink.href = safeSupport;
+                }
             })
             .catch(function() {
                 lpApplyLoginLogo(LP_DEFAULT_LOGO, 'KAYA');
@@ -642,7 +661,10 @@
             .then(function(c) {
                 c = c || {};
                 var supportLink = document.getElementById('lpSupportLink');
-                if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
+                if (supportLink && c.supportUrl) {
+                    var safeCfg = lpSafeHref(c.supportUrl, '');
+                    if (safeCfg) supportLink.href = safeCfg;
+                }
                 loadBranding();
                 renderDemoBox();
             })

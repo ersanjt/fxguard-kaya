@@ -155,10 +155,17 @@
     };
 
     var SUPPORTED = ['en', 'fa', 'tr', 'ar', 'ru'];
+    var FOOT = {
+        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
+        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
+        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' },
+        ar: { skip: 'تخطّ إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'اتصل', home: 'الرئيسية' },
+        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', home: 'Главная' }
+    };
 
     function apply(lang) {
         if (SUPPORTED.indexOf(lang) === -1) lang = 'en';
-        var dict = T[lang] || {};
+        var dict = Object.assign({}, FOOT[lang] || FOOT.en, T[lang] || {});
         document.documentElement.lang = lang;
         document.documentElement.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
         document.querySelectorAll('[data-i18n]').forEach(function (el) {
@@ -169,6 +176,14 @@
             btn.setAttribute('aria-current', btn.getAttribute('data-lang') === lang ? 'true' : 'false');
         });
         try { localStorage.setItem('fxg_legal_lang', lang); } catch (e) { /* ignore */ }
+        var titles = {
+            en: 'Security & procurement summary | FXGuard',
+            fa: 'خلاصه امنیت و تدارکات | FXGuard',
+            tr: 'Güvenlik ve satın alma özeti | FXGuard',
+            ar: 'ملخص الأمن والمشتريات | FXGuard',
+            ru: 'Кратко: безопасность и закупки | FXGuard'
+        };
+        if (titles[lang]) document.title = titles[lang];
         var canon = document.querySelector('link[rel="canonical"]');
         if (canon) {
             var base = 'https://fxguard.io/procurement';

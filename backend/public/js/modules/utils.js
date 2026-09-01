@@ -11,6 +11,15 @@
         return d.innerHTML;
     }
 
+    function escapeAttr(s) {
+        return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
     function dashboardLang() {
         try {
             return window.LANG || 'fa';
@@ -92,6 +101,7 @@
     window.CRM = window.CRM || {};
     window.CRM.Utils = {
         escapeHtml: escapeHtml,
+        escapeAttr: escapeAttr,
         formatPrice: formatPrice,
         formatChange: formatChange,
         looksLikePhone: looksLikePhone,

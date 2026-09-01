@@ -13,6 +13,7 @@ const {
 const {
     CONTACT_PURPOSES,
     normalizeContactPurpose,
+    normalizeContactLang,
     tallyPurposeCounts,
 } = require('../lib/contactLead');
 
@@ -67,12 +68,27 @@ test('converted and expired rows are not disconnected again', () => {
 test('contact purposes include demo and trial', () => {
     assert.ok(CONTACT_PURPOSES.indexOf('demo') >= 0);
     assert.ok(CONTACT_PURPOSES.indexOf('trial') >= 0);
-    assert.strictEqual(normalizeContactPurpose('GUIDED'), 'other');
+    assert.strictEqual(normalizeContactPurpose('GUIDED'), 'demo');
     assert.strictEqual(normalizeContactPurpose('trial'), 'trial');
     const counts = tallyPurposeCounts([{ purpose: 'demo', n: 2 }, { purpose: 'quote', n: 1 }]);
     assert.strictEqual(counts.demo, 2);
     assert.strictEqual(counts.quote, 1);
     assert.strictEqual(counts.purchase, 0);
+});
+
+test('landing purpose aliases map to CRM funnel values', () => {
+    assert.strictEqual(normalizeContactPurpose('cloud_subscribe'), 'purchase');
+    assert.strictEqual(normalizeContactPurpose('buy_license'), 'license');
+    assert.strictEqual(normalizeContactPurpose('managed_hosting'), 'managed');
+    assert.strictEqual(normalizeContactPurpose('guided_demo'), 'demo');
+    assert.strictEqual(normalizeContactPurpose('<script>'), 'other');
+});
+
+test('contact lang is allowlisted', () => {
+    assert.strictEqual(normalizeContactLang('fa'), 'fa');
+    assert.strictEqual(normalizeContactLang('TR'), 'tr');
+    assert.strictEqual(normalizeContactLang('zh-CN'), 'en');
+    assert.strictEqual(normalizeContactLang('javascript:alert(1)'), 'en');
 });
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

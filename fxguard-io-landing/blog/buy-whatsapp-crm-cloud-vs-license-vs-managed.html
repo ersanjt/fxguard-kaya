@@ -120,7 +120,7 @@
         {
           "@type": "Question",
           "name": "Can I try before I buy?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Open the free live demo at app.fxguard.io with a booked guided demo. Nothing is saved." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Book a 10-minute guided demo or a 7-day own-number trial. We do not publish a shared password." }
         }
       ]
     }
@@ -134,8 +134,8 @@
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preconnect" href="https://app.fxguard.io" crossorigin>
     <link rel="preload" as="script" href="/js/blog-articles-i18n.js">
-    <link rel="preload" as="script" href="/js/pages-i18n.js">
-    <link rel="preload" as="script" href="/js/landing.js">
+    <link rel="preload" as="script" href="/js/pages-i18n.js?v=20260901a">
+    <link rel="preload" as="script" href="/js/landing.js?v=20260901a">
     <link rel="dns-prefetch" href="https://app.fxguard.io">
     <link rel="dns-prefetch" href="https://wa.me">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -150,7 +150,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&amp;family=Vazirmatn:wght@400;500;600;700&amp;family=Noto+Sans+Arabic:wght@400;500;600;700&amp;family=Noto+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="/css/style.css">
     <link rel="stylesheet" href="/css/landing.css">
-    <link rel="stylesheet" href="/css/seo-pages.css">
+    <link rel="stylesheet" href="/css/seo-pages.css?v=20260901a">
     <link rel="stylesheet" href="/css/blog.css">
 </head>
 <body class="seo-page blog-article-page" data-page="blog">
@@ -174,22 +174,27 @@
       <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
       <span>FXGuard</span>
     </a>
-    <div class="lang-switch header-lang" role="group" data-i18n-aria="aria_lang" aria-label="Language">
-      <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
-      <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
-      <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">TR</button>
-      <button type="button" data-lang="ar" title="العربية" aria-label="العربية">AR</button>
-      <button type="button" data-lang="ru" title="Русский" aria-label="Русский">RU</button>
+    <div class="lang-dropdown header-lang">
+      <button type="button" class="lang-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="aria_lang" aria-label="Language">
+        <span class="lang-dropdown-code">EN</span>
+        <svg class="lang-dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="lang-switch lang-dropdown-menu" role="listbox" hidden>
+        <button type="button" data-lang="en" title="English" aria-label="English">English</button>
+        <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">فارسی</button>
+        <button type="button" data-lang="tr" title="Türkçe" aria-label="Türkçe">Türkçe</button>
+        <button type="button" data-lang="ar" title="العربية" aria-label="العربية">العربية</button>
+        <button type="button" data-lang="ru" title="Русский" aria-label="Русский">Русский</button>
+      </div>
     </div>
     <nav class="nav" data-i18n-aria="aria_nav" aria-label="Primary">
       <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
       <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-      <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+      <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
       <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
       <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-      <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
-      <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanel" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+      <a href="/live-demo" class="btn btn-primary" id="btnPanel" data-i18n="nav_try_demo">Demo</a>
+      <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
     </nav>
     <button class="nav-toggle" id="navToggle" type="button" data-i18n-aria="aria_menu" aria-label="Menu" aria-expanded="false" aria-controls="navMobile"><span></span><span></span><span></span></button>
   </div>
@@ -198,12 +203,11 @@
   <button class="nav-close" id="navClose" type="button" data-i18n-aria="aria_close" aria-label="Close">×</button>
   <a href="/products" data-nav="products" data-i18n="nav_products">Products</a>
   <a href="/whatsapp-crm" data-nav="product" data-i18n="nav_whatsapp_crm">WhatsApp CRM</a>
-  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
-  <a href="/live-demo" data-nav="demo" data-i18n="nav_demo">Demo</a>
+  <a href="/pricing" data-nav="pricing" data-i18n="nav_packages">Packages</a>
   <a href="/blog" data-nav="blog" class="is-active" data-i18n="nav_blog">Blog</a>
   <a href="/contact" data-nav="contact" data-i18n="nav_contact">Contact</a>
-  <a href="https://wa.me/905010676486" class="btn btn-wa js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Buy</a>
-  <a href="https://app.fxguard.io/" class="btn btn-primary js-panel-link" id="btnPanelMob" target="_blank" rel="noopener" data-i18n="nav_try_demo">Free Demo</a>
+  <a href="/live-demo" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_try_demo">Demo</a>
+  <a href="https://wa.me/905010676486" class="btn btn-outline js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="nav_buy">Quote</a>
   <div class="lang-switch lang-switch-mobile" role="group" data-i18n-aria="aria_lang" aria-label="Language">
     <button type="button" data-lang="en" title="English" aria-label="English">EN</button>
     <button type="button" data-lang="fa" title="فارسی" aria-label="فارسی">FA</button>
@@ -275,7 +279,7 @@
 
 <h2 id="how-to-buy">How to buy today</h2>
 <ol>
-  <li>Open the <a href="/live-demo">live demo</a> — user <code>demo</code>, password <code>guided demo</code></li>
+  <li>Book a <a href="/live-demo">10-minute guided demo</a> — we do not publish a shared password on this site</li>
   <li>Pick Cloud, License or Managed on <a href="/pricing">/pricing</a></li>
   <li>Message sales on WhatsApp <a href="https://wa.me/905010676486" target="_blank" rel="noopener">+90 501 067 6486</a> or use <a href="/contact">/contact</a></li>
 </ol>
@@ -289,10 +293,10 @@
 
             <div class="blog-buy-box reveal" aria-label="Buy FXGuard">
                 <h2 data-i18n="blog_buy_h2">Ready to buy FXGuard?</h2>
-                <p data-i18n="blog_buy_p">Hosted Cloud from <strong>$49/month</strong> · Self-hosted License · Managed Dedicated. Free live demo first — then purchase on WhatsApp.</p>
+                <p data-i18n="blog_buy_p">Hosted Cloud from <strong>$49/month</strong> · Self-hosted License · Managed Dedicated. Book a guided demo first — then purchase on WhatsApp.</p>
                 <div class="blog-buy-actions">
                     <a class="btn btn-wa js-wa-link" data-wa="buy" href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20BUY%20FXGuard%20WhatsApp%20CRM.%20Please%20send%20packages." target="_blank" rel="noopener" data-i18n="blog_buy_wa">Buy on WhatsApp</a>
-                    <a class="btn btn-primary" href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="blog_buy_demo">Open Free Demo</a>
+                    <a class="btn btn-primary" href="/live-demo" data-i18n="blog_buy_demo">Open Free Demo</a>
                     <a class="btn btn-outline" href="/pricing" data-i18n="blog_buy_packages">See Packages</a>
                 </div>
             </div>
@@ -314,28 +318,31 @@
         <img class="logo-icon" src="/images/logo.svg" width="36" height="36" alt="" />
         <span data-i18n="logo">FXGuard</span>
       </a>
-      <p data-i18n="footer_about">FXGuard builds digital products for exchange, finance and support teams. Start with WhatsApp CRM today — Accounting is coming next.</p>
-      <p class="footer-markets" data-i18n="footer_markets">Serving teams in Turkey · UAE / Dubai · Europe · Iran</p>
+      <p data-i18n="footer_about">FXGuard is a WhatsApp CRM for exchange, remittance and finance desks: one company number, FX rates on the same panel as the chat, customer book stays with the business.</p>
+      <p class="footer-who" data-i18n="footer_who">Primary: exchange, remittance, finance. Other teams can run Cloud Start without the FX pack.</p>
+      <p class="footer-trust" data-i18n="footer_trust">Optional OpenAI first-replies (your key) · staff close the deal · 7-day money-back on first Cloud Start month</p>
+      <p class="footer-markets" data-i18n="footer_markets">Turkey · UAE · Europe · Iran</p>
       <nav class="footer-market-links" aria-label="Markets">
-        <a href="/tr/" data-i18n="mkt_tr">Turkey</a>
-        <a href="/ae/" data-i18n="mkt_ae">UAE</a>
-        <a href="/eu/" data-i18n="mkt_eu">Europe</a>
-        <a href="/ir/" data-i18n="mkt_ir">Iran</a>
+        <a href="/tr/" data-no-lang data-i18n="mkt_tr">Turkey</a>
+        <a href="/ae/" data-no-lang data-i18n="mkt_ae">UAE</a>
+        <a href="/eu/" data-no-lang data-i18n="mkt_eu">Europe</a>
+        <a href="/ir/" data-no-lang data-i18n="mkt_ir">Iran</a>
       </nav>
     </div>
     <nav class="footer-col" aria-label="Product">
       <h3 data-i18n="footer_col_product">Products</h3>
       <a href="/products" data-i18n="footer_products">All products</a>
       <a href="/whatsapp-crm" data-i18n="footer_whatsapp_crm">WhatsApp CRM</a>
-            <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
+      <a href="https://demo-accounting.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_accounting">Accounting demo</a>
       <a href="https://exchange.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_exchange">Exchange site</a>
       <a href="/blog" data-i18n="footer_blog">Blog &amp; Articles</a>
-      <a href="/live-demo" data-i18n="footer_demo">Live Demo</a>
-      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Open Panel</a>
+      <a href="/live-demo" data-i18n="footer_demo">Demo</a>
+      <a href="https://app.fxguard.io/" target="_blank" rel="noopener" data-i18n="footer_open_panel">Staff login</a>
     </nav>
     <nav class="footer-col" aria-label="Solutions">
       <h3 data-i18n="footer_col_solutions">Solutions</h3>
       <a href="/pricing" data-i18n="footer_pricing">Pricing &amp; Packages</a>
+      <a href="/procurement" data-i18n="footer_procurement">Security / invoice pack</a>
       <a href="/self-hosted" data-i18n="footer_self_hosted">Self-hosted License</a>
       <a href="/managed-hosting" data-i18n="footer_managed">Managed Hosting</a>
       <a href="/#services" data-i18n="footer_services">Support &amp; Backups</a>
@@ -343,6 +350,9 @@
     <nav class="footer-col" aria-label="Company">
       <h3 data-i18n="footer_col_company">Company</h3>
       <a href="/contact" data-i18n="footer_contact">Contact</a>
+      <a href="/privacy" data-i18n="footer_privacy">Privacy</a>
+      <a href="/terms" data-i18n="footer_terms">Terms</a>
+      <a href="/account-deletion" data-i18n="footer_account_deletion">Account deletion</a>
       <a href="/#faq" data-i18n="footer_faq">FAQ</a>
       <a href="mailto:sales@fxguard.io">sales@fxguard.io</a>
       <a href="mailto:support@fxguard.io">support@fxguard.io</a>
@@ -350,24 +360,28 @@
     </nav>
   </div>
   <div class="container footer-bottom">
-    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">Digital products for Exchange, Finance &amp; Support Teams</span></p>
+    <p>&copy; 2026 FXGuard · <span data-i18n="footer_tagline">WhatsApp CRM — tailored to your business</span></p>
     <p class="footer-legal" data-i18n="footer_entity">FXGuard is a product of ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti., Esenyurt / İstanbul.</p>
     <p class="footer-legal">
+      <a href="/privacy" data-i18n="footer_privacy">Privacy</a> ·
+      <a href="/terms" data-i18n="footer_terms">Terms</a> ·
+      <a href="/account-deletion" data-i18n="footer_account_deletion">Account deletion</a> ·
       <a href="/">fxguard.io</a> ·
       <a href="https://app.fxguard.io/" target="_blank" rel="noopener">app.fxguard.io</a>
     </p>
   </div>
 </footer>
-<div class="sticky-buy" id="stickyBuy" role="region" aria-label="Buy FXGuard">
+<div class="sticky-buy" id="stickyBuy" role="region" data-i18n-aria="sticky_aria" aria-label="Demo, Cloud Start or quote">
   <p class="sticky-buy-text" data-i18n="sticky_text">From $49/mo · Free demo</p>
-  <div class="sticky-buy-actions">
-    <a href="https://app.fxguard.io/" class="btn btn-outline sticky-btn js-panel-link" target="_blank" rel="noopener" data-i18n="sticky_demo">Demo</a>
+    <div class="sticky-buy-actions">
+    <a href="/live-demo" class="btn btn-outline sticky-btn" data-i18n="sticky_demo">Demo</a>
+    <a href="/pay" class="btn btn-primary sticky-btn" data-i18n="sticky_pay">$49</a>
     <a href="https://wa.me/905010676486" class="btn btn-wa sticky-btn js-wa-link" data-wa="buy" target="_blank" rel="noopener" data-i18n="sticky_buy">Buy</a>
   </div>
 </div>
-<script src="/js/pages-i18n.js" defer></script>
-<script src="/js/gtm-i18n.js?v=20260822a" defer></script>
-<script src="/js/landing.js" defer></script>
-<script src="/js/site-yield.js" defer></script>
+<script src="/js/pages-i18n.js?v=20260901a" defer></script>
+<script src="/js/gtm-i18n.js?v=20260901a" defer></script>
+<script src="/js/landing.js?v=20260901a" defer></script>
+<script src="/js/site-yield.js?v=20260901a" defer></script>
 </body>
 </html>

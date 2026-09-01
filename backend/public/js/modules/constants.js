@@ -86,6 +86,7 @@
         VALID_PAGES: VALID_PAGES,
         PAGE_TO_SECTION: PAGE_TO_SECTION,
         PAGE_IDS: PAGE_IDS,
-        PAGE_TITLES: PAGE_TITLES
+        PAGE_TITLES: PAGE_TITLES,
+        UUID_RE: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     };
 })();

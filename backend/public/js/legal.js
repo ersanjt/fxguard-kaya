@@ -6,6 +6,11 @@
  * @see     docs/CODEBASE-MAP.md
  */
 (function () {
+    var FOOT = {
+        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
+        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
+        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' }
+    };
     var T = {
         privacy: {
             en: {},
@@ -245,7 +250,7 @@
 
     function apply(lang) {
         var pack = T[pageKey()] || {};
-        var dict = pack[lang] || {};
+        var dict = Object.assign({}, FOOT[lang] || FOOT.en, pack[lang] || {});
         document.documentElement.lang = lang === 'fa' ? 'fa' : lang === 'tr' ? 'tr' : 'en';
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
         document.querySelectorAll('[data-i18n]').forEach(function (el) {

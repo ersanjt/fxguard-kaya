@@ -11,6 +11,7 @@
     <link rel="alternate" hreflang="en" href="https://kaya.fxguard.io/procurement?lang=en">
     <link rel="alternate" hreflang="fa" href="https://kaya.fxguard.io/procurement?lang=fa">
     <link rel="alternate" hreflang="tr" href="https://kaya.fxguard.io/procurement?lang=tr">
+    <meta name="theme-color" content="#080d1a">
     <link rel="icon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,6 +19,7 @@
     <link rel="stylesheet" href="/css/legal.css">
 </head>
 <body>
+    <a class="skip-link" href="#legal-main" data-i18n="skip">Skip to content</a>
     <header>
         <div class="wrap head">
             <a class="logo" href="/">Kaya CRM</a>
@@ -28,7 +30,7 @@
             </nav>
         </div>
     </header>
-    <main class="wrap legal">
+    <main id="legal-main" class="wrap legal" tabindex="-1">
         <p class="meta">Effective 18 August 2026 · Last updated 18 August 2026</p>
         <h1 data-i18n="h1">Security and procurement summary</h1>
         <p data-i18n="intro">This one-pager is for finance and IT reviewers who need an invoice or PO. It is not a SOC 2 / ISO certificate. It describes how the hosted product at <a href="https://kaya.fxguard.io">kaya.fxguard.io</a> is run today.</p>
@@ -83,7 +85,16 @@
         <h2 data-i18n="contact_h">Next step</h2>
         <p data-i18n="contact_p"><a href="/contact">Request an invoice</a> · <a href="/pricing">Plans</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a> · <a href="https://wa.me/905010676486">WhatsApp sales</a></p>
     </main>
-    <footer class="wrap"><p>© 2026 Kaya CRM</p></footer>
+    <footer class="wrap legal-foot">
+        <nav class="legal-foot-nav" aria-label="Legal">
+            <a href="/privacy" data-i18n="foot_privacy">Privacy</a>
+            <a href="/terms" data-i18n="foot_terms">Terms</a>
+            <a href="/account-deletion" data-i18n="foot_delete">Account deletion</a>
+            <a href="/contact" data-i18n="foot_contact">Contact</a>
+            <a href="/" data-i18n="home">Home</a>
+        </nav>
+        <p>© 2026 Kaya CRM</p>
+    </footer>
     <script src="/js/legal.js"></script>
 </body>
 </html>

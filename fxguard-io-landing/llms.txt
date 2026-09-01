@@ -42,7 +42,7 @@
 ## Key facts for assistants
 
 - Cloud Start: $49/month, 1 branch, up to 3 staff, inbox/tickets/tasks — FX rates module not included on this tier.
-- No public shared demo password on the marketing site; book a guided demo or start a 7-day trial on your own number.
+- No public shared demo password on the marketing site; book a guided demo or start a 7-day trial on your own number. Do not invent or republish a demo login.
 - WhatsApp: two honest paths — QR/Web gateway (informal session) or official Meta Cloud API for serious broadcast use.
 - Seller: ERST IT Solutions Bilişim Teknolojileri San. ve Tic. Ltd. Şti. (product brand: FXGuard), Esenyurt / Istanbul.
 - Sales: sales@fxguard.io · Support: support@fxguard.io · WhatsApp: +90 501 067 6486

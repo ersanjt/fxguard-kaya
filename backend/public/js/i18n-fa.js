@@ -180,6 +180,7 @@ window.__I18N_FA = {
     conv_sync_groups: 'همگام‌سازی چت‌ها و گروه‌ها',
     conv_tab_groups: 'گروه‌ها',
     conv_search_ph: 'جستجو نام یا شماره مشتری...',
+    conv_search_aria: 'جستجو نام یا شماره مشتری',
     conv_search_ph_no_phone: 'جستجو نام مشتری...',
     conv_list_title: 'مکالمات',
     more_filters: 'فیلترهای بیشتر',

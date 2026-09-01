@@ -7,11 +7,11 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0c1222">
+    <meta name="theme-color" content="#080d1a">
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="17c6232463a0">
+    <meta name="crm-build" content="235ec3475fa2">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,12 +20,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=17c6232463a0">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=17c6232463a0" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=235ec3475fa2">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=235ec3475fa2" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
-    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
         <defs>
             <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
             <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
@@ -343,7 +343,7 @@
                         <div class="conv-filters-top-row">
                             <div class="conv-search-bar">
                                 <span class="conv-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-                                <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input conv-search-input">
+                                <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" data-i18n-aria-label="conv_search_aria" placeholder="جستجو نام یا شماره مشتری..." aria-label="جستجو نام یا شماره مشتری" class="conv-filter-input conv-search-input">
                             </div>
                             <button type="button" class="conv-more-filters-btn" id="convFilterToggle" aria-expanded="false" data-i18n-title="more_filters" title="فیلترهای بیشتر">
                                 <svg class="conv-more-filters-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
@@ -417,8 +417,8 @@
                                     <div class="chat-header-sub wa-chat-subtitle" id="chatHeaderSub"></div>
                                 </div>
                                 <div class="wa-chat-header-actions">
-                                    <button type="button" class="wa-chat-call-btn" id="waChatVideoBtn" onclick="waConvVideoCall()" title="Video" data-i18n-title="wa_video_call" aria-label="Video"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
-                                    <button type="button" class="wa-chat-call-btn" id="waChatVoiceBtn" onclick="waConvVoiceCall()" title="Voice" data-i18n-title="wa_voice_call" aria-label="Voice"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
+                                    <button type="button" class="wa-chat-call-btn" id="waChatVideoBtn" onclick="waConvVideoCall()" title="تماس تصویری" data-i18n-title="wa_video_call" data-i18n-aria-label="wa_video_call" aria-label="تماس تصویری"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                    <button type="button" class="wa-chat-call-btn" id="waChatVoiceBtn" onclick="waConvVoiceCall()" title="تماس صوتی" data-i18n-title="wa_voice_call" data-i18n-aria-label="wa_voice_call" aria-label="تماس صوتی"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
                                     <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" data-i18n-title="conv_mgmt_panel_title" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
                                 </div>
                             </div>
@@ -2933,7 +2933,7 @@
                 </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
-                        <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()">&times;</button></div>
+                        <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="serviceModalId" value="">
                             <label data-i18n="service_name">نام سرویس</label>
@@ -2954,7 +2954,7 @@
                 </div>
                 <div id="cashBoxModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
-                        <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()">&times;</button></div>
+                        <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="cashBoxModalId" value="">
                             <label data-i18n="cashbox_name">نام صندوق</label>
@@ -2977,7 +2977,7 @@
                 </div>
                 <div id="bankAccountModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
-                        <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()">&times;</button></div>
+                        <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="bankAccountModalId" value="">
                             <label data-i18n="bankaccount_name">نام حساب</label>
@@ -3015,7 +3015,7 @@
                                 <h3 id="txModalTitle" data-i18n="transaction_add">ثبت تراکنش</h3>
                                 <p class="tx-modal-subtitle" data-i18n="transaction_modal_subtitle">اطلاعات تراکنش مالی را وارد کنید</p>
                             </div>
-                            <button type="button" class="tx-modal-close" onclick="closeTransactionModal()" aria-label="Close">&times;</button>
+                            <button type="button" class="tx-modal-close" onclick="closeTransactionModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button>
                         </div>
                         <div class="tx-modal-body">
                             <div class="tx-modal-section">
@@ -3104,7 +3104,7 @@
                 </div>
                 <div id="statementFiltersModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box" style="max-width:520px;">
-                        <div class="modal-header"><h3 data-i18n="statement_filters">فیلترهای صورت حساب</h3><button type="button" class="modal-close" onclick="closeStatementFilters()">&times;</button></div>
+                        <div class="modal-header"><h3 data-i18n="statement_filters">فیلترهای صورت حساب</h3><button type="button" class="modal-close" onclick="closeStatementFilters()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <label data-i18n="stmt_account">حساب / مشتری</label>
                             <select id="stmtFilterCustomer"><option value="">همه</option></select>
@@ -3169,7 +3169,7 @@
                 </div>
                 <div id="accountBalanceModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box" style="max-width:500px;">
-                        <div class="modal-header"><h3 data-i18n="account_balance_title">موجودی حساب</h3><button type="button" class="modal-close" onclick="closeAccountBalance()">&times;</button></div>
+                        <div class="modal-header"><h3 data-i18n="account_balance_title">موجودی حساب</h3><button type="button" class="modal-close" onclick="closeAccountBalance()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <div id="accountBalanceContent"></div>
                         </div>
@@ -3480,7 +3480,7 @@
         </div>
         <div id="internalCallInviteModal" class="modal-overlay" style="display:none;">
             <div class="modal-box" style="max-width:360px;">
-                <div class="modal-header"><h3 id="internalCallInviteTitle" data-i18n="invite_to_call">دعوت به تماس</h3><button type="button" class="modal-close" onclick="rejectInternalCallInvite()">&times;</button></div>
+                <div class="modal-header"><h3 id="internalCallInviteTitle" data-i18n="invite_to_call">دعوت به تماس</h3><button type="button" class="modal-close" onclick="rejectInternalCallInvite()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                 <div class="modal-body" style="text-align:center;">
                     <p id="internalCallInviteText" style="margin:0 0 20px; color:var(--text-secondary);"></p>
                     <div style="display:flex; gap:12px; justify-content:center;">
@@ -3625,7 +3625,7 @@
     </div>
     <div id="newConvModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:480px;">
-            <div class="modal-header"><h3 data-i18n="conv_new">مکالمه جدید</h3><button type="button" class="modal-close" onclick="closeNewConvModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="conv_new">مکالمه جدید</h3><button type="button" class="modal-close" onclick="closeNewConvModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <label data-i18n="conv_select_customer">انتخاب مشتری</label>
                 <input type="text" id="newConvCustomerSearch" class="conv-filter-input" data-i18n-ph="header_search" placeholder="جستجو نام یا شماره..." style="margin-bottom:12px;" oninput="var v=this.value;clearTimeout(window._newConvSearchT);window._newConvSearchT=setTimeout(function(){loadNewConvCustomers(v);},300);">
@@ -3637,7 +3637,7 @@
         <div class="modal-box forward-msg-modal">
             <div class="modal-header">
                 <h3 id="forwardMsgModalTitle" data-i18n="conv_forward">فوروارد پیام</h3>
-                <button type="button" class="modal-close" aria-label="Close">&times;</button>
+                <button type="button" class="modal-close" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button>
             </div>
             <div class="modal-body forward-msg-modal-body">
                 <section class="forward-msg-section forward-msg-section--preview" aria-labelledby="forwardMsgPreviewLabel">
@@ -3677,7 +3677,7 @@
     </div>
     <div id="supInternalChatDetailModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:640px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
-            <div class="modal-header"><h3 id="supIntChatModalTitle" data-i18n="sup_internal_chat_detail">جزئیات چت داخلی</h3><button type="button" class="modal-close" onclick="closeSupInternalChatModal()">&times;</button></div>
+            <div class="modal-header"><h3 id="supIntChatModalTitle" data-i18n="sup_internal_chat_detail">جزئیات چت داخلی</h3><button type="button" class="modal-close" onclick="closeSupInternalChatModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body" style="overflow-y:auto;flex:1;min-height:0;">
                 <div id="supIntChatModalContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
             </div>
@@ -3685,7 +3685,7 @@
     </div>
     <div id="staffDetailModal" class="modal-overlay" style="display:none;">
         <div class="modal-box staff-detail-modal" style="max-width:720px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
-            <div class="modal-header"><h3 id="staffDetailTitle" data-i18n="staff_detail_title">جزئیات فعالیت کارمند</h3><button type="button" class="modal-close" onclick="closeStaffDetailModal()">&times;</button></div>
+            <div class="modal-header"><h3 id="staffDetailTitle" data-i18n="staff_detail_title">جزئیات فعالیت کارمند</h3><button type="button" class="modal-close" onclick="closeStaffDetailModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body staff-detail-body" id="staffDetailBody" style="overflow-y:auto;flex:1;min-height:0;">
                 <div class="loading-skeleton loading-row" id="staffDetailLoading"></div>
                 <div id="staffDetailContent" style="display:none;"></div>
@@ -3777,7 +3777,7 @@
     </div>
     <div id="totpSetupModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:420px;">
-            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" id="closeTotpSetupModalBtn">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" id="closeTotpSetupModalBtn" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <p style="margin:0 0 12px; font-size:0.9rem;" data-i18n="modal_totp_scan">با اپلیکیشن Google Authenticator QR زیر را اسکن کنید (یا کلید را دستی وارد کنید):</p>
                 <div id="totpSetupQr" style="text-align:center; margin:12px 0;"></div>
@@ -3790,7 +3790,7 @@
     </div>
     <div id="totpDisableModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:400px;">
-            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" id="closeTotpDisableModalBtn">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" id="closeTotpDisableModalBtn" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <p style="margin:0 0 12px;" data-i18n="modal_totp_enter_pw">رمز عبور خود را وارد کنید:</p>
                 <input type="password" id="totpDisablePassword" data-i18n-ph="modal_totp_password_ph" placeholder="رمز عبور">
@@ -3808,7 +3808,7 @@
                     <h3 id="templateModalTitle" data-i18n="template_add">افزودن تمپلیت</h3>
                     <p>تمپلیت متنی برای ارسال سریع در مکالمات</p>
                 </div>
-                <button type="button" class="modal-close" id="closeTemplateModalBtn">&times;</button>
+                <button type="button" class="modal-close" id="closeTemplateModalBtn" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button>
             </div>
             <div class="modal-body tpl-modal-body">
                 <input type="hidden" id="templateModalId">
@@ -3859,7 +3859,7 @@
                     <h3 id="fileTemplateModalTitle">بارگذاری فایل پرکاربرد</h3>
                     <p>فایل‌های آماده برای ارسال سریع در مکالمات</p>
                 </div>
-                <button type="button" class="modal-close" id="closeFileTemplateModalBtn">&times;</button>
+                <button type="button" class="modal-close" id="closeFileTemplateModalBtn" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button>
             </div>
             <div class="modal-body tpl-modal-body">
                 <input type="hidden" id="fileTemplateModalId">
@@ -3921,7 +3921,7 @@
     
     <div id="modalProcessTemplate" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:520px;">
-            <div class="modal-header"><h3 id="processTemplateModalTitle" data-i18n="process_add_template">افزودن قالب فرایند</h3><button type="button" class="modal-close" onclick="closeProcessTemplateModal()">&times;</button></div>
+            <div class="modal-header"><h3 id="processTemplateModalTitle" data-i18n="process_add_template">افزودن قالب فرایند</h3><button type="button" class="modal-close" onclick="closeProcessTemplateModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <input type="hidden" id="processTemplateId">
                 <label data-i18n="process_template_name">نام قالب</label>
@@ -3937,7 +3937,7 @@
     </div>
     <div id="modalProcessStartInstance" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:420px;">
-            <div class="modal-header"><h3 data-i18n="process_start_instance">شروع نمونه</h3><button type="button" class="modal-close" onclick="closeProcessStartInstanceModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="process_start_instance">شروع نمونه</h3><button type="button" class="modal-close" onclick="closeProcessStartInstanceModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <input type="hidden" id="processStartRefType">
                 <input type="hidden" id="processStartRefId">
@@ -3954,7 +3954,7 @@
     <!-- مودال ارسال انبوه -->
     <div id="modalBulkSend" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="bulkSendTitle">
         <div class="modal-box bulk-send-modal" style="max-width:520px;">
-            <div class="modal-header"><h3 id="bulkSendTitle" data-i18n="bulk_send">ارسال انبوه</h3><button type="button" class="modal-close" onclick="closeBulkSendModal()" aria-label="Close">&times;</button></div>
+            <div class="modal-header"><h3 id="bulkSendTitle" data-i18n="bulk_send">ارسال انبوه</h3><button type="button" class="modal-close" onclick="closeBulkSendModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <p class="bulk-hint" data-i18n="bulk_send_hint">مشتریان را از همین فهرست انتخاب کنید یا «همه فیلترشده» را بزنید. سقف هر ارسال ۱۰۰ نفر است.</p>
                 <div class="bulk-select-actions">
@@ -3992,7 +3992,7 @@
     <!-- مودال اعطای دسترسی مشتری -->
     <div id="modalStaffAccessGrant" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:480px;">
-            <div class="modal-header"><h3 data-i18n="access_grant_title">اعطای دسترسی</h3><button type="button" class="modal-close" onclick="closeStaffAccessGrantModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="access_grant_title">اعطای دسترسی</h3><button type="button" class="modal-close" onclick="closeStaffAccessGrantModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <p class="bulk-hint" id="staffAccessGrantHint" data-i18n="access_grant_hint">کاربری که انتخاب می‌کنید می‌تواند این مشتری و مکالماتش را ببیند، حتی اگر از کارکنان مخفی باشد.</p>
                 <label data-i18n="access_grant_user">کاربر</label>
@@ -4012,7 +4012,7 @@
     </div>
     <div id="modalImportCustomers" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:480px;">
-            <div class="modal-header"><h3 data-i18n="import_customers">ورود از Excel</h3><button type="button" class="modal-close" onclick="closeImportCustomersModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="import_customers">ورود از Excel</h3><button type="button" class="modal-close" onclick="closeImportCustomersModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
             <div class="modal-body">
                 <p class="import-hint" data-i18n="import_hint">فایل Excel با ستون‌های: name (نام)، phone (شماره تلفن). ستون email اختیاری است.</p>
                 <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="display:none;">
@@ -4025,10 +4025,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=17c6232463a0" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=235ec3475fa2" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4036,7 +4036,7 @@
                     <p class="onboarding-tour-kicker" data-i18n="onboarding_kicker">راهنمای ورود</p>
                     <h2 id="onboardingTourTitle" data-i18n="onboarding_title">شروع کار با پنل</h2>
                 </div>
-                <button type="button" class="modal-close" id="btnOnboardingClose" aria-label="Close">&times;</button>
+                <button type="button" class="modal-close" id="btnOnboardingClose" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button>
             </div>
             <div class="onboarding-progress" id="onboardingProgress" aria-hidden="true"></div>
             <div class="onboarding-tour-body">
@@ -4055,10 +4055,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=17c6232463a0" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=17c6232463a0" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=235ec3475fa2" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

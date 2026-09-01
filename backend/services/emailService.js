@@ -803,7 +803,7 @@ async function sendConversationAssigned(
  * ارسال فرم تماس لندینگ — به ایمیل فروش/پشتیبانی
  * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@kaya.fxguard.io)
  */
-async function sendContactForm({ purpose, name, email, phone, message, emailConfig = null }) {
+async function sendContactForm({ purpose, name, email, phone, message, lang, emailConfig = null }) {
     if (!isValidEmail(email)) {
         logger.warn('Invalid email in contact form', { email });
         return { ok: false, error: 'Invalid email address' };
@@ -831,10 +831,11 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
         `Name: ${name || '—'}`,
         `Email: ${email || '—'}`,
         `Phone: ${phone || '—'}`,
+        lang ? `Language: ${lang}` : '',
         '',
         'Message:',
         message || '—',
-    ].join('\n');
+    ].filter((line) => line !== '').join('\n');
     const esc = (s) =>
         String(s || '')
             .replace(/&/g, '&amp;')
@@ -848,6 +849,7 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
       <p><strong>Name:</strong> ${esc(name) || '—'}</p>
       <p><strong>Email:</strong> <a href="mailto:${esc(email || '')}">${esc(email) || '—'}</a></p>
       <p><strong>Phone:</strong> ${esc(phone) || '—'}</p>
+      ${lang ? `<p><strong>Language:</strong> ${esc(lang)}</p>` : ''}
       <p><strong>Message:</strong></p>
       <p>${esc(message || '—').replace(/\n/g, '<br>')}</p>
       <p class="muted">Reply directly to ${esc(email) || 'the sender'}.</p>

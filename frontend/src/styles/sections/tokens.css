@@ -1,12 +1,16 @@
 /**
- * متغیرهای طراحی مشترک (رنگ، فاصله، شعاع).
+ * متغیرهای طراحی مشترک — هم‌تراز login.css و mobile-shared/design-tokens.json
  */
 :root {
-    --kaya-font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-    --kaya-color-bg: #0f1419;
-    --kaya-color-surface: #1a2332;
-    --kaya-color-text: #e8eaed;
-    --kaya-color-muted: #9aa0a6;
-    --kaya-radius: 8px;
+    --kaya-font-sans: 'Vazirmatn', 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --kaya-color-bg: #080d1a;
+    --kaya-color-bg2: #0d1525;
+    --kaya-color-surface: #10182c;
+    --kaya-color-text: #f0f4fc;
+    --kaya-color-muted: #8b9dc3;
+    --kaya-color-accent: #10b981;
+    --kaya-color-danger: #ef4444;
+    --kaya-radius: 16px;
+    --kaya-radius-sm: 10px;
     --kaya-space: 1rem;
 }

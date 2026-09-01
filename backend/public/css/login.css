@@ -33,6 +33,25 @@ html {
     -webkit-tap-highlight-color: transparent;
 }
 
+.lp-skip {
+    position: absolute;
+    top: -50px;
+    inset-inline-start: 16px;
+    z-index: 1000;
+    padding: 12px 20px;
+    background: var(--lp-accent);
+    color: #fff;
+    font-weight: 600;
+    border-radius: var(--lp-radius-sm);
+    text-decoration: none;
+    transition: top 0.2s;
+}
+.lp-skip:focus {
+    top: 16px;
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
 body {
     min-height: 100vh;
     min-height: 100dvh;

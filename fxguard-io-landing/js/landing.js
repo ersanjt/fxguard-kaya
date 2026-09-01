@@ -8,7 +8,7 @@
             nav_solutions: 'Solutions', nav_demo: 'Demo', nav_features: 'Features', nav_packages: 'Packages', nav_services: 'Services', nav_updates: 'Updates', nav_blog: 'Blog', nav_faq: 'FAQ', nav_contact: 'Contact',
             nav_get_started: 'Buy Now', nav_try_demo: 'Free Demo',
             nav_pricing: 'Packages', nav_panel_btn: 'Buy / Demo',
-            aria_menu: 'Menu', aria_close: 'Close', aria_lang: 'Language', aria_nav: 'Primary', aria_nav_mobile: 'Mobile menu', aria_wa_buy: 'Buy FXGuard on WhatsApp',
+            aria_menu: 'Menu', aria_close: 'Close', aria_lang: 'Language', aria_nav: 'Primary', aria_nav_mobile: 'Mobile menu', aria_wa_buy: 'Get an FXGuard quote on WhatsApp', aria_wa_demo: 'Book an FXGuard demo on WhatsApp',
             hero_badge: 'WhatsApp CRM',
             hero_title: 'WhatsApp CRM for <span>exchange, remittance and finance</span> desks',
             hero_desc: 'One company WhatsApp number. The whole team replies from one panel. Customer history stays with the company — not on an employee’s phone. We customize the panel for your trade.',
@@ -91,7 +91,7 @@
             footer_blog: 'Blog &amp; Articles',
             faq_title: 'Frequently Asked Questions', faq_sub: 'Quick answers about deployment models, demo access, security and pricing.',
             faq1_q: 'What\'s the difference between Hosted Cloud, Self-hosted License, and Managed Dedicated?', faq1_a: 'Hosted Cloud: we run FXGuard for you, billed monthly or yearly. Self-hosted License: you buy the full system and run it on your own servers. Managed Dedicated: we install and operate a dedicated instance for you, with a custom SLA. All three include the same core modules.',
-            faq2_q: 'Can I try FXGuard before buying?', faq2_a: 'Yes — and it is free. Open app.fxguard.io (a booked guided demo), explore the real product, then contact sales to purchase. Nothing you change in the demo is saved.',
+            faq2_q: 'Can I try FXGuard before buying?', faq2_a: 'Yes. Book a 10-minute guided demo or a 7-day trial on your own WhatsApp number. A shared public password is not published on this site.',
             faq3_q: 'Is my data backed up?', faq3_a: 'On Hosted Cloud and Managed Dedicated plans, we run daily backups as part of the service. On a Self-hosted License, backups run on your own infrastructure — we provide guidance and can include this in a support contract.',
             faq4_q: 'What do I actually get with a Self-hosted License?', faq4_a: 'A one-time purchase of the full FXGuard system with installation documentation, so your team can deploy and run it on your own servers, fully under your control.',
             faq5_q: 'How secure is FXGuard?', faq5_a: 'Every account can enable 2FA via Google Authenticator. Access is role-based (Owner, Admin, Manager, Supervisor, Agent), and all activity is logged for accountability.',
@@ -112,7 +112,7 @@
             nav_solutions: 'راهکارها', nav_demo: 'دمو', nav_features: 'امکانات', nav_packages: 'پکیج‌ها', nav_services: 'خدمات', nav_updates: 'آپدیت‌ها', nav_blog: 'وبلاگ', nav_faq: 'سوالات', nav_contact: 'تماس',
             nav_get_started: 'خرید کنید', nav_try_demo: 'دمو رایگان',
             nav_pricing: 'پکیج‌ها', nav_panel_btn: 'خرید / دمو',
-            aria_menu: 'منو', aria_close: 'بستن', aria_lang: 'زبان', aria_nav: 'منوی اصلی', aria_nav_mobile: 'منوی موبایل', aria_wa_buy: 'خرید FXGuard از واتساپ',
+            aria_menu: 'منو', aria_close: 'بستن', aria_lang: 'زبان', aria_nav: 'منوی اصلی', aria_nav_mobile: 'منوی موبایل', aria_wa_buy: 'استعلام FXGuard در واتساپ', aria_wa_demo: 'رزرو دموی FXGuard در واتساپ',
             hero_badge: 'واتساپ CRM',
             hero_title: 'واتساپ CRM برای میزهای <span>صرافی، حواله و فاینانس</span>',
             hero_desc: 'یک شماره واتساپ سازمانی. کل تیم از یک پنل جواب می‌دهد. تاریخچه مشتری مال شرکت می‌ماند — نه روی گوشی کارمند. پنل را برای صنف شما اختصاصی می‌کنیم.',
@@ -121,7 +121,7 @@
             hero_a1: 'صرافی', hero_a2: 'میز حواله', hero_a3: 'شرکت مالی',
             hero_a4: 'میز چندشعبه', hero_a5: 'تیم‌های دیگر — هسته بدون نرخ', hero_a6: 'پنل را اختصاصی می‌کنیم',
             trust_demo: 'دموی رایگان و عمومی', trust_secure: 'امن با ۲FA', trust_multibranch: 'عملیات فروش چندشعبه', trust_uptime: 'آماده خرید امروز',
-            hero_offer: 'دموی زنده رایگان · از <strong>۴۹$/ماه</strong> · استعلام در واتساپ ظرف چند دقیقه', outcomes_title: 'چرا تیم‌ها FXGuard می‌خرند', outcomes_sub: 'برای بستن بیشتر معامله و حفظ هر چت مشتری ساخته شده — نه فقط یک پیام‌رسان دیگر.', out1_title: 'دیگر در چت پول از دست ندهید', out1_desc: 'پیام خوانده‌نشده = مشتری ازدست‌رفته. یک اینباکس مشترک یعنی چیزی گم نمی‌شود.', out2_title: 'با تاریخچه کامل بفروشید', out2_desc: 'تگ، یادداشت و چت‌های قبلی روی مشتری می‌ماند — تیم با زمینه می‌بندد.', out3_title: 'کنترل کنید چه کسی چه می‌بیند', out3_desc: 'نقش، شعبه و ۲FA تا مالک در همه شعب کنترل داشته باشد.', out4_title: 'یک‌بار بخرید. هرطور می‌خواهید استقرار دهید', out4_desc: 'کلود از ۴۹$/ماه، لایسنس یک‌باره روی سرور خودتان، یا کاملاً مدیریت‌شده توسط ما.', buy_title: 'چطور بخرید — ۳ قدم ساده', buy_sub: 'بدون فروش طولانی. دمو رایگان، پکیج را انتخاب کنید، از واتساپ یا فرم بخرید.', buy1_title: '۱. دموی رایگان', buy1_desc: 'app.fxguard.io را باز کنید — کاربر demo، دموی هدایت‌شده رزروی. محصول واقعی را در چند دقیقه ببینید.', buy2_title: '۲. پکیج را انتخاب کنید', buy2_desc: 'کلود برای سرعت، لایسنس برای مالکیت، یا مدیریت‌شده بدون دردسر ops.', buy3_title: '۳. همین امروز بخرید', buy3_desc: 'واتساپ بزنید یا فرم بفرستید. فروش در روز کاری تا ۲۴ ساعت پاسخ می‌دهد — اغلب سریع‌تر.', buy_cta_wa: 'شروع خرید از واتساپ', buy_cta_form: 'یا درخواست خرید بفرستید', pkg1_wa: 'واتساپ برای اشتراک', pkg2_wa: 'واتساپ برای لایسنس', pkg3_wa: 'واتساپ برای مدیریت‌شده', packages_guarantee: 'قبل از پرداخت با فروش صحبت کنید. دمو رایگان است. برای دمو کارت لازم نیست.', cta_wa: 'خرید از واتساپ', sticky_text: 'از ۴۹$/ماه · دمو رایگان', sticky_demo: 'دمو', sticky_buy: 'خرید', wa_msg_buy: 'سلام، می‌خواهم FXGuard WhatsApp CRM را بخرم. لطفاً پکیج‌ها و مراحل بعدی را بفرستید.', wa_msg_cloud: 'سلام، می‌خواهم اشتراک Hosted Cloud اف‌ایکس‌گارد را بگیرم.', wa_msg_license: 'سلام، استعلام قیمت لایسنس Self-hosted اف‌ایکس‌گارد می‌خواهم.', wa_msg_managed: 'سلام، استعلام Managed Dedicated اف‌ایکس‌گارد می‌خواهم.', wa_msg_general: 'سلام، می‌خواهم FXGuard WhatsApp CRM بخرم / استعلام بگیرم.',
+            hero_offer: 'دموی زنده رایگان · از <strong>۴۹$/ماه</strong> · استعلام در واتساپ ظرف چند دقیقه', outcomes_title: 'چرا تیم‌ها FXGuard می‌خرند', outcomes_sub: 'برای بستن بیشتر معامله و حفظ هر چت مشتری ساخته شده — نه فقط یک پیام‌رسان دیگر.', out1_title: 'دیگر در چت پول از دست ندهید', out1_desc: 'پیام خوانده‌نشده = مشتری ازدست‌رفته. یک اینباکس مشترک یعنی چیزی گم نمی‌شود.', out2_title: 'با تاریخچه کامل بفروشید', out2_desc: 'تگ، یادداشت و چت‌های قبلی روی مشتری می‌ماند — تیم با زمینه می‌بندد.', out3_title: 'کنترل کنید چه کسی چه می‌بیند', out3_desc: 'نقش، شعبه و ۲FA تا مالک در همه شعب کنترل داشته باشد.', out4_title: 'یک‌بار بخرید. هرطور می‌خواهید استقرار دهید', out4_desc: 'کلود از ۴۹$/ماه، لایسنس یک‌باره روی سرور خودتان، یا کاملاً مدیریت‌شده توسط ما.', buy_title: 'چطور بخرید — ۳ قدم ساده', buy_sub: 'بدون فروش طولانی. دمو رایگان، پکیج را انتخاب کنید، از واتساپ یا فرم بخرید.', buy1_title: '۱. دموی رایگان', buy1_desc: 'دموی هدایت‌شده ۱۰ دقیقه‌ای یا آزمایش ۷روزه با شماره خودتان. رمز مشترک منتشر نمی‌شود.', buy2_title: '۲. پکیج را انتخاب کنید', buy2_desc: 'کلود برای سرعت، لایسنس برای مالکیت، یا مدیریت‌شده بدون دردسر ops.', buy3_title: '۳. همین امروز بخرید', buy3_desc: 'واتساپ بزنید یا فرم بفرستید. فروش در روز کاری تا ۲۴ ساعت پاسخ می‌دهد — اغلب سریع‌تر.', buy_cta_wa: 'شروع خرید از واتساپ', buy_cta_form: 'یا درخواست خرید بفرستید', pkg1_wa: 'واتساپ برای اشتراک', pkg2_wa: 'واتساپ برای لایسنس', pkg3_wa: 'واتساپ برای مدیریت‌شده', packages_guarantee: 'قبل از پرداخت با فروش صحبت کنید. دمو رایگان است. برای دمو کارت لازم نیست.', cta_wa: 'خرید از واتساپ', sticky_text: 'از ۴۹$/ماه · دمو رایگان', sticky_demo: 'دمو', sticky_buy: 'خرید', wa_msg_buy: 'سلام، می‌خواهم FXGuard WhatsApp CRM را بخرم. لطفاً پکیج‌ها و مراحل بعدی را بفرستید.', wa_msg_cloud: 'سلام، می‌خواهم اشتراک Hosted Cloud اف‌ایکس‌گارد را بگیرم.', wa_msg_license: 'سلام، استعلام قیمت لایسنس Self-hosted اف‌ایکس‌گارد می‌خواهم.', wa_msg_managed: 'سلام، استعلام Managed Dedicated اف‌ایکس‌گارد می‌خواهم.', wa_msg_general: 'سلام، می‌خواهم FXGuard WhatsApp CRM بخرم / استعلام بگیرم.',
             problems_title: 'واتساپ دارد فروش‌تان را می‌سوزاند؟', problems_sub: 'اگر تیم هنوز با گوشی شخصی کار می‌کند، هر روز مشتری از دست می‌دهید.',
             p1_title: 'چند گوشی، یک شماره', p1_desc: 'کارمندان لاگین را به اشتراک می‌گذارند یا از گوشی شخصی استفاده می‌کنند. پیام‌ها گم می‌شوند و کسی تصویر کامل را ندارد.',
             p2_title: 'بدون تاریخچه مشتری', p2_desc: 'هر مکالمه از صفر شروع می‌شود — بدون تگ، یادداشت یا زمینه مشترک بین کارمندان.',
@@ -195,7 +195,7 @@
             footer_blog: 'وبلاگ و مقالات',
             faq_title: 'سوالات متداول', faq_sub: 'پاسخ سریع درباره مدل‌های استقرار، دسترسی به دمو، امنیت و قیمت‌گذاری.',
             faq1_q: 'تفاوت میزبانی ابری، لایسنس نصب اختصاصی و میزبانی مدیریت‌شده چیست؟', faq1_a: 'میزبانی ابری: ما FXGuard را برای شما اجرا می‌کنیم، صورتحساب ماهانه یا سالانه. لایسنس نصب اختصاصی: کل سیستم را می‌خرید و روی سرورهای خودتان اجرا می‌کنید. میزبانی مدیریت‌شده: ما یک نمونه اختصاصی برای شما نصب و اداره می‌کنیم، با SLA سفارشی. هر سه شامل ماژول‌های اصلی یکسان هستند.',
-            faq2_q: 'آیا می‌توانم قبل از خرید FXGuard را امتحان کنم؟', faq2_a: 'بله — و رایگان است. app.fxguard.io را باز کنید (a booked guided demo)، محصول واقعی را ببینید، بعد برای خرید با فروش تماس بگیرید. تغییرات دمو ذخیره نمی‌شود.',
+            faq2_q: 'آیا می‌توانم قبل از خرید FXGuard را امتحان کنم؟', faq2_a: 'بله. دموی هدایت‌شده ۱۰ دقیقه‌ای یا آزمایش ۷روزه با شماره واتساپ خودتان. رمز مشترک عمومی در این سایت منتشر نمی‌شود.',
             faq3_q: 'آیا از داده‌های من پشتیبان‌گیری می‌شود؟', faq3_a: 'در پلن‌های میزبانی ابری و مدیریت‌شده، پشتیبان‌گیری روزانه بخشی از سرویس است. در لایسنس نصب اختصاصی، پشتیبان‌گیری روی زیرساخت خودتان انجام می‌شود — ما راهنمایی ارائه می‌دهیم و می‌توانیم آن را در قرارداد پشتیبانی بگنجانیم.',
             faq4_q: 'با لایسنس نصب اختصاصی دقیقاً چه چیزی دریافت می‌کنم؟', faq4_a: 'خرید یکباره کل سیستم FXGuard همراه با مستندات نصب، تا تیم شما بتواند آن را روی سرورهای خودتان، کاملاً تحت کنترل خودتان، مستقر کند.',
             faq5_q: 'FXGuard چقدر امن است؟', faq5_a: 'هر حساب می‌تواند ۲FA را از طریق Google Authenticator فعال کند. دسترسی نقش‌محور است (مالک، ادمین، مدیر، سرپرست، کارمند) و تمام فعالیت‌ها برای پاسخگویی ثبت می‌شود.',
@@ -216,7 +216,7 @@
             nav_solutions: 'Çözümler', nav_demo: 'Demo', nav_features: 'Özellikler', nav_packages: 'Paketler', nav_services: 'Hizmetler', nav_updates: 'Güncellemeler', nav_blog: 'Blog', nav_faq: 'SSS', nav_contact: 'İletişim',
             nav_get_started: 'Satın Al', nav_try_demo: 'Ücretsiz Demo',
             nav_pricing: 'Paketler', nav_panel_btn: 'Al / Demo',
-            aria_menu: 'Menü', aria_close: 'Kapat', aria_lang: 'Dil', aria_nav: 'Ana menü', aria_nav_mobile: 'Mobil menü', aria_wa_buy: 'WhatsApp’tan FXGuard satın alın',
+            aria_menu: 'Menü', aria_close: 'Kapat', aria_lang: 'Dil', aria_nav: 'Ana menü', aria_nav_mobile: 'Mobil menü', aria_wa_buy: 'FXGuard teklifi WhatsApp’tan alın', aria_wa_demo: 'FXGuard demosu WhatsApp’tan alın',
             hero_badge: 'Döviz · havale · finans',
             hero_title: 'Kuru WhatsApp’tan verin. <span>Defter şirkette kalsın.</span>',
             hero_desc: 'Kişisel sohbetlerde satış kaybetmeyi bırakın. FXGuard ekibinize ortak WhatsApp gelen kutusu, müşteriler, ticket, görev, çok şube ve 2FA verir — sonra nasıl alacağınızı seçin: aylık $49\'dan Cloud, tek seferlik Lisans veya Managed Dedicated.',
@@ -296,7 +296,7 @@
             footer_blog: 'Blog &amp; Yazılar',
             faq_title: 'Sıkça Sorulan Sorular', faq_sub: 'Dağıtım modelleri, demo erişimi, güvenlik ve fiyatlandırma hakkında hızlı cevaplar.',
             faq1_q: 'Bulut Barındırma, Kendi Sunucunuzda Lisans ve Yönetilen Özel Sunucu arasındaki fark nedir?', faq1_a: 'Bulut Barındırma: FXGuard\'ı sizin için çalıştırırız, aylık veya yıllık faturalandırılır. Kendi Sunucunuzda Lisans: tam sistemi satın alır, kendi sunucularınızda çalıştırırsınız. Yönetilen Özel Sunucu: sizin için özel bir örnek kurar ve özel SLA ile işletiriz. Üçü de aynı temel modülleri içerir.',
-            faq2_q: 'Satın almadan önce FXGuard\'ı deneyebilir miyim?', faq2_a: 'Evet — ve ücretsiz. app.fxguard.io (a booked guided demo) açın, gerçek ürünü görün, sonra satın almak için satışa yazın. Demodaki değişiklikler kaydedilmez.',
+            faq2_q: 'Satın almadan önce FXGuard\'ı deneyebilir miyim?', faq2_a: 'Evet. 10 dakikalık rehberli demo veya kendi WhatsApp numaranızda 7 günlük deneme. Bu sitede ortak şifre yayımlanmaz.',
             faq3_q: 'Verilerim yedekleniyor mu?', faq3_a: 'Bulut Barındırma ve Yönetilen Özel Sunucu planlarında günlük yedekleme hizmetin bir parçasıdır. Kendi Sunucunuzda Lisans\'ta yedekleme kendi altyapınızda çalışır — rehberlik sağlıyoruz ve bunu bir destek sözleşmesine dahil edebiliriz.',
             faq4_q: 'Kendi Sunucunuzda Lisans ile tam olarak ne alıyorum?', faq4_a: 'Kurulum belgeleriyle birlikte eksiksiz FXGuard sisteminin tek seferlik satın alınması; ekibiniz kendi sunucularınızda, tamamen kendi kontrolünüzde dağıtabilir.',
             faq5_q: 'FXGuard ne kadar güvenli?', faq5_a: 'Her hesap Google Authenticator ile 2FA etkinleştirebilir. Erişim rol tabanlıdır (Sahip, Admin, Yönetici, Süpervizör, Temsilci) ve hesap verebilirlik için tüm etkinlikler kaydedilir.',
@@ -332,7 +332,8 @@
             aria_lang: 'اللغة',
             aria_nav: 'القائمة الرئيسية',
             aria_nav_mobile: 'قائمة الجوال',
-            aria_wa_buy: 'اشترِ FXGuard عبر واتساب',
+            aria_wa_buy: 'اطلب عرض FXGuard عبر واتساب',
+            aria_wa_demo: 'احجز عرض FXGuard عبر واتساب',
             hero_badge: 'صرافة · حوالة · مال',
             hero_title: 'أعلن السعر على واتساب. <span>دفتر العملاء يبقى للشركة.</span>',
             hero_desc: 'توقّف عن خسارة الصفقات في الدردشات الشخصية. FXGuard يمنح فريقك صندوق وارد واتساب مشتركًا وعملاء وتذاكر ومهام وتعدد فروع وتحقق بخطوتين — ثم اختر طريقة الشراء: سحابة من 49$/شهر أو ترخيص لمرة واحدة أو استضافة مُدارة.',
@@ -343,7 +344,7 @@
             trust_secure: 'مؤمَّن بـ 2FA',
             trust_multibranch: 'مبيعات متعددة الفروع',
             trust_uptime: 'جاهز للشراء اليوم',
-            hero_offer: 'عرض حي مجاني · من <strong>49$/شهر</strong> · عرض سعر عبر واتساب خلال دقائق', outcomes_title: 'لماذا تشتري الفرق FXGuard', outcomes_sub: 'لإغلاق المزيد من الصفقات وحماية كل محادثة عميل — وليس مجرد تطبيق دردشة آخر.', out1_title: 'توقّف عن خسارة المال في الدردشة', out1_desc: 'رسالة غير مقروءة = عميل ضائع. صندوق وارد مشترك يعني لا شيء يفلت.', out2_title: 'بِع بتاريخ كامل', out2_desc: 'الوسوم والملاحظات والمحادثات السابقة تبقى مع العميل — فريقك يغلق بسياق.', out3_title: 'تحكّم بمن يرى ماذا', out3_desc: 'أدوار وفروع و2FA ليبقى المالك مسيطرًا في كل موقع.', out4_title: 'اشترِ مرة. انشر بطريقتك', out4_desc: 'سحابة من 49$/شهر أو ترخيص لمرة واحدة على خوادمك أو مُدار بالكامل منّا.', buy_title: 'كيف تشتري — 3 خطوات', buy_sub: 'لا دورة مبيعات طويلة. عرض مجاني، اختر الباقة، اشترِ عبر واتساب أو النموذج.', buy1_title: '1. جرّب العرض المجاني', buy1_desc: 'افتح app.fxguard.io — المستخدم demo وكلمة المرور [guided demo]. شاهد المنتج الحقيقي خلال دقائق.', buy2_title: '2. اختر باقتك', buy2_desc: 'سحابة للسرعة أو ترخيص للملكية أو مُدار بلا عبء تشغيل.', buy3_title: '3. اشترِ اليوم', buy3_desc: 'راسل واتساب أو أرسل النموذج. المبيعات ترد خلال 24 ساعة في أيام العمل — غالبًا أسرع.', buy_cta_wa: 'ابدأ الشراء عبر واتساب', buy_cta_form: 'أو أرسل طلب شراء', pkg1_wa: 'واتساب للاشتراك', pkg2_wa: 'واتساب للترخيص', pkg3_wa: 'واتساب للمُدار', packages_guarantee: 'تحدّث مع المبيعات قبل الدفع. العرض مجاني. لا بطاقة مطلوبة للعرض.', cta_wa: 'اشترِ عبر واتساب', sticky_text: 'من 49$/شهر · عرض مجاني', sticky_demo: 'عرض', sticky_buy: 'اشترِ', wa_msg_buy: 'مرحبًا، أريد شراء FXGuard WhatsApp CRM. أرجو إرسال الباقات والخطوات التالية.', wa_msg_cloud: 'مرحبًا، أريد الاشتراك في FXGuard Hosted Cloud.', wa_msg_license: 'مرحبًا، أريد عرض سعر لترخيص FXGuard Self-hosted.', wa_msg_managed: 'مرحبًا، أريد عرض سعر لـ FXGuard Managed Dedicated.', wa_msg_general: 'مرحبًا، أريد شراء / عرض سعر لـ FXGuard WhatsApp CRM.',
+            hero_offer: 'عرض حي مجاني · من <strong>49$/شهر</strong> · عرض سعر عبر واتساب خلال دقائق', outcomes_title: 'لماذا تشتري الفرق FXGuard', outcomes_sub: 'لإغلاق المزيد من الصفقات وحماية كل محادثة عميل — وليس مجرد تطبيق دردشة آخر.', out1_title: 'توقّف عن خسارة المال في الدردشة', out1_desc: 'رسالة غير مقروءة = عميل ضائع. صندوق وارد مشترك يعني لا شيء يفلت.', out2_title: 'بِع بتاريخ كامل', out2_desc: 'الوسوم والملاحظات والمحادثات السابقة تبقى مع العميل — فريقك يغلق بسياق.', out3_title: 'تحكّم بمن يرى ماذا', out3_desc: 'أدوار وفروع و2FA ليبقى المالك مسيطرًا في كل موقع.', out4_title: 'اشترِ مرة. انشر بطريقتك', out4_desc: 'سحابة من 49$/شهر أو ترخيص لمرة واحدة على خوادمك أو مُدار بالكامل منّا.', buy_title: 'كيف تشتري — 3 خطوات', buy_sub: 'لا دورة مبيعات طويلة. عرض مجاني، اختر الباقة، اشترِ عبر واتساب أو النموذج.', buy1_title: '1. جرّب العرض المجاني', buy1_desc: 'احجزوا عرضًا موجّهًا 10 دقائق أو تجربة 7 أيام على رقمكم. لا كلمة مرور مشتركة هنا.', buy2_title: '2. اختر باقتك', buy2_desc: 'سحابة للسرعة أو ترخيص للملكية أو مُدار بلا عبء تشغيل.', buy3_title: '3. اشترِ اليوم', buy3_desc: 'راسل واتساب أو أرسل النموذج. المبيعات ترد خلال 24 ساعة في أيام العمل — غالبًا أسرع.', buy_cta_wa: 'ابدأ الشراء عبر واتساب', buy_cta_form: 'أو أرسل طلب شراء', pkg1_wa: 'واتساب للاشتراك', pkg2_wa: 'واتساب للترخيص', pkg3_wa: 'واتساب للمُدار', packages_guarantee: 'تحدّث مع المبيعات قبل الدفع. العرض مجاني. لا بطاقة مطلوبة للعرض.', cta_wa: 'اشترِ عبر واتساب', sticky_text: 'من 49$/شهر · عرض مجاني', sticky_demo: 'عرض', sticky_buy: 'اشترِ', wa_msg_buy: 'مرحبًا، أريد شراء FXGuard WhatsApp CRM. أرجو إرسال الباقات والخطوات التالية.', wa_msg_cloud: 'مرحبًا، أريد الاشتراك في FXGuard Hosted Cloud.', wa_msg_license: 'مرحبًا، أريد عرض سعر لترخيص FXGuard Self-hosted.', wa_msg_managed: 'مرحبًا، أريد عرض سعر لـ FXGuard Managed Dedicated.', wa_msg_general: 'مرحبًا، أريد شراء / عرض سعر لـ FXGuard WhatsApp CRM.',
             problems_title: 'هل واتساب يُكلّفك مبيعات؟',
             problems_sub: 'إذا كان الفريق ما زال يعمل من هواتف شخصية فأنت تخسر عملاء كل يوم.',
             p1_title: 'هواتف متعددة، رقم واحد',
@@ -511,7 +512,7 @@
             faq1_q: 'ما الفرق بين السحابة المستضافة والترخيص ذاتي الاستضافة والاستضافة المُدارة؟',
             faq1_a: 'السحابة: نشغّل FXGuard لك بفوترة شهرية أو سنوية. الترخيص: تشتري النظام الكامل وتشغّله على خوادمك. المُدارة: نثبت وندير نسخة مخصصة لك بـ SLA. الوحدات الأساسية نفسها في الثلاثة.',
             faq2_q: 'هل يمكنني تجربة FXGuard قبل الشراء؟',
-            faq2_a: 'نعم — وهو مجاني. افتح app.fxguard.io (a booked guided demo)، استكشف المنتج الحقيقي، ثم تواصل مع المبيعات للشراء. تغييرات العرض لا تُحفظ.',
+            faq2_a: 'نعم. احجزوا عرضًا موجّهًا لـ 10 دقائق أو تجربة 7 أيام على رقم واتسابكم. لا كلمة مرور مشتركة على هذا الموقع.',
             faq3_q: 'هل تُنسخ بياناتي احتياطيًا؟',
             faq3_a: 'في السحابة والاستضافة المُدارة ننفّذ نسخًا يوميًا ضمن الخدمة. في الترخيص ذاتي الاستضافة تعمل النسخ على بنيتك — نوجّهك ويمكن تضمين ذلك في عقد الدعم.',
             faq4_q: 'ماذا أحصل عليه فعليًا مع الترخيص ذاتي الاستضافة؟',
@@ -585,7 +586,8 @@
             aria_lang: 'Язык',
             aria_nav: 'Основное меню',
             aria_nav_mobile: 'Мобильное меню',
-            aria_wa_buy: 'Купить FXGuard в WhatsApp',
+            aria_wa_buy: 'Запросить КП FXGuard в WhatsApp',
+            aria_wa_demo: 'Записать демо FXGuard в WhatsApp',
             hero_badge: 'Отделы продаж не цель — обмен, переводы, финансы',
             hero_title: 'Назовите курс в WhatsApp. <span>Книга клиентов остаётся в компании.</span>',
             hero_desc: 'Хватит терять сделки в личных чатах. FXGuard даёт команде общий WhatsApp inbox, клиентов, тикеты, задачи, филиалы и 2FA — затем выберите покупку: Cloud от $49/мес, разовая License или Managed Dedicated.',
@@ -596,7 +598,7 @@
             trust_secure: 'Защита 2FA',
             trust_multibranch: 'Продажи по филиалам',
             trust_uptime: 'Готово купить сегодня',
-            hero_offer: 'Бесплатное live-демо · от <strong>$49/мес</strong> · КП в WhatsApp за минуты', outcomes_title: 'Почему команды покупают FXGuard', outcomes_sub: 'Чтобы закрывать больше сделок и сохранять каждый чат с клиентом — не просто ещё один мессенджер.', out1_title: 'Хватит терять деньги в чатах', out1_desc: 'Непрочитанное = потерянный клиент. Общий inbox — ничего не пропадает.', out2_title: 'Продавайте с полной историей', out2_desc: 'Теги, заметки и прошлые чаты остаются на клиенте — команда закрывает со контекстом.', out3_title: 'Контролируйте, кто что видит', out3_desc: 'Роли, филиалы и 2FA — владелец контролирует каждую локацию.', out4_title: 'Купите один раз. Разверните как удобно', out4_desc: 'Cloud от $49/мес, разовая лицензия на ваших серверах или полностью Managed нами.', buy_title: 'Как купить — 3 шага', buy_sub: 'Без долгого цикла продаж. Бесплатное демо, выбор пакета, покупка в WhatsApp или форме.', buy1_title: '1. Бесплатное демо', buy1_desc: 'Откройте app.fxguard.io — user demo, пароль [guided demo]. Реальный продукт за минуты.', buy2_title: '2. Выберите пакет', buy2_desc: 'Cloud для скорости, License для владения или Managed без ops-нагрузки.', buy3_title: '3. Купите сегодня', buy3_desc: 'Напишите в WhatsApp или отправьте форму. Sales отвечает в рабочие дни в течение 24 часов — часто быстрее.', buy_cta_wa: 'Начать покупку в WhatsApp', buy_cta_form: 'Или отправить заявку на покупку', pkg1_wa: 'WhatsApp для подписки', pkg2_wa: 'WhatsApp для License', pkg3_wa: 'WhatsApp для Managed', packages_guarantee: 'Поговорите с sales до оплаты. Демо бесплатно. Для демо карта не нужна.', cta_wa: 'Купить через WhatsApp', sticky_text: 'От $49/мес · Бесплатное демо', sticky_demo: 'Демо', sticky_buy: 'Купить', wa_msg_buy: 'Здравствуйте, хочу КУПИТЬ FXGuard WhatsApp CRM. Пришлите пакеты и следующие шаги.', wa_msg_cloud: 'Здравствуйте, хочу ПОДПИСАТЬСЯ на FXGuard Hosted Cloud.', wa_msg_license: 'Здравствуйте, нужен РАСЧЁТ по FXGuard Self-hosted License.', wa_msg_managed: 'Здравствуйте, нужен РАСЧЁТ по FXGuard Managed Dedicated.', wa_msg_general: 'Здравствуйте, хочу купить / получить расчёт по FXGuard WhatsApp CRM.',
+            hero_offer: 'Бесплатное live-демо · от <strong>$49/мес</strong> · КП в WhatsApp за минуты', outcomes_title: 'Почему команды покупают FXGuard', outcomes_sub: 'Чтобы закрывать больше сделок и сохранять каждый чат с клиентом — не просто ещё один мессенджер.', out1_title: 'Хватит терять деньги в чатах', out1_desc: 'Непрочитанное = потерянный клиент. Общий inbox — ничего не пропадает.', out2_title: 'Продавайте с полной историей', out2_desc: 'Теги, заметки и прошлые чаты остаются на клиенте — команда закрывает со контекстом.', out3_title: 'Контролируйте, кто что видит', out3_desc: 'Роли, филиалы и 2FA — владелец контролирует каждую локацию.', out4_title: 'Купите один раз. Разверните как удобно', out4_desc: 'Cloud от $49/мес, разовая лицензия на ваших серверах или полностью Managed нами.', buy_title: 'Как купить — 3 шага', buy_sub: 'Без долгого цикла продаж. Бесплатное демо, выбор пакета, покупка в WhatsApp или форме.', buy1_title: '1. Бесплатное демо', buy1_desc: 'Откройте /live-demo — демо с гидом, без общего пароля. Реальный продукт за минуты.', buy2_title: '2. Выберите пакет', buy2_desc: 'Cloud для скорости, License для владения или Managed без ops-нагрузки.', buy3_title: '3. Купите сегодня', buy3_desc: 'Напишите в WhatsApp или отправьте форму. Sales отвечает в рабочие дни в течение 24 часов — часто быстрее.', buy_cta_wa: 'Начать покупку в WhatsApp', buy_cta_form: 'Или отправить заявку на покупку', pkg1_wa: 'WhatsApp для подписки', pkg2_wa: 'WhatsApp для License', pkg3_wa: 'WhatsApp для Managed', packages_guarantee: 'Поговорите с sales до оплаты. Демо бесплатно. Для демо карта не нужна.', cta_wa: 'Купить через WhatsApp', sticky_text: 'От $49/мес · Бесплатное демо', sticky_demo: 'Демо', sticky_buy: 'Купить', wa_msg_buy: 'Здравствуйте, хочу КУПИТЬ FXGuard WhatsApp CRM. Пришлите пакеты и следующие шаги.', wa_msg_cloud: 'Здравствуйте, хочу ПОДПИСАТЬСЯ на FXGuard Hosted Cloud.', wa_msg_license: 'Здравствуйте, нужен РАСЧЁТ по FXGuard Self-hosted License.', wa_msg_managed: 'Здравствуйте, нужен РАСЧЁТ по FXGuard Managed Dedicated.', wa_msg_general: 'Здравствуйте, хочу купить / получить расчёт по FXGuard WhatsApp CRM.',
             problems_title: 'WhatsApp съедает ваши продажи?',
             problems_sub: 'Если команда всё ещё на личных телефонах — вы теряете клиентов каждый день.',
             p1_title: 'Несколько телефонов, один номер',
@@ -764,7 +766,7 @@
             faq1_q: 'Чем отличаются Hosted Cloud, Self-hosted License и Managed Dedicated?',
             faq1_a: 'Cloud: мы запускаем FXGuard для вас (месяц/год). License: вы покупаете систему и крутите на своих серверах. Managed: мы ставим и обслуживаем выделенный инстанс с SLA. Core-модули одинаковые.',
             faq2_q: 'Можно ли попробовать FXGuard до покупки?',
-            faq2_a: 'Да — и это бесплатно. Откройте app.fxguard.io (a booked guided demo), изучите реальный продукт, затем свяжитесь с sales для покупки. Изменения в демо не сохраняются.',
+            faq2_a: 'Да. 10-минутное демо с гидом или 7-дневный trial на своём WhatsApp. Общий пароль на сайте не публикуем.',
             faq3_q: 'Делаются ли бэкапы?',
             faq3_a: 'На Cloud и Managed — ежедневные бэкапы в составе сервиса. На Self-hosted бэкапы на вашей стороне; мы консультируем и можем включить это в support-контракт.',
             faq4_q: 'Что именно даёт Self-hosted License?',
@@ -821,12 +823,12 @@
     };
 
         var CONTACT_TRANSLATIONS = {
-        en: { contact_title: 'Contact Us', contact_sub: 'For purchase, support, demo, or consultation — reach us via email or WhatsApp. We respond within 24 hours on business days.', contact_buy_btn: 'Buy Now via WhatsApp', contact_demo_btn: 'Request Demo', contact_wa_title: 'WhatsApp — Consultation & Purchase', contact_wa_desc: 'Fast response for pricing, demo, and purchase', contact_sales_title: 'Sales', contact_sales_desc: 'Purchase, pricing, plans', contact_support_title: 'Support', contact_support_desc: 'Technical issues, installation', contact_hours_title: 'Response Hours', contact_hours_desc: 'Support and sales respond on business days within 24 hours. For urgent matters, use WhatsApp — we reply as soon as possible.', contact_wa_us: 'WhatsApp Us', contact_pricing_cta: 'Not sure which plan?', contact_view_pricing: 'View pricing', contact_or: ' or ', contact_ask_wa: 'ask us on WhatsApp', contact_back: '← Back to Home', contact_footer_contact: 'Contact', contact_footer_support: 'Support', contact_footer_wa: 'WhatsApp', nav_pricing: 'Pricing', nav_panel_btn: 'Get Started', logo: 'WhatsApp CRM' },
-        fa: { contact_title: 'تماس با ما', contact_sub: 'برای خرید، پشتیبانی، دمو یا مشاوره — از ایمیل یا واتساپ با ما در تماس باشید. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.', contact_buy_btn: 'خرید از طریق واتساپ', contact_demo_btn: 'درخواست دمو', contact_wa_title: 'واتساپ — مشاوره و خرید', contact_wa_desc: 'پاسخ سریع برای قیمت، دمو و خرید', contact_sales_title: 'فروش', contact_sales_desc: 'خرید، قیمت، پلن‌ها', contact_support_title: 'پشتیبانی', contact_support_desc: 'مشکلات فنی، نصب', contact_hours_title: 'ساعات پاسخگویی', contact_hours_desc: 'پشتیبانی و فروش در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهند. برای فوری، واتساپ بزنید.', contact_wa_us: 'واتساپ بزنید', contact_pricing_cta: 'پلن مناسب را نمی‌دانید؟', contact_view_pricing: 'قیمت‌ها را ببینید', contact_or: ' یا ', contact_ask_wa: 'از واتساپ بپرسید', contact_back: '→ بازگشت به صفحه اصلی', contact_footer_contact: 'تماس', contact_footer_support: 'پشتیبانی', contact_footer_wa: 'واتساپ', nav_pricing: 'قیمت', nav_panel_btn: 'شروع کنید', logo: 'WhatsApp CRM' },
-        tr: { contact_title: 'Bize Ulaşın', contact_sub: 'Satın alma, destek, demo veya danışmanlık için e-posta veya WhatsApp ile bize ulaşın. İş günlerinde 24 saat içinde yanıt veriyoruz.', contact_buy_btn: 'WhatsApp ile Satın Al', contact_demo_btn: 'Demo İste', contact_wa_title: 'WhatsApp — Danışmanlık ve Satın Alma', contact_wa_desc: 'Fiyat, demo ve satın alma için hızlı yanıt', contact_sales_title: 'Satış', contact_sales_desc: 'Satın alma, fiyatlandırma, planlar', contact_support_title: 'Destek', contact_support_desc: 'Teknik sorunlar, kurulum', contact_hours_title: 'Yanıt Saatleri', contact_hours_desc: 'Destek ve satış iş günlerinde 24 saat içinde yanıt verir. Acil durumlar için WhatsApp kullanın.', contact_wa_us: 'WhatsApp Yaz', contact_pricing_cta: 'Hangi planı seçeceğinizden emin değil misiniz?', contact_view_pricing: 'Fiyatları görün', contact_or: ' veya ', contact_ask_wa: 'WhatsApp\'ta sorun', contact_back: '← Ana Sayfaya Dön', contact_footer_contact: 'İletişim', contact_footer_support: 'Destek', contact_footer_wa: 'WhatsApp', nav_pricing: 'Fiyat', nav_panel_btn: 'Başlayın', logo: 'WhatsApp CRM' },
+        en: { contact_title: 'Contact FXGuard sales — demo, Cloud Start, license', contact_sub: 'Book a 10-minute guided demo, start Cloud Start at $49, or get a written quote for Business, license or Managed. WhatsApp +90 501 067 6486. We reply within 24 hours on business days.', contact_buy_btn: 'Buy Now via WhatsApp', contact_demo_btn: 'Request Demo', contact_wa_title: 'WhatsApp — Consultation & Purchase', contact_wa_desc: 'Fast response for pricing, demo, and purchase', contact_sales_title: 'Sales', contact_sales_desc: 'Purchase, pricing, plans', contact_support_title: 'Support', contact_support_desc: 'Technical issues, installation', contact_hours_title: 'Response Hours', contact_hours_desc: 'Support and sales respond on business days within 24 hours. For urgent matters, use WhatsApp — we reply as soon as possible.', contact_wa_us: 'WhatsApp Us', contact_pricing_cta: 'Not sure which plan?', contact_view_pricing: 'View pricing', contact_or: ' or ', contact_ask_wa: 'ask us on WhatsApp', contact_back: '← Back to Home', contact_footer_contact: 'Contact', contact_footer_support: 'Support', contact_footer_wa: 'WhatsApp', nav_pricing: 'Pricing', nav_panel_btn: 'Get Started', logo: 'WhatsApp CRM' },
+        fa: { contact_title: 'تماس با فروش FXGuard — دمو، ابر شروع، لایسنس', contact_sub: 'دموی هدایت‌شده ۱۰ دقیقه‌ای رزرو کنید، ابر شروع ۴۹$ را بخرید، یا برای تجاری، لایسنس و مدیریت‌شده پیش‌فاکتور بگیرید. واتساپ +90 501 067 6486. روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.', contact_buy_btn: 'خرید از طریق واتساپ', contact_demo_btn: 'درخواست دمو', contact_wa_title: 'واتساپ — مشاوره و خرید', contact_wa_desc: 'پاسخ سریع برای قیمت، دمو و خرید', contact_sales_title: 'فروش', contact_sales_desc: 'خرید، قیمت، پلن‌ها', contact_support_title: 'پشتیبانی', contact_support_desc: 'مشکلات فنی، نصب', contact_hours_title: 'ساعات پاسخگویی', contact_hours_desc: 'پشتیبانی و فروش در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهند. برای فوری، واتساپ بزنید.', contact_wa_us: 'واتساپ بزنید', contact_pricing_cta: 'پلن مناسب را نمی‌دانید؟', contact_view_pricing: 'قیمت‌ها را ببینید', contact_or: ' یا ', contact_ask_wa: 'از واتساپ بپرسید', contact_back: '→ بازگشت به صفحه اصلی', contact_footer_contact: 'تماس', contact_footer_support: 'پشتیبانی', contact_footer_wa: 'واتساپ', nav_pricing: 'قیمت', nav_panel_btn: 'شروع کنید', logo: 'WhatsApp CRM' },
+        tr: { contact_title: 'FXGuard satış — demo, Cloud Start, lisans', contact_sub: '10 dakikalık rehberli demo alın, $49 Cloud Start başlatın veya Business, lisans ve Managed için yazılı teklif isteyin. WhatsApp +90 501 067 6486. İş günlerinde 24 saat içinde yanıtlarız.', contact_buy_btn: 'WhatsApp ile Satın Al', contact_demo_btn: 'Demo İste', contact_wa_title: 'WhatsApp — Danışmanlık ve Satın Alma', contact_wa_desc: 'Fiyat, demo ve satın alma için hızlı yanıt', contact_sales_title: 'Satış', contact_sales_desc: 'Satın alma, fiyatlandırma, planlar', contact_support_title: 'Destek', contact_support_desc: 'Teknik sorunlar, kurulum', contact_hours_title: 'Yanıt Saatleri', contact_hours_desc: 'Destek ve satış iş günlerinde 24 saat içinde yanıt verir. Acil durumlar için WhatsApp kullanın.', contact_wa_us: 'WhatsApp Yaz', contact_pricing_cta: 'Hangi planı seçeceğinizden emin değil misiniz?', contact_view_pricing: 'Fiyatları görün', contact_or: ' veya ', contact_ask_wa: 'WhatsApp\'ta sorun', contact_back: '← Ana Sayfaya Dön', contact_footer_contact: 'İletişim', contact_footer_support: 'Destek', contact_footer_wa: 'WhatsApp', nav_pricing: 'Fiyat', nav_panel_btn: 'Başlayın', logo: 'WhatsApp CRM' },
         ar: {
-            contact_title: 'تواصل معنا',
-            contact_sub: 'للشراء أو الدعم أو العرض أو الاستشارة — راسلنا عبر البريد أو واتساب. نرد خلال 24 ساعة في أيام العمل.',
+            contact_title: 'تواصل مبيعات FXGuard — عرض، بدء سحابي، ترخيص',
+            contact_sub: 'احجزوا عرضًا موجّهًا 10 دقائق، أو ابدءوا Cloud Start بـ 49$، أو اطلبوا عرضًا مكتوبًا للأعمال والترخيص والمُدار. واتساب +90 501 067 6486. نرد خلال 24 ساعة في أيام العمل.',
             contact_buy_btn: 'اشترِ عبر واتساب',
             contact_demo_btn: 'طلب عرض',
             contact_wa_title: 'واتساب — استشارة وشراء',
@@ -851,8 +853,8 @@
             logo: 'WhatsApp CRM'
         },
         ru: {
-            contact_title: 'Свяжитесь с нами',
-            contact_sub: 'Покупка, поддержка, демо или консультация — email или WhatsApp. Отвечаем в течение 24 часов в рабочие дни.',
+            contact_title: 'Контакт FXGuard — демо, Cloud Start, лицензия',
+            contact_sub: 'Запишитесь на 10-минутное демо с гидом, начните Cloud Start за $49 или запросите письменное КП на Business, лицензию и Managed. WhatsApp +90 501 067 6486. Отвечаем в рабочие дни в течение 24 часов.',
             contact_buy_btn: 'Купить через WhatsApp',
             contact_demo_btn: 'Запросить демо',
             contact_wa_title: 'WhatsApp — консультация и покупка',
@@ -1005,7 +1007,7 @@
     }
 
 
-        var FOOTER_I18N = {"en": {"footer_about": "FXGuard is a WhatsApp CRM: one company number, a shared team panel, customer history stays with the business. We customize it for your trade.", "footer_who": "For exchange offices, remittance desks and finance firms — Cloud Start works without the FX pack.", "footer_trust": "AI-assisted engineering · optional smart replies · 7-day money-back on first Cloud Start month", "footer_markets": "Turkey · UAE · Europe · Iran", "footer_col_product": "Products", "footer_col_solutions": "Solutions", "footer_col_company": "Company", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Pricing &amp; Packages", "footer_self_hosted": "Self-hosted License", "footer_managed": "Managed Hosting", "footer_open_panel": "Open Panel", "footer_updates": "System Updates", "footer_blog": "Blog &amp; Articles", "footer_tagline": "WhatsApp CRM — tailored to your business", "footer_demo": "Demo"}, "fa": {"footer_about": "FXGuard یک واتساپ CRM است: یک شماره سازمانی، پنل مشترک تیم، تاریخچه مشتری مال شرکت می‌ماند. برای صنف شما اختصاصی می‌شود.", "footer_who": "مناسب تیم فروش، فروشگاه، مطب، شرکت، صرافی و حواله — و هر کسب‌وکاری که برایتان اختصاصی شود.", "footer_trust": "مهندسی با کمک هوش مصنوعی · پاسخ هوشمند اختیاری · بازگشت وجه ۷روزه ماه اول ابر شروع", "footer_markets": "ترکیه · امارات · اروپا · ایران", "footer_col_product": "محصولات", "footer_col_solutions": "راه‌حل‌ها", "footer_col_company": "شرکت", "footer_whatsapp_crm": "واتساپ سی‌آرام", "footer_pricing": "قیمت و پکیج‌ها", "footer_self_hosted": "لایسنس خودمیزبان", "footer_managed": "هاست مدیریت‌شده", "footer_open_panel": "ورود به پنل", "footer_updates": "آپدیت‌های سیستم", "footer_blog": "وبلاگ و مقالات", "footer_tagline": "واتساپ CRM — اختصاصی برای کسب‌وکار شما", "footer_demo": "دمو"}, "tr": {"footer_about": "FXGuard bir WhatsApp CRM’dir: şirket numarası, ortak panel, müşteri geçmişi işletmede kalır. İşinize göre uyarlanır.", "footer_who": "Satış ekipleri, dükkanlar, klinikler, şirketler, döviz büroları — ve uyarladığımız her işletme.", "footer_trust": "Yapay zekâ destekli mühendislik · isteğe bağlı akıllı yanıt · ilk Cloud Start ayında 7 gün iade", "footer_markets": "Türkiye · BAE · Avrupa · İran", "footer_col_product": "Ürünler", "footer_col_solutions": "Çözümler", "footer_col_company": "Şirket", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Fiyat &amp; Paketler", "footer_self_hosted": "Self-hosted Lisans", "footer_managed": "Yönetilen Hosting", "footer_open_panel": "Panele Git", "footer_updates": "Sistem Güncellemeleri", "footer_blog": "Blog &amp; Yazılar", "footer_tagline": "WhatsApp CRM — işinize göre uyarlanır", "footer_demo": "Demo"}, "ar": {"footer_about": "FXGuard هو واتساب CRM: رقم شركة واحد، لوحة مشتركة، سجل العملاء يبقى للعمل. نخصّصه لمهنتكم.", "footer_who": "لفرق المبيعات والمتاجر والعيادات والشركات ومكاتب الصرافة — وأي عمل نخصّصه.", "footer_trust": "هندسة بمساعدة الذكاء الاصطناعي · ردود ذكية اختيارية · استرداد 7 أيام لأول شهر بدء سحابي", "footer_markets": "تركيا · الإمارات · أوروبا · إيران", "footer_col_product": "المنتجات", "footer_col_solutions": "الحلول", "footer_col_company": "الشركة", "footer_whatsapp_crm": "واتساب CRM", "footer_pricing": "الأسعار والباقات", "footer_self_hosted": "ترخيص ذاتي الاستضافة", "footer_managed": "استضافة مُدارة", "footer_open_panel": "فتح اللوحة", "footer_updates": "تحديثات النظام", "footer_blog": "المدونة والمقالات", "footer_tagline": "واتساب CRM — مخصّص لعملك", "footer_demo": "عرض"}, "ru": {"footer_about": "FXGuard — WhatsApp CRM: один корпоративный номер, общая панель, история клиентов остаётся в компании. Настраиваем под отрасль.", "footer_who": "Для продаж, магазинов, клиник, компаний, обменных столов — и любого бизнеса, который настроим.", "footer_trust": "AI-assisted инженерия · опциональные умные ответы · 7 дней возврата за первый месяц Cloud Start", "footer_markets": "Турция · ОАЭ · Европа · Иран", "footer_col_product": "Продукты", "footer_col_solutions": "Решения", "footer_col_company": "Компания", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Цены и пакеты", "footer_self_hosted": "Self-hosted лицензия", "footer_managed": "Managed-хостинг", "footer_open_panel": "Открыть панель", "footer_updates": "Обновления системы", "footer_blog": "Блог и статьи", "footer_tagline": "WhatsApp CRM — под ваш бизнес", "footer_demo": "Демо"}};
+        var FOOTER_I18N = {"en": {"footer_about": "FXGuard is a WhatsApp CRM: one company number, a shared team panel, customer history stays with the business. We customize it for your trade.", "footer_who": "For exchange offices, remittance desks and finance firms — Cloud Start works without the FX pack.", "footer_trust": "AI-assisted engineering · optional smart replies · 7-day money-back on first Cloud Start month", "footer_markets": "Turkey · UAE · Europe · Iran", "footer_col_product": "Products", "footer_col_solutions": "Solutions", "footer_col_company": "Company", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Pricing &amp; Packages", "footer_self_hosted": "Self-hosted License", "footer_managed": "Managed Hosting", "footer_open_panel": "Staff login", "footer_updates": "System Updates", "footer_blog": "Blog &amp; Articles", "footer_tagline": "WhatsApp CRM — tailored to your business", "footer_demo": "Demo"}, "fa": {"footer_about": "FXGuard یک واتساپ CRM است: یک شماره سازمانی، پنل مشترک تیم، تاریخچه مشتری مال شرکت می‌ماند. برای صنف شما اختصاصی می‌شود.", "footer_who": "مناسب تیم فروش، فروشگاه، مطب، شرکت، صرافی و حواله — و هر کسب‌وکاری که برایتان اختصاصی شود.", "footer_trust": "مهندسی با کمک هوش مصنوعی · پاسخ هوشمند اختیاری · بازگشت وجه ۷روزه ماه اول ابر شروع", "footer_markets": "ترکیه · امارات · اروپا · ایران", "footer_col_product": "محصولات", "footer_col_solutions": "راه‌حل‌ها", "footer_col_company": "شرکت", "footer_whatsapp_crm": "واتساپ سی‌آرام", "footer_pricing": "قیمت و پکیج‌ها", "footer_self_hosted": "لایسنس خودمیزبان", "footer_managed": "هاست مدیریت‌شده", "footer_open_panel": "ورود کارکنان", "footer_updates": "آپدیت‌های سیستم", "footer_blog": "وبلاگ و مقالات", "footer_tagline": "واتساپ CRM — اختصاصی برای کسب‌وکار شما", "footer_demo": "دمو"}, "tr": {"footer_about": "FXGuard bir WhatsApp CRM’dir: şirket numarası, ortak panel, müşteri geçmişi işletmede kalır. İşinize göre uyarlanır.", "footer_who": "Satış ekipleri, dükkanlar, klinikler, şirketler, döviz büroları — ve uyarladığımız her işletme.", "footer_trust": "Yapay zekâ destekli mühendislik · isteğe bağlı akıllı yanıt · ilk Cloud Start ayında 7 gün iade", "footer_markets": "Türkiye · BAE · Avrupa · İran", "footer_col_product": "Ürünler", "footer_col_solutions": "Çözümler", "footer_col_company": "Şirket", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Fiyat &amp; Paketler", "footer_self_hosted": "Self-hosted Lisans", "footer_managed": "Yönetilen Hosting", "footer_open_panel": "Personel girişi", "footer_updates": "Sistem Güncellemeleri", "footer_blog": "Blog &amp; Yazılar", "footer_tagline": "WhatsApp CRM — işinize göre uyarlanır", "footer_demo": "Demo"}, "ar": {"footer_about": "FXGuard هو واتساب CRM: رقم شركة واحد، لوحة مشتركة، سجل العملاء يبقى للعمل. نخصّصه لمهنتكم.", "footer_who": "لفرق المبيعات والمتاجر والعيادات والشركات ومكاتب الصرافة — وأي عمل نخصّصه.", "footer_trust": "هندسة بمساعدة الذكاء الاصطناعي · ردود ذكية اختيارية · استرداد 7 أيام لأول شهر بدء سحابي", "footer_markets": "تركيا · الإمارات · أوروبا · إيران", "footer_col_product": "المنتجات", "footer_col_solutions": "الحلول", "footer_col_company": "الشركة", "footer_whatsapp_crm": "واتساب CRM", "footer_pricing": "الأسعار والباقات", "footer_self_hosted": "ترخيص ذاتي الاستضافة", "footer_managed": "استضافة مُدارة", "footer_open_panel": "دخول الموظفين", "footer_updates": "تحديثات النظام", "footer_blog": "المدونة والمقالات", "footer_tagline": "واتساب CRM — مخصّص لعملك", "footer_demo": "عرض"}, "ru": {"footer_about": "FXGuard — WhatsApp CRM: один корпоративный номер, общая панель, история клиентов остаётся в компании. Настраиваем под отрасль.", "footer_who": "Для продаж, магазинов, клиник, компаний, обменных столов — и любого бизнеса, который настроим.", "footer_trust": "AI-assisted инженерия · опциональные умные ответы · 7 дней возврата за первый месяц Cloud Start", "footer_markets": "Турция · ОАЭ · Европа · Иран", "footer_col_product": "Продукты", "footer_col_solutions": "Решения", "footer_col_company": "Компания", "footer_whatsapp_crm": "WhatsApp CRM", "footer_pricing": "Цены и пакеты", "footer_self_hosted": "Self-hosted лицензия", "footer_managed": "Managed-хостинг", "footer_open_panel": "Вход сотрудников", "footer_updates": "Обновления системы", "footer_blog": "Блог и статьи", "footer_tagline": "WhatsApp CRM — под ваш бизнес", "footer_demo": "Демо"}};
     function mergeFooterI18n(t, lang) {
         var extra = FOOTER_I18N[lang] || FOOTER_I18N.en;
         for (var k in extra) {
@@ -1198,6 +1200,9 @@
             btn.classList.toggle('active', on);
             btn.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
+        document.querySelectorAll('.lang-dropdown-code').forEach(function(el) {
+            el.textContent = (lang || 'en').toUpperCase();
+        });
         try { localStorage.setItem('landing_lang', lang); } catch (e) {}
         if (document.body && !document.body.classList.contains('seo-page')) updateSeoMeta(lang);
         else updatePageSeoMeta(lang);
@@ -1207,6 +1212,13 @@
         if (typeof window !== 'undefined') {
             window.FXG_LANG = lang;
             window.FXG_reapplyI18n = function () { applyLang(LANG); };
+            if (window.FXG_YIELD && typeof window.FXG_YIELD.reapplyWa === 'function') {
+                window.FXG_YIELD.reapplyWa();
+            }
+            if (window.FXG_YIELD && typeof window.FXG_YIELD.fillLeadFields === 'function') {
+                window.FXG_YIELD.fillLeadFields();
+            }
+            syncSalesForm();
         }
     }
 
@@ -1231,7 +1243,17 @@
         document.querySelectorAll('.js-wa-link').forEach(function(el) {
             var kind = el.getAttribute('data-wa') || 'general';
             var msg = map[kind] || map.general || t.wa_msg_general || 'Hi, I want to buy FXGuard WhatsApp CRM.';
+            var briefKinds = { demo: 1, trial: 1, buy: 1, cloud: 1, license: 1, managed: 1, general: 1 };
+            if (briefKinds[kind] && t.wa_msg_brief && msg.indexOf(t.wa_msg_brief) === -1) {
+                msg += '\n' + t.wa_msg_brief;
+            }
             el.setAttribute('href', 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg));
+            if (el.classList.contains('wa-float')) {
+                var ariaKey = (kind === 'demo' || kind === 'trial') ? 'aria_wa_demo' : 'aria_wa_buy';
+                el.setAttribute('data-i18n-aria', ariaKey);
+                var aria = t[ariaKey] || t.aria_wa_buy;
+                if (aria) el.setAttribute('aria-label', aria);
+            }
         });
     }
 
@@ -1256,12 +1278,49 @@
         });
     });
 
+    (function setupLangDropdown() {
+        var drops = document.querySelectorAll('.lang-dropdown');
+        if (!drops.length) return;
+        function closeAll() {
+            drops.forEach(function(drop) {
+                var toggle = drop.querySelector('.lang-dropdown-toggle');
+                var menu = drop.querySelector('.lang-dropdown-menu');
+                if (menu) menu.hidden = true;
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+            });
+        }
+        drops.forEach(function(drop) {
+            var toggle = drop.querySelector('.lang-dropdown-toggle');
+            var menu = drop.querySelector('.lang-dropdown-menu');
+            if (!toggle || !menu) return;
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var open = menu.hidden;
+                closeAll();
+                if (open) {
+                    menu.hidden = false;
+                    toggle.setAttribute('aria-expanded', 'true');
+                }
+            });
+            menu.addEventListener('click', function() { closeAll(); });
+        });
+        document.addEventListener('click', closeAll);
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeAll();
+        });
+    })();
+
     detectAndSetLang();
 
     /* Mobile sticky buy bar after leaving hero */
     (function() {
         var bar = document.getElementById('stickyBuy');
         if (!bar) return;
+        var pageId = document.body.getAttribute('data-page') || '';
+        if (['thanks', 'blog', 'privacy', 'terms', 'account-deletion'].indexOf(pageId) >= 0) {
+            bar.hidden = true;
+            return;
+        }
         var toggle = function() {
             bar.classList.toggle('is-visible', window.scrollY > 280);
         };
@@ -1298,9 +1357,13 @@
         });
     });
 
-    /* Point every "try the panel / try demo" link at the live demo panel */
-    var panelUrl = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
-    document.querySelectorAll('#btnPanel, #btnPanelMob, .js-panel-link').forEach(function(btn) { if (btn) btn.href = panelUrl; });
+    /* Demo CTA goes to /live-demo (booked session). Customer login stays on footer Open Panel. */
+    document.querySelectorAll('#btnPanel, #btnPanelMob, .js-panel-link').forEach(function(btn) {
+        if (!btn) return;
+        btn.href = '/live-demo';
+        btn.removeAttribute('target');
+        btn.removeAttribute('rel');
+    });
 
     window.addEventListener('scroll', function() {
         var h = document.getElementById('header');
@@ -1372,25 +1435,123 @@
         el.addEventListener('click', function() {
             var sel = document.getElementById('purpose');
             if (sel) sel.value = el.getAttribute('data-purpose');
+            syncSalesForm();
         });
     });
+
+    function deskBrief() {
+        function val(id) {
+            var el = document.getElementById(id);
+            return el && el.value ? String(el.value).trim() : '';
+        }
+        var city = val('desk_city');
+        var br = val('desk_branches');
+        var st = val('desk_staff');
+        var fx = val('desk_fx');
+        var lines = [];
+        if (city) lines.push('City: ' + city);
+        if (br) lines.push('Branches: ' + br);
+        if (st) lines.push('Staff: ' + st);
+        if (fx) lines.push('FX rates: ' + fx);
+        return lines.length ? '\n\n--- desk ---\n' + lines.join('\n') : '';
+    }
+
+    function syncSalesForm() {
+        var form = document.getElementById('contactForm');
+        if (!form) return;
+        var t = currentCopy();
+        var purpose = form.querySelector('#purpose');
+        var fxEl = document.getElementById('desk_fx');
+        var hint = document.getElementById('formHint');
+        var purposeVal = purpose && purpose.value ? purpose.value : '';
+        if (hint) {
+            var show = purposeVal === 'purchase' && fxEl && fxEl.value === 'yes';
+            hint.classList.toggle('is-on', !!show);
+            if (show && t.form_hint_fx) hint.innerHTML = t.form_hint_fx;
+        }
+        var submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn && !submitBtn.disabled) {
+            var label = t.form_submit || submitBtn.textContent;
+            if (purposeVal === 'demo' || purposeVal === 'trial') label = t.form_submit_demo || label;
+            else if (purposeVal === 'purchase' || purposeVal === 'cloud_subscribe') label = t.form_submit_cloud || label;
+            else if (purposeVal === 'quote' || purposeVal === 'license' || purposeVal === 'managed' || purposeVal === 'buy_license' || purposeVal === 'managed_hosting') label = t.form_submit_quote || label;
+            submitBtn.textContent = label;
+        }
+        var waFast = document.querySelector('.contact-wa-link .js-wa-link');
+        if (waFast && purposeVal) {
+            var kind = waKindForPurpose(purposeVal);
+            waFast.setAttribute('data-wa', kind);
+            updateWhatsAppLinks(t);
+        }
+    }
+
+    function currentCopy() {
+        return mergePageI18n(mergeFooterI18n(Object.assign({}, TRANSLATIONS[LANG] || TRANSLATIONS.en), LANG), LANG);
+    }
+
+    function waKindForPurpose(purposeVal) {
+        if (purposeVal === 'demo' || purposeVal === 'trial') return 'demo';
+        if (purposeVal === 'purchase' || purposeVal === 'cloud_subscribe') return 'cloud';
+        if (purposeVal === 'license' || purposeVal === 'buy_license') return 'license';
+        if (purposeVal === 'managed' || purposeVal === 'managed_hosting') return 'managed';
+        return 'buy';
+    }
+
+    function waMessageForPurpose(purposeVal) {
+        var t = currentCopy();
+        var kind = waKindForPurpose(purposeVal);
+        var map = {
+            buy: t.wa_msg_buy,
+            cloud: t.wa_msg_cloud,
+            license: t.wa_msg_license,
+            managed: t.wa_msg_managed,
+            demo: t.wa_msg_demo,
+            trial: t.wa_msg_trial
+        };
+        return (map[kind] || t.wa_msg_buy || 'Hi, I want to buy FXGuard WhatsApp CRM.') + (t.wa_msg_brief && (map[kind] || '').indexOf(t.wa_msg_brief) === -1 ? '\n' + t.wa_msg_brief : '') + deskBrief();
+    }
+
+    function thanksUrl(purposeVal) {
+        var origin = window.location.origin || 'https://fxguard.io';
+        var q = purposeVal ? '?purpose=' + encodeURIComponent(purposeVal) : '';
+        return origin + '/thanks' + q;
+    }
 
     var form = document.getElementById('contactForm');
     var formSuccess = document.getElementById('formSuccess');
     if (form) {
         var nextInput = form.querySelector('input[name="_next"]');
-        if (nextInput) nextInput.value = window.location.origin + window.location.pathname + '#contact-form';
+        var purposeEl = form.querySelector('#purpose');
+        var syncThanksNext = function () {
+            if (!nextInput) return;
+            var p = purposeEl && purposeEl.value ? purposeEl.value : '';
+            nextInput.value = thanksUrl(p);
+        };
+        syncThanksNext();
+        if (purposeEl) purposeEl.addEventListener('change', function () { syncThanksNext(); syncSalesForm(); });
+        ['desk_fx', 'desk_branches', 'desk_staff'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('change', syncSalesForm);
+        });
+        if (window.FXG_YIELD && typeof window.FXG_YIELD.fillLeadFields === 'function') {
+            window.FXG_YIELD.fillLeadFields();
+        }
+        syncSalesForm();
     }
-    if (form && formSuccess) {
+    if (form) {
         var submitBtn = form.querySelector('button[type="submit"]');
-        var originalBtnText = submitBtn ? submitBtn.textContent : '';
         var errEl = form.querySelector('.form-error');
         if (!errEl) {
             errEl = document.createElement('div');
             errEl.className = 'form-error';
-            errEl.style.cssText = 'color:#ef4444;margin-top:12px;font-size:0.9rem;display:none;';
+            errEl.setAttribute('role', 'alert');
             form.insertBefore(errEl, submitBtn);
         }
+        var showFormError = function (msg) {
+            errEl.textContent = msg || '';
+            errEl.classList.toggle('is-on', !!msg);
+            errEl.style.display = msg ? 'block' : 'none';
+        };
         var ALLOWED_PURPOSES = ['demo', 'trial', 'purchase', 'quote', 'license', 'managed', 'support', 'other', 'cloud_subscribe', 'buy_license', 'managed_hosting'];
         var PURPOSE_LABELS = { demo: 'Guided demo', trial: '7-day trial', purchase: 'Cloud Start', quote: 'Commercial invoice', license: 'Self-hosted license', managed: 'Managed dedicated', cloud_subscribe: 'Cloud Start', buy_license: 'License', managed_hosting: 'Managed', support: 'Support', other: 'Other' };
         form.addEventListener('submit', function(e) {
@@ -1403,26 +1564,34 @@
             var action = form.getAttribute('action') || '';
             var useApi = action.indexOf('YOUR_FORM_ID') >= 0 && (typeof CONTACT_API_URL !== 'undefined' && CONTACT_API_URL);
             if (useApi) {
-                errEl.style.display = 'none';
-                errEl.textContent = '';
+                showFormError('');
                 var name = nameEl ? nameEl.value.trim() : '';
                 var email = emailEl ? emailEl.value.trim() : '';
                 var message = messageEl ? messageEl.value.trim() : '';
                 if (!name || !email || !message) {
-                    errEl.textContent = (LANG === 'fa' ? 'نام، ایمیل و پیام الزامی است.' : LANG === 'tr' ? 'Ad, e-posta ve mesaj zorunludur.' : LANG === 'ar' ? 'الاسم والبريد والرسالة مطلوبة.' : LANG === 'ru' ? 'Имя, email и сообщение обязательны.' : 'Name, email and message are required.');
-                    errEl.style.display = 'block';
+                    showFormError(LANG === 'fa' ? 'نام، ایمیل و پیام الزامی است.' : LANG === 'tr' ? 'Ad, e-posta ve mesaj zorunludur.' : LANG === 'ar' ? 'الاسم والبريد والرسالة مطلوبة.' : LANG === 'ru' ? 'Имя, email и сообщение обязательны.' : 'Name, email and message are required.');
                     return;
                 }
                 var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                 if (!emailRe.test(email)) {
-                    errEl.textContent = (LANG === 'fa' ? 'ایمیل معتبر نیست.' : LANG === 'tr' ? 'Geçerli e-posta girin.' : LANG === 'ar' ? 'البريد غير صالح.' : LANG === 'ru' ? 'Введите корректный email.' : 'Please enter a valid email.');
-                    errEl.style.display = 'block';
+                    showFormError(LANG === 'fa' ? 'ایمیل معتبر نیست.' : LANG === 'tr' ? 'Geçerli e-posta girin.' : LANG === 'ar' ? 'البريد غير صالح.' : LANG === 'ru' ? 'Введите корректный email.' : 'Please enter a valid email.');
                     return;
                 }
                 var purposeVal = purpose && purpose.value ? purpose.value : 'other';
                 if (ALLOWED_PURPOSES.indexOf(purposeVal) === -1) purposeVal = 'other';
-                var payload = { purpose: purposeVal, name: name, email: email, message: message };
+                message = message + deskBrief();
+                if (message.length > 4900) message = message.slice(0, 4900);
+                var payload = { purpose: purposeVal, name: name, email: email, message: message, lang: LANG };
                 if (phoneEl && phoneEl.value.trim()) payload.phone = phoneEl.value.trim();
+                if (window.FXG_YIELD && typeof window.FXG_YIELD.getUtm === 'function') {
+                    var utm = window.FXG_YIELD.getUtm() || {};
+                    if (utm.utm_source) payload.utm_source = utm.utm_source;
+                    if (utm.utm_medium) payload.utm_medium = utm.utm_medium;
+                    if (utm.utm_campaign) payload.utm_campaign = utm.utm_campaign;
+                    payload.landing_path = utm.landing || window.location.pathname;
+                } else {
+                    payload.landing_path = window.location.pathname;
+                }
                 if (submitBtn) {
                     submitBtn.disabled = true;
                     submitBtn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : LANG === 'tr' ? 'Gönderiliyor...' : LANG === 'ar' ? 'جارٍ الإرسال...' : LANG === 'ru' ? 'Отправка...' : 'Sending...');
@@ -1436,31 +1605,25 @@
                     return r.json().then(function(data) { return { ok: r.ok, data: data }; });
                 }).then(function(result) {
                     if (result.ok && result.data.ok) {
-                        formSuccess.classList.add('show');
-                        form.style.display = 'none';
-                        formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         if (window.FXG_YIELD && typeof window.FXG_YIELD.track === 'function') {
                             window.FXG_YIELD.track('lead_submit', { purpose: purposeVal, via: 'api' });
                         }
+                        window.location.href = thanksUrl(purposeVal);
                     } else {
-                        var tFail = TRANSLATIONS[LANG] || TRANSLATIONS.en;
-                        var msgFail = (tFail && tFail.wa_msg_buy) ? tFail.wa_msg_buy : 'Hi, I want to buy FXGuard WhatsApp CRM.';
+                        var msgFail = waMessageForPurpose(purposeVal);
                         window.open('https://wa.me/905010676486?text=' + encodeURIComponent(msgFail), '_blank', 'noopener');
-                        errEl.textContent = result.data.error || (LANG === 'fa' ? 'ارسال نشد — واتساپ باز شد.' : LANG === 'tr' ? 'Gönderilemedi — WhatsApp açıldı.' : LANG === 'ar' ? 'فشل الإرسال — تم فتح واتساب.' : LANG === 'ru' ? 'Не отправлено — открыт WhatsApp.' : 'Send failed — WhatsApp opened.');
-                        errEl.style.display = 'block';
+                        showFormError(result.data.error || (LANG === 'fa' ? 'ارسال نشد — واتساپ باز شد.' : LANG === 'tr' ? 'Gönderilemedi — WhatsApp açıldı.' : LANG === 'ar' ? 'فشل الإرسال — تم فتح واتساب.' : LANG === 'ru' ? 'Не отправлено — открыт WhatsApp.' : 'Send failed — WhatsApp opened.'));
                     }
                 }).catch(function() {
-                    var t = TRANSLATIONS[LANG] || TRANSLATIONS.en;
-                    var msg = (t && t.wa_msg_buy) ? t.wa_msg_buy : 'Hi, I want to buy FXGuard WhatsApp CRM.';
+                    var msg = waMessageForPurpose(purposeVal);
                     if (nameEl && nameEl.value) msg += '\nName: ' + nameEl.value.trim();
                     if (messageEl && messageEl.value) msg += '\n' + messageEl.value.trim();
                     window.open('https://wa.me/905010676486?text=' + encodeURIComponent(msg), '_blank', 'noopener');
-                    errEl.textContent = (LANG === 'fa' ? 'فرم در دسترس نبود — واتساپ باز شد.' : LANG === 'tr' ? 'Form çalışmadı — WhatsApp açıldı.' : LANG === 'ar' ? 'النموذج غير متاح — تم فتح واتساب.' : LANG === 'ru' ? 'Форма недоступна — открыт WhatsApp.' : 'Form unavailable — WhatsApp opened.');
-                    errEl.style.display = 'block';
+                    showFormError(LANG === 'fa' ? 'فرم در دسترس نبود — واتساپ باز شد.' : LANG === 'tr' ? 'Form çalışmadı — WhatsApp açıldı.' : LANG === 'ar' ? 'النموذج غير متاح — تم فتح واتساب.' : LANG === 'ru' ? 'Форма недоступна — открыт WhatsApp.' : 'Form unavailable — WhatsApp opened.');
                 }).finally(function() {
                     if (submitBtn) {
                         submitBtn.disabled = false;
-                        submitBtn.textContent = originalBtnText;
+                        syncSalesForm();
                     }
                 });
                 return false;
@@ -1469,6 +1632,27 @@
             if (purpose && subj && purpose.value) {
                 subj.value = 'FXGuard - ' + (PURPOSE_LABELS[purpose.value] || purpose.value);
             }
+            syncThanksNext();
+            if (window.FXG_YIELD && typeof window.FXG_YIELD.fillLeadFields === 'function') {
+                window.FXG_YIELD.fillLeadFields();
+            }
+            if (window.FXG_YIELD && typeof window.FXG_YIELD.track === 'function') {
+                window.FXG_YIELD.track('lead_submit', { purpose: (purpose && purpose.value) || 'other', via: 'formspree' });
+            }
         });
+    }
+
+    if (document.body && document.body.getAttribute('data-page') === 'thanks') {
+        var thanksPurpose = '';
+        try { thanksPurpose = new URLSearchParams(window.location.search).get('purpose') || ''; } catch (eT) {}
+        var thanksMap = { demo: 'path-demo', trial: 'path-demo', purchase: 'path-cloud', cloud_subscribe: 'path-cloud', quote: 'path-quote', license: 'path-quote', managed: 'path-quote', buy_license: 'path-quote', managed_hosting: 'path-quote' };
+        var highlightId = thanksMap[thanksPurpose];
+        if (highlightId) {
+            var hot = document.getElementById(highlightId);
+            if (hot) {
+                document.querySelectorAll('.path-card--hot').forEach(function (el) { el.classList.remove('path-card--hot'); });
+                hot.classList.add('path-card--hot');
+            }
+        }
     }
 })();
