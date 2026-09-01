@@ -39,6 +39,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.Chat
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Send
 import androidx.compose.material.icons.outlined.Add
@@ -81,6 +82,7 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -369,7 +371,7 @@ fun InboxScreen(
                                 ) {
                                     CustomerPhoto(avatarUrl(row.id), row.name, Modifier.size(40.dp), tile = false)
                                     Column(Modifier.padding(start = 10.dp)) {
-                                        RtlSafeText(displayCustomerName(row.name, row.phone, "مشتری"), color = KayaColors.Text, fontWeight = FontWeight.Medium)
+                                        RtlSafeText(displayCustomerName(row.name, row.phone, L10n.t(lang, "customer")), color = KayaColors.Text, fontWeight = FontWeight.Medium)
                                         RtlSafeText(
                                             displayPhoneOrFallback(row.phone, row.email ?: ""),
                                             color = KayaColors.Text2,
@@ -436,7 +438,7 @@ private fun ConversationCard(lang: String, row: ConversationRow, photoUrl: Strin
                     Spacer(Modifier.width(4.dp))
                 }
                 RtlSafeText(
-                    displayCustomerName(row.customerName, row.customerPhone, "مشتری"),
+                    displayCustomerName(row.customerName, row.customerPhone, L10n.t(lang, "customer")),
                     color = KayaColors.Text,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
@@ -483,7 +485,7 @@ fun ChatScreen(
     onSendVoice: (File) -> Unit,
     onSendGif: (String) -> Unit,
     onStartCall: (String) -> Unit,
-    onSettings: () -> Unit,
+    onSettings: (() -> Unit)? = null,
     onNotice: (String) -> Unit,
     onRetry: (() -> Unit)? = null,
     onBack: () -> Unit,
@@ -545,6 +547,22 @@ fun ChatScreen(
             when {
                 loading && messages.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = KayaColors.Accent)
+                }
+                messages.isEmpty() -> Column(
+                    Modifier.fillMaxSize().padding(32.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Outlined.Chat,
+                        contentDescription = null,
+                        tint = KayaColors.Text3,
+                        modifier = Modifier.size(40.dp),
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Text(L10n.t(lang, "empty_messages"), color = KayaColors.Text, fontSize = 16.sp, textAlign = TextAlign.Center)
+                    Spacer(Modifier.height(6.dp))
+                    Text(L10n.t(lang, "empty_messages_hint"), color = KayaColors.Text2, fontSize = 13.sp, textAlign = TextAlign.Center)
                 }
                 else -> LazyColumn(
                     state = listState,
@@ -630,7 +648,7 @@ private fun ChatHeader(
     photoUrl: String?,
     onBack: () -> Unit,
     onStartCall: (String) -> Unit,
-    onSettings: () -> Unit,
+    onSettings: (() -> Unit)? = null,
 ) {
     Column(Modifier.fillMaxWidth().background(KayaColors.Bg2)) {
         Row(
@@ -665,7 +683,7 @@ private fun ChatHeader(
                         Spacer(Modifier.width(4.dp))
                     }
                     RtlSafeText(
-                        displayCustomerName(chat.customerName, chat.customerPhone, "مشتری"),
+                        displayCustomerName(chat.customerName, chat.customerPhone, L10n.t(lang, "customer")),
                         color = KayaColors.Text,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
@@ -686,8 +704,10 @@ private fun ChatHeader(
             IconButton(onClick = { onStartCall("voice") }) {
                 Icon(Icons.Outlined.Call, contentDescription = L10n.t(lang, "call_voice"), tint = KayaColors.Text2)
             }
-            IconButton(onClick = onSettings) {
-                Icon(Icons.Outlined.Settings, contentDescription = L10n.t(lang, "chat_settings"), tint = KayaColors.Text2)
+            if (onSettings != null) {
+                IconButton(onClick = onSettings) {
+                    Icon(Icons.Outlined.Settings, contentDescription = L10n.t(lang, "chat_settings"), tint = KayaColors.Text2)
+                }
             }
         }
         val chips = buildList {

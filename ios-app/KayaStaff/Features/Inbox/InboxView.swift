@@ -179,7 +179,7 @@ struct InboxView: View {
                     if row.isGroup {
                         Image(systemName: "person.3.fill").font(.caption2).foregroundStyle(Color(red: 0.65, green: 0.55, blue: 0.98))
                     }
-                    Text(PhoneDisplay.customerName(row.customerName, phone: row.customerPhone, fallback: "مشتری")).foregroundStyle(KayaColor.text).fontWeight(.semibold).lineLimit(1)
+                    Text(PhoneDisplay.customerName(row.customerName, phone: row.customerPhone, fallback: L10n.t(model.lang, "customer"))).foregroundStyle(KayaColor.text).fontWeight(.semibold).lineLimit(1)
                         .ltrIfPhone(row.customerName)
                     Spacer()
                     if let time = row.lastMessageAt, !time.isEmpty {
@@ -252,7 +252,7 @@ struct InboxView: View {
                                     tile: false
                                 )
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(PhoneDisplay.customerName(row.name, phone: row.phone, fallback: "مشتری")).foregroundStyle(KayaColor.text)
+                                    Text(PhoneDisplay.customerName(row.name, phone: row.phone, fallback: L10n.t(model.lang, "customer"))).foregroundStyle(KayaColor.text)
                                     Text(PhoneDisplay.phoneOrFallback(row.phone, fallback: row.email ?? "")).font(.caption).foregroundStyle(KayaColor.text2)
                                 }
                             }
@@ -291,6 +291,27 @@ struct ChatView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
             }
+            if model.chatLoading && model.messages.isEmpty {
+                ProgressView()
+                    .tint(KayaColor.accent)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if model.messages.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.title)
+                        .foregroundStyle(KayaColor.text3)
+                    Text(L10n.t(model.lang, "empty_messages"))
+                        .font(.headline)
+                        .foregroundStyle(KayaColor.text)
+                        .multilineTextAlignment(.center)
+                    Text(L10n.t(model.lang, "empty_messages_hint"))
+                        .font(.footnote)
+                        .foregroundStyle(KayaColor.text2)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(32)
+            } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
@@ -306,6 +327,7 @@ struct ChatView: View {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
+            }
             }
             if let tab = pickerTab {
                 WaPickerPanel(
@@ -369,7 +391,9 @@ struct ChatView: View {
             HStack(spacing: 8) {
                 Button { model.closeChat() } label: {
                     Image(systemName: "chevron.backward").foregroundStyle(KayaColor.text)
+                        .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.t(model.lang, "back"))
                 ZStack {
                     Circle().fill(chat?.isGroup == true ? Color(red: 0.36, green: 0.29, blue: 0.54) : KayaColor.accent.opacity(0.15))
                     if chat?.isGroup == true {
@@ -405,16 +429,18 @@ struct ChatView: View {
                 Spacer()
                 Button { model.startCall("video") } label: {
                     Image(systemName: "video").foregroundStyle(KayaColor.text2)
+                        .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.t(model.lang, "call_video"))
                 Button { model.startCall("voice") } label: {
                     Image(systemName: "phone").foregroundStyle(KayaColor.text2)
+                        .frame(width: 44, height: 44)
                 }
-                Button { model.showChatNotice(L10n.t(model.lang, "chat_settings_soon")) } label: {
-                    Image(systemName: "gearshape").foregroundStyle(KayaColor.text2)
-                }
+                .accessibilityLabel(L10n.t(model.lang, "call_voice"))
             }
             .padding(.horizontal, 12)
             .padding(.top, 8)
+            .safeAreaPadding(.top)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     chip(statusLabel(chat?.status ?? "open"), Color(red: 16 / 255, green: 185 / 255, blue: 129 / 255))
@@ -477,17 +503,22 @@ struct ChatView: View {
                     catch { model.showChatNotice(L10n.t(model.lang, "voice_err_open")) }
                 } label: {
                     Image(systemName: "mic").foregroundStyle(KayaColor.text2)
+                        .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.t(model.lang, "voice"))
                 .disabled(model.sending)
             } else {
                 Button { model.send() } label: {
                     Image(systemName: "paperplane.fill").foregroundStyle(KayaColor.accent)
+                        .frame(width: 44, height: 44)
                 }
+                .accessibilityLabel(L10n.t(model.lang, "send"))
                 .disabled(model.sending)
             }
         }
         .padding(10)
         .background(KayaColor.bg2)
+        .safeAreaPadding(.bottom)
     }
 
     private var recordingBar: some View {

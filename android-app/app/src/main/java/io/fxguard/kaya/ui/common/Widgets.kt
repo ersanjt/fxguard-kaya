@@ -154,7 +154,7 @@ fun ErrorText(message: String?, success: Boolean = false) {
 }
 
 @Composable
-fun StatusLine(message: String?, onRetry: (() -> Unit)? = null, retryLabel: String = "تلاش دوباره") {
+fun StatusLine(message: String?, onRetry: (() -> Unit)? = null, retryLabel: String) {
     if (message.isNullOrBlank()) return
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Text(message, color = KayaColors.Danger, fontSize = 13.sp)

@@ -117,7 +117,7 @@ final class ApiClient {
                 customerId: customer?["id"] as? String,
                 customerName: isGroup
                     ? (groupName ?? (customer?["name"] as? String)?.nilIfEmpty ?? "گروه")
-                    : ((customer?["name"] as? String)?.nilIfEmpty ?? "مشتری"),
+                    : ((customer?["name"] as? String)?.nilIfEmpty ?? ""),
                 customerPhone: phone,
                 isGroup: isGroup,
                 lastOutgoingIsAutoReply: item["lastOutgoingIsAutoReply"] as? Bool ?? false,
@@ -660,7 +660,7 @@ final class ApiClient {
             customerId: customer?["id"] as? String,
             customerName: isGroup
                 ? (groupName ?? (customer?["name"] as? String)?.nilIfEmpty ?? "گروه")
-                : ((customer?["name"] as? String)?.nilIfEmpty ?? "مشتری"),
+                : ((customer?["name"] as? String)?.nilIfEmpty ?? ""),
             customerPhone: phone,
             isGroup: isGroup,
             lastOutgoingIsAutoReply: item["lastOutgoingIsAutoReply"] as? Bool ?? false,
@@ -676,7 +676,7 @@ final class ApiClient {
         let assignee = loc?["assignee"] as? [String: Any]
         return CustomerRow(
             id: item["id"] as? String ?? "",
-            name: (item["name"] as? String)?.nilIfEmpty ?? "مشتری",
+            name: (item["name"] as? String)?.nilIfEmpty ?? "",
             phone: item["phone"] as? String,
             email: item["email"] as? String,
             status: item["status"] as? String ?? "active",

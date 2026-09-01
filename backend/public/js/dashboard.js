@@ -2213,8 +2213,8 @@
                         internalCallPendingInvite.type = data.type || 'voice';
                     });
                     socket.on('call_invite_reject', function(data) {
-                        const name = (data.userName || '').trim() || (LANG === 'fa' ? 'کاربر' : 'User');
-                        toast(name + (LANG === 'fa' ? ' دعوت را رد کرد' : ' declined the invite'));
+                        const name = (data.userName || '').trim() || tt('کاربر', 'User', 'Kullanıcı');
+                        toast(name + tt(' دعوت را رد کرد', ' declined the invite', ' daveti reddetti'));
                     });
                     socket.on('call_end', function(data) {
                         if (data && isSameCallThread(data.threadId)) endInternalCall();
@@ -2224,19 +2224,19 @@
                     });
                     socket.on('unanswered_alert', function(data) {
                         playInternalChatSound();
-                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || tt('مشتری', 'Customer', 'Müşteri');
                         const mins = data.minutesWaiting || 0;
-                        const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
-                        const msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + ' — ' + waitStr;
+                        const waitStr = mins < 60 ? (mins + tt(' دقیقه', ' min', ' dk')) : (mins < 1440 ? (Math.floor(mins / 60) + tt(' ساعت', ' hr', ' sa')) : (Math.floor(mins / 1440) + tt(' روز', ' days', ' gün')));
+                        const msg = tt('مکالمه بدون پاسخ: ', 'Unanswered: ', 'Cevapsız: ') + cust + ' — ' + waitStr;
                         toast(msg, 8000);
                         const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
                     socket.on('conversation_escalated', function(data) {
                         playInternalChatSound();
-                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                        const dept = data.department || (LANG === 'fa' ? 'پشتیبانی' : 'Support');
-                        const msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
+                        const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || tt('مشتری', 'Customer', 'Müşteri');
+                        const dept = data.department || tt('پشتیبانی', 'Support', 'Destek');
+                        const msg = tt('ارجاع: ', 'Escalated: ', 'Yönlendirildi: ') + cust + tt(' به ', ' to ', ' → ') + dept;
                         toast(msg, 10000);
                         const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
@@ -2254,7 +2254,7 @@
                         try {
                             playInternalChatSound();
                             const sev = (data && data.severity) || 'ALERT';
-                            const title = (data && data.title) || (LANG === 'fa' ? 'هشدار سیستم' : 'System alert');
+                            const title = (data && data.title) || tt('هشدار سیستم', 'System alert', 'Sistem uyarısı');
                             const body = String((data && data.body) || '').replace(/\n/g, ' ').trim();
                             const preview = body.length > 160 ? body.slice(0, 160) + '…' : body;
                             const msg = sev + ': ' + title + (preview ? ' — ' + preview : '');
@@ -2287,11 +2287,11 @@
             try {
                 if (!('Notification' in window) || Notification.permission === 'denied') return;
                 if (Notification.permission === 'default') { Notification.requestPermission(function(p) { if (p === 'granted' && data) showDesktopNotification(data); }); return; }
-                const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                const cust = (data.customer && (typeof customerUiName === 'function' ? customerUiName(data.customer) : (data.customer.name || ''))) || tt('مشتری', 'Customer', 'Müşteri');
                 let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
                 const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/brand/kaya-favicon-32.png';
-                const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: notifIcon });
+                const n = new Notification(tt('پیام جدید از ', 'New message from ', 'Yeni mesaj: ') + cust, { body: preview || tt('پیام واتساپ', 'WhatsApp message', 'WhatsApp mesajı'), icon: notifIcon });
                 n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, typeof customerUiPhone === 'function' ? customerUiPhone(data.customer) : '', data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
         }
@@ -2638,7 +2638,7 @@
                 });
                 text = await r.text();
             } catch (e) {
-                return { ok: false, needLogin: false, timeout: !!(_ac && _ac.signal && _ac.signal.aborted), error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+                return { ok: false, needLogin: false, timeout: !!(_ac && _ac.signal && _ac.signal.aborted), error: t('api_err_network') };
             } finally {
                 if (_to) clearTimeout(_to);
             }
@@ -2646,22 +2646,15 @@
                 var _st = r && r.status ? r.status : 0;
                 var _sample = String(text || '').slice(0, 280).toLowerCase();
                 var _isCf = _sample.indexOf('cloudflare') !== -1 || _sample.indexOf('just a moment') !== -1;
-                var _msg;
-                if (LANG === 'fa') {
-                    _msg = _isCf
-                        ? 'پاسخ HTML از Cloudflare آمد. صفحه را رفرش کنید.'
-                        : ('پاسخ HTML به‌جای JSON' + (_st ? ' (HTTP ' + _st + ')' : '') + '. Ctrl+Shift+R بزنید.');
-                } else {
-                    _msg = _isCf
-                        ? 'Cloudflare returned HTML. Refresh the page.'
-                        : ('Server returned HTML instead of JSON' + (_st ? ' (HTTP ' + _st + ')' : '') + '. Hard-refresh.');
-                }
+                var _msg = _isCf
+                    ? t('api_err_html_cf')
+                    : (t('api_err_html') + (_st ? ' (HTTP ' + _st + ')' : ''));
                 try { console.warn('[apiFetch] non-JSON HTML', { url: API + url, status: _st }); } catch (_e) {}
                 return { ok: false, needLogin: false, status: _st || undefined, error: _msg };
             }
             let data;
             try { data = JSON.parse(text); } catch (_) {
-                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
+                return { ok: false, needLogin: false, error: t('api_err_invalid') };
             }
             if (r.status === 401) {
                 if (!opt.softAuth) teardownActiveSession(true);
@@ -2671,11 +2664,11 @@
                     softAuth: !!opt.softAuth,
                     status: 401,
                     data: data,
-                    error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again')
+                    error: (data && data.error) ? data.error : t('api_err_reauth')
                 };
             }
             if (r.status === 429) {
-                return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
+                return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || t('api_err_429') };
             }
             if (!r.ok && data && (data.error || data.message)) {
                 var errVal = data.error || data.message;
@@ -2683,8 +2676,8 @@
             }
             if (!r.ok) {
                 var failMsg = (r.status === 502 || r.status === 503)
-                    ? (LANG === 'tr' ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi.' : (LANG === 'fa' ? 'واتساپ/Gateway آماده نیست یا پیام به واتساپ نرسید.' : 'WhatsApp Gateway not ready.'))
-                    : (LANG === 'tr' ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')' : LANG === 'fa' ? 'خطای سرور (HTTP ' + (r.status || '?') + ')' : 'Server error (HTTP ' + (r.status || '?') + ')');
+                    ? t('api_err_gateway')
+                    : (t('api_err_http') + ' (HTTP ' + (r.status || '?') + ')');
                 return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: failMsg };
             }
             return { ok: r.ok, status: r.status, data: data };
@@ -2699,9 +2692,9 @@
                 if (typeof e === 'string' && e.trim()) return e;
             }
             if (res && (res.status === 502 || res.status === 503)) {
-                return LANG === 'tr' ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi.' : (LANG === 'fa' ? 'واتساپ/Gateway آماده نیست یا پیام ارسال نشد.' : 'WhatsApp Gateway not ready.');
+                return t('api_err_gateway');
             }
-            return LANG === 'tr' ? ('Sunucu hatası' + (res && res.status ? ' (HTTP ' + res.status + ')' : '')) : (LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error');
+            return t('api_err_http') + (res && res.status ? ' (HTTP ' + res.status + ')' : '');
         }
 
         function showTotpPromptIfNeeded() {
@@ -3340,7 +3333,7 @@
             if (res.needLogin) return;
             if (!res.ok) {
                 var errMsg = (res.status === 429)
-                    ? (LANG === 'fa' ? 'در حال بارگذاری آمار… چند ثانیه دیگر تلاش کنید.' : 'Loading stats… please try again in a few seconds.')
+                    ? tt('در حال بارگذاری آمار… چند ثانیه دیگر تلاش کنید.', 'Loading stats… please try again in a few seconds.', 'İstatistikler yükleniyor… birkaç saniye sonra tekrar deneyin.')
                     : ((res.data && res.data.error) ? res.data.error : t('loading_err'));
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(errMsg) + '</div>';
                 if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
@@ -3393,7 +3386,7 @@
                 if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (t('dashboard_min') || (LANG === 'fa' ? 'دقیقه' : 'min')), label: t('dashboard_avg_response') || t('avg_response_time') || 'Avg response time', convTab: 'all' });
                 if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/' + dashFormatNum(5), label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
-                summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
+                summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + tt('آمار دیگری برای نمایش نیست.', 'No additional stats.', 'Başka istatistik yok.') + '</div>';
             }
             if (quickEl) {
                 const quickBtns = [];
@@ -4955,6 +4948,11 @@
                 
                 convList.addEventListener('click', convListClickHandler);
             }
+            bindInboxKeyboard();
+            var emptyOpenBtn = document.getElementById('chatEmptyOpenLatestBtn');
+            if (emptyOpenBtn) {
+                emptyOpenBtn.onclick = function() { openLatestInboxThread(true); };
+            }
             // Close button handlers
             const annCloseBtn = document.getElementById('annMarqueeCloseBtn');
             if (annCloseBtn) {
@@ -5806,6 +5804,7 @@
                 else list.insertAdjacentHTML('beforeend', newItems);
             } else {
                 list.innerHTML = newItems;
+                maybeResumeInboxThread(visibleRows);
             }
             // نمایش/مخفی کردن دکمه load more
             const loadedSoFar = convCurrentPage * convPageSize;
@@ -5898,8 +5897,109 @@
                     : (t('customer_search_ph_no_phone') || (LANG === 'fa' ? 'جستجو نام یا ایمیل...' : 'Search name or email...'));
             }
         }
+        function persistLastConv(id, name, phone, profilePic, isGroup, customerId) {
+            try {
+                sessionStorage.setItem('crm_last_conv', JSON.stringify({
+                    id: String(id || ''),
+                    name: String(name || ''),
+                    phone: String(phone || ''),
+                    profilePic: String(profilePic || ''),
+                    isGroup: !!isGroup,
+                    customerId: String(customerId || '')
+                }));
+            } catch (_e) {}
+        }
+        function readLastConv() {
+            try {
+                var raw = sessionStorage.getItem('crm_last_conv');
+                return raw ? JSON.parse(raw) : null;
+            } catch (_e) {
+                return null;
+            }
+        }
+        function inboxIsDesktop() {
+            return window.matchMedia('(min-width: 901px)').matches;
+        }
+        function openConvListItem(item) {
+            if (!item || typeof openChat !== 'function') return;
+            var id = item.getAttribute('data-id');
+            if (!id) return;
+            openChat(
+                id,
+                item.getAttribute('data-name') || '',
+                item.getAttribute('data-phone') || '',
+                item.getAttribute('data-profile-pic') || '',
+                item.getAttribute('data-is-group') === '1',
+                item.getAttribute('data-customer-id') || ''
+            );
+        }
+        function openLatestInboxThread(force) {
+            if (!force && currentConvId) return;
+            var last = readLastConv();
+            var items = document.querySelectorAll('#convList .conv-list-item');
+            var i;
+            if (last && last.id) {
+                for (i = 0; i < items.length; i++) {
+                    if (items[i].getAttribute('data-id') === last.id) {
+                        openConvListItem(items[i]);
+                        return;
+                    }
+                }
+            }
+            if (items[0]) openConvListItem(items[0]);
+        }
+        function maybeResumeInboxThread(rows) {
+            if (currentConvId) return;
+            if (!inboxIsDesktop()) return;
+            if (!rows || !rows.length) return;
+            var last = readLastConv();
+            var target = null;
+            var i;
+            if (last && last.id) {
+                for (i = 0; i < rows.length; i++) {
+                    if (rows[i].id === last.id) {
+                        target = rows[i];
+                        break;
+                    }
+                }
+            }
+            if (!target) target = rows[0];
+            var cust = target.customer || {};
+            var isGroup = !!(target.metadata && target.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
+            var name = last && last.id === target.id && last.name ? last.name : (cust.name || '');
+            openChat(target.id, name, cust.phone || '', cust.profilePic || '', isGroup, cust.id);
+        }
+        function bindInboxKeyboard() {
+            if (document._crmInboxKeysBound) return;
+            document._crmInboxKeysBound = true;
+            document.addEventListener('keydown', function(e) {
+                var page = document.getElementById('pageConversations');
+                if (!page || !page.classList.contains('show')) return;
+                var active = document.activeElement;
+                var tag = active && (active.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || tag === 'select' || (active && active.isContentEditable)) return;
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'j' && e.key !== 'k') return;
+                var items = Array.prototype.slice.call(document.querySelectorAll('#convList .conv-list-item'));
+                if (!items.length) return;
+                var idx = -1;
+                for (var n = 0; n < items.length; n++) {
+                    if (items[n].classList.contains('active')) {
+                        idx = n;
+                        break;
+                    }
+                }
+                var next = idx;
+                if (e.key === 'ArrowDown' || e.key === 'j') next = idx < 0 ? 0 : Math.min(items.length - 1, idx + 1);
+                if (e.key === 'ArrowUp' || e.key === 'k') next = idx < 0 ? 0 : Math.max(0, idx - 1);
+                if (next === idx) return;
+                e.preventDefault();
+                openConvListItem(items[next]);
+                items[next].scrollIntoView({ block: 'nearest' });
+            });
+        }
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
+            persistLastConv(id, name, phone, profilePic, isGroup, customerId);
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             var visiblePhone = customerUiPhone({ phone: phone });
@@ -6964,7 +7064,12 @@
             const data = res.data;
             if (data.mobileWhatsappSender) _mobileWaSender = data.mobileWhatsappSender;
             else await ensureMobileWaSender(false);
-            if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) {
+                if (!loadOlder) {
+                    el.innerHTML = '<div class="empty conv-empty-thread"><p>' + t('empty_conv_messages') + '</p><p class="empty-hint">' + t('empty_conv_messages_hint') + '</p></div>';
+                }
+                return;
+            }
             // ذخیره قدیمی‌ترین id برای load older
             if (data.oldestId) _currentMsgOldestId = data.oldestId;
             const list = data.data.filter(function(m) {
@@ -6994,7 +7099,7 @@
                     if (displayName && window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(displayName) && !canViewCustomerPhoneUi()) {
                         displayName = null;
                     }
-                    if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
+                    if (!displayName) displayName = t('group_member');
                     const senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
                     const senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
                     senderLabel = '<div class="msg-sender msg-sender-group msg-sender-clickable"' + senderPhoneAttr + senderNameAttr + ' title="' + (LANG === 'fa' ? 'کلیک برای پیام خصوصی' : 'Click to send private message') + '">' + escapeHtml(displayName) + '</div>';

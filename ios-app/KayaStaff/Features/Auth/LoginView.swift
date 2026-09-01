@@ -17,75 +17,88 @@ struct LoginView: View {
 
     var body: some View {
         let t = { L10n.t(model.lang, $0) }
-        ScrollView {
-            VStack(spacing: 16) {
-                if let url = model.logoUrl() {
-                    AsyncImage(url: url) { img in
-                        img.resizable().scaledToFit()
-                    } placeholder: {
+        ZStack {
+            KayaColor.bg.ignoresSafeArea()
+            RadialGradient(
+                colors: [KayaColor.accentSoft, Color.clear],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 420
+            )
+            .ignoresSafeArea()
+            ScrollView {
+                VStack(spacing: 16) {
+                    if let url = model.logoUrl() {
+                        AsyncImage(url: url) { img in
+                            img.resizable().scaledToFit()
+                        } placeholder: {
+                            logoFallback
+                        }
+                        .frame(width: 88, height: 88)
+                    } else {
                         logoFallback
                     }
-                    .frame(width: 88, height: 88)
-                } else {
-                    logoFallback
-                }
-                Text(model.branding?.displayTitle ?? "KAYA")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(KayaColor.text)
-                Text(t("login_sub"))
-                    .font(.footnote)
-                    .foregroundStyle(KayaColor.text2)
-                    .multilineTextAlignment(.center)
-                langSwitch
-                if forgot {
-                    field(t("login_email"), text: $email)
-                    errorLine
-                    Button(t("forgot_send")) { model.forgot(email.trimmingCharacters(in: .whitespaces)) }
-                        .buttonStyle(KayaButtonStyle(loading: model.authLoading))
-                    Button(t("back")) { forgot = false }.foregroundStyle(KayaColor.text2)
-                } else {
-                    Text(t("login_title")).font(.headline).foregroundStyle(KayaColor.text)
-                    field(t("login_email"), text: $email)
-                    HStack {
-                        Group {
-                            if showPass {
-                                TextField(t("login_pass"), text: $password)
-                            } else {
-                                SecureField(t("login_pass"), text: $password)
+                    Text(model.branding?.displayTitle ?? "KAYA")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(KayaColor.text)
+                    Text(t("login_sub"))
+                        .font(.footnote)
+                        .foregroundStyle(KayaColor.text2)
+                        .multilineTextAlignment(.center)
+                    langSwitch
+                    if forgot {
+                        field(t("login_email"), text: $email)
+                        errorLine
+                        Button(t("forgot_send")) { model.forgot(email.trimmingCharacters(in: .whitespaces)) }
+                            .buttonStyle(KayaButtonStyle(loading: model.authLoading))
+                        Button(t("back")) { forgot = false }.foregroundStyle(KayaColor.text2)
+                    } else {
+                        Text(t("login_title")).font(.headline).foregroundStyle(KayaColor.text)
+                        field(t("login_email"), text: $email)
+                        HStack {
+                            Group {
+                                if showPass {
+                                    TextField(t("login_pass"), text: $password)
+                                } else {
+                                    SecureField(t("login_pass"), text: $password)
+                                }
                             }
+                            Button {
+                                showPass.toggle()
+                            } label: {
+                                Image(systemName: showPass ? "eye.slash" : "eye")
+                                    .foregroundStyle(KayaColor.text2)
+                            }
+                            .accessibilityLabel(showPass ? t("toggle_hide") : t("toggle_show"))
                         }
-                        Button {
-                            showPass.toggle()
-                        } label: {
-                            Image(systemName: showPass ? "eye.slash" : "eye")
-                                .foregroundStyle(KayaColor.text2)
+                        .padding(12)
+                        .background(KayaColor.inputBg)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(KayaColor.border))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                        errorLine
+                        Button(model.authLoading ? t("login_loading") : t("login_btn")) {
+                            model.login(identifier: email.trimmingCharacters(in: .whitespaces), password: password)
                         }
-                    }
-                    .padding(12)
-                    .background(KayaColor.inputBg)
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(KayaColor.border))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                    errorLine
-                    Button(model.authLoading ? t("login_loading") : t("login_btn")) {
-                        model.login(identifier: email.trimmingCharacters(in: .whitespaces), password: password)
-                    }
-                    .buttonStyle(KayaButtonStyle(loading: model.authLoading))
-                    Button(t("forgot")) { forgot = true }.foregroundStyle(KayaColor.accent)
-                    Button(t("server")) { showServer.toggle() }.font(.caption).foregroundStyle(KayaColor.text3)
-                    if showServer {
-                        field(t("server"), text: $model.serverUrl)
-                    }
-                    if let url = URL(string: model.serverUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/privacy") {
-                        Link(t("privacy"), destination: url)
-                            .font(.caption)
-                            .foregroundStyle(KayaColor.text3)
+                        .buttonStyle(KayaButtonStyle(loading: model.authLoading))
+                        Button(t("forgot")) { forgot = true }.foregroundStyle(KayaColor.accent)
+                        Button(t("server")) { showServer.toggle() }.font(.caption).foregroundStyle(KayaColor.text3)
+                        if showServer {
+                            field(t("server"), text: $model.serverUrl)
+                        }
+                        if let url = URL(string: model.serverUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/privacy") {
+                            Link(t("privacy"), destination: url)
+                                .font(.caption)
+                                .foregroundStyle(KayaColor.text3)
+                        }
                     }
                 }
+                .padding(22)
+                .background(KayaColor.card)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(KayaColor.border))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(color: Color.black.opacity(0.28), radius: 24, y: 12)
+                .padding(20)
             }
-            .padding(22)
-            .background(KayaColor.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .padding(20)
         }
     }
 
@@ -103,11 +116,11 @@ struct LoginView: View {
             ForEach([("fa", "فارسی"), ("en", "English"), ("tr", "Türkçe")], id: \.0) { item in
                 let active = model.lang == item.0
                 Text(item.1)
-                    .font(.caption)
-                    .foregroundStyle(active ? KayaColor.text : KayaColor.text3)
+                    .font(.caption.weight(active ? .semibold : .regular))
+                    .foregroundStyle(active ? Color.white : KayaColor.text3)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(active ? KayaColor.accent.opacity(0.15) : Color.clear)
+                    .background(active ? KayaColor.accent : Color.clear)
                     .clipShape(Capsule())
                     .onTapGesture { model.setLang(item.0) }
             }
@@ -120,7 +133,7 @@ struct LoginView: View {
     private var errorLine: some View {
         Group {
             if let err = model.authError, !err.isEmpty {
-                Text(err).font(.footnote).foregroundStyle(KayaColor.danger)
+                Text(err).font(.footnote).foregroundStyle(model.authIsSuccess ? KayaColor.accent : KayaColor.danger)
             }
         }
     }
@@ -146,29 +159,42 @@ struct TotpView: View {
 
     var body: some View {
         let t = { L10n.t(model.lang, $0) }
-        VStack(alignment: .leading, spacing: 14) {
-            Text(t("totp_title")).font(.title3.weight(.semibold)).foregroundStyle(KayaColor.text)
-            Text(t("totp_sub")).font(.footnote).foregroundStyle(KayaColor.text2)
-            if let hint = model.totpHint {
-                Text(hint).font(.caption).foregroundStyle(KayaColor.text3)
-            }
-            TextField("TOTP", text: $code)
-                .keyboardType(.numberPad)
-                .padding(12)
-                .background(KayaColor.inputBg)
-                .overlay(RoundedRectangle(cornerRadius: 10).stroke(KayaColor.border))
-                .onChange(of: code) { _, v in
-                    code = String(v.filter(\.isNumber).prefix(6))
+        ZStack {
+            KayaColor.bg.ignoresSafeArea()
+            RadialGradient(
+                colors: [KayaColor.accentSoft, Color.clear],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 420
+            )
+            .ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    Text(t("totp_title")).font(.title3.weight(.semibold)).foregroundStyle(KayaColor.text)
+                    Text(t("totp_sub")).font(.footnote).foregroundStyle(KayaColor.text2)
+                    if let hint = model.totpHint {
+                        Text(hint).font(.caption).foregroundStyle(KayaColor.text3)
+                    }
+                    TextField(t("totp_code"), text: $code)
+                        .keyboardType(.numberPad)
+                        .padding(12)
+                        .background(KayaColor.inputBg)
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(KayaColor.border))
+                        .onChange(of: code) { _, v in
+                            code = String(v.filter(\.isNumber).prefix(6))
+                        }
+                    if let err = model.authError { Text(err).foregroundStyle(KayaColor.danger).font(.footnote) }
+                    Button(t("totp_btn")) { model.verifyTotp(code) }
+                        .buttonStyle(KayaButtonStyle(loading: model.authLoading))
+                    Button(t("back")) { model.backToLogin() }.foregroundStyle(KayaColor.text2)
                 }
-            if let err = model.authError { Text(err).foregroundStyle(KayaColor.danger).font(.footnote) }
-            Button(t("totp_btn")) { model.verifyTotp(code) }
-                .buttonStyle(KayaButtonStyle(loading: model.authLoading))
-            Button(t("back")) { model.backToLogin() }.foregroundStyle(KayaColor.text2)
+                .padding(22)
+                .background(KayaColor.card)
+                .overlay(RoundedRectangle(cornerRadius: 16).stroke(KayaColor.border))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .padding(20)
+            }
         }
-        .padding(22)
-        .background(KayaColor.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(20)
     }
 }
 

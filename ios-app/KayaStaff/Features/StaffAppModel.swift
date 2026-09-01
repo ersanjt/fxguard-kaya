@@ -22,6 +22,7 @@ final class StaffAppModel: ObservableObject {
     @Published var serverUrl: String
     @Published var authLoading = false
     @Published var authError: String?
+    @Published var authIsSuccess = false
     @Published var totpHint: String?
     private var tempToken: String?
 
@@ -52,8 +53,10 @@ final class StaffAppModel: ObservableObject {
     @Published var customerSaving = false
     @Published var tickets: [TicketRow] = []
     @Published var ticketsLoading = false
+    @Published var ticketsError: String?
     @Published var tasks: [TaskRow] = []
     @Published var tasksLoading = false
+    @Published var tasksError: String?
     @Published var teamThreads: [TeamThread] = []
     @Published var teamLoading = false
     @Published var teamUsers: [TeamColleague] = []
@@ -106,11 +109,16 @@ final class StaffAppModel: ObservableObject {
         objectWillChange.send()
     }
 
-    func persistServer() {
-        let trimmed = serverUrl.trimmingCharacters(in: .whitespacesAndNewlines)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        session.baseUrl = trimmed
-        serverUrl = trimmed
+    @discardableResult
+    func persistServer() -> Bool {
+        guard let normalized = SessionStore.normalizeBaseUrl(serverUrl) else {
+            authIsSuccess = false
+            authError = L10n.t(lang, "server_https")
+            return false
+        }
+        session.baseUrl = normalized
+        serverUrl = normalized
+        return true
     }
 
     func logoUrl() -> URL? {
@@ -212,12 +220,14 @@ final class StaffAppModel: ObservableObject {
 
     func login(identifier: String, password: String) {
         if identifier.isEmpty || password.isEmpty {
+            authIsSuccess = false
             authError = L10n.t(lang, "required")
             return
         }
-        persistServer()
+        guard persistServer() else { return }
         Task {
             authLoading = true
+            authIsSuccess = false
             authError = nil
             defer { authLoading = false }
             do {
@@ -264,15 +274,17 @@ final class StaffAppModel: ObservableObject {
             authError = L10n.t(lang, "required")
             return
         }
-        persistServer()
+        guard persistServer() else { return }
         Task {
             authLoading = true
             authError = nil
             defer { authLoading = false }
             do {
                 try await api.forgotPassword(email: email)
+                authIsSuccess = true
                 authError = L10n.t(lang, "forgot_ok")
             } catch {
+                authIsSuccess = false
                 authError = errMsg(error)
             }
         }
@@ -281,6 +293,7 @@ final class StaffAppModel: ObservableObject {
     func backToLogin() {
         tempToken = nil
         authError = nil
+        authIsSuccess = false
         gate = .login
     }
 
@@ -309,6 +322,9 @@ final class StaffAppModel: ObservableObject {
             announcementError = nil
             inboxError = nil
             customersError = nil
+            ticketsError = nil
+            tasksError = nil
+            teamError = nil
             dashModuleItems = []
             dashModuleError = nil
             openChat = nil
@@ -325,17 +341,19 @@ final class StaffAppModel: ObservableObject {
         debounce { self.refreshInbox() }
     }
 
-    func refreshInbox() {
+    func refreshInbox(silent: Bool = false) {
         Task {
-            inboxLoading = true
-            defer { inboxLoading = false }
+            if !silent { inboxLoading = true }
+            defer { if !silent { inboxLoading = false } }
             do {
                 let res = try await api.conversations(search: inboxSearch, filter: inboxFilter, mineUserId: user?.id)
                 inbox = res.rows
                 unreadTotal = res.unread
                 inboxError = nil
             } catch {
-                inboxError = errMsg(error)
+                if !silent || inbox.isEmpty {
+                    inboxError = errMsg(error)
+                }
             }
         }
     }
@@ -615,19 +633,33 @@ final class StaffAppModel: ObservableObject {
         }
     }
 
-    func refreshTickets() {
+    func refreshTickets(silent: Bool = false) {
         Task {
-            ticketsLoading = true
+            if !silent { ticketsLoading = true }
             defer { ticketsLoading = false }
-            tickets = (try? await api.tickets()) ?? tickets
+            do {
+                tickets = try await api.tickets()
+                ticketsError = nil
+            } catch {
+                if !silent || tickets.isEmpty {
+                    ticketsError = errMsg(error)
+                }
+            }
         }
     }
 
-    func refreshTasks() {
+    func refreshTasks(silent: Bool = false) {
         Task {
-            tasksLoading = true
+            if !silent { tasksLoading = true }
             defer { tasksLoading = false }
-            tasks = (try? await api.tasks()) ?? tasks
+            do {
+                tasks = try await api.tasks()
+                tasksError = nil
+            } catch {
+                if !silent || tasks.isEmpty {
+                    tasksError = errMsg(error)
+                }
+            }
         }
     }
 
@@ -904,13 +936,19 @@ final class StaffAppModel: ObservableObject {
     private func startPolling() {
         Task {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: 8_000_000_000)
-                if gate == .app {
-                    refreshInbox()
-                    if let chat = openChat {
-                        if let latest = try? await api.messages(conversationId: chat.id) {
-                            messages = latest
-                        }
+                let interval: UInt64 = (openChat != nil || openThread != nil) ? 3_000_000_000 : 8_000_000_000
+                try? await Task.sleep(nanoseconds: interval)
+                guard gate == .app else { continue }
+                refreshInbox(silent: true)
+                if let chat = openChat {
+                    if let latest = try? await api.messages(conversationId: chat.id) {
+                        messages = latest
+                    }
+                }
+                if let thread = openThread {
+                    let me = user?.id ?? ""
+                    if let latest = try? await api.teamMessages(threadId: thread.id, meId: me) {
+                        teamMessages = latest
                     }
                 }
             }

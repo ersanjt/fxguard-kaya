@@ -43,6 +43,13 @@ window.t = function (k) {
     return (I18N.fa && I18N.fa[k]) || (window.__I18N_FA && window.__I18N_FA[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
 };
 
+/** Inline copy when a dedicated key is not worth adding yet. Always pass fa / en / tr. */
+window.tt = function (fa, en, tr) {
+    if (LANG === 'tr') return tr != null && String(tr) !== '' ? tr : en != null && String(en) !== '' ? en : fa;
+    if (LANG === 'en') return en != null && String(en) !== '' ? en : tr != null && String(tr) !== '' ? tr : fa;
+    return fa != null && String(fa) !== '' ? fa : en != null && String(en) !== '' ? en : tr;
+};
+
 window.setLang = function (l) {
     var supported = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
     if (isFxguardPublicHost()) {

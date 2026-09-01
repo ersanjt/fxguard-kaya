@@ -264,6 +264,11 @@
                 
                 convList.addEventListener('click', convListClickHandler);
             }
+            bindInboxKeyboard();
+            var emptyOpenBtn = document.getElementById('chatEmptyOpenLatestBtn');
+            if (emptyOpenBtn) {
+                emptyOpenBtn.onclick = function() { openLatestInboxThread(true); };
+            }
             // Close button handlers
             const annCloseBtn = document.getElementById('annMarqueeCloseBtn');
             if (annCloseBtn) {
@@ -1115,6 +1120,7 @@
                 else list.insertAdjacentHTML('beforeend', newItems);
             } else {
                 list.innerHTML = newItems;
+                maybeResumeInboxThread(visibleRows);
             }
             // نمایش/مخفی کردن دکمه load more
             const loadedSoFar = convCurrentPage * convPageSize;
@@ -1207,8 +1213,109 @@
                     : (t('customer_search_ph_no_phone') || (LANG === 'fa' ? 'جستجو نام یا ایمیل...' : 'Search name or email...'));
             }
         }
+        function persistLastConv(id, name, phone, profilePic, isGroup, customerId) {
+            try {
+                sessionStorage.setItem('crm_last_conv', JSON.stringify({
+                    id: String(id || ''),
+                    name: String(name || ''),
+                    phone: String(phone || ''),
+                    profilePic: String(profilePic || ''),
+                    isGroup: !!isGroup,
+                    customerId: String(customerId || '')
+                }));
+            } catch (_e) {}
+        }
+        function readLastConv() {
+            try {
+                var raw = sessionStorage.getItem('crm_last_conv');
+                return raw ? JSON.parse(raw) : null;
+            } catch (_e) {
+                return null;
+            }
+        }
+        function inboxIsDesktop() {
+            return window.matchMedia('(min-width: 901px)').matches;
+        }
+        function openConvListItem(item) {
+            if (!item || typeof openChat !== 'function') return;
+            var id = item.getAttribute('data-id');
+            if (!id) return;
+            openChat(
+                id,
+                item.getAttribute('data-name') || '',
+                item.getAttribute('data-phone') || '',
+                item.getAttribute('data-profile-pic') || '',
+                item.getAttribute('data-is-group') === '1',
+                item.getAttribute('data-customer-id') || ''
+            );
+        }
+        function openLatestInboxThread(force) {
+            if (!force && currentConvId) return;
+            var last = readLastConv();
+            var items = document.querySelectorAll('#convList .conv-list-item');
+            var i;
+            if (last && last.id) {
+                for (i = 0; i < items.length; i++) {
+                    if (items[i].getAttribute('data-id') === last.id) {
+                        openConvListItem(items[i]);
+                        return;
+                    }
+                }
+            }
+            if (items[0]) openConvListItem(items[0]);
+        }
+        function maybeResumeInboxThread(rows) {
+            if (currentConvId) return;
+            if (!inboxIsDesktop()) return;
+            if (!rows || !rows.length) return;
+            var last = readLastConv();
+            var target = null;
+            var i;
+            if (last && last.id) {
+                for (i = 0; i < rows.length; i++) {
+                    if (rows[i].id === last.id) {
+                        target = rows[i];
+                        break;
+                    }
+                }
+            }
+            if (!target) target = rows[0];
+            var cust = target.customer || {};
+            var isGroup = !!(target.metadata && target.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
+            var name = last && last.id === target.id && last.name ? last.name : (cust.name || '');
+            openChat(target.id, name, cust.phone || '', cust.profilePic || '', isGroup, cust.id);
+        }
+        function bindInboxKeyboard() {
+            if (document._crmInboxKeysBound) return;
+            document._crmInboxKeysBound = true;
+            document.addEventListener('keydown', function(e) {
+                var page = document.getElementById('pageConversations');
+                if (!page || !page.classList.contains('show')) return;
+                var active = document.activeElement;
+                var tag = active && (active.tagName || '').toLowerCase();
+                if (tag === 'input' || tag === 'textarea' || tag === 'select' || (active && active.isContentEditable)) return;
+                if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'j' && e.key !== 'k') return;
+                var items = Array.prototype.slice.call(document.querySelectorAll('#convList .conv-list-item'));
+                if (!items.length) return;
+                var idx = -1;
+                for (var n = 0; n < items.length; n++) {
+                    if (items[n].classList.contains('active')) {
+                        idx = n;
+                        break;
+                    }
+                }
+                var next = idx;
+                if (e.key === 'ArrowDown' || e.key === 'j') next = idx < 0 ? 0 : Math.min(items.length - 1, idx + 1);
+                if (e.key === 'ArrowUp' || e.key === 'k') next = idx < 0 ? 0 : Math.max(0, idx - 1);
+                if (next === idx) return;
+                e.preventDefault();
+                openConvListItem(items[next]);
+                items[next].scrollIntoView({ block: 'nearest' });
+            });
+        }
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
+            persistLastConv(id, name, phone, profilePic, isGroup, customerId);
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             var visiblePhone = customerUiPhone({ phone: phone });
@@ -2273,7 +2380,12 @@
             const data = res.data;
             if (data.mobileWhatsappSender) _mobileWaSender = data.mobileWhatsappSender;
             else await ensureMobileWaSender(false);
-            if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) {
+                if (!loadOlder) {
+                    el.innerHTML = '<div class="empty conv-empty-thread"><p>' + t('empty_conv_messages') + '</p><p class="empty-hint">' + t('empty_conv_messages_hint') + '</p></div>';
+                }
+                return;
+            }
             // ذخیره قدیمی‌ترین id برای load older
             if (data.oldestId) _currentMsgOldestId = data.oldestId;
             const list = data.data.filter(function(m) {
@@ -2303,7 +2415,7 @@
                     if (displayName && window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(displayName) && !canViewCustomerPhoneUi()) {
                         displayName = null;
                     }
-                    if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
+                    if (!displayName) displayName = t('group_member');
                     const senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
                     const senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
                     senderLabel = '<div class="msg-sender msg-sender-group msg-sender-clickable"' + senderPhoneAttr + senderNameAttr + ' title="' + (LANG === 'fa' ? 'کلیک برای پیام خصوصی' : 'Click to send private message') + '">' + escapeHtml(displayName) + '</div>';

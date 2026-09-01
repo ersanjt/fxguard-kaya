@@ -1176,12 +1176,13 @@ private fun PanelCard(lang: String, titleKey: String, meta: String?, icon: Image
         Spacer(Modifier.height(8.dp))
         Text(L10n.t(lang, titleKey), color = KayaColors.Text, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
         if (!meta.isNullOrBlank()) {
-            Text(meta, color = KayaColors.Text2, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(6.dp))
             Text(
                 meta,
                 color = KayaColors.Accent,
                 fontSize = 10.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
                     .background(KayaColors.AccentSoft)

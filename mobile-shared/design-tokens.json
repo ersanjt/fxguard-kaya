@@ -3,7 +3,7 @@
   "owner": "Ersan Jahed Tabrizi",
   "source": "backend/public/css/login.css",
   "defaultBaseUrl": "https://kaya.fxguard.io",
-  "rtlLanguages": ["fa", "tr"],
+  "rtlLanguages": ["fa"],
   "colors": {
     "bg": "#080D1A",
     "bg2": "#0D1525",
@@ -15,10 +15,13 @@
     "danger": "#EF4444",
     "text": "#F0F4FC",
     "text2": "#8B9DC3",
-    "text3": "#4E6080",
+    "text3": "#8B9DC3",
     "inputBg": "#FFFFFF0A",
     "bubbleIn": "#162033",
-    "bubbleOut": "#0F3D32"
+    "bubbleOut": "#0F3D32",
+    "success": "#059669",
+    "chrome": "#161F38",
+    "chromeTab": "#0F172A"
   },
   "radius": {
     "card": 16,

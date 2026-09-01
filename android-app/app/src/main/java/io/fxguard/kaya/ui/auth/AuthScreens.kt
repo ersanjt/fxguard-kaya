@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalUriHandler
@@ -221,7 +222,7 @@ fun TotpScreen(
                 KayaField(
                     code,
                     { if (it.length <= 6) code = it.filter { ch -> ch.isDigit() } },
-                    "TOTP",
+                    t("totp_code"),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                 )
                 ErrorText(error)
@@ -246,11 +247,12 @@ private fun LangSwitch(lang: String, onLang: (String) -> Unit) {
             val active = lang == code
             Text(
                 label,
-                color = if (active) KayaColors.Text else KayaColors.Text3,
+                color = if (active) Color.White else KayaColors.Text3,
                 fontSize = 12.sp,
+                fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal,
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(if (active) KayaColors.AccentSoft else androidx.compose.ui.graphics.Color.Transparent)
+                    .background(if (active) KayaColors.Accent else androidx.compose.ui.graphics.Color.Transparent)
                     .clickable { onLang(code) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )

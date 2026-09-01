@@ -167,13 +167,13 @@
                         <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="serviceModalId" value="">
-                            <label data-i18n="service_name">نام سرویس</label>
+                            <label for="serviceModalName" data-i18n="service_name">نام سرویس</label>
                             <input type="text" id="serviceModalName" placeholder="مثال: خرید دلار نقد" required>
-                            <label data-i18n="service_code">کد (اختیاری)</label>
+                            <label for="serviceModalCode" data-i18n="service_code">کد (اختیاری)</label>
                             <input type="text" id="serviceModalCode" placeholder="مثال: buy-usd">
-                            <label data-i18n="service_category">دسته‌بندی (اختیاری)</label>
+                            <label for="serviceModalCategory" data-i18n="service_category">دسته‌بندی (اختیاری)</label>
                             <input type="text" id="serviceModalCategory" placeholder="مثال: نقد، حواله">
-                            <label data-i18n="service_description">توضیح (اختیاری)</label>
+                            <label for="serviceModalDescription" data-i18n="service_description">توضیح (اختیاری)</label>
                             <textarea id="serviceModalDescription" rows="2" placeholder="توضیح کوتاه..."></textarea>
                             <label><input type="checkbox" id="serviceModalActive" checked> <span data-i18n="service_active">فعال</span></label>
                         </div>
@@ -188,15 +188,15 @@
                         <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="cashBoxModalId" value="">
-                            <label data-i18n="cashbox_name">نام صندوق</label>
+                            <label for="cashBoxModalName" data-i18n="cashbox_name">نام صندوق</label>
                             <input type="text" id="cashBoxModalName" placeholder="مثال: صندوق ۱" required>
-                            <label data-i18n="branch">شعبه</label>
+                            <label for="cashBoxModalBranch" data-i18n="branch">شعبه</label>
                             <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
-                            <label data-i18n="currency">واحد پول</label>
+                            <label for="cashBoxModalCurrency" data-i18n="currency">واحد پول</label>
                             <select id="cashBoxModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
-                            <label data-i18n="balance">موجودی اولیه</label>
+                            <label for="cashBoxModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
-                            <label data-i18n="description">توضیح</label>
+                            <label for="cashBoxModalDescription" data-i18n="description">توضیح</label>
                             <textarea id="cashBoxModalDescription" rows="2"></textarea>
                             <label><input type="checkbox" id="cashBoxModalActive" checked> <span data-i18n="active">فعال</span></label>
                         </div>
@@ -211,21 +211,21 @@
                         <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="bankAccountModalId" value="">
-                            <label data-i18n="bankaccount_name">نام حساب</label>
+                            <label for="bankAccountModalName" data-i18n="bankaccount_name">نام حساب</label>
                             <input type="text" id="bankAccountModalName" placeholder="مثال: حساب تجاری بانک ملی" required>
-                            <label data-i18n="bank_name">نام بانک</label>
+                            <label for="bankAccountModalBankName" data-i18n="bank_name">نام بانک</label>
                             <input type="text" id="bankAccountModalBankName" placeholder="مثال: بانک ملی">
-                            <label data-i18n="account_number">شماره حساب</label>
+                            <label for="bankAccountModalAccountNumber" data-i18n="account_number">شماره حساب</label>
                             <input type="text" id="bankAccountModalAccountNumber" placeholder="شماره حساب">
-                            <label data-i18n="iban">شماره شبا</label>
+                            <label for="bankAccountModalIban" data-i18n="iban">شماره شبا</label>
                             <input type="text" id="bankAccountModalIban" placeholder="IR..." dir="ltr">
-                            <label data-i18n="branch">شعبه</label>
+                            <label for="bankAccountModalBranch" data-i18n="branch">شعبه</label>
                             <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
-                            <label data-i18n="currency">واحد پول</label>
+                            <label for="bankAccountModalCurrency" data-i18n="currency">واحد پول</label>
                             <select id="bankAccountModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
-                            <label data-i18n="balance">موجودی اولیه</label>
+                            <label for="bankAccountModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
-                            <label data-i18n="description">توضیح</label>
+                            <label for="bankAccountModalDescription" data-i18n="description">توضیح</label>
                             <textarea id="bankAccountModalDescription" rows="2"></textarea>
                             <label><input type="checkbox" id="bankAccountModalActive" checked> <span data-i18n="active">فعال</span></label>
                         </div>
@@ -289,20 +289,20 @@
                             </div>
                             <div class="tx-modal-section tx-modal-section-dynamic">
                                 <div id="txModalFromBoxWrap" class="tx-field-wrap tx-modal-field">
-                                    <label>از صندوق</label>
-                                    <select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select>
+                                    <label for="txModalFromCashBox" data-i18n="tx_from_cashbox">از صندوق</label>
+                                    <select id="txModalFromCashBox"><option value="" data-i18n="tx_select_cashbox">انتخاب صندوق</option></select>
                                 </div>
                                 <div id="txModalToBoxWrap" class="tx-field-wrap tx-modal-field">
-                                    <label>به صندوق</label>
-                                    <select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select>
+                                    <label for="txModalToCashBox" data-i18n="tx_to_cashbox">به صندوق</label>
+                                    <select id="txModalToCashBox"><option value="" data-i18n="tx_select_cashbox">انتخاب صندوق</option></select>
                                 </div>
                                 <div id="txModalFromBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
-                                    <label>از حساب بانکی</label>
-                                    <select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select>
+                                    <label for="txModalFromBankAccount" data-i18n="tx_from_bank">از حساب بانکی</label>
+                                    <select id="txModalFromBankAccount"><option value="" data-i18n="tx_select_bank">انتخاب حساب</option></select>
                                 </div>
                                 <div id="txModalToBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
-                                    <label>به حساب بانکی</label>
-                                    <select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select>
+                                    <label for="txModalToBankAccount" data-i18n="tx_to_bank">به حساب بانکی</label>
+                                    <select id="txModalToBankAccount"><option value="" data-i18n="tx_select_bank">انتخاب حساب</option></select>
                                 </div>
                             </div>
                             <div class="tx-modal-section">
@@ -310,7 +310,7 @@
                                 <div class="tx-modal-grid">
                                     <div class="tx-modal-field tx-modal-field-full">
                                         <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
-                                        <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
+                                        <select id="txModalCustomer"><option value="" data-i18n="tx_no_customer">بدون مشتری</option></select>
                                     </div>
                                     <div class="tx-modal-field tx-modal-field-full">
                                         <label data-i18n="description">توضیحات</label>
@@ -545,36 +545,36 @@
                                 </div>
                             </section>
                             <section class="customer-modal-section">
-                                <h4 class="customer-modal-section-title">اطلاعات شخصی</h4>
+                                <h4 class="customer-modal-section-title" data-i18n="customer_section_personal">اطلاعات شخصی</h4>
                                 <div class="customer-modal-grid">
                                     <div class="customer-modal-field">
-                                        <label for="customerModalBirthDate">تاریخ تولد</label>
+                                        <label for="customerModalBirthDate" data-i18n="customer_birth_date">تاریخ تولد</label>
                                         <input type="date" id="customerModalBirthDate" placeholder="YYYY-MM-DD">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalNationalId">کد ملی / شناسه</label>
-                                        <input type="text" id="customerModalNationalId" placeholder="کد ملی یا شناسه">
+                                        <label for="customerModalNationalId" data-i18n="customer_national_id">کد ملی / شناسه</label>
+                                        <input type="text" id="customerModalNationalId" data-i18n-ph="customer_national_id_ph" placeholder="کد ملی یا شناسه">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalNationality">ملیت</label>
-                                        <input type="text" id="customerModalNationality" placeholder="مثال: ایرانی">
+                                        <label for="customerModalNationality" data-i18n="customer_nationality">ملیت</label>
+                                        <input type="text" id="customerModalNationality" data-i18n-ph="customer_nationality_ph" placeholder="مثال: ایرانی">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalGender">جنسیت</label>
+                                        <label for="customerModalGender" data-i18n="customer_gender">جنسیت</label>
                                         <select id="customerModalGender">
-                                            <option value="">— انتخاب —</option>
-                                            <option value="male">مرد</option>
-                                            <option value="female">زن</option>
-                                            <option value="other">سایر</option>
+                                            <option value="" data-i18n="customer_gender_select">— انتخاب —</option>
+                                            <option value="male" data-i18n="customer_gender_male">مرد</option>
+                                            <option value="female" data-i18n="customer_gender_female">زن</option>
+                                            <option value="other" data-i18n="customer_gender_other">سایر</option>
                                         </select>
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalOccupation">شغل</label>
-                                        <input type="text" id="customerModalOccupation" placeholder="شغل مشتری">
+                                        <label for="customerModalOccupation" data-i18n="customer_occupation">شغل</label>
+                                        <input type="text" id="customerModalOccupation" data-i18n-ph="customer_occupation_ph" placeholder="شغل مشتری">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalCompanyName">نام شرکت</label>
-                                        <input type="text" id="customerModalCompanyName" placeholder="نام شرکت یا سازمان">
+                                        <label for="customerModalCompanyName" data-i18n="customer_company_name">نام شرکت</label>
+                                        <input type="text" id="customerModalCompanyName" data-i18n-ph="customer_company_ph" placeholder="نام شرکت یا سازمان">
                                     </div>
                                 </div>
                             </section>

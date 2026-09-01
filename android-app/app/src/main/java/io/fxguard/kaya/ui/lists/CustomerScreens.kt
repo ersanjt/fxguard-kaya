@@ -286,7 +286,7 @@ fun CustomerDetailScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CustomerPhoto(avatarUrl(customer.id), customer.name)
                 Column(Modifier.padding(start = 12.dp)) {
-                    RtlSafeText(displayCustomerName(customer.name, customer.phone, "مشتری"), color = KayaColors.Text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
+                    RtlSafeText(displayCustomerName(customer.name, customer.phone, L10n.t(lang, "customer")), color = KayaColors.Text, fontWeight = FontWeight.SemiBold, fontSize = 18.sp)
                     Row {
                         Text("${L10n.t(lang, "phone")}: ", color = KayaColors.Text2, fontSize = 13.sp)
                         RtlSafeText(customer.phone ?: "—", color = KayaColors.Text2, fontSize = 13.sp, ltr = true)
@@ -512,7 +512,7 @@ private fun CustomerCard(lang: String, row: CustomerRow, photoUrl: String?, onOp
         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RtlSafeText(
-                    displayCustomerName(row.name, row.phone, "مشتری"),
+                    displayCustomerName(row.name, row.phone, L10n.t(lang, "customer")),
                     color = KayaColors.Text,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,

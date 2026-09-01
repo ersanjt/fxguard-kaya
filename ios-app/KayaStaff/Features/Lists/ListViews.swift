@@ -171,13 +171,12 @@ struct DashboardView: View {
                 Image(systemName: icon).foregroundStyle(KayaColor.accent)
                 Text(L10n.t(model.lang, key)).foregroundStyle(KayaColor.text).font(.subheadline.weight(.medium)).lineLimit(2)
                 if let meta, !meta.isEmpty {
-                    Text(meta).font(.caption2).foregroundStyle(KayaColor.text2).lineLimit(1)
                     Text(meta)
                         .font(.caption2)
                         .foregroundStyle(KayaColor.accent)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
-                        .background(KayaColor.accent.opacity(0.15))
+                        .background(KayaColor.accentSoft)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
@@ -1070,6 +1069,9 @@ struct CustomersView: View {
                 }
                 if let err = model.customersError, !err.isEmpty {
                     Text(err).font(.caption).foregroundStyle(KayaColor.danger)
+                    Button(L10n.t(model.lang, "retry")) { model.refreshCustomers() }
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(KayaColor.accent)
                 }
                 if model.customersLoading && model.customers.isEmpty {
                     Spacer()
@@ -1203,7 +1205,7 @@ struct CustomersView: View {
             )
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(PhoneDisplay.customerName(row.name, phone: row.phone, fallback: "مشتری")).foregroundStyle(KayaColor.text).fontWeight(.semibold).lineLimit(1)
+                    Text(PhoneDisplay.customerName(row.name, phone: row.phone, fallback: L10n.t(model.lang, "customer"))).foregroundStyle(KayaColor.text).fontWeight(.semibold).lineLimit(1)
                         .ltrIfPhone(row.name)
                     Text(statusLabel(row.status))
                         .font(.caption2)
@@ -1589,7 +1591,9 @@ struct TicketsView: View {
             lang: model.lang,
             loading: model.ticketsLoading && model.tickets.isEmpty,
             empty: model.tickets.isEmpty,
-            emptyKey: "empty_tickets"
+            emptyKey: "empty_tickets",
+            error: model.ticketsError,
+            onRetry: { model.refreshTickets() }
         ) {
             List(model.tickets) { row in
                 VStack(alignment: .leading, spacing: 4) {
@@ -1615,7 +1619,9 @@ struct TasksView: View {
             lang: model.lang,
             loading: model.tasksLoading && model.tasks.isEmpty,
             empty: model.tasks.isEmpty,
-            emptyKey: "empty_tasks"
+            emptyKey: "empty_tasks",
+            error: model.tasksError,
+            onRetry: { model.refreshTasks() }
         ) {
             List(model.tasks) { row in
                 VStack(alignment: .leading, spacing: 4) {
@@ -1890,6 +1896,8 @@ private func listStack<Content: View>(
     loading: Bool,
     empty: Bool,
     emptyKey: String,
+    error: String? = nil,
+    onRetry: (() -> Void)? = nil,
     @ViewBuilder content: () -> Content
 ) -> some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -1897,12 +1905,28 @@ private func listStack<Content: View>(
             Spacer()
             ProgressView().tint(KayaColor.accent).frame(maxWidth: .infinity)
             Spacer()
-        } else if empty {
-            Spacer()
-            Text(L10n.t(lang, emptyKey)).foregroundStyle(KayaColor.text2).frame(maxWidth: .infinity)
-            Spacer()
         } else {
-            content()
+            if let error, !error.isEmpty {
+                Text(error)
+                    .foregroundStyle(KayaColor.danger)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                if let onRetry {
+                    Button(L10n.t(lang, "retry"), action: onRetry)
+                        .buttonStyle(.borderedProminent)
+                        .tint(KayaColor.accent)
+                        .frame(minHeight: 44)
+                }
+            }
+            if empty {
+                if error == nil || error?.isEmpty == true {
+                    Spacer()
+                    Text(L10n.t(lang, emptyKey)).foregroundStyle(KayaColor.text2).frame(maxWidth: .infinity)
+                    Spacer()
+                }
+            } else {
+                content()
+            }
         }
     }
     .padding(16)

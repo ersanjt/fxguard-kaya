@@ -13,6 +13,26 @@
         config.on401 = cfg && cfg.on401;
     }
 
+    function apiLang() {
+        try {
+            if (typeof config.getLang === 'function') return config.getLang() || 'fa';
+        } catch (_e) {}
+        return typeof window.LANG === 'string' && window.LANG ? window.LANG : 'fa';
+    }
+
+    function apiMsg(key, fa, en, tr) {
+        try {
+            if (typeof window.t === 'function') {
+                var v = window.t(key);
+                if (v != null && String(v) !== '' && v !== key) return v;
+            }
+        } catch (_e) {}
+        var lang = apiLang();
+        if (lang === 'tr') return tr;
+        if (lang === 'en') return en;
+        return fa;
+    }
+
     async function apiFetch(url, opts) {
         const opt = opts || {};
         const h =
@@ -52,24 +72,22 @@
             });
             text = await r.text();
         } catch (e) {
-        const lang = config.getLang ? config.getLang() : 'fa';
         const timedOut = !!(_ac && _ac.signal && _ac.signal.aborted);
         return {
             ok: false,
             needLogin: false,
             timeout: timedOut,
-            error:
-                lang === 'tr'
-                    ? 'Sunucuya bağlanılamadı. Ağ veya sunucu adresini kontrol edin.'
-                    : lang === 'fa'
-                      ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.'
-                      : 'Could not connect to server. Check network or server address.',
+            error: apiMsg(
+                'api_err_network',
+                'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.',
+                'Could not connect to server. Check network or server address.',
+                'Sunucuya bağlanılamadı. Ağ veya sunucu adresini kontrol edin.'
+            ),
         };
     } finally {
         if (_to) clearTimeout(_to);
     }
     if ((text || '').trim().startsWith('<')) {
-        const lang2 = config.getLang ? config.getLang() : 'fa';
         const status = r && r.status ? r.status : 0;
         const sample = String(text || '').slice(0, 280).toLowerCase();
         const isCf =
@@ -78,25 +96,31 @@
             sample.indexOf('just a moment') !== -1;
         const isProxyTimeout = status === 502 || status === 504 || status === 524;
         let htmlErr;
-        if (lang2 === 'fa') {
-            if (isCf) htmlErr = 'پاسخ HTML از Cloudflare آمد (چالش یا خطای لبه). صفحه را رفرش کنید.';
-            else if (isProxyTimeout)
-                htmlErr = 'تایم‌اوت پراکسی (HTML ' + status + '). درخواست طولانی بود؛ دوباره تلاش کنید.';
-            else
-                htmlErr =
-                    'پاسخ HTML به‌جای JSON' +
-                    (status ? ' (HTTP ' + status + ')' : '') +
-                    '. یک‌بار Ctrl+Shift+R بزنید؛ اگر ادامه داشت کش/Service Worker را پاک کنید.';
-        } else if (lang2 === 'tr') {
-            htmlErr = isCf
-                ? 'Cloudflare HTML döndürdü. Sayfayı yenileyin.'
-                : 'Sunucu JSON yerine HTML döndürdü' + (status ? ' (HTTP ' + status + ')' : '') + '.';
+        if (isCf) {
+            htmlErr = apiMsg(
+                'api_err_html_cf',
+                'پاسخ HTML از Cloudflare آمد (چالش یا خطای لبه). صفحه را رفرش کنید.',
+                'Cloudflare returned HTML (challenge/edge). Refresh the page.',
+                'Cloudflare HTML döndürdü. Sayfayı yenileyin.'
+            );
+        } else if (isProxyTimeout) {
+            htmlErr =
+                apiMsg(
+                    'api_err_html_proxy',
+                    'تایم‌اوت پراکسی. درخواست طولانی بود؛ دوباره تلاش کنید.',
+                    'Proxy timeout. The request took too long; try again.',
+                    'Proxy zaman aşımı. İstek uzun sürdü; tekrar deneyin.'
+                ) +
+                (status ? ' (HTTP ' + status + ')' : '');
         } else {
-            htmlErr = isCf
-                ? 'Cloudflare returned HTML (challenge/edge). Refresh the page.'
-                : 'Server returned HTML instead of JSON' +
-                  (status ? ' (HTTP ' + status + ')' : '') +
-                  '. Hard-refresh (Ctrl+Shift+R).';
+            htmlErr =
+                apiMsg(
+                    'api_err_html',
+                    'پاسخ HTML به‌جای JSON. یک‌بار Ctrl+Shift+R بزنید؛ اگر ادامه داشت کش را پاک کنید.',
+                    'Server returned HTML instead of JSON. Hard-refresh (Ctrl+Shift+R).',
+                    'Sunucu JSON yerine HTML döndürdü. Sayfayı yenileyin.'
+                ) +
+                (status ? ' (HTTP ' + status + ')' : '');
         }
         try {
             if (typeof console !== 'undefined' && console.warn) {
@@ -114,21 +138,14 @@
     try {
         data = JSON.parse(text);
     } catch (_) {
-        const lang3 = config.getLang ? config.getLang() : 'fa';
         return {
             ok: false,
             needLogin: false,
-            error:
-                lang3 === 'tr'
-                    ? 'Sunucu yanıtı geçersiz'
-                    : lang3 === 'fa'
-                      ? 'پاسخ سرور معتبر نیست'
-                      : 'Invalid server response',
+            error: apiMsg('api_err_invalid', 'پاسخ سرور معتبر نیست', 'Invalid server response', 'Sunucu yanıtı geçersiz'),
         };
     }
     if (r.status === 401) {
         if (!opt.softAuth && typeof config.on401 === 'function') config.on401(data);
-        const lang4 = config.getLang ? config.getLang() : 'fa';
         return {
             ok: false,
             needLogin: !opt.softAuth,
@@ -138,15 +155,10 @@
             error:
                 data && data.error
                     ? data.error
-                    : lang4 === 'tr'
-                      ? 'Lütfen tekrar giriş yapın'
-                      : lang4 === 'fa'
-                        ? 'لطفاً دوباره وارد شوید'
-                        : 'Please sign in again',
+                    : apiMsg('api_err_reauth', 'لطفاً دوباره وارد شوید', 'Please sign in again', 'Lütfen tekrar giriş yapın'),
         };
     }
     if (r.status === 429) {
-        const lang5 = config.getLang ? config.getLang() : 'fa';
         return {
             ok: false,
             needLogin: false,
@@ -154,11 +166,12 @@
             data: data,
             error:
                 (data && data.error) ||
-                (lang5 === 'tr'
-                    ? 'Çok fazla istek. Lütfen bir süre bekleyin.'
-                    : lang5 === 'fa'
-                      ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.'
-                      : 'Too many requests. Please wait a moment.'),
+                apiMsg(
+                    'api_err_429',
+                    'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.',
+                    'Too many requests. Please wait a moment.',
+                    'Çok fazla istek. Lütfen bir süre bekleyin.'
+                ),
         };
     }
     if (!r.ok && data && (data.error || data.message)) {
@@ -172,22 +185,20 @@
         };
     }
     if (!r.ok) {
-        const langFail = config.getLang ? config.getLang() : 'fa';
         let failMsg;
         if (r.status === 502 || r.status === 503) {
-            failMsg =
-                langFail === 'tr'
-                    ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi. WhatsApp bağlantısını kontrol edin.'
-                    : langFail === 'fa'
-                      ? 'واتساپ/Gateway آماده نیست یا پیام به واتساپ نرسید. اتصال واتساپ را در تنظیمات بررسی کنید.'
-                      : 'WhatsApp Gateway is not ready or the message was not delivered.';
+            failMsg = apiMsg(
+                'api_err_gateway',
+                'واتساپ/Gateway آماده نیست یا پیام به واتساپ نرسید. اتصال واتساپ را در تنظیمات بررسی کنید.',
+                'WhatsApp Gateway is not ready or the message was not delivered.',
+                'WhatsApp Gateway hazır değil veya mesaj iletilemedi. WhatsApp bağlantısını kontrol edin.'
+            );
         } else {
             failMsg =
-                langFail === 'tr'
-                    ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')'
-                    : langFail === 'fa'
-                      ? 'خطای سرور (HTTP ' + (r.status || '?') + ')'
-                      : 'Server error (HTTP ' + (r.status || '?') + ')';
+                apiMsg('api_err_http', 'خطای سرور', 'Server error', 'Sunucu hatası') +
+                ' (HTTP ' +
+                (r.status || '?') +
+                ')';
         }
         return {
             ok: false,
@@ -206,34 +217,27 @@ function getApiError(res) {
         const e = res.data.error || res.data.message;
         if (typeof e === 'string' && e.trim()) return e;
     }
-    const lang = config.getLang ? config.getLang() : 'fa';
     const status = res && res.status ? Number(res.status) : 0;
     if (status === 502 || status === 503) {
-        return lang === 'tr'
-            ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi. Bağlantıyı kontrol edin.'
-            : lang === 'fa'
-              ? 'واتساپ/Gateway آماده نیست یا پیام ارسال نشد. اتصال واتساپ را بررسی کنید.'
-              : 'WhatsApp Gateway is not ready or the message could not be delivered.';
+        return apiMsg(
+            'api_err_gateway',
+            'واتساپ/Gateway آماده نیست یا پیام ارسال نشد. اتصال واتساپ را بررسی کنید.',
+            'WhatsApp Gateway is not ready or the message could not be delivered.',
+            'WhatsApp Gateway hazır değil veya mesaj iletilemedi. Bağlantıyı kontrol edin.'
+        );
     }
     if (status === 429) {
-        return lang === 'tr'
-            ? 'Çok fazla istek. Lütfen biraz bekleyin.'
-            : lang === 'fa'
-              ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.'
-              : 'Too many requests. Please wait.';
+        return apiMsg(
+            'api_err_429',
+            'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.',
+            'Too many requests. Please wait.',
+            'Çok fazla istek. Lütfen biraz bekleyin.'
+        );
     }
     if (status >= 400) {
-        return lang === 'tr'
-            ? 'Sunucu hatası (HTTP ' + status + ')'
-            : lang === 'fa'
-              ? 'خطای سرور (HTTP ' + status + ')'
-              : 'Server error (HTTP ' + status + ')';
+        return apiMsg('api_err_http', 'خطای سرور', 'Server error', 'Sunucu hatası') + ' (HTTP ' + status + ')';
     }
-    return lang === 'tr'
-        ? 'Sunucu hatası'
-        : lang === 'fa'
-          ? 'خطا در ارتباط با سرور'
-          : 'Server error';
+    return apiMsg('api_err_http', 'خطا در ارتباط با سرور', 'Server error', 'Sunucu hatası');
 }
 
     window.CRM = window.CRM || {};

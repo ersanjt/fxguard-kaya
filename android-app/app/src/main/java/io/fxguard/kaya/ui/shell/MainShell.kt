@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -69,30 +70,36 @@ fun MainShell(
     onNotify: () -> Unit,
     onSearch: () -> Unit,
     onProfile: () -> Unit,
+    immersive: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().background(KayaColors.Bg)) {
-        MobileHeader(
-            title = title,
-            notifyBadge = notifyBadge,
-            avatarUrl = avatarUrl,
-            avatarLetter = avatarLetter,
-            menuLabel = L10n.t(lang, "menu"),
-            notifyLabel = L10n.t(lang, "notify"),
-            searchLabel = L10n.t(lang, "search"),
-            onMenu = onMenu,
-            onNotify = onNotify,
-            onSearch = onSearch,
-            onProfile = onProfile,
-        )
+        if (!immersive) {
+            MobileHeader(
+                title = title,
+                notifyBadge = notifyBadge,
+                avatarUrl = avatarUrl,
+                avatarLetter = avatarLetter,
+                menuLabel = L10n.t(lang, "menu"),
+                notifyLabel = L10n.t(lang, "notify"),
+                searchLabel = L10n.t(lang, "search"),
+                profileLabel = L10n.t(lang, "profile"),
+                onMenu = onMenu,
+                onNotify = onNotify,
+                onSearch = onSearch,
+                onProfile = onProfile,
+            )
+        }
         Box(Modifier.weight(1f).fillMaxWidth()) { content() }
-        MobileTabBar(
-            lang = lang,
-            tab = tab,
-            onTab = onTab,
-            convBadge = convBadge,
-            annBadge = annBadge,
-        )
+        if (!immersive) {
+            MobileTabBar(
+                lang = lang,
+                tab = tab,
+                onTab = onTab,
+                convBadge = convBadge,
+                annBadge = annBadge,
+            )
+        }
     }
 }
 
@@ -105,6 +112,7 @@ private fun MobileHeader(
     menuLabel: String,
     notifyLabel: String,
     searchLabel: String,
+    profileLabel: String,
     onMenu: () -> Unit,
     onNotify: () -> Unit,
     onSearch: () -> Unit,
@@ -113,7 +121,7 @@ private fun MobileHeader(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xD9161F38))
+            .background(KayaColors.Chrome)
             .statusBarsPadding()
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -151,19 +159,19 @@ private fun MobileHeader(
         IconButton(onClick = onSearch) {
             Icon(Icons.Outlined.Search, contentDescription = searchLabel, tint = KayaColors.Text2)
         }
-        Box(
-            Modifier
-                .padding(end = 6.dp)
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(KayaColors.AccentSoft)
-                .clickable(onClick = onProfile),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (!avatarUrl.isNullOrBlank()) {
-                AsyncImage(avatarUrl, contentDescription = title, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            } else {
-                AvatarCircle(avatarLetter, Modifier.fillMaxSize())
+        IconButton(onClick = onProfile) {
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(KayaColors.AccentSoft),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!avatarUrl.isNullOrBlank()) {
+                    AsyncImage(avatarUrl, contentDescription = profileLabel, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+                } else {
+                    AvatarCircle(avatarLetter, Modifier.fillMaxSize())
+                }
             }
         }
     }
@@ -187,7 +195,7 @@ private fun MobileTabBar(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xEB0F172A))
+            .background(KayaColors.ChromeTab)
             .navigationBarsPadding()
             .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceAround,
@@ -198,6 +206,7 @@ private fun MobileTabBar(
             Column(
                 Modifier
                     .weight(1f)
+                    .heightIn(min = 44.dp)
                     .clickable { onTab(item.tab) }
                     .padding(vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

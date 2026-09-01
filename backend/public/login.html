@@ -10,10 +10,10 @@
     <meta name="theme-color" content="#080d1a">
     <title>ورود | KAYA</title>
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=235ec3475fa2">
-    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=235ec3475fa2">
+    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=02e8107b5ec2">
+    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=02e8107b5ec2">
     <meta name="description" content="ورود به پورتال کارکنان KAYA">
-    <meta name="crm-build" content="235ec3475fa2">
+    <meta name="crm-build" content="02e8107b5ec2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap"
@@ -21,7 +21,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=235ec3475fa2">
+    <link rel="stylesheet" href="/css/login.css?v=02e8107b5ec2">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -70,16 +70,16 @@
 
         <!-- Header -->
         <header class="lp-header">
-            <div class="lp-logo-wrap has-img" id="lpLogoWrap" aria-hidden="true">
+            <div class="lp-logo-wrap has-img" id="lpLogoWrap">
                 <img src="/brand/kaya-logo.png" alt="KAYA" width="112" height="112" decoding="async">
             </div>
-            <h1 class="lp-brand" id="lpBrandName" hidden>KAYA</h1>
+            <h1 class="lp-brand lp-sr-only" id="lpBrandName">KAYA</h1>
             <p class="lp-brand-sub" id="lpBrandSub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
         </header>
 
         <!-- Language switcher — NO onclick, handled by JS -->
         <div class="lp-lang-wrap" id="lpLangWrap">
-            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان">
+            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان" data-i18n-aria-label="lang_label">
                 <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
                 <button type="button" data-lang="en" aria-pressed="false">English</button>
                 <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
@@ -90,6 +90,7 @@
         <section class="lp-step active" id="stepLogin" aria-label="ورود">
             <h2 class="lp-step-title" data-i18n="login_title">پورتال کارکنان</h2>
 
+            <form id="lpLoginForm" novalidate>
             <div class="lp-field">
                 <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
                 <input type="text" id="lpEmail" class="lp-input"
@@ -111,7 +112,7 @@
                 </div>
             </div>
 
-            <button type="button" id="btnLogin" class="lp-btn">
+            <button type="submit" id="btnLogin" class="lp-btn">
                 <div class="lp-spinner" aria-hidden="true"></div>
                 <span class="lp-btn-text" data-i18n="login_btn">ورود به سیستم</span>
                 <svg class="lp-btn-icon" aria-hidden="true" style="margin-inline-start:4px;opacity:.7"><use href="#lp-arrow"/></svg>
@@ -122,6 +123,7 @@
             </div>
 
             <div class="lp-msg error" id="loginMsg" role="alert" aria-live="polite"></div>
+            </form>
         </section>
 
         <!-- Step 2: TOTP -->
@@ -215,12 +217,12 @@
         <div class="lp-divider" aria-hidden="true"></div>
         <p class="lp-support">
             <span data-i18n="cant_signin">نمی‌توانید وارد شوید؟</span>
-            <a href="#" id="lpSupportLink" data-i18n="contact_support"> با پشتیبانی تماس بگیرید</a>
+            <a href="/contact" id="lpSupportLink" data-i18n="contact_support"> با پشتیبانی تماس بگیرید</a>
         </p>
 
     </div>
 </main>
 
-<script src="/js/login.js?v=235ec3475fa2"></script>
+<script src="/js/login.js?v=02e8107b5ec2"></script>
 </body>
 </html>

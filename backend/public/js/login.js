@@ -69,6 +69,7 @@
             reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'ترکی',
+            lang_label: 'انتخاب زبان',
         },
         en: {
             login_title:          'Staff Portal',
@@ -126,6 +127,7 @@
             reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkish',
+            lang_label: 'Language',
         },
         tr: {
             login_title:          'Personel Portalı',
@@ -183,6 +185,7 @@
             reset_new_ph:         'En az 8 karakter, bir harf ve bir rakam',
             reset_confirm_ph:     'Şifre tekrar',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
+            lang_label: 'Dil seçimi',
         }
     };
 
@@ -240,6 +243,10 @@
         document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
             var v = t(el.getAttribute('data-i18n-ph'));
             if (v) el.placeholder = v;
+        });
+        document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
+            var v = t(el.getAttribute('data-i18n-aria-label'));
+            if (v) el.setAttribute('aria-label', v);
         });
         renderDemoBox();
     }
@@ -595,11 +602,11 @@
         logoWrap.classList.add('has-img');
         logoWrap.innerHTML = '';
         logoWrap.appendChild(img);
-        // لوگوی کامل شامل نام برند است — عنوان متنی تکراری را مخفی کن
         var nameEl = document.getElementById('lpBrandName');
         if (nameEl) {
             if (siteName) nameEl.textContent = siteName;
-            nameEl.hidden = true;
+            nameEl.classList.add('lp-sr-only');
+            nameEl.removeAttribute('hidden');
         }
     }
     function loadBranding() {
@@ -732,9 +739,14 @@
             });
         });
 
-        /* Login button */
-        var btnLogin = document.getElementById('btnLogin');
-        if (btnLogin) btnLogin.addEventListener('click', doLogin);
+        /* Login form (native submit + autofill) */
+        var loginForm = document.getElementById('lpLoginForm');
+        if (loginForm) {
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                doLogin();
+            });
+        }
 
         /* Forgot password link */
         var forgotLink = document.getElementById('lpForgotLink');

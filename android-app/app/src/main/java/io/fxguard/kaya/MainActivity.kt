@@ -395,9 +395,15 @@ class StaffViewModel(
         }
     }
 
-    fun persistServer() {
-        session.baseUrl = serverUrl.trim().trimEnd('/')
-        serverUrl = session.baseUrl
+    fun persistServer(): Boolean {
+        val normalized = SessionStore.normalizeBaseUrl(serverUrl)
+        if (normalized == null) {
+            setAuthI18n("server_https")
+            return false
+        }
+        session.baseUrl = normalized
+        serverUrl = normalized
+        return true
     }
 
     private suspend fun bootstrap() {
@@ -426,7 +432,7 @@ class StaffViewModel(
             setAuthI18n("required")
             return
         }
-        persistServer()
+        if (!persistServer()) return
         viewModelScope.launch {
             authLoading = true
             setAuthRaw(null)
@@ -486,7 +492,7 @@ class StaffViewModel(
             setAuthI18n("required")
             return
         }
-        persistServer()
+        if (!persistServer()) return
         viewModelScope.launch {
             authLoading = true
             setAuthRaw(null)
@@ -1367,6 +1373,7 @@ private fun StaffApp(vm: StaffViewModel, launchIntent: Intent?, onLaunchConsumed
                     onNotify = { vm.selectTab(StaffTab.Announcements) },
                     onSearch = { vm.selectTab(StaffTab.Inbox) },
                     onProfile = { vm.openMore(MoreDest.Profile) },
+                    immersive = vm.openChat != null,
                 ) {
                     val chat = vm.openChat
                     val profile = vm.customerProfile
@@ -1388,7 +1395,6 @@ private fun StaffApp(vm: StaffViewModel, launchIntent: Intent?, onLaunchConsumed
                             onSendVoice = vm::sendVoice,
                             onSendGif = vm::sendGif,
                             onStartCall = vm::startCall,
-                            onSettings = { vm.showChatNotice(L10n.t(vm.lang, "chat_settings_soon")) },
                             onNotice = vm::showChatNotice,
                             onRetry = vm::reloadOpenChat,
                             onBack = vm::closeChat,
@@ -1554,7 +1560,7 @@ private fun StaffApp(vm: StaffViewModel, launchIntent: Intent?, onLaunchConsumed
                                 avatarUrl = vm.mediaUrl(vm.user?.avatar),
                                 serverUrl = vm.serverUrl,
                                 onServer = { vm.serverUrl = it },
-                                onSaveServer = vm::persistServer,
+                                onSaveServer = { vm.persistServer(); Unit },
                                 onLang = vm::changeLang,
                                 onLogout = vm::logout,
                                 pushStatus = vm.pushStatus(context),

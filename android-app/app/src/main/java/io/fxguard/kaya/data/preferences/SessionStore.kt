@@ -37,9 +37,13 @@ class SessionStore(context: Context) {
     }
 
     var baseUrl: String
-        get() = (prefs.getString(KEY_URL, DEFAULT_URL) ?: DEFAULT_URL).trimEnd('/')
+        get() {
+            val raw = (prefs.getString(KEY_URL, DEFAULT_URL) ?: DEFAULT_URL).trimEnd('/')
+            return normalizeBaseUrl(raw) ?: DEFAULT_URL
+        }
         set(value) {
-            prefs.edit().putString(KEY_URL, value.trim().trimEnd('/')).apply()
+            val normalized = normalizeBaseUrl(value) ?: DEFAULT_URL
+            prefs.edit().putString(KEY_URL, normalized).apply()
         }
 
     var language: String
@@ -91,5 +95,29 @@ class SessionStore(context: Context) {
         private const val KEY_LANG = "lang"
         private const val KEY_TOKEN = "jwt"
         private const val KEY_USER = "user"
+
+        fun normalizeBaseUrl(raw: String): String? {
+            var s = raw.trim().trimEnd('/')
+            if (s.isEmpty()) return null
+            val lower = s.lowercase()
+            if (lower.startsWith("javascript:") || lower.startsWith("data:") || lower.startsWith("file:")) {
+                return null
+            }
+            if (!s.contains("://")) s = "https://$s"
+            val uri = try {
+                java.net.URI(s)
+            } catch (_: Exception) {
+                return null
+            }
+            val scheme = uri.scheme?.lowercase() ?: return null
+            val host = uri.host?.lowercase() ?: return null
+            if (host.isBlank()) return null
+            val loopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "10.0.2.2"
+            return when (scheme) {
+                "http" -> if (loopback) s else null
+                "https" -> s
+                else -> null
+            }
+        }
     }
 }

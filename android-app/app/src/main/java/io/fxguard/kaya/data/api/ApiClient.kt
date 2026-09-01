@@ -632,7 +632,7 @@ class ApiClient(private val session: SessionStore) {
         val dept = loc?.optObj("department")
         return CustomerRow(
             id = o.optString("id"),
-            name = o.optString("name").ifBlank { "مشتری" },
+            name = o.optString("name").ifBlank { "" },
             phone = o.optStr("phone"),
             email = o.optStr("email"),
             status = o.optString("status").ifBlank { "active" },
@@ -826,7 +826,7 @@ class ApiClient(private val session: SessionStore) {
         val groupName = meta?.optStr("groupName") ?: meta?.optStr("name")
         val displayName = when {
             isGroup -> groupName ?: c?.optStr("name") ?: "گروه"
-            else -> c?.optStr("name")?.ifBlank { null } ?: "مشتری"
+            else -> c?.optStr("name")?.ifBlank { null } ?: ""
         }
         return ConversationRow(
             id = o.optString("id"),

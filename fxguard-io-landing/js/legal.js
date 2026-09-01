@@ -8,7 +8,7 @@
         en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
         fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
         tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' },
-        ar: { skip: 'تخطّ إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'اتصل', home: 'الرئيسية' },
+        ar: { skip: 'تخطّوا إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'تواصلوا معنا', home: 'الرئيسية' },
         ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', home: 'Главная' }
     };
 

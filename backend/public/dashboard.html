@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="235ec3475fa2">
+    <meta name="crm-build" content="02e8107b5ec2">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=235ec3475fa2">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=235ec3475fa2" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=02e8107b5ec2">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=02e8107b5ec2" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -63,16 +63,16 @@
         <header class="header" role="banner">
             <!-- موبایل: هدر سبک اپلیکیشن -->
             <div class="header-mobile-bar">
-                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" data-i18n-aria-label="header_menu" aria-expanded="false" aria-controls="sidebar" title="منو" data-i18n-title="header_menu" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
                     <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها" onclick="toggleAnnouncementMarquee()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
-                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" data-i18n-aria-label="nav_announcements_and_tickets" data-i18n-title="nav_announcements_and_tickets" title="اعلان‌ها و تیکت‌ها">
                         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         <span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span>
                     </button>
                     <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو" onclick="openHeaderSearchPopup()"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
+                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" data-i18n-aria-label="header_profile"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
             </div>
             <!-- دسکتاپ: هدر حرفه‌ای -->
@@ -103,7 +103,7 @@
                     <div class="header-status-wrap">
                         <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
                         <div class="header-notify-wrap" id="headerNotifyWrap">
-                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" data-i18n-aria-label="nav_announcements_and_tickets" data-i18n-title="nav_announcements_and_tickets" title="اعلان‌ها و تیکت‌ها">
                                 <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 <span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span>
                             </button>
@@ -123,7 +123,7 @@
                         </div>
                     </div>
                     <div class="user-dropdown-wrap" id="userDropdownWrap">
-                        <button type="button" class="user-dropdown-trigger" id="userDropdownTrigger" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو">
+                        <button type="button" class="user-dropdown-trigger" id="userDropdownTrigger" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" data-i18n-aria-label="header_profile">
                             <span class="user-avatar" id="userAvatar" aria-hidden="true">?</span>
                             <span id="userEmail" class="user-dropdown-name"></span>
                             <svg class="user-dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -144,7 +144,7 @@
                 <!-- هدر پنل -->
                 <div class="notify-panel-header">
                     <span class="notify-panel-title" data-i18n="nav_announcements_and_tickets">اعلان‌ها</span>
-                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن">
+                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن" data-i18n-aria-label="btn_close">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -406,11 +406,12 @@
                                 <span class="chat-empty-icon" aria-hidden="true">💬</span>
                                 <p class="chat-empty-title" data-i18n="chat_empty_title">یک گفتگو را از لیست انتخاب کنید</p>
                                 <p class="chat-empty-hint" data-i18n="chat_empty_hint">برای مشاهدهٔ پیام‌ها و پاسخ، روی یک مکالمه کلیک کنید.</p>
+                                <button type="button" class="btn-primary chat-empty-open-btn" id="chatEmptyOpenLatestBtn" data-i18n="chat_empty_open_latest">باز کردن آخرین مکالمه</button>
                             </div>
                         </div>
                         <div class="chat-header-wrap">
                             <div class="chat-header-main">
-                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-aria-label="back_to_list" data-i18n-title="back_to_list" title="بازگشت به لیست"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                                 <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
                                 <div class="chat-header-text-col">
                                     <div class="chat-header" id="chatHeader"></div>
@@ -494,12 +495,12 @@
                                     <div id="chatTemplateDropdown" class="chat-template-dropdown wa-chat-template-dropdown" hidden role="listbox" aria-labelledby="waAttachTemplateBtn"></div>
                                 </div>
                                 <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
-                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
-                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" enterkeyhint="send" inputmode="text">
+                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" data-i18n-aria-label="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
+                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" data-i18n-aria-label="msg_input_aria" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" enterkeyhint="send" inputmode="text">
                                 </div>
                                 <div class="wa-compose-primary-actions">
-                                    <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
-                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-trailing" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                    <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" data-i18n-title="btn_send" data-i18n-aria-label="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-trailing" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" data-i18n-title="voice_record" data-i18n-aria-label="voice_record" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
                                 </div>
                             </div>
                             <div id="waEmojiPickerMount" class="wa-emoji-picker-mount" hidden></div>
@@ -2936,13 +2937,13 @@
                         <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="serviceModalId" value="">
-                            <label data-i18n="service_name">نام سرویس</label>
+                            <label for="serviceModalName" data-i18n="service_name">نام سرویس</label>
                             <input type="text" id="serviceModalName" placeholder="مثال: خرید دلار نقد" required>
-                            <label data-i18n="service_code">کد (اختیاری)</label>
+                            <label for="serviceModalCode" data-i18n="service_code">کد (اختیاری)</label>
                             <input type="text" id="serviceModalCode" placeholder="مثال: buy-usd">
-                            <label data-i18n="service_category">دسته‌بندی (اختیاری)</label>
+                            <label for="serviceModalCategory" data-i18n="service_category">دسته‌بندی (اختیاری)</label>
                             <input type="text" id="serviceModalCategory" placeholder="مثال: نقد، حواله">
-                            <label data-i18n="service_description">توضیح (اختیاری)</label>
+                            <label for="serviceModalDescription" data-i18n="service_description">توضیح (اختیاری)</label>
                             <textarea id="serviceModalDescription" rows="2" placeholder="توضیح کوتاه..."></textarea>
                             <label><input type="checkbox" id="serviceModalActive" checked> <span data-i18n="service_active">فعال</span></label>
                         </div>
@@ -2957,15 +2958,15 @@
                         <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="cashBoxModalId" value="">
-                            <label data-i18n="cashbox_name">نام صندوق</label>
+                            <label for="cashBoxModalName" data-i18n="cashbox_name">نام صندوق</label>
                             <input type="text" id="cashBoxModalName" placeholder="مثال: صندوق ۱" required>
-                            <label data-i18n="branch">شعبه</label>
+                            <label for="cashBoxModalBranch" data-i18n="branch">شعبه</label>
                             <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
-                            <label data-i18n="currency">واحد پول</label>
+                            <label for="cashBoxModalCurrency" data-i18n="currency">واحد پول</label>
                             <select id="cashBoxModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
-                            <label data-i18n="balance">موجودی اولیه</label>
+                            <label for="cashBoxModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
-                            <label data-i18n="description">توضیح</label>
+                            <label for="cashBoxModalDescription" data-i18n="description">توضیح</label>
                             <textarea id="cashBoxModalDescription" rows="2"></textarea>
                             <label><input type="checkbox" id="cashBoxModalActive" checked> <span data-i18n="active">فعال</span></label>
                         </div>
@@ -2980,21 +2981,21 @@
                         <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()" data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
                         <div class="modal-body">
                             <input type="hidden" id="bankAccountModalId" value="">
-                            <label data-i18n="bankaccount_name">نام حساب</label>
+                            <label for="bankAccountModalName" data-i18n="bankaccount_name">نام حساب</label>
                             <input type="text" id="bankAccountModalName" placeholder="مثال: حساب تجاری بانک ملی" required>
-                            <label data-i18n="bank_name">نام بانک</label>
+                            <label for="bankAccountModalBankName" data-i18n="bank_name">نام بانک</label>
                             <input type="text" id="bankAccountModalBankName" placeholder="مثال: بانک ملی">
-                            <label data-i18n="account_number">شماره حساب</label>
+                            <label for="bankAccountModalAccountNumber" data-i18n="account_number">شماره حساب</label>
                             <input type="text" id="bankAccountModalAccountNumber" placeholder="شماره حساب">
-                            <label data-i18n="iban">شماره شبا</label>
+                            <label for="bankAccountModalIban" data-i18n="iban">شماره شبا</label>
                             <input type="text" id="bankAccountModalIban" placeholder="IR..." dir="ltr">
-                            <label data-i18n="branch">شعبه</label>
+                            <label for="bankAccountModalBranch" data-i18n="branch">شعبه</label>
                             <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
-                            <label data-i18n="currency">واحد پول</label>
+                            <label for="bankAccountModalCurrency" data-i18n="currency">واحد پول</label>
                             <select id="bankAccountModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
-                            <label data-i18n="balance">موجودی اولیه</label>
+                            <label for="bankAccountModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
-                            <label data-i18n="description">توضیح</label>
+                            <label for="bankAccountModalDescription" data-i18n="description">توضیح</label>
                             <textarea id="bankAccountModalDescription" rows="2"></textarea>
                             <label><input type="checkbox" id="bankAccountModalActive" checked> <span data-i18n="active">فعال</span></label>
                         </div>
@@ -3058,20 +3059,20 @@
                             </div>
                             <div class="tx-modal-section tx-modal-section-dynamic">
                                 <div id="txModalFromBoxWrap" class="tx-field-wrap tx-modal-field">
-                                    <label>از صندوق</label>
-                                    <select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select>
+                                    <label for="txModalFromCashBox" data-i18n="tx_from_cashbox">از صندوق</label>
+                                    <select id="txModalFromCashBox"><option value="" data-i18n="tx_select_cashbox">انتخاب صندوق</option></select>
                                 </div>
                                 <div id="txModalToBoxWrap" class="tx-field-wrap tx-modal-field">
-                                    <label>به صندوق</label>
-                                    <select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select>
+                                    <label for="txModalToCashBox" data-i18n="tx_to_cashbox">به صندوق</label>
+                                    <select id="txModalToCashBox"><option value="" data-i18n="tx_select_cashbox">انتخاب صندوق</option></select>
                                 </div>
                                 <div id="txModalFromBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
-                                    <label>از حساب بانکی</label>
-                                    <select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select>
+                                    <label for="txModalFromBankAccount" data-i18n="tx_from_bank">از حساب بانکی</label>
+                                    <select id="txModalFromBankAccount"><option value="" data-i18n="tx_select_bank">انتخاب حساب</option></select>
                                 </div>
                                 <div id="txModalToBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
-                                    <label>به حساب بانکی</label>
-                                    <select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select>
+                                    <label for="txModalToBankAccount" data-i18n="tx_to_bank">به حساب بانکی</label>
+                                    <select id="txModalToBankAccount"><option value="" data-i18n="tx_select_bank">انتخاب حساب</option></select>
                                 </div>
                             </div>
                             <div class="tx-modal-section">
@@ -3079,7 +3080,7 @@
                                 <div class="tx-modal-grid">
                                     <div class="tx-modal-field tx-modal-field-full">
                                         <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
-                                        <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
+                                        <select id="txModalCustomer"><option value="" data-i18n="tx_no_customer">بدون مشتری</option></select>
                                     </div>
                                     <div class="tx-modal-field tx-modal-field-full">
                                         <label data-i18n="description">توضیحات</label>
@@ -3314,36 +3315,36 @@
                                 </div>
                             </section>
                             <section class="customer-modal-section">
-                                <h4 class="customer-modal-section-title">اطلاعات شخصی</h4>
+                                <h4 class="customer-modal-section-title" data-i18n="customer_section_personal">اطلاعات شخصی</h4>
                                 <div class="customer-modal-grid">
                                     <div class="customer-modal-field">
-                                        <label for="customerModalBirthDate">تاریخ تولد</label>
+                                        <label for="customerModalBirthDate" data-i18n="customer_birth_date">تاریخ تولد</label>
                                         <input type="date" id="customerModalBirthDate" placeholder="YYYY-MM-DD">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalNationalId">کد ملی / شناسه</label>
-                                        <input type="text" id="customerModalNationalId" placeholder="کد ملی یا شناسه">
+                                        <label for="customerModalNationalId" data-i18n="customer_national_id">کد ملی / شناسه</label>
+                                        <input type="text" id="customerModalNationalId" data-i18n-ph="customer_national_id_ph" placeholder="کد ملی یا شناسه">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalNationality">ملیت</label>
-                                        <input type="text" id="customerModalNationality" placeholder="مثال: ایرانی">
+                                        <label for="customerModalNationality" data-i18n="customer_nationality">ملیت</label>
+                                        <input type="text" id="customerModalNationality" data-i18n-ph="customer_nationality_ph" placeholder="مثال: ایرانی">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalGender">جنسیت</label>
+                                        <label for="customerModalGender" data-i18n="customer_gender">جنسیت</label>
                                         <select id="customerModalGender">
-                                            <option value="">— انتخاب —</option>
-                                            <option value="male">مرد</option>
-                                            <option value="female">زن</option>
-                                            <option value="other">سایر</option>
+                                            <option value="" data-i18n="customer_gender_select">— انتخاب —</option>
+                                            <option value="male" data-i18n="customer_gender_male">مرد</option>
+                                            <option value="female" data-i18n="customer_gender_female">زن</option>
+                                            <option value="other" data-i18n="customer_gender_other">سایر</option>
                                         </select>
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalOccupation">شغل</label>
-                                        <input type="text" id="customerModalOccupation" placeholder="شغل مشتری">
+                                        <label for="customerModalOccupation" data-i18n="customer_occupation">شغل</label>
+                                        <input type="text" id="customerModalOccupation" data-i18n-ph="customer_occupation_ph" placeholder="شغل مشتری">
                                     </div>
                                     <div class="customer-modal-field">
-                                        <label for="customerModalCompanyName">نام شرکت</label>
-                                        <input type="text" id="customerModalCompanyName" placeholder="نام شرکت یا سازمان">
+                                        <label for="customerModalCompanyName" data-i18n="customer_company_name">نام شرکت</label>
+                                        <input type="text" id="customerModalCompanyName" data-i18n-ph="customer_company_ph" placeholder="نام شرکت یا سازمان">
                                     </div>
                                 </div>
                             </section>
@@ -4025,10 +4026,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=02e8107b5ec2" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4055,10 +4056,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=235ec3475fa2" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=235ec3475fa2" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=02e8107b5ec2" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=02e8107b5ec2" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

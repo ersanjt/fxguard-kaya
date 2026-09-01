@@ -6,7 +6,7 @@
             --border: rgba(255, 255, 255, 0.10);
             --text-primary: #f0f4fc;
             --text-secondary: #8b9dc3;
-            --text-muted: #6b7fa3;
+            --text-muted: #8b9dc3;
             --accent: #10b981;
             --accent-hover: #059669;
             --accent-soft: rgba(16, 185, 129, 0.15);
@@ -870,15 +870,16 @@
         @keyframes tickerMarqueeRtl { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         @media (max-width: 768px) {
             .announcement-marquee { width: 100%; max-width: 100%; overflow: hidden; box-sizing: border-box; }
-            .announcement-marquee-bar { flex-wrap: wrap; padding: 10px 0; gap: 8px 10px; align-items: center; min-width: 0; }
-            .announcement-marquee-label { font-size: 0.85rem; flex-shrink: 0; align-items: center; order: 1; }
-            .announcement-marquee-more { padding: 8px 10px; font-size: 0.8rem; flex-shrink: 0; min-height: 44px; min-width: 44px; order: 2; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+            .announcement-marquee-bar { flex-wrap: nowrap; padding: 4px 8px; gap: 6px; align-items: center; min-height: 48px; min-width: 0; }
+            .announcement-marquee-label { font-size: 0.85rem; flex-shrink: 0; align-items: center; order: 1; gap: 4px; }
+            .announcement-marquee-label span[data-i18n="ann_marquee_label"] { display: none; }
+            .announcement-marquee-more { padding: 0; font-size: 0.8rem; flex-shrink: 0; min-height: 44px; min-width: 44px; width: 44px; order: 3; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
             .announcement-marquee-more span:first-child { display: none; }
             .announcement-marquee-more svg { width: 20px; height: 20px; }
-            .announcement-marquee-close { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-shrink: 0; order: 3; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-            .announcement-marquee-track { flex: 1 1 100%; min-width: 0; order: 4; overflow: hidden; width: 100%; }
-            .announcement-marquee-item { padding: 8px 12px; gap: 8px; }
-            .announcement-marquee-item .ann-marquee-text { max-width: min(200px, 45vw); }
+            .announcement-marquee-close { width: 44px; height: 44px; min-width: 44px; min-height: 44px; flex-shrink: 0; order: 4; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+            .announcement-marquee-track { flex: 1 1 auto; min-width: 0; order: 2; overflow: hidden; width: auto; }
+            .announcement-marquee-item { padding: 6px 10px; gap: 6px; }
+            .announcement-marquee-item .ann-marquee-text { max-width: min(220px, 52vw); }
         }
         .content { flex: 1; display: flex; flex-direction: column; overflow: auto; padding: clamp(12px, 2vw, 24px); max-width: 100%; min-width: 0; min-height: 0; -webkit-overflow-scrolling: touch; }
         .content:has(#pageConversations.show),
@@ -2257,9 +2258,10 @@
         .conv-quick-tabs-toggle-text { line-height: 1.35; white-space: nowrap; }
         .conv-quick-tabs {
             display: flex; gap: 8px; margin-bottom: 0; flex-wrap: nowrap;
-            overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
-            padding-bottom: 4px;
+            overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+            padding-bottom: 2px;
         }
+        .conv-quick-tabs::-webkit-scrollbar { display: none; height: 0; }
         @media (min-width: 900px) { .conv-quick-tabs { flex-wrap: wrap; overflow-x: visible; } }
         .conv-tab { flex: 0 0 auto; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); font-size: 0.88rem; cursor: pointer; transition: all 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; white-space: nowrap; }
         .conv-tab:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border); }
@@ -2393,6 +2395,9 @@
         .conv-empty { padding: 40px 24px; text-align: center; }
         .conv-empty .btn-primary { margin-top: 16px; }
         .conv-empty .empty-icon { font-size: 2.5rem; }
+        .conv-empty-thread { padding: 48px 24px; text-align: center; }
+        .conv-empty-thread p { margin: 0; color: var(--text-secondary); }
+        .conv-empty-thread .empty-hint { margin-top: 8px; font-size: 0.875rem; color: var(--text-muted); }
         /* ========== صفحه تیکت‌ها — طراحی بهبود یافته ========== */
         .ticket-page { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
         .ticket-page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
@@ -2584,10 +2589,15 @@
             line-height: 1.3;
         }
         .chat-empty-hint {
-            margin: 0;
+            margin: 0 0 18px;
             font-size: 0.9rem;
             line-height: 1.5;
             color: var(--text-muted);
+        }
+        .chat-empty-open-btn {
+            min-height: 44px;
+            padding: 0 18px;
+            font-weight: 600;
         }
         @media (min-width: 901px) {
             #pageConversations .conv-layout .chat-area {
@@ -4890,17 +4900,27 @@
             .header { padding: 0; gap: 0; }
             .main { flex-direction: column; }
             /* RTL (فارسی): منو از راست */
-            [dir="rtl"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; left: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-left: 1px solid var(--border); }
+            [dir="rtl"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; left: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-left: 1px solid var(--border); }
             [dir="rtl"] .sidebar.sidebar-open { transform: translateX(0); box-shadow: -8px 0 32px rgba(0,0,0,0.4); }
             /* LTR (انگلیسی/ترکی): منو از چپ */
-            [dir="ltr"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); left: 0; right: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(-100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-right: 1px solid var(--border); }
+            [dir="ltr"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); left: 0; right: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(-100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-right: 1px solid var(--border); }
             [dir="ltr"] .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
-            .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; }
+            .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; }
             .sidebar.sidebar-open { transform: translateX(0); }
             .content { padding: 16px; padding-inline: max(16px, env(safe-area-inset-inline)); }
             .mobile-tab-bar { display: flex !important; }
             .bottom-bar.has-mobile-tab .app-footer { display: none !important; }
             .main-wrap { padding-bottom: max(82px, calc(72px + env(safe-area-inset-bottom))); }
+            /* چت تمام‌صفحه: نوار تب و تیکر پایین را پنهان کن تا composer زیر کیبورد نرود */
+            body:has(.conv-layout.chat-open) #bottomBar {
+                display: none !important;
+            }
+            body:has(.conv-layout.chat-open) .announcement-marquee {
+                display: none !important;
+            }
+            body:has(.conv-layout.chat-open) .main-wrap {
+                padding-bottom: 0 !important;
+            }
             .conv-layout { flex-direction: column; min-height: calc(100vh - 280px); min-height: calc(100dvh - 280px); gap: 0; }
             .conv-list-wrap { flex: 1 1 auto; width: 100%; max-width: 100%; max-height: none; min-height: 300px; }
             .conv-list-pane { padding: 8px 12px; overscroll-behavior: contain; }
@@ -4932,13 +4952,13 @@
             .header { padding: 0; gap: 0; }
             .main { flex-direction: column; }
             /* RTL (فارسی): منو از راست باز می‌شود */
-            [dir="rtl"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; left: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-left: 1px solid var(--border); }
+            [dir="rtl"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; left: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-left: 1px solid var(--border); }
             [dir="rtl"] .sidebar.sidebar-open { transform: translateX(0); box-shadow: -8px 0 32px rgba(0,0,0,0.4); }
             /* LTR (انگلیسی/ترکی): منو از چپ باز می‌شود */
-            [dir="ltr"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); left: 0; right: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(-100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-right: 1px solid var(--border); }
+            [dir="ltr"] .sidebar { position: fixed; top: var(--mobile-header-height, 56px); left: 0; right: auto; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(-100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; border-right: 1px solid var(--border); }
             [dir="ltr"] .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
             /* fallback برای زمانی که dir تنظیم نشده */
-            .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(env(safe-area-inset-bottom), 16px); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; }
+            .sidebar { position: fixed; top: var(--mobile-header-height, 56px); right: 0; bottom: 0; width: min(320px, 85vw); max-width: 320px; min-width: 0; z-index: 9999; transform: translateX(100%); transition: transform 0.3s ease, box-shadow 0.3s; flex-direction: column; padding: 16px 0 max(96px, calc(80px + env(safe-area-inset-bottom))); overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; box-shadow: none; }
             .sidebar.sidebar-open { transform: translateX(0); }
             .sidebar-nav-header { padding: 0 16px 12px; margin-bottom: 8px; }
             .sidebar .nav-section { padding: 0 16px 8px; margin-bottom: 8px; }
@@ -5039,7 +5059,8 @@
             #convStats { display: none !important; }
             /* تب‌های سریع: اسکرول افقی pill-style */
             .conv-filters-panel { margin-bottom: 10px; padding-inline: 0; border-radius: 0; border-inline: none; }
-            .conv-controls-header { padding: 10px max(12px, env(safe-area-inset-inline)); }
+            .conv-controls-header { padding: 6px max(12px, env(safe-area-inset-inline)); }
+            .conv-controls-header-title h2 { display: none; }
             .conv-controls-header-actions .conv-new-btn { display: none; }
             .conv-controls-header .conv-sync-groups-btn .conv-sync-text { display: none; }
             .conv-filters-body { padding: 8px max(10px, env(safe-area-inset-inline)) 10px; gap: 8px; }
@@ -5084,7 +5105,7 @@
             /* لیست مکالمات — یک قانون واحد برای flex و ارتفاع */
             .conv-layout { flex-direction: column; flex: 1; min-height: 0; gap: 0; position: relative; }
             .conv-list-wrap { flex: 1; width: 100%; max-width: 100%; min-height: 0; overflow-x: hidden; display: flex; flex-direction: column; }
-            .conv-list-pane { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 8px; }
+            .conv-list-pane { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 8px calc(88px + env(safe-area-inset-bottom)); }
             /* هدر لیست: مخفی — تکراری است */
             .conv-list-header { display: none !important; }
             .conv-layout .chat-area { display: none; }
@@ -5519,6 +5540,7 @@
             .conv-fab-btn { display: flex; position: absolute; bottom: max(16px, calc(72px + env(safe-area-inset-bottom) + 12px)); inset-inline-end: max(16px, env(safe-area-inset-inline-end)); width: 52px; height: 52px; min-width: 52px; min-height: 52px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 4px 16px rgba(5,150,105,0.45); cursor: pointer; align-items: center; justify-content: center; z-index: 10; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.15s, box-shadow 0.15s; }
             .conv-fab-btn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
             #pageConversations:has(.conv-layout.chat-open) .conv-fab-btn { display: none !important; }
+            #pageConversations:not(.show) .conv-fab-btn { display: none !important; }
         }
         /* ویجت چت داخلی شناور — فارسی: چپ، انگلیسی/ترکی: راست */
         .internal-chat-floating-btn { position: fixed; bottom: max(calc(80px + env(safe-area-inset-bottom)), 90px); right: max(20px, env(safe-area-inset-right)); left: auto; width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 3px 14px rgba(5,150,105,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 998; transition: width 0.2s, height 0.2s, transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -6494,10 +6516,13 @@
             }
             @media (max-width: 1100px) {
                 #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-text {
-                    display: none;
+                    max-width: 7.5em;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
                 }
                 #pageConversations.wa-conversations-theme .conv-sync-groups-btn {
-                    padding: 5px 9px;
+                    padding: 5px 10px;
                 }
             }
         }
@@ -7464,10 +7489,10 @@
                 width: 2px;
             }
             #pageConversations.wa-conversations-theme .chat-voice-action-btn {
-                width: 34px;
-                height: 34px;
-                min-width: 34px;
-                min-height: 34px;
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
                 padding: 0 !important;
             }
             #pageConversations.wa-conversations-theme .chat-send .chat-voice-send-btn.chat-voice-action-btn {
@@ -7486,7 +7511,7 @@
             #pageConversations.wa-conversations-theme .wa-sticker-picker-mount {
                 position: fixed;
                 inset-inline: 0;
-                bottom: max(60px, env(safe-area-inset-bottom));
+                bottom: max(60px, calc(env(safe-area-inset-bottom) + var(--crm-ios-kb, 0px)));
                 z-index: 11000;
                 padding-inline: 8px;
                 flex-basis: auto;
@@ -7522,7 +7547,7 @@
             #pageConversations.wa-conversations-theme .chat-send {
                 padding: 8px 10px;
                 padding-inline: max(8px, env(safe-area-inset-inline));
-                padding-bottom: max(10px, env(safe-area-inset-bottom));
+                padding-bottom: max(10px, calc(env(safe-area-inset-bottom) + var(--crm-ios-kb, 0px)));
             }
             #pageConversations.wa-conversations-theme .msg {
                 max-width: min(92%, 520px);
@@ -7557,15 +7582,15 @@
                 gap: 2px;
             }
             #pageConversations.wa-conversations-theme .wa-chat-call-btn {
-                width: 38px;
-                height: 38px;
-                min-width: 38px;
-                min-height: 38px;
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
             }
             #pageConversations.wa-conversations-theme .chat-detail-toggle {
-                width: 38px;
-                height: 38px;
-                min-width: 38px;
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
             }
             #pageConversations.wa-conversations-theme .chat-voice-recording-bar {
                 flex-wrap: nowrap;
@@ -7583,7 +7608,7 @@
             }
             #pageConversations.wa-conversations-theme .wa-emoji-picker-mount,
             #pageConversations.wa-conversations-theme .wa-sticker-picker-mount {
-                bottom: max(12px, env(safe-area-inset-bottom));
+                bottom: max(12px, calc(env(safe-area-inset-bottom) + var(--crm-ios-kb, 0px)));
                 padding-inline: max(6px, env(safe-area-inset-inline));
             }
             #pageConversations.wa-conversations-theme .wa-picker-shell {
@@ -7601,10 +7626,10 @@
                 font-size: 0.88rem;
             }
             #pageConversations.wa-conversations-theme .wa-chat-call-btn {
-                width: 34px;
-                height: 34px;
-                min-width: 34px;
-                min-height: 34px;
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
             }
             #pageConversations.wa-conversations-theme .wa-chat-call-btn svg {
                 width: 18px;

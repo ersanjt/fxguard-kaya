@@ -3,7 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const VER = '20260901a';
+const VER = '20260901c';
 
 const LANG_NEW = `<div class="lang-dropdown header-lang">
       <button type="button" class="lang-dropdown-toggle" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="aria_lang" aria-label="Language">

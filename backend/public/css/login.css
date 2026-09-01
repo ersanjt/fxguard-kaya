@@ -15,7 +15,7 @@
     --lp-success:   #059669;
     --lp-text:      #f0f4fc;
     --lp-text2:     #8b9dc3;
-    --lp-text3:     #4e6080;
+    --lp-text3:     #8b9dc3;
     --lp-input-bg:  rgba(255,255,255,0.04);
     --lp-input-bdr: rgba(255,255,255,0.1);
     --lp-radius:    16px;
@@ -25,6 +25,18 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.lp-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 
 html {
     height: 100%;
@@ -209,7 +221,7 @@ body {
 }
 
 .lp-lang button {
-    padding: 6px 16px; border: none; border-radius: 50px;
+    min-height: 44px; min-width: 44px; padding: 10px 16px; border: none; border-radius: 50px;
     background: transparent; color: var(--lp-text2);
     font-family: inherit; font-size: 0.8rem; font-weight: 500;
     cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
@@ -416,4 +428,11 @@ body.ltr .lp-step { animation-name: stepIn !important; }
 button:focus-visible, a:focus-visible, input:focus-visible {
     outline: 2px solid var(--lp-accent);
     outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lp-blob, .lp-blob-1, .lp-blob-2, .lp-blob-3 { animation: none !important; }
+    .lp-main { animation: none !important; }
+    .lp-step, .lp-step.active { animation: none !important; }
+    .lp-spinner { animation: none !important; }
 }

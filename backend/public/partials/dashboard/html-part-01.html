@@ -63,16 +63,16 @@
         <header class="header" role="banner">
             <!-- موبایل: هدر سبک اپلیکیشن -->
             <div class="header-mobile-bar">
-                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" data-i18n-aria-label="header_menu" aria-expanded="false" aria-controls="sidebar" title="منو" data-i18n-title="header_menu" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
                     <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها" onclick="toggleAnnouncementMarquee()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
-                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" data-i18n-aria-label="nav_announcements_and_tickets" data-i18n-title="nav_announcements_and_tickets" title="اعلان‌ها و تیکت‌ها">
                         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                         <span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span>
                     </button>
                     <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو" onclick="openHeaderSearchPopup()"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
+                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" data-i18n-aria-label="header_profile"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
             </div>
             <!-- دسکتاپ: هدر حرفه‌ای -->
@@ -103,7 +103,7 @@
                     <div class="header-status-wrap">
                         <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
                         <div class="header-notify-wrap" id="headerNotifyWrap">
-                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" data-i18n-aria-label="nav_announcements_and_tickets" data-i18n-title="nav_announcements_and_tickets" title="اعلان‌ها و تیکت‌ها">
                                 <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 <span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span>
                             </button>
@@ -123,7 +123,7 @@
                         </div>
                     </div>
                     <div class="user-dropdown-wrap" id="userDropdownWrap">
-                        <button type="button" class="user-dropdown-trigger" id="userDropdownTrigger" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو">
+                        <button type="button" class="user-dropdown-trigger" id="userDropdownTrigger" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" data-i18n-aria-label="header_profile">
                             <span class="user-avatar" id="userAvatar" aria-hidden="true">?</span>
                             <span id="userEmail" class="user-dropdown-name"></span>
                             <svg class="user-dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
@@ -144,7 +144,7 @@
                 <!-- هدر پنل -->
                 <div class="notify-panel-header">
                     <span class="notify-panel-title" data-i18n="nav_announcements_and_tickets">اعلان‌ها</span>
-                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن">
+                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن" data-i18n-aria-label="btn_close">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -406,11 +406,12 @@
                                 <span class="chat-empty-icon" aria-hidden="true">💬</span>
                                 <p class="chat-empty-title" data-i18n="chat_empty_title">یک گفتگو را از لیست انتخاب کنید</p>
                                 <p class="chat-empty-hint" data-i18n="chat_empty_hint">برای مشاهدهٔ پیام‌ها و پاسخ، روی یک مکالمه کلیک کنید.</p>
+                                <button type="button" class="btn-primary chat-empty-open-btn" id="chatEmptyOpenLatestBtn" data-i18n="chat_empty_open_latest">باز کردن آخرین مکالمه</button>
                             </div>
                         </div>
                         <div class="chat-header-wrap">
                             <div class="chat-header-main">
-                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-aria-label="back_to_list" data-i18n-title="back_to_list" title="بازگشت به لیست"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                                 <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
                                 <div class="chat-header-text-col">
                                     <div class="chat-header" id="chatHeader"></div>
@@ -494,12 +495,12 @@
                                     <div id="chatTemplateDropdown" class="chat-template-dropdown wa-chat-template-dropdown" hidden role="listbox" aria-labelledby="waAttachTemplateBtn"></div>
                                 </div>
                                 <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
-                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
-                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" enterkeyhint="send" inputmode="text">
+                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" data-i18n-aria-label="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
+                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" data-i18n-aria-label="msg_input_aria" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" enterkeyhint="send" inputmode="text">
                                 </div>
                                 <div class="wa-compose-primary-actions">
-                                    <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
-                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-trailing" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                    <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" data-i18n-title="btn_send" data-i18n-aria-label="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-trailing" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" data-i18n-title="voice_record" data-i18n-aria-label="voice_record" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
                                 </div>
                             </div>
                             <div id="waEmojiPickerMount" class="wa-emoji-picker-mount" hidden></div>

@@ -49,7 +49,31 @@ final class SessionStore: ObservableObject {
 
     init() {
         language = UserDefaults.standard.string(forKey: "kaya.lang") ?? "fa"
-        baseUrl = UserDefaults.standard.string(forKey: "kaya.base") ?? SessionStore.defaultURL
+        let stored = UserDefaults.standard.string(forKey: "kaya.base") ?? SessionStore.defaultURL
+        baseUrl = SessionStore.normalizeBaseUrl(stored) ?? SessionStore.defaultURL
+    }
+
+    /// HTTPS only, except loopback HTTP for local debug.
+    static func normalizeBaseUrl(_ raw: String) -> String? {
+        var s = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        while s.hasSuffix("/") { s.removeLast() }
+        if s.isEmpty { return nil }
+        let lower = s.lowercased()
+        if lower.hasPrefix("javascript:") || lower.hasPrefix("data:") || lower.hasPrefix("file:") {
+            return nil
+        }
+        if !s.contains("://") {
+            s = "https://" + s
+        }
+        guard let url = URL(string: s),
+              let scheme = url.scheme?.lowercased(),
+              let host = url.host?.lowercased(),
+              !host.isEmpty
+        else { return nil }
+        let loopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "10.0.2.2"
+        if scheme == "http" { return loopback ? s : nil }
+        if scheme == "https" { return s }
+        return nil
     }
 
     func saveLogin(token: String, user: StaffUser) {

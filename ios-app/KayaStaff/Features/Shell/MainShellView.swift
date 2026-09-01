@@ -11,8 +11,11 @@ struct MainShellView: View {
     @EnvironmentObject var model: StaffAppModel
 
     var body: some View {
-        VStack(spacing: 0) {
-            mobileHeader
+        let immersive = model.openChat != nil || model.openThread != nil
+        return VStack(spacing: 0) {
+            if !immersive {
+                mobileHeader
+            }
             Group {
                 if model.openChat != nil {
                     ChatView()
@@ -47,7 +50,9 @@ struct MainShellView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            mobileTabBar
+            if !immersive {
+                mobileTabBar
+            }
         }
         .background(KayaColor.bg)
         .onChange(of: model.tab) { _, tab in
@@ -65,7 +70,7 @@ struct MainShellView: View {
                 Image(systemName: "line.3.horizontal")
                     .font(.title3)
                     .foregroundStyle(KayaColor.text)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel(L10n.t(model.lang, "menu"))
             Text(model.headerTitle)
@@ -77,7 +82,7 @@ struct MainShellView: View {
                 ZStack(alignment: .topTrailing) {
                     Image(systemName: "bell")
                         .foregroundStyle(KayaColor.text2)
-                        .frame(width: 40, height: 40)
+                        .frame(width: 44, height: 44)
                     if model.notifyBadge > 0 {
                         Text(model.notifyBadge > 99 ? "99+" : "\(model.notifyBadge)")
                             .font(.system(size: 9, weight: .bold))
@@ -92,7 +97,7 @@ struct MainShellView: View {
             Button { model.selectTab(.inbox) } label: {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(KayaColor.text2)
-                    .frame(width: 40, height: 40)
+                    .frame(width: 44, height: 44)
             }
             .accessibilityLabel(L10n.t(model.lang, "search"))
             Button { model.openMore(.profile) } label: {
@@ -108,14 +113,16 @@ struct MainShellView: View {
                         Text(model.avatarLetter).foregroundStyle(KayaColor.accent)
                     }
                 }
-                .frame(width: 36, height: 36)
+                .frame(width: 44, height: 44)
                 .clipShape(Circle())
             }
+            .accessibilityLabel(L10n.t(model.lang, "profile"))
             .padding(.trailing, 6)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
-        .background(Color(red: 22 / 255, green: 31 / 255, blue: 56 / 255).opacity(0.85))
+        .background(KayaColor.chrome)
+        .safeAreaPadding(.top)
     }
 
     private var mobileTabBar: some View {
@@ -128,7 +135,8 @@ struct MainShellView: View {
         }
         .padding(.top, 6)
         .padding(.bottom, 8)
-        .background(Color(red: 15 / 255, green: 23 / 255, blue: 42 / 255).opacity(0.92))
+        .background(KayaColor.chromeTab)
+        .safeAreaPadding(.bottom)
     }
 
     private func tabItem(_ tab: StaffTab, _ icon: String, _ key: String, _ badge: Int) -> some View {
@@ -153,7 +161,7 @@ struct MainShellView: View {
                     .lineLimit(1)
             }
             .foregroundStyle(on ? KayaColor.accent : KayaColor.text3)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: 44)
             .padding(.vertical, 4)
         }
     }

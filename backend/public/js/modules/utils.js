@@ -108,4 +108,92 @@
         customerDisplayName: customerDisplayName,
         visibleCustomerPhone: visibleCustomerPhone,
     };
+
+    /**
+     * Tab cycle stays inside an open .modal-overlay so keyboard users
+     * do not land on the dashboard behind the dimmer. Call once after DOM ready.
+     */
+    function bindModalA11y() {
+        if (document.documentElement.getAttribute('data-crm-modal-a11y') === '1') return;
+        document.documentElement.setAttribute('data-crm-modal-a11y', '1');
+
+        function overlayIsOpen(overlay) {
+            if (!overlay || overlay.hidden) return false;
+            if (overlay.style.display === 'none') return false;
+            var cs = window.getComputedStyle(overlay);
+            return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
+        }
+
+        function focusableIn(root) {
+            var nodes = root.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+            return Array.prototype.filter.call(nodes, function (el) {
+                return el.offsetWidth > 0 || el.offsetHeight > 0 || el === document.activeElement;
+            });
+        }
+
+        function openOverlay() {
+            var list = document.querySelectorAll('.modal-overlay');
+            var found = null;
+            for (var i = 0; i < list.length; i++) {
+                if (overlayIsOpen(list[i])) found = list[i];
+            }
+            return found;
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Tab') return;
+            var overlay = openOverlay();
+            if (!overlay) return;
+            var box = overlay.querySelector('.modal-box') || overlay;
+            var items = focusableIn(box);
+            if (!items.length) return;
+            var first = items[0];
+            var last = items[items.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first || !box.contains(document.activeElement)) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else if (document.activeElement === last || !box.contains(document.activeElement)) {
+                e.preventDefault();
+                first.focus();
+            }
+        });
+
+        var lastFocus = null;
+        function onOverlayShown(overlay) {
+            lastFocus = document.activeElement;
+            var box = overlay.querySelector('.modal-box') || overlay;
+            box.setAttribute('role', box.getAttribute('role') || 'dialog');
+            box.setAttribute('aria-modal', 'true');
+            var items = focusableIn(box);
+            var prefer = box.querySelector('input:not([type="hidden"]), select, textarea, button.btn-primary');
+            if (prefer && items.indexOf(prefer) >= 0) prefer.focus();
+            else if (items[0]) items[0].focus();
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
+            var wasOpen = overlayIsOpen(overlay);
+            if (wasOpen) onOverlayShown(overlay);
+            var obs = new MutationObserver(function () {
+                var now = overlayIsOpen(overlay);
+                if (now && !wasOpen) onOverlayShown(overlay);
+                if (!now && wasOpen && lastFocus && typeof lastFocus.focus === 'function') {
+                    try { lastFocus.focus(); } catch (_) { /* ignore */ }
+                }
+                wasOpen = now;
+            });
+            obs.observe(overlay, { attributes: true, attributeFilter: ['style', 'class', 'hidden'] });
+        });
+    }
+
+    window.CRM.Ui = window.CRM.Ui || {};
+    window.CRM.Ui.bindModalA11y = bindModalA11y;
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindModalA11y);
+    } else {
+        bindModalA11y();
+    }
 })();
