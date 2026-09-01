@@ -200,11 +200,16 @@
         .page-dashboard .content { padding: 24px; }
         .dashboard-stat-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 88px; padding: 16px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, background 0.2s, transform 0.15s; cursor: pointer; text-decoration: none; color: inherit; }
         .dashboard-stat-box:hover { border-color: var(--accent); background: var(--bg-hover); transform: translateY(-2px); }
-        .dashboard-stat-box .stat-number { font-size: 1.75rem; font-weight: 700; color: var(--accent); line-height: 1.2; margin-bottom: 4px; }
+        .dashboard-stat-box:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+        .dashboard-stat-box .stat-number { font-size: 1.75rem; font-weight: 700; color: var(--accent); line-height: 1.25; margin-bottom: 4px; font-variant-numeric: tabular-nums; text-align: center; }
+        .dashboard-summary .dashboard-stat-box .stat-number { font-size: 1.28rem; }
         .dashboard-stat-box .stat-label { font-size: 0.8rem; color: var(--text-muted); text-align: center; line-height: 1.3; overflow-wrap: break-word; word-wrap: break-word; }
         .dashboard-stat-box.warn .stat-number { color: var(--danger); }
-        .dashboard-quick-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; }
-        .dashboard-quick-actions .btn-quick { display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; text-decoration: none; }
+        .dashboard-stat-box.is-quiet { opacity: 0.78; }
+        .dashboard-stat-box.is-quiet .stat-number { color: var(--text-muted); font-weight: 600; }
+        .dashboard-quick-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+        @media (min-width: 901px) { #dashboardQuickActions { display: none !important; } }
+        .dashboard-quick-actions .btn-quick { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent); border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; text-decoration: none; }
         .dashboard-quick-actions .btn-quick:hover { background: var(--accent); color: #fff; }
         .dashboard-quick-actions .btn-quick svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
         .dashboard-cards-title { font-size: 1rem; font-weight: 600; color: var(--text-muted); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -216,9 +221,12 @@
         .dashboard-refresh-btn.loading svg { animation: dashboard-spin 0.8s linear infinite; }
         @keyframes dashboard-spin { to { transform: rotate(360deg); } }
         .dashboard-refresh-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .dashboard-attention { padding: 12px 16px; margin-bottom: 16px; background: var(--danger-soft); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius); font-size: 0.9rem; color: var(--text-primary); }
-        .dashboard-attention-link { color: var(--accent); font-weight: 600; text-decoration: none; margin: 0 4px; }
-        .dashboard-attention-link:hover { text-decoration: underline; }
+        .dashboard-attention { display: none; flex-wrap: wrap; align-items: center; gap: 10px 12px; padding: 12px 14px; margin-bottom: 16px; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.5); border-radius: var(--radius); font-size: 0.9rem; color: var(--text-primary); }
+        .dashboard-attention-label { font-weight: 700; color: #fecaca; flex-shrink: 0; }
+        .dashboard-attention-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .dashboard-attention-link { display: inline-flex; align-items: center; min-height: 36px; padding: 6px 12px; border-radius: 999px; background: rgba(239, 68, 68, 0.28); border: 1px solid rgba(252, 165, 165, 0.5); color: #fecaca; font-weight: 700; text-decoration: none; margin: 0; }
+        .dashboard-attention-link:hover { background: rgba(239, 68, 68, 0.45); color: #fff; text-decoration: none; }
+        .dashboard-attention-link:focus-visible { outline: 2px solid #fecaca; outline-offset: 2px; }
         .dashboard-product-fit { margin: 0 0 20px; }
         .dashboard-commercial-banner { margin: 0 0 16px; }
         .commercial-home-card { padding: 16px 18px; border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); background: var(--bg-card); }
@@ -5551,6 +5559,7 @@
         }
         /* FAB چت داخلی روی صفحه مکالمات با لیست/چت و تیکر هم‌پوشانی دارد */
         body:has(#pageConversations.show) .internal-chat-floating-btn { display: none !important; }
+        body:has(#pageDashboard.show) .internal-chat-floating-btn { display: none !important; }
         .internal-chat-floating-btn svg { width: 22px; height: 22px; transition: width 0.2s, height 0.2s; }
         .internal-chat-floating-btn:hover, .internal-chat-floating-btn:focus, .internal-chat-floating-btn.internal-chat-floating-btn-open { width: 56px; height: 56px; box-shadow: 0 6px 24px rgba(5,150,105,0.5); outline: none; }
         .internal-chat-floating-btn:hover svg, .internal-chat-floating-btn:focus svg, .internal-chat-floating-btn.internal-chat-floating-btn-open svg { width: 24px; height: 24px; }

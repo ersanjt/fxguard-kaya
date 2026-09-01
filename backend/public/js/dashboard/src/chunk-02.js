@@ -971,6 +971,34 @@
             if (typeof formatPrice === 'function') return formatPrice(num);
             return String(num).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
+        function dashFormatDurationMinutes(mins) {
+            var m = Math.max(0, Math.round(Number(mins) || 0));
+            var minL = t('dashboard_min') || tt('دقیقه', 'min', 'dk');
+            var hourL = t('dashboard_hour') || tt('ساعت', 'h', 'sa');
+            var dayL = t('dashboard_day') || tt('روز', 'd', 'gün');
+            if (m < 60) return dashFormatNum(m) + ' ' + minL;
+            var h = Math.floor(m / 60);
+            if (h < 48) return dashFormatNum(h) + ' ' + hourL;
+            var d = Math.floor(h / 24);
+            var rh = h % 24;
+            if (!rh) return dashFormatNum(d) + ' ' + dayL;
+            return dashFormatNum(d) + ' ' + dayL + ' ' + dashFormatNum(rh) + ' ' + hourL;
+        }
+        function dashStatIsQuiet(item) {
+            if (!item || item.warn) return false;
+            var raw = String(item.num == null ? '' : item.num);
+            if (raw.indexOf('/') !== -1) return false;
+            var nstr = raw.replace(/[۰-۹]/g, function(d) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)); }).replace(/[^\d]/g, '');
+            if (!nstr) return false;
+            return parseInt(nstr, 10) === 0;
+        }
+        function renderDashboardStatBox(item, primary) {
+            var quiet = dashStatIsQuiet(item);
+            var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '') + (primary ? ' dashboard-stat-box--primary' : '') + (quiet ? ' is-quiet' : '');
+            var convTab = item.convTab ? (' data-conv-tab="' + escapeHtml(item.convTab) + '"') : '';
+            var aria = escapeHtml(String(item.num) + ' ' + String(item.label || ''));
+            return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + ' aria-label="' + aria + '"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
+        }
         function refreshDashboardUiAfterLang() {
             try {
                 if (typeof loadDashboard === 'function') loadDashboard();
@@ -991,11 +1019,6 @@
             var html = '';
             for (var i = 0; i < n; i++) html += '<div class="dashboard-stat-box dashboard-stat-skeleton loading-skeleton" aria-hidden="true"></div>';
             return html;
-        }
-        function renderDashboardStatBox(item, primary) {
-            var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '') + (primary ? ' dashboard-stat-box--primary' : '');
-            var convTab = item.convTab ? (' data-conv-tab="' + escapeHtml(item.convTab) + '"') : '';
-            return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + '><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
         }
         let _loadDashboardSeq = 0;
         async function loadDashboard(_attempt) {
@@ -1144,9 +1167,9 @@
                 if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + dashFormatNum(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + dashFormatNum(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
-                    const needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
-                    attentionEl.innerHTML = needsLabel + parts.join(' · ');
-                    attentionEl.style.display = 'block';
+                    var needsLabel = (t('dashboard_needs_attention') || tt('نیاز به توجه', 'Needs attention', 'Dikkat')).replace(/[:：]\s*$/, '');
+                    attentionEl.innerHTML = '<span class="dashboard-attention-label">' + escapeHtml(needsLabel) + '</span><span class="dashboard-attention-chips">' + parts.join('') + '</span>';
+                    attentionEl.style.display = 'flex';
                 }
             }
             if (kpiPrimaryEl && can('conversations')) {
@@ -1168,7 +1191,10 @@
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.staffOnline)), label: t('dashboard_stat_online') });
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
-                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (t('dashboard_min') || (LANG === 'fa' ? 'دقیقه' : 'min')), label: t('dashboard_avg_response') || t('avg_response_time') || 'Avg response time', convTab: 'all' });
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) {
+                    var avgMins = n(stats.avgResponseTimeMinutes);
+                    summaryItems.push({ page: 'conversations', num: dashFormatDurationMinutes(avgMins), label: t('dashboard_avg_response') || t('avg_response_time') || 'Avg response time', convTab: 'all', warn: avgMins >= 60 });
+                }
                 if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/' + dashFormatNum(5), label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
                 summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + tt('آمار دیگری برای نمایش نیست.', 'No additional stats.', 'Başka istatistik yok.') + '</div>';
