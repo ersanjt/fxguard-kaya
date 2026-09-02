@@ -5747,6 +5747,7 @@
                         emptyBtn.addEventListener('click', openNewConvModal);
                     }
                 }, 50);
+                maybeResumeInboxThread([]);
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
@@ -5767,6 +5768,7 @@
                         emptyBtn.addEventListener('click', openNewConvModal);
                     }
                 }, 50);
+                maybeResumeInboxThread([]);
                 return;
             }
             const newItems = visibleRows.map(function(c) {
@@ -5809,7 +5811,7 @@
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 const unreadPill = (c.unreadCount > 0) ? '<span class="conv-unread-pill">' + (c.unreadCount > 99 ? '99+' : c.unreadCount) + '</span>' : '';
-                const preview = (c.lastMessagePreview || '').trim();
+                const preview = convListPreviewText((c.lastMessagePreview || '').trim());
                 const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
                 let unansweredBadge = '';
                 if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
@@ -5860,17 +5862,31 @@
             if (panel && panel.classList.contains('open')) closeConvMgmtPanel();
             else openConvMgmtPanel();
         }
-        function closeChatMobile() {
+        function closeChatMobile(force) {
             closeConvMgmtPanel();
+            if (force !== true && typeof inboxIsDesktop === 'function' && inboxIsDesktop()) return;
             const chatArea = document.getElementById('chatArea');
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.remove('show');
             if (layout) layout.classList.remove('chat-open');
+            const empty = document.getElementById('chatEmptyState');
+            if (empty) empty.setAttribute('aria-hidden', 'false');
             const btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
             const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
             if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 200);
+        }
+        function revealOpenInboxThread() {
+            if (!currentConvId) return;
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.add('show');
+            if (layout) layout.classList.add('chat-open');
+            const empty = document.getElementById('chatEmptyState');
+            if (empty) empty.setAttribute('aria-hidden', 'true');
+            const backBtn = document.querySelector('.chat-back-btn');
+            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
         }
         function updateChatBackBtn() {
             const btn = document.querySelector('.chat-back-btn');
@@ -5935,6 +5951,9 @@
                 }));
             } catch (_e) {}
         }
+        function clearLastConv() {
+            try { sessionStorage.removeItem('crm_last_conv'); } catch (_e) {}
+        }
         function readLastConv() {
             try {
                 var raw = sessionStorage.getItem('crm_last_conv');
@@ -5945,6 +5964,17 @@
         }
         function inboxIsDesktop() {
             return window.matchMedia('(min-width: 901px)').matches;
+        }
+        function convListPreviewText(raw) {
+            var p = String(raw || '').trim();
+            if (!p) return '';
+            if (/^(voice|audio|ptt)(\.(ogg|opus|oga|webm|m4a|mp3|wav))?$/i.test(p) || (/\.(ogg|opus|oga)$/i.test(p) && /voice|ptt/i.test(p))) {
+                return (typeof t === 'function' && t('preview_voice')) || (LANG === 'fa' ? '🎤 پیام صوتی' : LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
+            }
+            if (p === 'file' || p === '📎 فایل') {
+                return (typeof t === 'function' && t('preview_file')) || (LANG === 'fa' ? '📎 فایل' : LANG === 'tr' ? '📎 Dosya' : '📎 File');
+            }
+            return p;
         }
         function openConvListItem(item) {
             if (!item || typeof openChat !== 'function') return;
@@ -5975,7 +6005,10 @@
             if (items[0]) openConvListItem(items[0]);
         }
         function maybeResumeInboxThread(rows) {
-            if (currentConvId) return;
+            if (currentConvId) {
+                revealOpenInboxThread();
+                return;
+            }
             if (!inboxIsDesktop()) return;
             if (!rows || !rows.length) return;
             var last = readLastConv();
@@ -6081,6 +6114,7 @@
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.add('show');
             if (layout) layout.classList.add('chat-open');
+            revealOpenInboxThread();
             if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 120);
             const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
@@ -6591,9 +6625,10 @@
             if (res.needLogin) return;
             if (res.ok) {
                 toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد؛ پیام‌ها حفظ شدند' : 'Conversation archived; messages preserved');
-                closeChatMobile();
-                loadConversations();
                 currentConvId = null;
+                clearLastConv();
+                closeChatMobile(true);
+                loadConversations();
             } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function deleteConversation() {
@@ -6603,9 +6638,10 @@
             if (res.needLogin) return;
             if (res.ok) {
                 toast((res.data && res.data.message) || (LANG === 'fa' ? 'آرشیو شد؛ پیام‌ها حفظ شدند' : 'Archived; messages preserved'));
-                closeChatMobile();
-                loadConversations();
                 currentConvId = null;
+                clearLastConv();
+                closeChatMobile(true);
+                loadConversations();
             } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
@@ -7087,6 +7123,7 @@
             if (_currentMsgConvId !== thisConvId) return;
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            revealOpenInboxThread();
             const data = res.data;
             if (data.mobileWhatsappSender) _mobileWaSender = data.mobileWhatsappSender;
             else await ensureMobileWaSender(false);
@@ -14377,7 +14414,7 @@
             box.style.display = 'block';
             list.innerHTML = convs.map(function(c) {
                 const name = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                let preview = (c.lastMessagePreview || '').slice(0, 50);
+                let preview = (typeof convListPreviewText === 'function' ? convListPreviewText(c.lastMessagePreview || '') : (c.lastMessagePreview || '')).slice(0, 50);
                 if (preview.length >= 50) preview += '…';
                 return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
             }).join('');
@@ -15041,6 +15078,9 @@
                 btn.classList.toggle('active', on);
                 btn.setAttribute('aria-selected', on ? 'true' : 'false');
             });
+            document.querySelectorAll('.staff-stat-card-btn').forEach(function(btn) {
+                btn.classList.toggle('is-selected', btn.getAttribute('data-staff-tab') === staffActivityCurrentTab);
+            });
             document.querySelectorAll('.staff-activity-panel').forEach(function(panel) {
                 const on = panel.getAttribute('data-staff-panel') === staffActivityCurrentTab;
                 panel.classList.toggle('active', on);
@@ -15054,24 +15094,42 @@
             return [obj.name, obj.username, obj.email, obj.firstName, obj.lastName, userDisplay(obj)].filter(Boolean).join(' ').toLowerCase();
         }
 
-        function buildStaffOnlineRow(u) {
+        function staffHasValue(v) {
+            return !!(v && String(v).trim() && v !== '\u2014');
+        }
+        function staffEmptyOrText(v) {
+            if (staffHasValue(v)) return escapeHtml(String(v));
+            return '<span class="staff-cell-empty">' + escapeHtml(t('staff_not_recorded') || tt('ثبت نشده', 'Not recorded', 'Kayıt yok')) + '</span>';
+        }
+        function staffAvatarLetter(u) {
+            var name = (typeof userDisplay === 'function' ? userDisplay(u) : '') || (u && (u.name || u.email)) || '';
+            var ch = String(name).trim().charAt(0);
+            return ch || '?';
+        }
+        function staffEmptyState(message) {
+            return '<div class="staff-empty"><span class="staff-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-presence"/></svg></span><p>' + escapeHtml(message) + '</p></div>';
+        }
+
+        function buildStaffOnlineRow(u, opts) {
+            opts = opts || {};
             const statusClass = (u.status || 'offline').toLowerCase();
             const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-            const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
-            const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
-            const deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
-            const ip = u.lastLoginIp || '\u2014';
-            const country = u.lastLoginCountry || '\u2014';
+            const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '';
+            const branchName = (u.branch && u.branch.name) ? u.branch.name : '';
+            const deptName = (u.department && u.department.name) ? u.department.name : '';
             const lbl = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
-            return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
-                '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
-                '<td data-label="' + lbl[1] + '">' + escapeHtml(u.email || '\u2014') + '</td>' +
-                '<td data-label="' + lbl[2] + '">' + escapeHtml(branchName) + '</td>' +
-                '<td data-label="' + lbl[3] + '">' + escapeHtml(deptName) + '</td>' +
+            var html = '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
+                '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(u)) + '</span><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
+                '<td data-label="' + lbl[1] + '">' + staffEmptyOrText(u.email) + '</td>' +
+                '<td data-label="' + lbl[2] + '">' + staffEmptyOrText(branchName) + '</td>' +
+                '<td data-label="' + lbl[3] + '">' + staffEmptyOrText(deptName) + '</td>' +
                 '<td data-label="' + lbl[4] + '"><span class="staff-status-badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span></td>' +
-                '<td data-label="' + lbl[5] + '">' + lastLogin + '</td>' +
-                '<td data-label="' + lbl[6] + '" dir="ltr">' + escapeHtml(ip) + '</td>' +
-                '<td data-label="' + lbl[7] + '">' + escapeHtml(country) + '</td></tr>';
+                '<td data-label="' + lbl[5] + '">' + (lastLogin ? escapeHtml(lastLogin) : staffEmptyOrText('')) + '</td>';
+            if (opts.showNet) {
+                html += '<td data-label="' + lbl[6] + '" dir="ltr">' + staffEmptyOrText(u.lastLoginIp) + '</td>' +
+                    '<td data-label="' + lbl[7] + '">' + staffEmptyOrText(u.lastLoginCountry) + '</td>';
+            }
+            return html + '</tr>';
         }
 
         function renderOnlineStaffList() {
@@ -15088,23 +15146,31 @@
             }
             if (countEl) countEl.textContent = staffActivityOnlineData.length;
             if (users.length === 0) {
-                onlineList.innerHTML = '<div class="empty">' + (staffActivityOnlineData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('no_staff_online')) + '</div>';
+                onlineList.classList.add('empty');
+                onlineList.innerHTML = staffEmptyState(staffActivityOnlineData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('no_staff_online'));
                 return;
             }
-            const hdr = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
-            onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + users.map(buildStaffOnlineRow).join('') + '</tbody></table>';
+            onlineList.classList.remove('empty');
+            const showNet = users.some(function(u) { return staffHasValue(u.lastLoginIp) || staffHasValue(u.lastLoginCountry); });
+            const hdr = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login')];
+            if (showNet) { hdr.push(t('th_ip'), t('th_country')); }
+            onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + users.map(function(u) { return buildStaffOnlineRow(u, { showNet: showNet }); }).join('') + '</tbody></table>';
         }
 
-        function buildStaffLoginRow(r) {
+        function buildStaffLoginRow(r, opts) {
+            opts = opts || {};
             const user = r.user || {};
-            const branch = r.branch ? r.branch.name : '\u2014';
+            const branch = r.branch ? r.branch.name : '';
             const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
             const uid = r.userId || (user && user.id) || '';
             const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-            const ip = r.ip || '\u2014';
-            const country = r.country || '\u2014';
             const ll = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
-            return '<tr' + rowAttrs + '><td data-label="' + ll[0] + '">' + escapeHtml(userDisplay(user)) + '</td><td data-label="' + ll[1] + '">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="' + ll[2] + '">' + escapeHtml(branch) + '</td><td data-label="' + ll[3] + '">' + time + '</td><td data-label="' + ll[4] + '" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="' + ll[5] + '">' + escapeHtml(country) + '</td><td data-label="' + ll[6] + '">' + escapeHtml(r.summary || '') + '</td></tr>';
+            var html = '<tr' + rowAttrs + '><td data-label="' + ll[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(user)) + '</span>' + escapeHtml(userDisplay(user)) + '</span></td><td data-label="' + ll[1] + '">' + staffEmptyOrText(user.email) + '</td><td data-label="' + ll[2] + '">' + staffEmptyOrText(branch) + '</td><td data-label="' + ll[3] + '">' + (time ? escapeHtml(time) : staffEmptyOrText('')) + '</td>';
+            if (opts.showNet) {
+                html += '<td data-label="' + ll[4] + '" dir="ltr">' + staffEmptyOrText(r.ip) + '</td><td data-label="' + ll[5] + '">' + staffEmptyOrText(r.country) + '</td>';
+            }
+            html += '<td data-label="' + ll[6] + '">' + staffEmptyOrText(r.summary) + '</td></tr>';
+            return html;
         }
 
         function renderLoginsList() {
@@ -15120,11 +15186,16 @@
                 });
             }
             if (rows.length === 0) {
-                loginsList.innerHTML = '<div class="empty">' + (staffActivityLoginsData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('empty_no_logins')) + '</div>';
+                loginsList.classList.add('empty');
+                loginsList.innerHTML = staffEmptyState(staffActivityLoginsData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('empty_no_logins'));
                 return;
             }
-            const hdr = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
-            loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(buildStaffLoginRow).join('') + '</tbody></table>';
+            loginsList.classList.remove('empty');
+            const showNet = rows.some(function(r) { return staffHasValue(r.ip) || staffHasValue(r.country); });
+            const hdr = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time')];
+            if (showNet) { hdr.push(t('th_ip'), t('th_country')); }
+            hdr.push(t('th_summary'));
+            loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function(r) { return buildStaffLoginRow(r, { showNet: showNet }); }).join('') + '</tbody></table>';
         }
 
         function renderStaffActivityQuickFind(q) {
@@ -15232,8 +15303,11 @@
             const loginsTodayEl = document.getElementById('loginsTodayCount');
             const loginsTotalEl = document.getElementById('loginsTotalCount');
             const updatedEl = document.getElementById('staffActivityUpdated');
-            if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            const refreshBtn = document.getElementById('staffActivityRefresh');
+            if (refreshBtn) { refreshBtn.classList.add('loading'); refreshBtn.disabled = true; }
+            try {
+            if (onlineList) { onlineList.classList.remove('empty'); onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>'; }
+            if (loginsList) { loginsList.classList.remove('empty'); loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>'; }
             if (!staffActivityUserIndex.length) loadStaffActivityUserIndex();
             const onlineRes = await apiFetch('/api/supervision/online');
             if (onlineRes.needLogin) return;
@@ -15276,6 +15350,9 @@
                 });
             } else if (refreshAttendance) {
                 loadAttendanceReport();
+            }
+            } finally {
+                if (refreshBtn) { refreshBtn.classList.remove('loading'); refreshBtn.disabled = false; }
             }
         }
 

@@ -1037,6 +1037,7 @@
                         emptyBtn.addEventListener('click', openNewConvModal);
                     }
                 }, 50);
+                maybeResumeInboxThread([]);
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
@@ -1057,6 +1058,7 @@
                         emptyBtn.addEventListener('click', openNewConvModal);
                     }
                 }, 50);
+                maybeResumeInboxThread([]);
                 return;
             }
             const newItems = visibleRows.map(function(c) {
@@ -1099,7 +1101,7 @@
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 const unreadPill = (c.unreadCount > 0) ? '<span class="conv-unread-pill">' + (c.unreadCount > 99 ? '99+' : c.unreadCount) + '</span>' : '';
-                const preview = (c.lastMessagePreview || '').trim();
+                const preview = convListPreviewText((c.lastMessagePreview || '').trim());
                 const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
                 let unansweredBadge = '';
                 if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
@@ -1150,17 +1152,31 @@
             if (panel && panel.classList.contains('open')) closeConvMgmtPanel();
             else openConvMgmtPanel();
         }
-        function closeChatMobile() {
+        function closeChatMobile(force) {
             closeConvMgmtPanel();
+            if (force !== true && typeof inboxIsDesktop === 'function' && inboxIsDesktop()) return;
             const chatArea = document.getElementById('chatArea');
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.remove('show');
             if (layout) layout.classList.remove('chat-open');
+            const empty = document.getElementById('chatEmptyState');
+            if (empty) empty.setAttribute('aria-hidden', 'false');
             const btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
             const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
             if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 200);
+        }
+        function revealOpenInboxThread() {
+            if (!currentConvId) return;
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.add('show');
+            if (layout) layout.classList.add('chat-open');
+            const empty = document.getElementById('chatEmptyState');
+            if (empty) empty.setAttribute('aria-hidden', 'true');
+            const backBtn = document.querySelector('.chat-back-btn');
+            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
         }
         function updateChatBackBtn() {
             const btn = document.querySelector('.chat-back-btn');
@@ -1225,6 +1241,9 @@
                 }));
             } catch (_e) {}
         }
+        function clearLastConv() {
+            try { sessionStorage.removeItem('crm_last_conv'); } catch (_e) {}
+        }
         function readLastConv() {
             try {
                 var raw = sessionStorage.getItem('crm_last_conv');
@@ -1235,6 +1254,17 @@
         }
         function inboxIsDesktop() {
             return window.matchMedia('(min-width: 901px)').matches;
+        }
+        function convListPreviewText(raw) {
+            var p = String(raw || '').trim();
+            if (!p) return '';
+            if (/^(voice|audio|ptt)(\.(ogg|opus|oga|webm|m4a|mp3|wav))?$/i.test(p) || (/\.(ogg|opus|oga)$/i.test(p) && /voice|ptt/i.test(p))) {
+                return (typeof t === 'function' && t('preview_voice')) || (LANG === 'fa' ? '🎤 پیام صوتی' : LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
+            }
+            if (p === 'file' || p === '📎 فایل') {
+                return (typeof t === 'function' && t('preview_file')) || (LANG === 'fa' ? '📎 فایل' : LANG === 'tr' ? '📎 Dosya' : '📎 File');
+            }
+            return p;
         }
         function openConvListItem(item) {
             if (!item || typeof openChat !== 'function') return;
@@ -1265,7 +1295,10 @@
             if (items[0]) openConvListItem(items[0]);
         }
         function maybeResumeInboxThread(rows) {
-            if (currentConvId) return;
+            if (currentConvId) {
+                revealOpenInboxThread();
+                return;
+            }
             if (!inboxIsDesktop()) return;
             if (!rows || !rows.length) return;
             var last = readLastConv();
@@ -1371,6 +1404,7 @@
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.add('show');
             if (layout) layout.classList.add('chat-open');
+            revealOpenInboxThread();
             if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 120);
             const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
@@ -1881,9 +1915,10 @@
             if (res.needLogin) return;
             if (res.ok) {
                 toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد؛ پیام‌ها حفظ شدند' : 'Conversation archived; messages preserved');
-                closeChatMobile();
-                loadConversations();
                 currentConvId = null;
+                clearLastConv();
+                closeChatMobile(true);
+                loadConversations();
             } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function deleteConversation() {
@@ -1893,9 +1928,10 @@
             if (res.needLogin) return;
             if (res.ok) {
                 toast((res.data && res.data.message) || (LANG === 'fa' ? 'آرشیو شد؛ پیام‌ها حفظ شدند' : 'Archived; messages preserved'));
-                closeChatMobile();
-                loadConversations();
                 currentConvId = null;
+                clearLastConv();
+                closeChatMobile(true);
+                loadConversations();
             } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
@@ -2377,6 +2413,7 @@
             if (_currentMsgConvId !== thisConvId) return;
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            revealOpenInboxThread();
             const data = res.data;
             if (data.mobileWhatsappSender) _mobileWaSender = data.mobileWhatsappSender;
             else await ensureMobileWaSender(false);

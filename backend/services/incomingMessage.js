@@ -44,6 +44,7 @@ const {
 } = require('../lib/resolveMobileWhatsappUser');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
+const { inboxPreviewFromIncoming } = require('../lib/conversationPreview');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir))
@@ -1102,10 +1103,14 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const ts = timestamp
             ? new Date(timestamp < 1e12 ? timestamp * 1000 : timestamp)
             : new Date();
-        const previewText =
-            body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '';
-        let preview = previewText.slice(0, 120);
-        if (previewText.length > 120) preview += '…';
+        const preview = inboxPreviewFromIncoming({
+            body,
+            filename: resolvedMedia && resolvedMedia.filename,
+            caption: resolvedMedia && resolvedMedia.caption,
+            rawType,
+            msgType,
+            hasMedia: !!(hasMedia || resolvedMedia),
+        });
 
         const prevLastIncoming =
             !isFromMe && conversation.lastIncomingMessageAt

@@ -21,6 +21,7 @@ const {
     WHATSAPP_VOICE_MIME,
     WHATSAPP_VOICE_FILENAME,
 } = require('../lib/audioConverter');
+const { inboxPreviewFromOutgoing } = require('./conversationPreview');
 
 const MIME_FROM_EXT = {
     '.pdf': 'application/pdf',
@@ -219,8 +220,13 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         timestamp: new Date(),
     });
 
-    let preview = (text || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
-    if ((text || '').length > 120) preview += '…';
+    const preview = inboxPreviewFromOutgoing({
+        text,
+        hasMedia,
+        isVoice: isVoiceNoteEarly,
+        msgType,
+        filename: media && (media.filename || media.name),
+    });
     const now = new Date();
     const updateData = {
         lastMessageAt: now,

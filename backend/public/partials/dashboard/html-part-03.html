@@ -83,14 +83,15 @@
                 <div id="pageStaffActivity" class="page staff-activity-page">
                     <header class="staff-activity-header">
                         <div class="staff-activity-header-main">
-                            <div class="staff-activity-header-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></div>
+                            <div class="staff-activity-header-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-presence"/></svg></div>
                             <div class="staff-activity-header-text">
                                 <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
                                 <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
                             </div>
                             <div class="staff-activity-header-actions">
-                                <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی">
-                                    <span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span>
+                                <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" data-i18n-title="refresh" data-i18n-aria-label="refresh" title="به‌روزرسانی" aria-label="به‌روزرسانی">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sa-refresh"/></svg>
+                                    <span data-i18n="refresh">به‌روزرسانی</span>
                                 </button>
                             </div>
                         </div>
@@ -98,36 +99,39 @@
                         <div class="staff-activity-quick-find">
                             <label class="staff-activity-quick-find-label" for="staffActivityUserSearch" data-i18n="staff_quick_find">جستجوی سریع کارمند</label>
                             <div class="staff-activity-quick-find-row">
-                                <input type="search" id="staffActivityUserSearch" class="staff-activity-search-input" data-i18n-ph="staff_search_ph" placeholder="نام، ایمیل یا نام کاربری..." autocomplete="off">
+                                <div class="staff-search-field">
+                                    <svg class="staff-search-field-icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-search"/></svg>
+                                    <input type="search" id="staffActivityUserSearch" class="staff-activity-search-input" data-i18n-ph="staff_search_ph" placeholder="نام، ایمیل یا نام کاربری..." autocomplete="off">
+                                </div>
                                 <button type="button" class="btn-secondary btn-sm" id="staffActivitySearchClear" hidden data-i18n="clear">پاک کردن</button>
                             </div>
                             <div id="staffActivitySearchResults" class="staff-activity-search-results" hidden></div>
                         </div>
                     </header>
                     <div class="staff-activity-stats-row">
-                        <button type="button" class="stat-card stat-card-accent staff-stat-online staff-stat-card-btn" data-staff-tab="online" aria-label="کارکنان آنلاین">
-                            <div class="stat-card-icon">🟢</div>
+                        <button type="button" class="stat-card staff-stat-online staff-stat-card-btn is-selected" data-staff-tab="online" data-i18n-aria-label="staff_online" aria-label="کارکنان آنلاین">
+                            <span class="staff-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-presence"/></svg></span>
                             <div class="stat-card-content">
                                 <div class="val" id="onlineCount">0</div>
                                 <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
                             </div>
                         </button>
-                        <button type="button" class="stat-card staff-stat-logins staff-stat-card-btn" data-staff-tab="logins" aria-label="ورود امروز">
-                            <div class="stat-card-icon">📋</div>
+                        <button type="button" class="stat-card staff-stat-logins staff-stat-card-btn" data-staff-tab="logins" data-i18n-aria-label="staff_logins_today" aria-label="ورود امروز">
+                            <span class="staff-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-signin"/></svg></span>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTodayCount">0</div>
                                 <div class="label" data-i18n="staff_logins_today">ورود امروز</div>
                             </div>
                         </button>
-                        <button type="button" class="stat-card staff-stat-total staff-stat-card-btn" data-staff-tab="logins" aria-label="کل ورودها">
-                            <div class="stat-card-icon">📊</div>
+                        <button type="button" class="stat-card staff-stat-total staff-stat-card-btn" data-staff-tab="logins" data-i18n-aria-label="staff_logins_total_registered" aria-label="کل ورودها">
+                            <span class="staff-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-ledger"/></svg></span>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTotalCount">0</div>
                                 <div class="label" data-i18n="staff_logins_total_registered">کل ورودهای ثبت‌شده</div>
                             </div>
                         </button>
-                        <button type="button" class="stat-card staff-stat-attendance staff-stat-card-btn" data-staff-tab="attendance" aria-label="گزارش حضور">
-                            <div class="stat-card-icon">⏱</div>
+                        <button type="button" class="stat-card staff-stat-attendance staff-stat-card-btn" data-staff-tab="attendance" data-i18n-aria-label="attendance_report" aria-label="گزارش حضور">
+                            <span class="staff-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-sa-shift"/></svg></span>
                             <div class="stat-card-content">
                                 <div class="val staff-stat-attendance-val" data-i18n="staff_tab_attendance_short">حضور</div>
                                 <div class="label" data-i18n="attendance_report">گزارش حضور و غیاب</div>
@@ -135,10 +139,19 @@
                         </button>
                     </div>
                     <div class="staff-activity-tabs-wrap">
-                        <div class="staff-activity-tabs" role="tablist" aria-label="بخش‌های فعالیت کارکنان">
-                            <button type="button" class="staff-activity-tab active" role="tab" aria-selected="true" data-staff-tab="online" id="staffTabOnline" data-i18n="staff_tab_online">آنلاین</button>
-                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="logins" id="staffTabLogins" data-i18n="staff_tab_logins">ورودها</button>
-                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="attendance" id="staffTabAttendance" data-i18n="staff_tab_attendance">حضور و غیاب</button>
+                        <div class="staff-activity-tabs" role="tablist" data-i18n-aria-label="staff_tabs_aria" aria-label="بخش‌های فعالیت کارکنان">
+                            <button type="button" class="staff-activity-tab active" role="tab" aria-selected="true" data-staff-tab="online" id="staffTabOnline">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sa-presence"/></svg>
+                                <span data-i18n="staff_tab_online">آنلاین</span>
+                            </button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="logins" id="staffTabLogins">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sa-signin"/></svg>
+                                <span data-i18n="staff_tab_logins">ورودها</span>
+                            </button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="attendance" id="staffTabAttendance">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-sa-shift"/></svg>
+                                <span data-i18n="staff_tab_attendance">حضور و غیاب</span>
+                            </button>
                         </div>
                     </div>
                     <div class="staff-activity-panels">
@@ -150,11 +163,11 @@
                                 </div>
                                 <div class="staff-panel-filters">
                                     <input type="search" id="staffOnlineFilter" class="staff-panel-search" data-i18n-ph="staff_filter_ph" placeholder="فیلتر در لیست..." autocomplete="off">
-                                    <div class="staff-status-chips" role="group" aria-label="وضعیت">
-                                        <button type="button" class="staff-status-chip active" data-status="all" data-i18n="all">همه</button>
-                                        <button type="button" class="staff-status-chip" data-status="online" data-i18n="status_online">آنلاین</button>
-                                        <button type="button" class="staff-status-chip" data-status="away" data-i18n="status_away">دور</button>
-                                        <button type="button" class="staff-status-chip" data-status="busy" data-i18n="status_busy">مشغول</button>
+                                    <div class="staff-status-chips" role="group" data-i18n-aria-label="th_status" aria-label="وضعیت">
+                                        <button type="button" class="staff-status-chip active" data-status="all"><span data-i18n="all">همه</span></button>
+                                        <button type="button" class="staff-status-chip" data-status="online"><span class="status-dot online" aria-hidden="true"></span><span data-i18n="status_online">آنلاین</span></button>
+                                        <button type="button" class="staff-status-chip" data-status="away"><span class="status-dot away" aria-hidden="true"></span><span data-i18n="status_away">دور</span></button>
+                                        <button type="button" class="staff-status-chip" data-status="busy"><span class="status-dot busy" aria-hidden="true"></span><span data-i18n="status_busy">مشغول</span></button>
                                     </div>
                                 </div>
                             </div>
