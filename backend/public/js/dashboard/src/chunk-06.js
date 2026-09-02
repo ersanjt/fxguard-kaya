@@ -29,6 +29,7 @@
                 return;
             }
             if (!waAlive()) return;
+            st.removeAttribute('data-i18n');
             st.className = 'whatsapp-status-line';
             const phase = data && data.phase;
             var isCloudApi = !!(data && data.cloudApi);
@@ -181,6 +182,13 @@
                     if (qrUnavailable) qrUnavailable.style.display = 'none';
                 }
             }
+            } catch (e) {
+                if (!waAlive()) return;
+                st.removeAttribute('data-i18n');
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = t('whatsapp_server_err');
+                setWhatsappStatusBadge('disconnected');
+            }
         }
 
         /* ========== Kaya CRM chunk-06 | واتساپ، قالب پیام، runAfterAuthReady | docs/CODEBASE-MAP.md ========== */
@@ -263,6 +271,15 @@
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             if (mode) mode.value = d.connectionMode || 'cloud_first';
+            if (typeof switchWhatsappConnectionTab === 'function') {
+                switchWhatsappConnectionTab((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud');
+            }
+            if (mode && !mode._crmWaModeBound) {
+                mode._crmWaModeBound = true;
+                mode.addEventListener('change', function () {
+                    switchWhatsappConnectionTab(mode.value === 'gateway' ? 'gateway' : 'cloud');
+                });
+            }
             if (cloudEn) cloudEn.checked = d.cloudEnabled !== false;
             if (cloudToken) { cloudToken.value = ''; cloudToken.placeholder = d.cloudAccessTokenSet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر وارد کنید' : 'Saved ✓ — Enter to change') : 'EAAxxx...'; }
             if (cloudPhone) cloudPhone.value = d.cloudPhoneNumberId || '';
@@ -824,7 +841,7 @@
         }
         async function loadWhatsappStats() {
             const perms = (currentUser && currentUser.permissions) || {};
-            if (!token || perms.conversations === false) return;
+            if (!hasStaffAuth() || perms.conversations === false) return;
             const openEl = document.getElementById('whatsappStatOpen');
             const unassignedEl = document.getElementById('whatsappStatUnassigned');
             const unansweredEl = document.getElementById('whatsappStatUnanswered');

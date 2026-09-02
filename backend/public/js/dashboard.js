@@ -32,6 +32,16 @@
                 else sessionStorage.removeItem('crm_token');
             } catch (_) {}
         }
+        /** نشست کارکنان با کوکی httpOnly هم معتبر است — token در حافظه ممکن است خالی بماند. */
+        function hasStaffAuth() {
+            if (currentUser) return true;
+            if (token) return true;
+            try {
+                return document.documentElement.classList.contains('auth-has-token');
+            } catch (_e) {
+                return false;
+            }
+        }
         function loadStoredAuthToken() {
             try {
                 const t = sessionStorage.getItem('crm_token');
@@ -2273,7 +2283,7 @@
             if (navBadgeRefreshInterval) return;
             if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             navBadgeRefreshInterval = setInterval(function() {
-                if (!token) return;
+                if (!hasStaffAuth()) return;
                 fetchDashboardStats().then(function(res) {
                     if (res.ok && res.data) updateNavBadges(res.data);
                 }).catch(function(){});
@@ -13478,7 +13488,7 @@
         }
         async function fetchWhatsappHeaderStatus() {
             const perms = (currentUser && currentUser.permissions) || {};
-            if (!token || perms.whatsapp === false) return;
+            if (!hasStaffAuth() || perms.whatsapp === false) return;
             try {
                 const res = await apiFetch('/api/gateway/status', { timeoutMs: 10000 });
                 if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
@@ -13490,7 +13500,6 @@
             const mySeq = ++_whatsappStatusSeq;
             function waAlive() { return mySeq === _whatsappStatusSeq; }
             const perms = (currentUser && currentUser.permissions) || {};
-            if (!token || perms.whatsapp === false) return;
             const st = document.getElementById('gatewayStatus');
             const qrBox = document.getElementById('qrBox');
             const qrUnavailable = document.getElementById('whatsappQrUnavailable');
@@ -13501,6 +13510,15 @@
             const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
             const lastCard = document.getElementById('whatsappLastConnectionCard');
             if (!st || !qrBox || !qrImg) return;
+            if (!hasStaffAuth() || perms.whatsapp === false) {
+                st.removeAttribute('data-i18n');
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = perms.whatsapp === false
+                    ? (t('no_access') || (LANG === 'fa' ? 'دسترسی ندارید' : 'No access'))
+                    : (LANG === 'fa' ? 'نشست منقضی شد — دوباره وارد شوید' : 'Session expired — sign in again');
+                setWhatsappStatusBadge('disconnected');
+                return;
+            }
             if (qrRetryTimeout) { clearTimeout(qrRetryTimeout); qrRetryTimeout = null; }
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (isInitial !== false) {
@@ -13516,6 +13534,7 @@
                 const af = document.getElementById('whatsappAuthFailure');
                 if (af) { af.style.display = 'none'; af.textContent = ''; }
             }
+            try {
             let ping;
             try { ping = await apiFetch('/api/ping', { auth: false, timeoutMs: 8000 }); } catch (e) { ping = { needLogin: true }; }
             if (!waAlive()) return;
@@ -13557,6 +13576,7 @@
                 return;
             }
             if (!waAlive()) return;
+            st.removeAttribute('data-i18n');
             st.className = 'whatsapp-status-line';
             const phase = data && data.phase;
             var isCloudApi = !!(data && data.cloudApi);
@@ -13709,6 +13729,13 @@
                     if (qrUnavailable) qrUnavailable.style.display = 'none';
                 }
             }
+            } catch (e) {
+                if (!waAlive()) return;
+                st.removeAttribute('data-i18n');
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = t('whatsapp_server_err');
+                setWhatsappStatusBadge('disconnected');
+            }
         }
 
         /* ========== Kaya CRM chunk-06 | واتساپ، قالب پیام، runAfterAuthReady | docs/CODEBASE-MAP.md ========== */
@@ -13791,6 +13818,15 @@
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             if (mode) mode.value = d.connectionMode || 'cloud_first';
+            if (typeof switchWhatsappConnectionTab === 'function') {
+                switchWhatsappConnectionTab((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud');
+            }
+            if (mode && !mode._crmWaModeBound) {
+                mode._crmWaModeBound = true;
+                mode.addEventListener('change', function () {
+                    switchWhatsappConnectionTab(mode.value === 'gateway' ? 'gateway' : 'cloud');
+                });
+            }
             if (cloudEn) cloudEn.checked = d.cloudEnabled !== false;
             if (cloudToken) { cloudToken.value = ''; cloudToken.placeholder = d.cloudAccessTokenSet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر وارد کنید' : 'Saved ✓ — Enter to change') : 'EAAxxx...'; }
             if (cloudPhone) cloudPhone.value = d.cloudPhoneNumberId || '';
@@ -14352,7 +14388,7 @@
         }
         async function loadWhatsappStats() {
             const perms = (currentUser && currentUser.permissions) || {};
-            if (!token || perms.conversations === false) return;
+            if (!hasStaffAuth() || perms.conversations === false) return;
             const openEl = document.getElementById('whatsappStatOpen');
             const unassignedEl = document.getElementById('whatsappStatUnassigned');
             const unansweredEl = document.getElementById('whatsappStatUnanswered');

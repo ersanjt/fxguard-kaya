@@ -32,6 +32,16 @@
                 else sessionStorage.removeItem('crm_token');
             } catch (_) {}
         }
+        /** نشست کارکنان با کوکی httpOnly هم معتبر است — token در حافظه ممکن است خالی بماند. */
+        function hasStaffAuth() {
+            if (currentUser) return true;
+            if (token) return true;
+            try {
+                return document.documentElement.classList.contains('auth-has-token');
+            } catch (_e) {
+                return false;
+            }
+        }
         function loadStoredAuthToken() {
             try {
                 const t = sessionStorage.getItem('crm_token');

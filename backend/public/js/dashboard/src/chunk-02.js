@@ -58,7 +58,7 @@
             if (navBadgeRefreshInterval) return;
             if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             navBadgeRefreshInterval = setInterval(function() {
-                if (!token) return;
+                if (!hasStaffAuth()) return;
                 fetchDashboardStats().then(function(res) {
                     if (res.ok && res.data) updateNavBadges(res.data);
                 }).catch(function(){});
