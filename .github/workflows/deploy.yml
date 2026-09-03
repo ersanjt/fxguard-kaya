@@ -258,16 +258,19 @@ jobs:
             echo "  ✅ gateway با Chromium تمیز استارت شد"
             pm2 save
 
-            PM_CWD=$(pm2 show crm-backend-kaya 2>/dev/null | sed -n 's/.*exec cwd[[:space:]]*│[[:space:]]*//p' | head -1 | tr -d ' ')
-            echo "PM2 exec cwd: ${PM_CWD}"
-            case "$PM_CWD" in
-              *kayaCRM-kaya*) echo "  ✅ cwd روی کایا است" ;;
-              *)
-                echo "❌ crm-backend-kaya روی مسیر کایا نیست — آپدیت به پروسهٔ اشتباه می‌رود"
-                pm2 show crm-backend-kaya || true
-                exit 1
-                ;;
-            esac
+            echo "🔎 بررسی cwd پروسهٔ کایا ..."
+            node -e '
+              const { execSync } = require("child_process");
+              const apps = JSON.parse(execSync("pm2 jlist", { encoding: "utf8" }));
+              const p = apps.find((a) => a.name === "crm-backend-kaya");
+              const cwd = (p && p.pm2_env && p.pm2_env.pm_cwd) || "";
+              console.log("PM2 exec cwd:", cwd);
+              if (!cwd.includes("kayaCRM-kaya")) {
+                console.error("❌ crm-backend-kaya روی مسیر کایا نیست — آپدیت به پروسهٔ اشتباه می‌رود");
+                process.exit(1);
+              }
+              console.log("  ✅ cwd روی کایا است");
+            '
 
             # ---- بررسی سلامت بعد از deploy ----
             BACKEND_PORT=$(grep "^PORT=" backend/.env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
