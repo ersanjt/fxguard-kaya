@@ -169,6 +169,8 @@ jobs:
               git branch -r || true
               exit 1
             fi
+            echo "📌 کامیت روی دیسک: $(git log -1 --oneline)"
+            echo "📌 HEAD: $(git rev-parse HEAD)"
 
             echo "🌐 همگام‌سازی ویترین fxguard.io به public_html ..."
             rsync -a --delete --exclude '.well-known' fxguard-io-landing/ /home/fxguard/public_html/
@@ -232,25 +234,40 @@ jobs:
             cd ..
             echo "  ✅ syntax بدون خطا"
 
-            # ---- reload با PM2 (نام‌های واقعی روی سرور کایا) ----
-            echo "🔄 reload سرویس‌ها ..."
+            echo "🏷️ ثبت gitSha روی crm-build.json ..."
+            node backend/scripts/stamp-deploy-manifest.js
+            echo "  ✅ $(cat backend/public/crm-build.json | tr '\n' ' ')"
+
+            # ---- restart با PM2 (نام‌های واقعی روی سرور کایا) ----
+            echo "🔄 restart سرویس‌های کایا (نه crm-backend-app) ..."
             export FIREBASE_SERVICE_ACCOUNT_PATH="/var/www/kayaCRM-kaya/backend/firebase-service-account.json"
             if [ -s backend/firebase-service-account.json ]; then
               echo "  ✅ فایل سرویس‌اکانت Firebase روی دیسک موجود است"
             else
               echo "⚠️ فایل سرویس‌اکانت Firebase روی دیسک نیست"
             fi
-            pm2 reload crm-backend-kaya --update-env || pm2 restart crm-backend-kaya --update-env
-            echo "  ✅ backend reload شد"
-            echo "🧹 Gateway: stop، بعد استارت تا خودش Chromium یتیم را پاک کند ..."
+            pm2 restart crm-backend-kaya --update-env || pm2 reload crm-backend-kaya --update-env
+            echo "  ✅ backend restart شد"
+            echo "🧹 Gateway: stop، بعد restart تا Chromium یتیم پاک شود ..."
             pm2 stop crm-gateway-kaya || true
             sleep 3
             rm -f /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonLock \
                   /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonCookie \
                   /var/www/kayaCRM-kaya/gateway/sessions/session/SingletonSocket || true
-            pm2 start crm-gateway-kaya --update-env || pm2 restart crm-gateway-kaya --kill-timeout 12000 --update-env
+            pm2 restart crm-gateway-kaya --update-env --kill-timeout 12000 || pm2 start crm-gateway-kaya --update-env
             echo "  ✅ gateway با Chromium تمیز استارت شد"
             pm2 save
+
+            PM_CWD=$(pm2 show crm-backend-kaya 2>/dev/null | sed -n 's/.*exec cwd[[:space:]]*│[[:space:]]*//p' | head -1 | tr -d ' ')
+            echo "PM2 exec cwd: ${PM_CWD}"
+            case "$PM_CWD" in
+              *kayaCRM-kaya*) echo "  ✅ cwd روی کایا است" ;;
+              *)
+                echo "❌ crm-backend-kaya روی مسیر کایا نیست — آپدیت به پروسهٔ اشتباه می‌رود"
+                pm2 show crm-backend-kaya || true
+                exit 1
+                ;;
+            esac
 
             # ---- بررسی سلامت بعد از deploy ----
             BACKEND_PORT=$(grep "^PORT=" backend/.env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
@@ -267,6 +284,9 @@ jobs:
             done
             if [ "$OK" = "1" ]; then
               echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
+              echo "📄 crm-build.json از پورت ${BACKEND_PORT}:"
+              curl -sS --max-time 10 "http://127.0.0.1:${BACKEND_PORT}/crm-build.json" || true
+              echo ""
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
               pm2 logs crm-backend-kaya --lines 40 --nostream || true
