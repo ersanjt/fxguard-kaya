@@ -6,7 +6,9 @@
 const axios = require('axios');
 const logger = require('../config/logger');
 const defaultRateCurrencies = require('./defaultRateCurrencies');
-const { getNavasanApiKey, navasanLatestUrl } = require('./navasanApiKey');
+const { navasanLatestUrl } = require('./navasanApiKey');
+const { getRatesApiCredentials } = require('./ratesApiProvider');
+const { fetchRawAlanChand, getAlanChandCache, clearAlanChandCache } = require('./alanChandApi');
 
 let lastRatesCache = null;
 
@@ -61,27 +63,61 @@ function applyAdjustment(rawNum, adj) {
     return Number(rawNum);
 }
 
-async function fetchRawNavasan() {
-    const apiKey = await getNavasanApiKey();
+async function fetchRawNavasanOnly(apiKey) {
     const latestUrl = navasanLatestUrl(apiKey);
+    if (!latestUrl) return null;
+    return axios.get(latestUrl, { timeout: 12000 }).then((r) => r.data || {}).catch((e) => {
+        logger.warn('Navasan API error', { error: e.message || e.code });
+        return null;
+    });
+}
+
+async function fetchRawNavasan() {
+    const creds = await getRatesApiCredentials();
+    const hasApiKey = creds.hasApiKey;
     let raw = null;
-    if (latestUrl) {
-        raw = await axios.get(latestUrl, { timeout: 12000 }).then((r) => r.data || {}).catch((e) => {
-            logger.warn('Navasan API error', { error: e.message || e.code });
-            return null;
-        });
+    const provider = creds.provider;
+
+    if (provider === 'alanchand') {
+        const cachedAlan = getAlanChandCache();
+        if (cachedAlan) {
+            lastRatesCache = cachedAlan;
+            return { raw: cachedAlan, fromCache: true, hasApiKey, provider: 'alanchand' };
+        }
+        const alan = await fetchRawAlanChand(creds.alanChandKey);
+        if (alan.ok && alan.raw && Object.keys(alan.raw).length > 0) {
+            lastRatesCache = alan.raw;
+            return { raw: alan.raw, fromCache: !!alan.fromCache, hasApiKey, provider: 'alanchand' };
+        }
+        logger.warn('Alan Chand API error', { error: alan.error || 'empty' });
+        if (creds.navasanKey) {
+            raw = await fetchRawNavasanOnly(creds.navasanKey);
+            if (raw && typeof raw === 'object' && Object.keys(raw).length > 0) {
+                lastRatesCache = raw;
+                return { raw, fromCache: false, hasApiKey, provider: 'navasan' };
+            }
+        }
+    } else if (provider === 'navasan') {
+        raw = await fetchRawNavasanOnly(creds.navasanKey);
     } else {
-        logger.warn('Navasan API key not set — using cached rates only');
+        logger.warn('Rates API key not set — using cached rates only');
     }
+
     if (raw && typeof raw === 'object' && Object.keys(raw).length > 0) {
         lastRatesCache = raw;
-        return { raw, fromCache: false, hasApiKey: !!apiKey };
+        return { raw, fromCache: false, hasApiKey, provider: provider || 'navasan' };
     }
     return {
         raw: lastRatesCache && typeof lastRatesCache === 'object' ? lastRatesCache : {},
         fromCache: !!(lastRatesCache && Object.keys(lastRatesCache).length),
-        hasApiKey: !!apiKey
+        hasApiKey,
+        provider: provider || null
     };
+}
+
+function clearRatesCaches() {
+    lastRatesCache = null;
+    clearAlanChandCache();
 }
 
 async function getRatesKeys(models) {
@@ -114,7 +150,7 @@ async function buildRatesSnapshot(opts = {}) {
     const onlyPositive = !!opts.onlyPositive;
     const respectVisible = opts.respectVisible !== false;
 
-    const { raw, fromCache, hasApiKey } = await fetchRawNavasan();
+    const { raw, fromCache, hasApiKey, provider } = await fetchRawNavasan();
     const RATES_KEYS = await getRatesKeys(models);
 
     const adjustments = {};
@@ -176,6 +212,7 @@ async function buildRatesSnapshot(opts = {}) {
         updatedAt,
         fromCache,
         hasApiKey,
+        provider: provider || null,
         hasLiveData: !!(raw && Object.keys(raw).length > 0)
     };
 }
@@ -190,5 +227,6 @@ module.exports = {
     applyAdjustment,
     fetchRawNavasan,
     buildRatesSnapshot,
-    getLastRatesCache
+    getLastRatesCache,
+    clearRatesCaches
 };

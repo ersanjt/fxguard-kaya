@@ -99,12 +99,10 @@ router.get('/', authMiddleware, async (req, res, next) => {
         const out = { ...s };
         delete out.smtpPass;
         delete out.telegramBotToken;
-        delete out.navasanApiKey;
+        const { stripRatesApiSecrets, publicRatesApiFlags } = require('../lib/ratesApiProvider');
+        stripRatesApiSecrets(out);
         out.telegramBotTokenSet = !!(s && s.telegramBotToken);
-        out.navasanApiKeySet = !!(s && s.navasanApiKey && String(s.navasanApiKey).trim());
-        out.navasanApiKeyFromEnv = !!(
-            process.env.NAVASAN_API_KEY && String(process.env.NAVASAN_API_KEY).trim()
-        );
+        Object.assign(out, publicRatesApiFlags(s));
         out.supportedLanguages = getSupportedLanguages(out);
         if (out.supportedLanguages && out.supportedLanguages.indexOf(out.defaultLanguage) < 0) {
             out.defaultLanguage = out.supportedLanguages[0] || 'fa';
@@ -162,6 +160,9 @@ router.put('/', authMiddleware, async (req, res, next) => {
             sidebarOrder,
             navasanApiKey,
             navasanApiKeyClear,
+            alanChandApiKey,
+            alanChandApiKeyClear,
+            ratesApiProvider,
             planTier,
         } = body;
 
@@ -375,12 +376,14 @@ router.put('/', authMiddleware, async (req, res, next) => {
             row.iosAppUrl = iosAppUrl === '' ? null : String(iosAppUrl).trim();
         if (androidAppUrl !== undefined)
             row.androidAppUrl = androidAppUrl === '' ? null : String(androidAppUrl).trim();
-        if (navasanApiKeyClear === true) {
-            row.navasanApiKey = null;
-        } else if (navasanApiKey !== undefined && String(navasanApiKey).trim() !== '') {
-            const { normalizeNavasanApiKey } = require('../lib/navasanApiKey');
-            row.navasanApiKey = normalizeNavasanApiKey(navasanApiKey);
-        }
+        const { applyRatesApiKeyUpdates } = require('../lib/ratesApiProvider');
+        applyRatesApiKeyUpdates(row, {
+            navasanApiKey,
+            navasanApiKeyClear,
+            alanChandApiKey,
+            alanChandApiKeyClear,
+            ratesApiProvider,
+        });
         if (planTier !== undefined) {
             const envLocked =
                 isPlanTierLockEnabled() && !!normalizePlanTier(process.env.PLAN_TIER);
@@ -438,12 +441,13 @@ router.put('/', authMiddleware, async (req, res, next) => {
         s.supportedLanguages = getSupportedLanguages(s);
         delete s.smtpPass;
         delete s.telegramBotToken;
-        delete s.navasanApiKey;
+        const { stripRatesApiSecrets, publicRatesApiFlags } = require('../lib/ratesApiProvider');
+        stripRatesApiSecrets(s);
         s.telegramBotTokenSet = !!(row.telegramBotToken && String(row.telegramBotToken).trim());
-        s.navasanApiKeySet = !!(row.navasanApiKey && String(row.navasanApiKey).trim());
-        s.navasanApiKeyFromEnv = !!(
-            process.env.NAVASAN_API_KEY && String(process.env.NAVASAN_API_KEY).trim()
-        );
+        Object.assign(s, publicRatesApiFlags(row));
+        try {
+            require('../lib/ratesSnapshot').clearRatesCaches();
+        } catch (_) { /* ignore */ }
         await attachPlanToSettings(s);
         res.json(s);
     } catch (err) {
@@ -665,7 +669,7 @@ router.post('/test-navasan', authMiddleware, async (req, res, next) => {
             req.body && Object.prototype.hasOwnProperty.call(req.body, 'navasanApiKey');
         const keyInput = hasKeyField ? normalizeNavasanApiKey(req.body.navasanApiKey) : '';
         const settings = await getPanelSettings();
-        const apiKey = hasKeyField
+        const apiKey = keyInput
             ? keyInput
             : normalizeNavasanApiKey(settings.navasanApiKey) ||
               normalizeNavasanApiKey(process.env.NAVASAN_API_KEY);
@@ -706,6 +710,55 @@ router.post('/test-navasan', authMiddleware, async (req, res, next) => {
             });
         }
         return res.status(502).json({ error: err.message || 'اتصال به API نوسان ناموفق بود.' });
+    }
+});
+
+const testAlanChandCooldown = new Map();
+const TEST_ALANCHAND_COOLDOWN_MS = 30000;
+
+router.post('/test-alanchand', authMiddleware, async (req, res, next) => {
+    try {
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
+        }
+        const userId = req.user && req.user.id;
+        if (userId) {
+            const last = testAlanChandCooldown.get(userId) || 0;
+            if (Date.now() - last < TEST_ALANCHAND_COOLDOWN_MS) {
+                const waitSec = Math.ceil((TEST_ALANCHAND_COOLDOWN_MS - (Date.now() - last)) / 1000);
+                return res.status(429).json({
+                    error: `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.`,
+                });
+            }
+        }
+        const {
+            normalizeAlanChandApiKey,
+            getAlanChandApiKey,
+            fetchAlanChandLatest,
+            mapAlanChandToNavasanShape,
+        } = require('../lib/alanChandApi');
+        const hasKeyField =
+            req.body && Object.prototype.hasOwnProperty.call(req.body, 'alanChandApiKey');
+        const keyInput = hasKeyField ? normalizeAlanChandApiKey(req.body.alanChandApiKey) : '';
+        const apiKey = keyInput ? keyInput : await getAlanChandApiKey();
+        if (!apiKey) {
+            return res.status(400).json({ error: 'توکن API الان چند تنظیم نشده است.' });
+        }
+        const result = await fetchAlanChandLatest(apiKey, { type: 'currency', symbols: ['usd'] });
+        if (result.status !== 200) {
+            return res.status(result.status === 429 ? 429 : 400).json({
+                error: result.error || 'اتصال به API الان چند ناموفق بود.',
+            });
+        }
+        const mapped = mapAlanChandToNavasanShape(result.raw, 'currency');
+        const hasData = mapped && Object.keys(mapped).length > 0;
+        if (!hasData) {
+            return res.status(502).json({ error: 'پاسخ API الان چند خالی یا ناشناخته بود.' });
+        }
+        if (userId) testAlanChandCooldown.set(userId, Date.now());
+        return res.json({ ok: true, message: 'اتصال به API الان چند برقرار است.' });
+    } catch (err) {
+        next(err);
     }
 });
 

@@ -954,29 +954,153 @@
                 return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
             }).join('');
         }
+        function ratesApiStatusElSet(el, text, kind) {
+            if (!el) return;
+            if (!text) { el.hidden = true; el.textContent = ''; el.className = 'rates-api-test-status'; return; }
+            el.hidden = false;
+            el.textContent = text;
+            el.className = 'rates-api-test-status' + (kind === 'ok' ? ' is-ok' : kind === 'err' ? ' is-err' : '');
+        }
+        function applyRatesApiKeyHints(d) {
+            const navHint = document.getElementById('ratesNavasanKeyHint');
+            const alanHint = document.getElementById('ratesAlanChandKeyHint');
+            if (navHint) {
+                if (d.navasanApiKeySet) navHint.textContent = t('rates_api_key_keep_hint');
+                else if (d.navasanApiKeyFromEnv) navHint.textContent = t('rates_api_key_env_navasan');
+                else navHint.textContent = t('rates_api_key_none');
+            }
+            if (alanHint) {
+                if (d.alanChandApiKeySet) alanHint.textContent = t('rates_api_key_keep_hint');
+                else if (d.alanChandApiKeyFromEnv) alanHint.textContent = t('rates_api_key_env_alanchand');
+                else alanHint.textContent = t('rates_api_key_none');
+            }
+            const navRadio = document.getElementById('ratesApiProviderNavasan');
+            const alanRadio = document.getElementById('ratesApiProviderAlanChand');
+            const preferred = d.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan';
+            if (navRadio) navRadio.checked = preferred === 'navasan';
+            if (alanRadio) alanRadio.checked = preferred === 'alanchand';
+            const status = document.getElementById('ratesApiStatus');
+            if (status) {
+                if (d.hasApiKey || d.activeProvider) {
+                    status.className = 'rates-api-status is-ok';
+                    status.textContent = d.activeProvider === 'alanchand' ? t('rates_api_ok_alanchand') : t('rates_api_ok_navasan');
+                } else {
+                    status.className = 'rates-api-status is-warn';
+                    status.innerHTML = t('rates_apikey_alert_html');
+                }
+            }
+        }
         async function checkRatesApiKeyStatus() {
             const header = document.querySelector('#pageRates .rates-page-header');
-            if (!header) return;
             const existingAlert = document.getElementById('ratesApiKeyAlert');
             if (existingAlert) existingAlert.remove();
             const existingOk = document.getElementById('ratesApiKeyOk');
             if (existingOk) existingOk.remove();
             const res = await apiFetch('/api/rates/config-status');
-            if (res.needLogin || !res.ok) return;
-            if (res.data && res.data.hasApiKey === false) {
-                const alert = document.createElement('div');
-                alert.id = 'ratesApiKeyAlert';
-                alert.className = 'rates-apikey-alert';
-                const msg = typeof t === 'function' ? t('rates_apikey_alert_html') : '';
-                alert.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + (msg || 'کلید API نوسان (NAVASAN_API_KEY) در .env سرور تنظیم نشده.') + '</span>';
-                header.appendChild(alert);
-            } else if (res.data && res.data.hasApiKey === true) {
-                const ok = document.createElement('div');
-                ok.id = 'ratesApiKeyOk';
-                ok.className = 'rates-apikey-ok';
-                ok.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>' + (typeof t === 'function' ? t('rates_apikey_ok') : 'اتصال API نوسان فعال است.') + '</span>';
-                header.appendChild(ok);
+            if (res.needLogin || !res.ok || !res.data) {
+                if (header && !document.getElementById('ratesApiKeysBox')) return;
+                return;
             }
+            applyRatesApiKeyHints(res.data);
+        }
+        function selectedRatesApiProvider() {
+            const alan = document.getElementById('ratesApiProviderAlanChand');
+            return (alan && alan.checked) ? 'alanchand' : 'navasan';
+        }
+        async function saveRatesApiKeys() {
+            const btn = document.getElementById('ratesApiKeysSaveBtn');
+            const statusEl = document.getElementById('ratesApiKeysSaveStatus');
+            const navEl = document.getElementById('ratesNavasanApiKey');
+            const alanEl = document.getElementById('ratesAlanChandApiKey');
+            const payload = { ratesApiProvider: selectedRatesApiProvider() };
+            const navVal = navEl ? String(navEl.value || '').trim() : '';
+            const alanVal = alanEl ? String(alanEl.value || '').trim() : '';
+            if (navVal) payload.navasanApiKey = navVal;
+            if (alanVal) payload.alanChandApiKey = alanVal;
+            if (btn) btn.disabled = true;
+            ratesApiStatusElSet(statusEl, '', '');
+            const res = await apiFetch('/api/rates/api-keys', { method: 'PUT', body: JSON.stringify(payload) });
+            if (btn) btn.disabled = false;
+            if (res.ok && res.data) {
+                if (navEl) navEl.value = '';
+                if (alanEl) alanEl.value = '';
+                applyRatesApiKeyHints(res.data);
+                ratesApiStatusElSet(statusEl, t('rates_api_saved'), 'ok');
+                toast(t('rates_api_saved'));
+                if (typeof fetchRates === 'function') fetchRates();
+            } else {
+                const err = (res.data && res.data.error) || t('err_generic');
+                ratesApiStatusElSet(statusEl, err, 'err');
+                toast(err, true);
+            }
+        }
+        async function testRatesNavasan() {
+            const statusEl = document.getElementById('ratesNavasanTestStatus');
+            const keyEl = document.getElementById('ratesNavasanApiKey');
+            const payload = { navasanApiKey: keyEl ? keyEl.value : '' };
+            ratesApiStatusElSet(statusEl, '', '');
+            const res = await apiFetch('/api/rates/test-navasan', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                const msg = res.data.message || t('panel_test_navasan_ok');
+                ratesApiStatusElSet(statusEl, msg, 'ok');
+                toast(msg);
+            } else {
+                const err = (res.data && res.data.error) || t('panel_test_navasan_fail');
+                ratesApiStatusElSet(statusEl, err, 'err');
+                toast(err, true);
+            }
+        }
+        async function testRatesAlanChand() {
+            const statusEl = document.getElementById('ratesAlanChandTestStatus');
+            const keyEl = document.getElementById('ratesAlanChandApiKey');
+            const payload = { alanChandApiKey: keyEl ? keyEl.value : '' };
+            ratesApiStatusElSet(statusEl, '', '');
+            const res = await apiFetch('/api/rates/test-alanchand', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                const msg = res.data.message || t('panel_test_alanchand_ok');
+                ratesApiStatusElSet(statusEl, msg, 'ok');
+                toast(msg);
+            } else {
+                const err = (res.data && res.data.error) || t('panel_test_alanchand_fail');
+                ratesApiStatusElSet(statusEl, err, 'err');
+                toast(err, true);
+            }
+        }
+        async function clearRatesNavasanKey() {
+            if (!confirm(t('rates_api_clear_navasan_confirm'))) return;
+            const res = await apiFetch('/api/rates/api-keys', { method: 'PUT', body: JSON.stringify({ navasanApiKeyClear: true }) });
+            if (res.ok) {
+                toast(t('saved'));
+                checkRatesApiKeyStatus();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        async function clearRatesAlanChandKey() {
+            if (!confirm(t('rates_api_clear_alanchand_confirm'))) return;
+            const res = await apiFetch('/api/rates/api-keys', { method: 'PUT', body: JSON.stringify({ alanChandApiKeyClear: true }) });
+            if (res.ok) {
+                toast(t('saved'));
+                checkRatesApiKeyStatus();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        function toggleRatesNavasanKeyVisibility() {
+            const el = document.getElementById('ratesNavasanApiKey');
+            const btn = document.getElementById('ratesNavasanShowBtn');
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.textContent = t(show ? 'rates_api_hide' : 'rates_api_show');
+        }
+        function toggleRatesAlanChandKeyVisibility() {
+            const el = document.getElementById('ratesAlanChandApiKey');
+            const btn = document.getElementById('ratesAlanChandShowBtn');
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.textContent = t(show ? 'rates_api_hide' : 'rates_api_show');
         }
 
         function openCurrencyModal(existingKey) {
@@ -9955,6 +10079,20 @@
                     navasanHint.textContent = t('panel_navasan_key_none_hint');
                 }
             }
+            const alanChandKeyEl = document.getElementById('panelSettingAlanChandApiKey');
+            if (alanChandKeyEl) alanChandKeyEl.value = '';
+            const alanChandHint = document.getElementById('panelAlanChandKeyHint');
+            if (alanChandHint) {
+                if (d.alanChandApiKeySet) {
+                    alanChandHint.textContent = t('panel_alanchand_key_saved_hint');
+                } else if (d.alanChandApiKeyFromEnv) {
+                    alanChandHint.textContent = t('panel_alanchand_key_env_hint');
+                } else {
+                    alanChandHint.textContent = t('panel_alanchand_key_none_hint');
+                }
+            }
+            const ratesProviderEl = document.getElementById('panelSettingRatesApiProvider');
+            if (ratesProviderEl) ratesProviderEl.value = d.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan';
             const planEl = document.getElementById('panelSettingPlanTier');
             if (planEl) {
                 const tier = (d.planLimits && d.planLimits.tier) || d.planTier || 'legacy';
@@ -10511,6 +10649,12 @@
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
             const navasanNewKey = get('panelSettingNavasanApiKey');
             if (navasanNewKey) payload.navasanApiKey = navasanNewKey;
+            const alanChandNewKey = get('panelSettingAlanChandApiKey');
+            if (alanChandNewKey) payload.alanChandApiKey = alanChandNewKey;
+            const ratesProviderElSave = document.getElementById('panelSettingRatesApiProvider');
+            if (ratesProviderElSave && (ratesProviderElSave.value === 'navasan' || ratesProviderElSave.value === 'alanchand')) {
+                payload.ratesApiProvider = ratesProviderElSave.value;
+            }
             let res;
             try {
                 res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
@@ -10546,6 +10690,14 @@
                     if (res.data.navasanApiKeySet) navasanHintSaved.textContent = t('panel_navasan_key_saved_hint');
                     else if (res.data.navasanApiKeyFromEnv) navasanHintSaved.textContent = t('panel_navasan_key_env_hint');
                     else navasanHintSaved.textContent = t('panel_navasan_key_none_hint');
+                }
+                const alanChandKeyElSaved = document.getElementById('panelSettingAlanChandApiKey');
+                if (alanChandKeyElSaved) alanChandKeyElSaved.value = '';
+                const alanChandHintSaved = document.getElementById('panelAlanChandKeyHint');
+                if (alanChandHintSaved && res.data) {
+                    if (res.data.alanChandApiKeySet) alanChandHintSaved.textContent = t('panel_alanchand_key_saved_hint');
+                    else if (res.data.alanChandApiKeyFromEnv) alanChandHintSaved.textContent = t('panel_alanchand_key_env_hint');
+                    else alanChandHintSaved.textContent = t('panel_alanchand_key_none_hint');
                 }
                 const planElSaved = document.getElementById('panelSettingPlanTier');
                 if (planElSaved && res.data && res.data.planLimits) {
@@ -10663,11 +10815,55 @@
         }
         function togglePanelNavasanKeyVisibility() {
             const el = document.getElementById('panelSettingNavasanApiKey');
-            const btn = document.querySelector('.panel-password-toggle');
+            const btn = document.getElementById('panelNavasanShowKeyBtn');
             if (!el) return;
             const show = el.type === 'password';
             el.type = show ? 'text' : 'password';
             if (btn) btn.textContent = t(show ? 'panel_navasan_hide_key' : 'panel_navasan_show_key');
+        }
+        function togglePanelAlanChandKeyVisibility() {
+            const el = document.getElementById('panelSettingAlanChandApiKey');
+            const btn = document.getElementById('panelAlanChandShowKeyBtn');
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.textContent = t(show ? 'panel_navasan_hide_key' : 'panel_navasan_show_key');
+        }
+        async function clearPanelAlanChandApiKey() {
+            if (!confirm(t('panel_alanchand_clear_confirm'))) return;
+            const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify({ alanChandApiKeyClear: true }) });
+            if (res.ok) {
+                toast(t('saved'));
+                loadPanelSettings();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        async function sendPanelTestAlanChand() {
+            const btn = document.getElementById('panelTestAlanChandBtn');
+            const statusEl = document.getElementById('panelTestAlanChandStatus');
+            const keyEl = document.getElementById('panelSettingAlanChandApiKey');
+            const payload = { alanChandApiKey: keyEl ? keyEl.value : '' };
+            if (btn) { btn.disabled = true; }
+            if (statusEl) statusEl.style.display = 'none';
+            const res = await apiFetch('/api/panel-settings/test-alanchand', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                toast(res.data.message || t('panel_test_alanchand_ok'));
+                if (statusEl) {
+                    statusEl.textContent = t('panel_test_alanchand_ok');
+                    statusEl.className = 'panel-test-email-status success';
+                    statusEl.style.display = 'inline';
+                }
+            } else {
+                const err = (res.data && res.data.error) || res.error || t('panel_test_alanchand_fail');
+                toast(err, true);
+                if (statusEl) {
+                    statusEl.textContent = err;
+                    statusEl.className = 'panel-test-email-status error';
+                    statusEl.style.display = 'inline';
+                }
+            }
+            if (btn) btn.disabled = false;
         }
         async function sendPanelTestNavasan() {
             const btn = document.getElementById('panelTestNavasanBtn');
@@ -15886,8 +16082,18 @@
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.sendPanelTestTelegram = sendPanelTestTelegram;
             window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.sendPanelTestAlanChand = sendPanelTestAlanChand;
             window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
+            window.clearPanelAlanChandApiKey = clearPanelAlanChandApiKey;
             window.togglePanelNavasanKeyVisibility = togglePanelNavasanKeyVisibility;
+            window.togglePanelAlanChandKeyVisibility = togglePanelAlanChandKeyVisibility;
+            window.saveRatesApiKeys = saveRatesApiKeys;
+            window.testRatesNavasan = testRatesNavasan;
+            window.testRatesAlanChand = testRatesAlanChand;
+            window.clearRatesNavasanKey = clearRatesNavasanKey;
+            window.clearRatesAlanChandKey = clearRatesAlanChandKey;
+            window.toggleRatesNavasanKeyVisibility = toggleRatesNavasanKeyVisibility;
+            window.toggleRatesAlanChandKeyVisibility = toggleRatesAlanChandKeyVisibility;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
@@ -16209,8 +16415,18 @@
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.sendPanelTestTelegram = sendPanelTestTelegram;
             window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.sendPanelTestAlanChand = sendPanelTestAlanChand;
             window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
+            window.clearPanelAlanChandApiKey = clearPanelAlanChandApiKey;
             window.togglePanelNavasanKeyVisibility = togglePanelNavasanKeyVisibility;
+            window.togglePanelAlanChandKeyVisibility = togglePanelAlanChandKeyVisibility;
+            window.saveRatesApiKeys = saveRatesApiKeys;
+            window.testRatesNavasan = testRatesNavasan;
+            window.testRatesAlanChand = testRatesAlanChand;
+            window.clearRatesNavasanKey = clearRatesNavasanKey;
+            window.clearRatesAlanChandKey = clearRatesAlanChandKey;
+            window.toggleRatesNavasanKeyVisibility = toggleRatesNavasanKeyVisibility;
+            window.toggleRatesAlanChandKeyVisibility = toggleRatesAlanChandKeyVisibility;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;

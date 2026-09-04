@@ -46,6 +46,8 @@ const DEFAULT = {
     iosAppUrl: null,
     androidAppUrl: null,
     navasanApiKey: null,
+    alanChandApiKey: null,
+    ratesApiProvider: 'navasan',
     planTier: null,
 };
 
@@ -141,6 +143,8 @@ async function getPanelSettings() {
         iosAppUrl: row.iosAppUrl || null,
         androidAppUrl: row.androidAppUrl || null,
         navasanApiKey: row.navasanApiKey || null,
+        alanChandApiKey: row.alanChandApiKey || null,
+        ratesApiProvider: row.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan',
         planTier: row.planTier || null,
     };
 }

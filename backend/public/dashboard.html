@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="f7155b579b09">
+    <meta name="crm-build" content="dc287bc81963">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=f7155b579b09">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=f7155b579b09" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=dc287bc81963">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=dc287bc81963" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -2015,6 +2015,55 @@
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
                         <p class="rates-intro text-muted" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
                     </header>
+                    <section class="rates-api-keys-box form-box" id="ratesApiKeysBox" aria-labelledby="ratesApiKeysTitle">
+                        <h3 id="ratesApiKeysTitle" class="rates-section-title" data-i18n="rates_api_keys_title">توکن وب‌سرویس قیمت</h3>
+                        <p class="rates-section-hint" data-i18n="rates_api_keys_intro">توکن نوسان یا الان‌چند را وارد کنید. منبع فعال مشخص می‌کند کدام سرویس قیمت لحظه‌ای را می‌گیرد. فیلد خالی کلید ذخیره‌شده را عوض نمی‌کند.</p>
+                        <div class="rates-api-status" id="ratesApiStatus" role="status" aria-live="polite"></div>
+                        <fieldset class="rates-api-provider-fieldset">
+                            <legend data-i18n="rates_api_provider_label">منبع فعال</legend>
+                            <label class="rates-api-provider-opt">
+                                <input type="radio" name="ratesApiProvider" id="ratesApiProviderNavasan" value="navasan" checked>
+                                <span data-i18n="rates_api_provider_navasan">نوسان (Navasan)</span>
+                            </label>
+                            <label class="rates-api-provider-opt">
+                                <input type="radio" name="ratesApiProvider" id="ratesApiProviderAlanChand" value="alanchand">
+                                <span data-i18n="rates_api_provider_alanchand">الان چند (Alan Chand)</span>
+                            </label>
+                        </fieldset>
+                        <div class="rates-api-keys-grid">
+                            <div class="rates-api-key-card">
+                                <label for="ratesNavasanApiKey" data-i18n="rates_api_navasan_label">۱. توکن نوسان</label>
+                                <div class="panel-password-row">
+                                    <input type="password" id="ratesNavasanApiKey" data-i18n-ph="rates_api_navasan_ph" placeholder="Navasan API key" dir="ltr" spellcheck="false" autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="ratesNavasanShowBtn" onclick="typeof toggleRatesNavasanKeyVisibility==='function'&&toggleRatesNavasanKeyVisibility()" data-i18n="rates_api_show">نمایش</button>
+                                </div>
+                                <span id="ratesNavasanKeyHint" class="form-hint"></span>
+                                <div class="rates-api-key-actions">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof testRatesNavasan==='function'&&testRatesNavasan()" data-i18n="rates_api_test">تست اتصال</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof clearRatesNavasanKey==='function'&&clearRatesNavasanKey()" data-i18n="rates_api_clear">پاک کردن</button>
+                                    <span id="ratesNavasanTestStatus" class="rates-api-test-status" hidden></span>
+                                </div>
+                            </div>
+                            <div class="rates-api-key-card">
+                                <label for="ratesAlanChandApiKey" data-i18n="rates_api_alanchand_label">۲. توکن الان چند</label>
+                                <div class="panel-password-row">
+                                    <input type="password" id="ratesAlanChandApiKey" data-i18n-ph="rates_api_alanchand_ph" placeholder="Alan Chand API token" dir="ltr" spellcheck="false" autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="ratesAlanChandShowBtn" onclick="typeof toggleRatesAlanChandKeyVisibility==='function'&&toggleRatesAlanChandKeyVisibility()" data-i18n="rates_api_show">نمایش</button>
+                                </div>
+                                <span id="ratesAlanChandKeyHint" class="form-hint"></span>
+                                <p class="form-hint"><span data-i18n="rates_api_alanchand_hint">مستندات: alanchand.com/media/api — هدر Authorization: Bearer</span></p>
+                                <div class="rates-api-key-actions">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof testRatesAlanChand==='function'&&testRatesAlanChand()" data-i18n="rates_api_test">تست اتصال</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof clearRatesAlanChandKey==='function'&&clearRatesAlanChandKey()" data-i18n="rates_api_clear">پاک کردن</button>
+                                    <span id="ratesAlanChandTestStatus" class="rates-api-test-status" hidden></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rates-api-keys-save-row">
+                            <button type="button" class="btn-primary" id="ratesApiKeysSaveBtn" onclick="typeof saveRatesApiKeys==='function'&&saveRatesApiKeys()" data-i18n="rates_api_save">ذخیره توکن‌ها</button>
+                            <span id="ratesApiKeysSaveStatus" class="rates-api-test-status" hidden></span>
+                        </div>
+                    </section>
                     <div class="rates-page-layout">
                         <div class="rates-page-col rates-page-col-left">
                             <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
@@ -2917,7 +2966,7 @@
                                             <label for="panelSettingNavasanApiKey" data-i18n="panel_navasan_api_key">کلید API نوسان</label>
                                             <div class="panel-password-row">
                                                 <input type="password" id="panelSettingNavasanApiKey" data-i18n-ph="panel_navasan_api_key_ph" placeholder="your-navasan-api-key" dir="ltr" spellcheck="false" autocomplete="off" oninput="markPanelSettingsChanged();">
-                                                <button type="button" class="btn-secondary btn-sm panel-password-toggle" onclick="typeof togglePanelNavasanKeyVisibility==='function'&&togglePanelNavasanKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
+                                                <button type="button" class="btn-secondary btn-sm panel-password-toggle" id="panelNavasanShowKeyBtn" onclick="typeof togglePanelNavasanKeyVisibility==='function'&&togglePanelNavasanKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
                                             </div>
                                             <span id="panelNavasanKeyHint" class="form-hint"></span>
                                             <p class="form-hint"><span data-i18n="panel_navasan_bot_hint">دریافت کلید رایگان از ربات تلگرام</span> <a href="https://t.me/navasan_contact_bot" target="_blank" rel="noopener">@navasan_contact_bot</a></p>
@@ -2926,6 +2975,31 @@
                                             <button type="button" id="panelTestNavasanBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestNavasan==='function'&&sendPanelTestNavasan()" data-i18n="panel_test_navasan_btn">تست اتصال API</button>
                                             <button type="button" id="panelClearNavasanKeyBtn" class="btn-secondary btn-sm" onclick="typeof clearPanelNavasanApiKey==='function'&&clearPanelNavasanApiKey()" data-i18n="panel_navasan_clear_key">پاک کردن کلید ذخیره‌شده</button>
                                             <span id="panelTestNavasanStatus" class="panel-test-email-status" style="display:none;"></span>
+                                        </div>
+                                    </section>
+                                    <section class="panel-settings-section">
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span data-i18n="panel_section_alanchand">API الان چند (Alan Chand)</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_alanchand_intro">توکن وب‌سرویس الان‌چند برای قیمت لحظه‌ای ارز، طلا و رمزارز. هدر Authorization: Bearer. اگر خالی بماند از متغیر ALANCHAND_API_KEY در env سرور استفاده می‌شود.</p>
+                                        <div class="form-group">
+                                            <label for="panelSettingAlanChandApiKey" data-i18n="panel_alanchand_api_key">توکن API الان چند</label>
+                                            <div class="panel-password-row">
+                                                <input type="password" id="panelSettingAlanChandApiKey" data-i18n-ph="panel_alanchand_api_key_ph" placeholder="your-alanchand-token" dir="ltr" spellcheck="false" autocomplete="off" oninput="markPanelSettingsChanged();">
+                                                <button type="button" class="btn-secondary btn-sm" id="panelAlanChandShowKeyBtn" onclick="typeof togglePanelAlanChandKeyVisibility==='function'&&togglePanelAlanChandKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
+                                            </div>
+                                            <span id="panelAlanChandKeyHint" class="form-hint"></span>
+                                            <p class="form-hint"><a href="https://alanchand.com/media/api" target="_blank" rel="noopener">alanchand.com/media/api</a></p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="panelSettingRatesApiProvider" data-i18n="panel_rates_provider_label">منبع فعال قیمت</label>
+                                            <select id="panelSettingRatesApiProvider" onchange="markPanelSettingsChanged();">
+                                                <option value="navasan" data-i18n="rates_api_provider_navasan">نوسان (Navasan)</option>
+                                                <option value="alanchand" data-i18n="rates_api_provider_alanchand">الان چند (Alan Chand)</option>
+                                            </select>
+                                        </div>
+                                        <div class="panel-test-email-row">
+                                            <button type="button" id="panelTestAlanChandBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestAlanChand==='function'&&sendPanelTestAlanChand()" data-i18n="panel_test_alanchand_btn">تست اتصال الان چند</button>
+                                            <button type="button" id="panelClearAlanChandKeyBtn" class="btn-secondary btn-sm" onclick="typeof clearPanelAlanChandApiKey==='function'&&clearPanelAlanChandApiKey()" data-i18n="panel_alanchand_clear_key">پاک کردن توکن ذخیره‌شده</button>
+                                            <span id="panelTestAlanChandStatus" class="panel-test-email-status" style="display:none;"></span>
                                         </div>
                                     </section>
                                 </div>
@@ -4045,10 +4119,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=f7155b579b09" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=dc287bc81963" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4075,10 +4149,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=f7155b579b09" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=f7155b579b09" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=dc287bc81963" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=dc287bc81963" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

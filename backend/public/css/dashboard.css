@@ -118,6 +118,24 @@
         .rates-apikey-alert a { color: #1565c0; font-weight: 600; }
         .rates-apikey-ok { display: flex; align-items: center; gap: 10px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.35); border-radius: 10px; padding: 12px 16px; margin-top: 12px; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
         .rates-apikey-ok svg { flex-shrink: 0; color: var(--accent); }
+        .rates-api-keys-box { margin-bottom: 8px; }
+        .rates-api-status { min-height: 1.4em; margin: 0 0 12px; font-size: 0.9rem; line-height: 1.5; }
+        .rates-api-status.is-ok { color: var(--accent); }
+        .rates-api-status.is-warn { color: var(--warning); }
+        .rates-api-provider-fieldset { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; margin: 0 0 16px; display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+        .rates-api-provider-fieldset legend { padding: 0 6px; font-size: 0.85rem; color: var(--text-secondary); }
+        .rates-api-provider-opt { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; min-height: 44px; }
+        .rates-api-keys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 800px) {
+            .rates-api-keys-grid { grid-template-columns: 1fr; }
+        }
+        .rates-api-key-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px; min-width: 0; }
+        .rates-api-key-card label { display: block; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); }
+        .rates-api-key-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px; }
+        .rates-api-keys-save-row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 16px; }
+        .rates-api-test-status { font-size: 0.85rem; color: var(--text-secondary); }
+        .rates-api-test-status.is-ok { color: var(--accent); }
+        .rates-api-test-status.is-err { color: var(--danger); }
         .rates-page-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; min-width: 0; }
         @media (max-width: 900px) {
             .rates-page-layout { grid-template-columns: 1fr; }

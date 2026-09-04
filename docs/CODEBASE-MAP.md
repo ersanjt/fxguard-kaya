@@ -128,7 +128,7 @@ backend/
 | `/api/departments/*` | `routes/departments.js` | |
 | `/api/whatsapp/*` | `routes/whatsapp.js` | `models/WhatsappConfig.js` · آزمایش ۷روزه QR |
 | `/api/panel-settings/*` | `routes/panelSettings.js` | `services/config/panelSettingsLoader.js` · سقف پلن `lib/planLimits.js` |
-| `/api/rates/*` | `routes/rates.js` | `jobs/dailyRates.js` · قفل پلن شروع |
+| `/api/rates/*` | `routes/rates.js` | `lib/ratesSnapshot.js` · نوسان + الان‌چند (`lib/alanChandApi.js`) · قفل پلن شروع |
 | `/api/analytics/*` | `routes/analytics.js` | KPI داشبورد + `product-fit` + قیف فرم تماس |
 | `/api/billing/*` | `routes/billing.js` | چک‌اوت Stripe Cloud Start (اختیاری) · `lib/billingCheckout.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |

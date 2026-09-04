@@ -1,16 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { RateAdjustment, RateCurrency, TickerConfig } = require('../models');
+const { RateAdjustment, RateCurrency, TickerConfig, PanelSetting } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
-const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
+const { getNavasanApiKey, navasanLatestUrl, normalizeNavasanApiKey, navasanUsageUrl, navasanApiErrorMessage } = require('../lib/navasanApiKey');
+const {
+    getRatesApiCredentials,
+    applyRatesApiKeyUpdates,
+    publicRatesApiFlags
+} = require('../lib/ratesApiProvider');
 const {
     pickValue,
     pickChange,
     applyAdjustment,
     fetchRawNavasan,
-    getLastRatesCache
+    getLastRatesCache,
+    clearRatesCaches
 } = require('../lib/ratesSnapshot');
 const { requireFxModule } = require('../lib/planLimits');
 
@@ -29,11 +35,115 @@ async function getRatesKeys() {
     return defaultRateCurrencies.map(({ key, label, apiKeys }) => ({ key, label, apiKeys }));
 }
 
-// GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
+// GET /api/rates/config-status — وضعیت توکن‌ها (نوسان / الان چند)
 router.get('/config-status', async (req, res, _next) => {
     if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
-    const apiKey = await getNavasanApiKey();
-    res.json({ hasApiKey: !!apiKey, source: apiKey ? 'configured' : 'none' });
+    const creds = await getRatesApiCredentials();
+    const settings = await require('../services/panelSettingsLoader').getPanelSettings();
+    res.json({
+        hasApiKey: creds.hasApiKey,
+        source: creds.provider || 'none',
+        activeProvider: creds.provider,
+        ...publicRatesApiFlags(settings)
+    });
+});
+
+function ratesTestCooldownCheck(map, userId, ms) {
+    if (!userId) return null;
+    const last = map.get(userId) || 0;
+    if (Date.now() - last < ms) {
+        const waitSec = Math.ceil((ms - (Date.now() - last)) / 1000);
+        return `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.`;
+    }
+    return null;
+}
+
+const ratesTestNavasanCooldown = new Map();
+const ratesTestAlanChandCooldown = new Map();
+const RATES_TEST_COOLDOWN_MS = 30000;
+
+// PUT /api/rates/api-keys — ذخیره توکن نوسان / الان چند و منبع فعال
+router.put('/api-keys', async (req, res, next) => {
+    try {
+        if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        const [row] = await PanelSetting.findOrCreate({
+            where: { id: 'default' },
+            defaults: { id: 'default' }
+        });
+        applyRatesApiKeyUpdates(row, req.body || {});
+        await row.save();
+        clearRatesCaches();
+        const creds = await getRatesApiCredentials();
+        res.json({ ok: true, hasApiKey: creds.hasApiKey, activeProvider: creds.provider, ...publicRatesApiFlags(row) });
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.post('/test-navasan', async (req, res, next) => {
+    try {
+        if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        const userId = req.user && req.user.id;
+        const wait = ratesTestCooldownCheck(ratesTestNavasanCooldown, userId, RATES_TEST_COOLDOWN_MS);
+        if (wait) return res.status(429).json({ error: wait });
+        const hasKeyField = req.body && Object.prototype.hasOwnProperty.call(req.body, 'navasanApiKey');
+        const keyInput = hasKeyField ? normalizeNavasanApiKey(req.body.navasanApiKey) : '';
+        const creds = await getRatesApiCredentials();
+        const apiKey = keyInput ? keyInput : creds.navasanKey;
+        if (!apiKey) return res.status(400).json({ error: 'کلید API نوسان تنظیم نشده است.' });
+        const url = navasanLatestUrl(apiKey);
+        const r = await axios.get(url, { timeout: 12000, validateStatus: () => true });
+        if (r.status !== 200) {
+            return res.status(r.status === 429 ? 429 : 400).json({ error: navasanApiErrorMessage(r.status, r.data) });
+        }
+        const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
+        if (!hasData) return res.status(502).json({ error: 'پاسخ API نوسان خالی بود.' });
+        let usageNote = '';
+        const usageUrl = navasanUsageUrl(apiKey);
+        if (usageUrl) {
+            try {
+                const u = await axios.get(usageUrl, { timeout: 8000, validateStatus: () => true });
+                if (u.status === 200 && u.data && u.data.monthly_usage != null) {
+                    usageNote = ` مصرف ماه جاری: ${u.data.monthly_usage} درخواست.`;
+                }
+            } catch (_) { /* optional */ }
+        }
+        if (userId) ratesTestNavasanCooldown.set(userId, Date.now());
+        return res.json({ ok: true, message: `اتصال به API نوسان برقرار است.${usageNote}` });
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.post('/test-alanchand', async (req, res, next) => {
+    try {
+        if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        const userId = req.user && req.user.id;
+        const wait = ratesTestCooldownCheck(ratesTestAlanChandCooldown, userId, RATES_TEST_COOLDOWN_MS);
+        if (wait) return res.status(429).json({ error: wait });
+        const {
+            normalizeAlanChandApiKey,
+            fetchAlanChandLatest,
+            mapAlanChandToNavasanShape
+        } = require('../lib/alanChandApi');
+        const hasKeyField = req.body && Object.prototype.hasOwnProperty.call(req.body, 'alanChandApiKey');
+        const keyInput = hasKeyField ? normalizeAlanChandApiKey(req.body.alanChandApiKey) : '';
+        const creds = await getRatesApiCredentials();
+        const apiKey = keyInput ? keyInput : creds.alanChandKey;
+        if (!apiKey) return res.status(400).json({ error: 'توکن API الان چند تنظیم نشده است.' });
+        const result = await fetchAlanChandLatest(apiKey, { type: 'currency', symbols: ['usd'] });
+        if (result.status !== 200) {
+            return res.status(result.status === 429 ? 429 : 400).json({ error: result.error || 'اتصال به API الان چند ناموفق بود.' });
+        }
+        const mapped = mapAlanChandToNavasanShape(result.raw, 'currency');
+        if (!mapped || Object.keys(mapped).length === 0) {
+            return res.status(502).json({ error: 'پاسخ API الان چند خالی یا ناشناخته بود.' });
+        }
+        if (userId) ratesTestAlanChandCooldown.set(userId, Date.now());
+        return res.json({ ok: true, message: 'اتصال به API الان چند برقرار است.' });
+    } catch (err) {
+        next(err);
+    }
 });
 
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات
@@ -41,7 +151,7 @@ router.get('/', async (req, res, _next) => {
     if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
     try {
         const RATES_KEYS = await getRatesKeys();
-        const { raw: fetchedRaw, hasApiKey } = await fetchRawNavasan();
+        const { raw: fetchedRaw, hasApiKey, provider } = await fetchRawNavasan();
         const raw = fetchedRaw && Object.keys(fetchedRaw).length ? fetchedRaw : (getLastRatesCache() || {});
         void hasApiKey;
         const adjustments = {};
@@ -88,7 +198,8 @@ router.get('/', async (req, res, _next) => {
             visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key),
             updatedAt,
             updatedAtTimestamp: ts || null,
-            tickerDisplay
+            tickerDisplay,
+            provider: provider || null
         });
     } catch (err) {
         const fallback = defaultRateCurrencies.map(({ key, label }) => ({ key, label, value: '—', change: null }));
@@ -296,16 +407,15 @@ router.get('/history', async (req, res, next) => {
 
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
 router.get('/health', async (req, res, _next) => {
-    const apiKey = await getNavasanApiKey();
-    const latestUrl = navasanLatestUrl(apiKey);
-    if (!latestUrl) return res.json({ ok: false, external: false, error: 'API key not configured' });
+    const creds = await getRatesApiCredentials();
+    if (!creds.hasApiKey) return res.json({ ok: false, external: false, error: 'API key not configured', provider: null });
     try {
-        const r = await axios.get(latestUrl, { timeout: 8000 });
-        const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
-        res.json({ ok: true, external: hasData });
+        const { raw, hasApiKey, provider } = await fetchRawNavasan();
+        const hasData = raw && typeof raw === 'object' && Object.keys(raw).length > 0;
+        res.json({ ok: true, external: hasData, hasApiKey, provider: provider || creds.provider });
     } catch (e) {
         logger.warn('Rates health check failed', { error: e.message });
-        res.json({ ok: false, external: false, error: 'External API unavailable' });
+        res.json({ ok: false, external: false, error: 'External API unavailable', provider: creds.provider });
     }
 });
 

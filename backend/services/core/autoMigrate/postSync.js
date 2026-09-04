@@ -92,6 +92,8 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['androidAppUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['loginLogoUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['navasanApiKey', { type: DataTypes.TEXT, allowNull: true }],
+            ['alanChandApiKey', { type: DataTypes.TEXT, allowNull: true }],
+            ['ratesApiProvider', { type: DataTypes.STRING(16), allowNull: true }],
             ['planTier', { type: DataTypes.STRING(32), allowNull: true }],
         ];
         for (const [name, def] of newThemeCols) {

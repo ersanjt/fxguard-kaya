@@ -1085,6 +1085,20 @@
                     navasanHint.textContent = t('panel_navasan_key_none_hint');
                 }
             }
+            const alanChandKeyEl = document.getElementById('panelSettingAlanChandApiKey');
+            if (alanChandKeyEl) alanChandKeyEl.value = '';
+            const alanChandHint = document.getElementById('panelAlanChandKeyHint');
+            if (alanChandHint) {
+                if (d.alanChandApiKeySet) {
+                    alanChandHint.textContent = t('panel_alanchand_key_saved_hint');
+                } else if (d.alanChandApiKeyFromEnv) {
+                    alanChandHint.textContent = t('panel_alanchand_key_env_hint');
+                } else {
+                    alanChandHint.textContent = t('panel_alanchand_key_none_hint');
+                }
+            }
+            const ratesProviderEl = document.getElementById('panelSettingRatesApiProvider');
+            if (ratesProviderEl) ratesProviderEl.value = d.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan';
             const planEl = document.getElementById('panelSettingPlanTier');
             if (planEl) {
                 const tier = (d.planLimits && d.planLimits.tier) || d.planTier || 'legacy';
@@ -1641,6 +1655,12 @@
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
             const navasanNewKey = get('panelSettingNavasanApiKey');
             if (navasanNewKey) payload.navasanApiKey = navasanNewKey;
+            const alanChandNewKey = get('panelSettingAlanChandApiKey');
+            if (alanChandNewKey) payload.alanChandApiKey = alanChandNewKey;
+            const ratesProviderElSave = document.getElementById('panelSettingRatesApiProvider');
+            if (ratesProviderElSave && (ratesProviderElSave.value === 'navasan' || ratesProviderElSave.value === 'alanchand')) {
+                payload.ratesApiProvider = ratesProviderElSave.value;
+            }
             let res;
             try {
                 res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
@@ -1676,6 +1696,14 @@
                     if (res.data.navasanApiKeySet) navasanHintSaved.textContent = t('panel_navasan_key_saved_hint');
                     else if (res.data.navasanApiKeyFromEnv) navasanHintSaved.textContent = t('panel_navasan_key_env_hint');
                     else navasanHintSaved.textContent = t('panel_navasan_key_none_hint');
+                }
+                const alanChandKeyElSaved = document.getElementById('panelSettingAlanChandApiKey');
+                if (alanChandKeyElSaved) alanChandKeyElSaved.value = '';
+                const alanChandHintSaved = document.getElementById('panelAlanChandKeyHint');
+                if (alanChandHintSaved && res.data) {
+                    if (res.data.alanChandApiKeySet) alanChandHintSaved.textContent = t('panel_alanchand_key_saved_hint');
+                    else if (res.data.alanChandApiKeyFromEnv) alanChandHintSaved.textContent = t('panel_alanchand_key_env_hint');
+                    else alanChandHintSaved.textContent = t('panel_alanchand_key_none_hint');
                 }
                 const planElSaved = document.getElementById('panelSettingPlanTier');
                 if (planElSaved && res.data && res.data.planLimits) {
@@ -1793,11 +1821,55 @@
         }
         function togglePanelNavasanKeyVisibility() {
             const el = document.getElementById('panelSettingNavasanApiKey');
-            const btn = document.querySelector('.panel-password-toggle');
+            const btn = document.getElementById('panelNavasanShowKeyBtn');
             if (!el) return;
             const show = el.type === 'password';
             el.type = show ? 'text' : 'password';
             if (btn) btn.textContent = t(show ? 'panel_navasan_hide_key' : 'panel_navasan_show_key');
+        }
+        function togglePanelAlanChandKeyVisibility() {
+            const el = document.getElementById('panelSettingAlanChandApiKey');
+            const btn = document.getElementById('panelAlanChandShowKeyBtn');
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.textContent = t(show ? 'panel_navasan_hide_key' : 'panel_navasan_show_key');
+        }
+        async function clearPanelAlanChandApiKey() {
+            if (!confirm(t('panel_alanchand_clear_confirm'))) return;
+            const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify({ alanChandApiKeyClear: true }) });
+            if (res.ok) {
+                toast(t('saved'));
+                loadPanelSettings();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        async function sendPanelTestAlanChand() {
+            const btn = document.getElementById('panelTestAlanChandBtn');
+            const statusEl = document.getElementById('panelTestAlanChandStatus');
+            const keyEl = document.getElementById('panelSettingAlanChandApiKey');
+            const payload = { alanChandApiKey: keyEl ? keyEl.value : '' };
+            if (btn) { btn.disabled = true; }
+            if (statusEl) statusEl.style.display = 'none';
+            const res = await apiFetch('/api/panel-settings/test-alanchand', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                toast(res.data.message || t('panel_test_alanchand_ok'));
+                if (statusEl) {
+                    statusEl.textContent = t('panel_test_alanchand_ok');
+                    statusEl.className = 'panel-test-email-status success';
+                    statusEl.style.display = 'inline';
+                }
+            } else {
+                const err = (res.data && res.data.error) || res.error || t('panel_test_alanchand_fail');
+                toast(err, true);
+                if (statusEl) {
+                    statusEl.textContent = err;
+                    statusEl.className = 'panel-test-email-status error';
+                    statusEl.style.display = 'inline';
+                }
+            }
+            if (btn) btn.disabled = false;
         }
         async function sendPanelTestNavasan() {
             const btn = document.getElementById('panelTestNavasanBtn');

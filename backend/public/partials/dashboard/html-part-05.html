@@ -128,7 +128,7 @@
                                             <label for="panelSettingNavasanApiKey" data-i18n="panel_navasan_api_key">کلید API نوسان</label>
                                             <div class="panel-password-row">
                                                 <input type="password" id="panelSettingNavasanApiKey" data-i18n-ph="panel_navasan_api_key_ph" placeholder="your-navasan-api-key" dir="ltr" spellcheck="false" autocomplete="off" oninput="markPanelSettingsChanged();">
-                                                <button type="button" class="btn-secondary btn-sm panel-password-toggle" onclick="typeof togglePanelNavasanKeyVisibility==='function'&&togglePanelNavasanKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
+                                                <button type="button" class="btn-secondary btn-sm panel-password-toggle" id="panelNavasanShowKeyBtn" onclick="typeof togglePanelNavasanKeyVisibility==='function'&&togglePanelNavasanKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
                                             </div>
                                             <span id="panelNavasanKeyHint" class="form-hint"></span>
                                             <p class="form-hint"><span data-i18n="panel_navasan_bot_hint">دریافت کلید رایگان از ربات تلگرام</span> <a href="https://t.me/navasan_contact_bot" target="_blank" rel="noopener">@navasan_contact_bot</a></p>
@@ -137,6 +137,31 @@
                                             <button type="button" id="panelTestNavasanBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestNavasan==='function'&&sendPanelTestNavasan()" data-i18n="panel_test_navasan_btn">تست اتصال API</button>
                                             <button type="button" id="panelClearNavasanKeyBtn" class="btn-secondary btn-sm" onclick="typeof clearPanelNavasanApiKey==='function'&&clearPanelNavasanApiKey()" data-i18n="panel_navasan_clear_key">پاک کردن کلید ذخیره‌شده</button>
                                             <span id="panelTestNavasanStatus" class="panel-test-email-status" style="display:none;"></span>
+                                        </div>
+                                    </section>
+                                    <section class="panel-settings-section">
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></span><span data-i18n="panel_section_alanchand">API الان چند (Alan Chand)</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_alanchand_intro">توکن وب‌سرویس الان‌چند برای قیمت لحظه‌ای ارز، طلا و رمزارز. هدر Authorization: Bearer. اگر خالی بماند از متغیر ALANCHAND_API_KEY در env سرور استفاده می‌شود.</p>
+                                        <div class="form-group">
+                                            <label for="panelSettingAlanChandApiKey" data-i18n="panel_alanchand_api_key">توکن API الان چند</label>
+                                            <div class="panel-password-row">
+                                                <input type="password" id="panelSettingAlanChandApiKey" data-i18n-ph="panel_alanchand_api_key_ph" placeholder="your-alanchand-token" dir="ltr" spellcheck="false" autocomplete="off" oninput="markPanelSettingsChanged();">
+                                                <button type="button" class="btn-secondary btn-sm" id="panelAlanChandShowKeyBtn" onclick="typeof togglePanelAlanChandKeyVisibility==='function'&&togglePanelAlanChandKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
+                                            </div>
+                                            <span id="panelAlanChandKeyHint" class="form-hint"></span>
+                                            <p class="form-hint"><a href="https://alanchand.com/media/api" target="_blank" rel="noopener">alanchand.com/media/api</a></p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="panelSettingRatesApiProvider" data-i18n="panel_rates_provider_label">منبع فعال قیمت</label>
+                                            <select id="panelSettingRatesApiProvider" onchange="markPanelSettingsChanged();">
+                                                <option value="navasan" data-i18n="rates_api_provider_navasan">نوسان (Navasan)</option>
+                                                <option value="alanchand" data-i18n="rates_api_provider_alanchand">الان چند (Alan Chand)</option>
+                                            </select>
+                                        </div>
+                                        <div class="panel-test-email-row">
+                                            <button type="button" id="panelTestAlanChandBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestAlanChand==='function'&&sendPanelTestAlanChand()" data-i18n="panel_test_alanchand_btn">تست اتصال الان چند</button>
+                                            <button type="button" id="panelClearAlanChandKeyBtn" class="btn-secondary btn-sm" onclick="typeof clearPanelAlanChandApiKey==='function'&&clearPanelAlanChandApiKey()" data-i18n="panel_alanchand_clear_key">پاک کردن توکن ذخیره‌شده</button>
+                                            <span id="panelTestAlanChandStatus" class="panel-test-email-status" style="display:none;"></span>
                                         </div>
                                     </section>
                                 </div>

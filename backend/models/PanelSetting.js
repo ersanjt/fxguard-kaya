@@ -88,6 +88,8 @@ module.exports = (sequelize) => {
         iosAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ iOS (App Store/TestFlight/itms-services)' },
         androidAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ Android (Play Store یا APK)' },
         navasanApiKey: { type: DataTypes.TEXT, allowNull: true, comment: 'کلید API نوسان (navasan.tech) — جایگزین NAVASAN_API_KEY در env' },
+        alanChandApiKey: { type: DataTypes.TEXT, allowNull: true, comment: 'توکن API الان چند (alanchand.com) — جایگزین ALANCHAND_API_KEY در env' },
+        ratesApiProvider: { type: DataTypes.STRING(16), allowNull: true, defaultValue: 'navasan', comment: 'منبع قیمت: navasan | alanchand' },
         planTier: {
             type: DataTypes.STRING(32),
             allowNull: true,

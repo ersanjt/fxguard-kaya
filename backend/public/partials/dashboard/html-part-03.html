@@ -773,6 +773,55 @@
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
                         <p class="rates-intro text-muted" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
                     </header>
+                    <section class="rates-api-keys-box form-box" id="ratesApiKeysBox" aria-labelledby="ratesApiKeysTitle">
+                        <h3 id="ratesApiKeysTitle" class="rates-section-title" data-i18n="rates_api_keys_title">توکن وب‌سرویس قیمت</h3>
+                        <p class="rates-section-hint" data-i18n="rates_api_keys_intro">توکن نوسان یا الان‌چند را وارد کنید. منبع فعال مشخص می‌کند کدام سرویس قیمت لحظه‌ای را می‌گیرد. فیلد خالی کلید ذخیره‌شده را عوض نمی‌کند.</p>
+                        <div class="rates-api-status" id="ratesApiStatus" role="status" aria-live="polite"></div>
+                        <fieldset class="rates-api-provider-fieldset">
+                            <legend data-i18n="rates_api_provider_label">منبع فعال</legend>
+                            <label class="rates-api-provider-opt">
+                                <input type="radio" name="ratesApiProvider" id="ratesApiProviderNavasan" value="navasan" checked>
+                                <span data-i18n="rates_api_provider_navasan">نوسان (Navasan)</span>
+                            </label>
+                            <label class="rates-api-provider-opt">
+                                <input type="radio" name="ratesApiProvider" id="ratesApiProviderAlanChand" value="alanchand">
+                                <span data-i18n="rates_api_provider_alanchand">الان چند (Alan Chand)</span>
+                            </label>
+                        </fieldset>
+                        <div class="rates-api-keys-grid">
+                            <div class="rates-api-key-card">
+                                <label for="ratesNavasanApiKey" data-i18n="rates_api_navasan_label">۱. توکن نوسان</label>
+                                <div class="panel-password-row">
+                                    <input type="password" id="ratesNavasanApiKey" data-i18n-ph="rates_api_navasan_ph" placeholder="Navasan API key" dir="ltr" spellcheck="false" autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="ratesNavasanShowBtn" onclick="typeof toggleRatesNavasanKeyVisibility==='function'&&toggleRatesNavasanKeyVisibility()" data-i18n="rates_api_show">نمایش</button>
+                                </div>
+                                <span id="ratesNavasanKeyHint" class="form-hint"></span>
+                                <div class="rates-api-key-actions">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof testRatesNavasan==='function'&&testRatesNavasan()" data-i18n="rates_api_test">تست اتصال</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof clearRatesNavasanKey==='function'&&clearRatesNavasanKey()" data-i18n="rates_api_clear">پاک کردن</button>
+                                    <span id="ratesNavasanTestStatus" class="rates-api-test-status" hidden></span>
+                                </div>
+                            </div>
+                            <div class="rates-api-key-card">
+                                <label for="ratesAlanChandApiKey" data-i18n="rates_api_alanchand_label">۲. توکن الان چند</label>
+                                <div class="panel-password-row">
+                                    <input type="password" id="ratesAlanChandApiKey" data-i18n-ph="rates_api_alanchand_ph" placeholder="Alan Chand API token" dir="ltr" spellcheck="false" autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="ratesAlanChandShowBtn" onclick="typeof toggleRatesAlanChandKeyVisibility==='function'&&toggleRatesAlanChandKeyVisibility()" data-i18n="rates_api_show">نمایش</button>
+                                </div>
+                                <span id="ratesAlanChandKeyHint" class="form-hint"></span>
+                                <p class="form-hint"><span data-i18n="rates_api_alanchand_hint">مستندات: alanchand.com/media/api — هدر Authorization: Bearer</span></p>
+                                <div class="rates-api-key-actions">
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof testRatesAlanChand==='function'&&testRatesAlanChand()" data-i18n="rates_api_test">تست اتصال</button>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="typeof clearRatesAlanChandKey==='function'&&clearRatesAlanChandKey()" data-i18n="rates_api_clear">پاک کردن</button>
+                                    <span id="ratesAlanChandTestStatus" class="rates-api-test-status" hidden></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rates-api-keys-save-row">
+                            <button type="button" class="btn-primary" id="ratesApiKeysSaveBtn" onclick="typeof saveRatesApiKeys==='function'&&saveRatesApiKeys()" data-i18n="rates_api_save">ذخیره توکن‌ها</button>
+                            <span id="ratesApiKeysSaveStatus" class="rates-api-test-status" hidden></span>
+                        </div>
+                    </section>
                     <div class="rates-page-layout">
                         <div class="rates-page-col rates-page-col-left">
                             <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
