@@ -16059,7 +16059,109 @@
         function sysHelpBubble(helpKey) {
             var text = t(helpKey);
             if (!text || text === helpKey) return '';
-            return '<span class="sys-tip-mark" aria-hidden="true">?</span><div class="sys-tip-bubble" role="tooltip">' + escapeHtml(text) + '</div>';
+            return '<span class="sys-tip-mark" aria-hidden="true">?</span><div class="sys-tip-bubble">' + escapeHtml(text) + '</div>';
+        }
+
+        function sysTipHostFromNode(node) {
+            if (!node || !node.closest) return null;
+            return node.closest('.sys-tip');
+        }
+
+        function sysTipText(tipEl) {
+            if (!tipEl || !tipEl.querySelectorAll) return '';
+            var nodes = tipEl.querySelectorAll('.sys-tip-bubble');
+            for (var i = 0; i < nodes.length; i++) {
+                if (nodes[i].closest('.sys-tip') === tipEl) return String(nodes[i].textContent || '').trim();
+            }
+            return '';
+        }
+
+        function sysTipAnchor(tipEl) {
+            if (!tipEl || !tipEl.querySelectorAll) return tipEl;
+            var marks = tipEl.querySelectorAll('.sys-tip-mark');
+            for (var i = 0; i < marks.length; i++) {
+                if (marks[i].closest('.sys-tip') === tipEl) return marks[i];
+            }
+            return tipEl;
+        }
+
+        function ensureSysTipPopover() {
+            var pop = document.getElementById('sysTipPopover');
+            if (pop) return pop;
+            pop = document.createElement('div');
+            pop.id = 'sysTipPopover';
+            pop.className = 'sys-tip-popover';
+            pop.setAttribute('role', 'tooltip');
+            document.body.appendChild(pop);
+            return pop;
+        }
+
+        function hideSysTipPopover() {
+            var pop = document.getElementById('sysTipPopover');
+            if (!pop) return;
+            pop.classList.remove('is-visible');
+            pop.textContent = '';
+        }
+
+        function placeSysTipPopover(tipEl) {
+            var text = sysTipText(tipEl);
+            if (!text) {
+                hideSysTipPopover();
+                return;
+            }
+            var pop = ensureSysTipPopover();
+            pop.textContent = text;
+            pop.classList.add('is-visible');
+            var r = sysTipAnchor(tipEl).getBoundingClientRect();
+            var pad = 8;
+            var w = pop.offsetWidth || 280;
+            var h = pop.offsetHeight || 72;
+            var top = r.bottom + pad;
+            if (top + h > window.innerHeight - pad) top = Math.max(pad, r.top - h - pad);
+            var left = document.documentElement.dir === 'ltr' ? r.left : r.right - w;
+            if (left + w > window.innerWidth - pad) left = window.innerWidth - w - pad;
+            if (left < pad) left = pad;
+            pop.style.top = Math.round(top) + 'px';
+            pop.style.left = Math.round(left) + 'px';
+        }
+
+        function bindSystemStatusTips() {
+            var page = document.getElementById('pageSystemStatus');
+            if (!page || page._sysTipsBound) return;
+            page._sysTipsBound = true;
+            ensureSysTipPopover();
+            page.addEventListener('mouseover', function(e) {
+                var tip = sysTipHostFromNode(e.target);
+                if (!tip || !page.contains(tip)) return;
+                placeSysTipPopover(tip);
+            });
+            page.addEventListener('mouseout', function(e) {
+                var tip = sysTipHostFromNode(e.target);
+                if (!tip || !page.contains(tip)) return;
+                if (e.relatedTarget && tip.contains(e.relatedTarget)) return;
+                var nextTip = sysTipHostFromNode(e.relatedTarget);
+                if (nextTip && page.contains(nextTip)) placeSysTipPopover(nextTip);
+                else hideSysTipPopover();
+            });
+            page.addEventListener('focusin', function(e) {
+                var tip = sysTipHostFromNode(e.target);
+                if (tip && page.contains(tip)) placeSysTipPopover(tip);
+            });
+            page.addEventListener('focusout', function(e) {
+                var nextTip = sysTipHostFromNode(e.relatedTarget);
+                if (nextTip && page.contains(nextTip)) return;
+                hideSysTipPopover();
+            });
+            page.addEventListener('click', function(e) {
+                var mark = e.target && e.target.closest ? e.target.closest('.sys-tip-mark') : null;
+                if (!mark || !page.contains(mark)) return;
+                var tip = sysTipHostFromNode(mark);
+                if (!tip) return;
+                e.preventDefault();
+                placeSysTipPopover(tip);
+            });
+            window.addEventListener('scroll', hideSysTipPopover, true);
+            window.addEventListener('resize', hideSysTipPopover);
         }
 
         function sysStatusClass(st) {
@@ -16105,6 +16207,8 @@
 
         async function loadSystemStatus(showSkeleton) {
             if (_sysStatusLoading) return;
+            bindSystemStatusTips();
+            hideSysTipPopover();
             var checksEl = document.getElementById('sysStatusChecks');
             var banner = document.getElementById('sysOverallBanner');
             var labelEl = document.getElementById('sysOverallLabel');

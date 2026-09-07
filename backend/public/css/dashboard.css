@@ -4121,15 +4121,43 @@
         .sys-stat-card { background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 12px; position: relative; }
         .sys-stat-card .val { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
         .sys-stat-card .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; }
-        .sys-tip { cursor: help; }
-        .sys-tip-mark { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; opacity: 0.55; line-height: 1; }
+        .sys-tip { cursor: help; position: relative; }
+        .sys-tip-mark { flex-shrink: 0; width: 18px; height: 18px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; opacity: 0.7; line-height: 1; cursor: help; }
         .sys-overall-banner .sys-tip-mark { margin-inline-start: auto; }
-        .sys-tip-bubble { position: absolute; z-index: 40; inset-inline-start: 12px; bottom: calc(100% + 8px); width: min(280px, calc(100% - 16px)); padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.8rem; font-weight: 500; line-height: 1.55; box-shadow: 0 10px 28px rgba(0,0,0,0.28); opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(4px); transition: opacity 0.15s ease, visibility 0.15s ease, transform 0.15s ease; }
-        .sys-tip:hover > .sys-tip-bubble, .sys-tip:focus-within > .sys-tip-bubble, .sys-tip:focus > .sys-tip-bubble { opacity: 1; visibility: visible; transform: none; }
-        html[dir="ltr"] .sys-tip-bubble { inset-inline-start: auto; inset-inline-end: 12px; }
+        /* متن منبع برای پاپ‌اور ثابت؛ overflow صفحه حباب داخل کارت را می‌بُرد */
+        .sys-tip-bubble {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+            pointer-events: none;
+        }
+        .sys-tip-popover {
+            position: fixed;
+            z-index: 8000;
+            max-width: min(320px, calc(100vw - 24px));
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.82rem;
+            font-weight: 500;
+            line-height: 1.65;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.38);
+            display: none;
+            text-align: start;
+            pointer-events: none;
+        }
+        .sys-tip-popover.is-visible { display: block; }
         .sys-kv { display: grid; gap: 8px; font-size: 0.88rem; }
-        .sys-kv-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; position: relative; }
-        .sys-kv-row span:last-child { color: var(--text-secondary); text-align: end; word-break: break-word; }
+        .sys-kv-row { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 6px; position: relative; align-items: center; }
+        .sys-kv-row > span:nth-child(2) { color: var(--text-secondary); text-align: end; word-break: break-word; }
         .sys-raw-details { border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg-card); padding: 10px 14px; position: relative; }
         .sys-raw-details summary { cursor: pointer; font-weight: 600; }
         .sys-raw-pre { margin: 12px 0 0; padding: 12px; overflow: auto; max-height: 360px; background: var(--bg-secondary); border-radius: var(--radius-sm); font-size: 0.75rem; direction: ltr; text-align: left; white-space: pre-wrap; word-break: break-word; }
