@@ -149,6 +149,7 @@ window.__I18N_TR = {
     dashboard_queue_all: 'Tümünü gör',
     dashboard_queue_empty: 'Kuyrukta bekleyen yok.',
     dashboard_queue_empty_cta: 'Konuşmalara git',
+    dashboard_queue_waiting: '{time} bekliyor',
     dashboard_aside_title: 'Bugünün rakamları',
     dashboard_wa_on: 'WhatsApp bağlı',
     dashboard_wa_off: 'WhatsApp kapalı',

@@ -1144,7 +1144,11 @@
             }
             var phone = '';
             if (!isGroup && typeof customerUiPhone === 'function') phone = customerUiPhone(cust) || '';
-            var previewFn = (typeof convListPreviewText === 'function') ? convListPreviewText : function(raw) { return String(raw || '').trim(); };
+            var previewFn = function(raw) {
+                var p = (typeof convListPreviewText === 'function') ? convListPreviewText(raw) : String(raw || '').trim();
+                p = String(p || '').replace(/@\d{6,}(?:@g\.us)?/gi, ' ').replace(/\s+/g, ' ').trim();
+                return p;
+            };
             var preview = previewFn((c && c.lastMessagePreview) || '');
             var pic = (cust.profilePic && String(cust.profilePic).trim()) ? String(cust.profilePic).trim() : '';
             return {
@@ -1161,26 +1165,33 @@
         }
         async function fetchDashboardQueue(canConversations, stats) {
             if (!canConversations || typeof apiFetch !== 'function') return { rows: [], kind: 'none' };
-            var nn = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
-            var tries = [];
-            if (nn(stats && stats.unansweredConversations) > 0) tries.push({ url: '/api/conversations?unanswered=1&limit=12', kind: 'unanswered' });
-            if (nn(stats && stats.unreadConversations) > 0) tries.push({ url: '/api/conversations?unread=1&limit=12', kind: 'unread' });
-            tries.push({ url: '/api/conversations?status=open&limit=12', kind: 'open' });
-            var seen = {};
+            var urls = [
+                { url: '/api/conversations?unanswered=1&limit=12', kind: 'unanswered' },
+                { url: '/api/conversations?unread=1&limit=12', kind: 'unread' },
+                { url: '/api/conversations?status=open&limit=12', kind: 'open' }
+            ];
+            var merged = [];
+            var ids = {};
+            var primaryKind = 'open';
             var i;
-            for (i = 0; i < tries.length; i++) {
-                if (seen[tries[i].kind]) continue;
-                seen[tries[i].kind] = true;
+            var j;
+            for (i = 0; i < urls.length && merged.length < 12; i++) {
                 try {
-                    var res = await apiFetch(tries[i].url, { timeoutMs: 12000 });
+                    var res = await apiFetch(urls[i].url, { timeoutMs: 12000 });
                     if (!res || !res.ok) continue;
                     var payload = res.data || {};
                     var rows = payload.data || payload.rows || [];
-                    if (Array.isArray(rows) && rows.length) return { rows: rows, kind: tries[i].kind };
-                    if (tries[i].kind === 'open') return { rows: [], kind: 'open' };
+                    if (!Array.isArray(rows) || !rows.length) continue;
+                    if (urls[i].kind !== 'open' && primaryKind === 'open') primaryKind = urls[i].kind;
+                    for (j = 0; j < rows.length && merged.length < 12; j++) {
+                        var id = rows[j] && rows[j].id;
+                        if (!id || ids[id]) continue;
+                        ids[id] = true;
+                        merged.push(rows[j]);
+                    }
                 } catch (_e) { /* try next */ }
             }
-            return { rows: [], kind: 'none' };
+            return { rows: merged, kind: merged.length ? primaryKind : 'none' };
         }
         function dashQueueWaitLabel(c) {
             if (!c || !c.lastIncomingMessageAt) return '';
@@ -1231,14 +1242,18 @@
                 var timeStr = c.lastMessageAt
                     ? (typeof timeAgo === 'function' ? timeAgo(c.lastMessageAt) : (typeof fmtTZ === 'function' ? fmtTZ(c.lastMessageAt, 'time') : ''))
                     : '';
+                if (LANG === 'fa' && timeStr) {
+                    timeStr = String(timeStr).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+                }
                 var tally = unread > 99 ? '99+' : String(unread);
                 var preview = info.preview || '';
                 var wait = dashQueueWaitLabel(c);
                 var tallyHtml = unread
                     ? '<span class="dash-queue-tally">' + escapeHtml(tally) + '</span>'
                     : '<span class="dash-queue-tally is-zero"></span>';
-                var waitHtml = wait ? '<span class="dash-queue-wait">' + escapeHtml(wait) + '</span>' : '';
-                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + waitHtml + '<time class="dash-queue-time">' + escapeHtml(timeStr) + '</time>' + tallyHtml + '</div></a>';
+                var waitHtml = wait ? '<span class="dash-queue-wait">' + escapeHtml((t('dashboard_queue_waiting') || tt('منتظر {time}', 'Waiting {time}', '{time} bekliyor')).replace('{time}', wait)) + '</span>' : '';
+                var timeHtml = wait ? '' : (timeStr ? '<time class="dash-queue-time">' + escapeHtml(timeStr) + '</time>' : '');
+                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + waitHtml + timeHtml + tallyHtml + '</div></a>';
             }).join('');
         }
         function refreshDashboardUiAfterLang() {
@@ -1365,7 +1380,7 @@
                         const stat = cardStatText(c, stats);
                         const badgeWarn = c.badgeWarn && c.statKey === 'unreadConversations' && n(stats.unreadConversations) > 0;
                         const badge = stat ? ('<span class="card-badge' + (badgeWarn ? ' warn' : '') + '">' + escapeHtml(stat) + '</span>') : '';
-                        groupHtml += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (stat ? '<p class="card-meta">' + escapeHtml(stat) + '</p>' : '') + badge + '</a>';
+                        groupHtml += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + badge + '</a>';
                     });
                     if (!groupHtml && grp.key === 'finance' && fxLocked && can('rates')) {
                         groupHtml = '<div class="dashboard-card dashboard-card--locked"><div class="card-title">' + escapeHtml(t('dash_fx_locked_title')) + '</div><p class="card-meta">' + escapeHtml(t('dash_fx_locked_body')) + '</p></div>';

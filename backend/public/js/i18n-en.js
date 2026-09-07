@@ -149,6 +149,7 @@ window.__I18N_EN = {
     dashboard_queue_all: 'View all',
     dashboard_queue_empty: 'Nothing waiting in the queue.',
     dashboard_queue_empty_cta: 'Open conversations',
+    dashboard_queue_waiting: 'Waiting {time}',
     dashboard_aside_title: 'Today’s figures',
     dashboard_wa_on: 'WhatsApp connected',
     dashboard_wa_off: 'WhatsApp offline',

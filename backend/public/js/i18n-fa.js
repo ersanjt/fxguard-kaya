@@ -148,6 +148,7 @@ window.__I18N_FA = {
     dashboard_queue_all: 'مشاهده همه',
     dashboard_queue_empty: 'الان چیزی در صف پاسخ نیست.',
     dashboard_queue_empty_cta: 'رفتن به مکالمات',
+    dashboard_queue_waiting: 'منتظر {time}',
     dashboard_aside_title: 'آمار امروز',
     dashboard_wa_on: 'واتساپ متصل',
     dashboard_wa_off: 'واتساپ قطع',
