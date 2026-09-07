@@ -2352,6 +2352,7 @@
             }
             const headerStatus = document.getElementById('headerWhatsappStatus');
             if (headerStatus) headerStatus.classList.toggle('connected', status === 'connected');
+            if (typeof syncDashboardWaChip === 'function') syncDashboardWaChip();
         }
         async function fetchWhatsappHeaderStatus() {
             const perms = (currentUser && currentUser.permissions) || {};

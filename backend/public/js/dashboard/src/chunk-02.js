@@ -1070,6 +1070,146 @@
             var aria = escapeHtml(String(item.num) + ' ' + String(item.label || ''));
             return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + ' aria-label="' + aria + '"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
         }
+        function renderDashBlotterCell(item) {
+            var quiet = dashStatIsQuiet(item);
+            var cls = 'dash-blotter-cell' + (item.warn ? ' warn' : '') + (quiet ? ' is-quiet' : '');
+            var convTab = item.convTab ? (' data-conv-tab="' + escapeHtml(item.convTab) + '"') : '';
+            var aria = escapeHtml(String(item.num) + ' ' + String(item.label || ''));
+            return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + ' aria-label="' + aria + '"><span class="stat-label">' + escapeHtml(item.label) + '</span><span class="stat-number">' + escapeHtml(String(item.num)) + '</span></a>';
+        }
+        function renderDashDefRow(item) {
+            var quiet = dashStatIsQuiet(item);
+            var cls = 'dash-def-row' + (item.warn ? ' warn' : '') + (quiet ? ' is-quiet' : '');
+            var convTab = item.convTab ? (' data-conv-tab="' + escapeHtml(item.convTab) + '"') : '';
+            var aria = escapeHtml(String(item.label || '') + ' ' + String(item.num));
+            return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + ' aria-label="' + aria + '"><span class="dash-def-label">' + escapeHtml(item.label) + '</span><span class="dash-def-num">' + escapeHtml(String(item.num)) + '</span></a>';
+        }
+        function paintDashboardGreeting() {
+            var el = document.getElementById('dashboardGreeting');
+            if (!el) return;
+            var u = currentUser || {};
+            var first = String(u.firstName || '').trim();
+            if (!first) {
+                var full = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || String(u.name || '').trim();
+                first = full.split(/\s+/)[0] || '';
+            }
+            if (first) {
+                var tmpl = t('dashboard_hello') || tt('سلام، {name}', 'Hello, {name}', 'Merhaba, {name}');
+                el.textContent = String(tmpl).replace('{name}', first);
+            } else {
+                el.textContent = t('page_dashboard') || tt('داشبورد', 'Dashboard', 'Kontrol Paneli');
+            }
+        }
+        function syncDashboardWaChip() {
+            var chip = document.getElementById('dashboardWaChip');
+            if (!chip) return;
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (perms.whatsapp === false) {
+                chip.hidden = true;
+                chip.textContent = '';
+                return;
+            }
+            var header = document.getElementById('headerWhatsappStatus');
+            var on = !!(header && header.classList.contains('connected'));
+            chip.hidden = false;
+            chip.className = 'dash-wa-chip' + (on ? ' is-on' : ' is-off');
+            chip.textContent = on
+                ? (t('dashboard_wa_on') || tt('واتساپ متصل', 'WhatsApp connected', 'WhatsApp bağlı'))
+                : (t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı'));
+        }
+        function dashConvLooksLikeJid(s) {
+            if (!s) return true;
+            if (window.CRM && CRM.Utils && typeof CRM.Utils.looksLikeTechnicalWhatsAppLabel === 'function' && CRM.Utils.looksLikeTechnicalWhatsAppLabel(s)) return true;
+            return /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
+        }
+        function dashQueueDisplay(c) {
+            var cust = (c && c.customer) || {};
+            var metaObj = (c && c.metadata) || {};
+            if (typeof metaObj === 'string') {
+                try { metaObj = JSON.parse(metaObj); } catch (_e) { metaObj = {}; }
+            }
+            metaObj = metaObj || {};
+            var isGroup = !!(metaObj.isGroup) || /@g\.us$/i.test(cust.phone || '');
+            var name = '';
+            if (isGroup) {
+                var groupName = String(metaObj.groupName || metaObj.name || metaObj.subject || metaObj.formattedTitle || '').trim();
+                var custName = String(cust.name || '').trim();
+                if (groupName && !dashConvLooksLikeJid(groupName)) name = groupName;
+                else if (custName && !dashConvLooksLikeJid(custName)) name = custName;
+                else name = LANG === 'fa' ? 'گروه واتساپ' : (LANG === 'tr' ? 'WhatsApp grubu' : 'WhatsApp group');
+            } else if (typeof customerUiName === 'function') {
+                name = customerUiName(cust);
+            } else {
+                name = String(cust.name || '').trim() || (t('customer') || tt('مشتری', 'Customer', 'Müşteri'));
+            }
+            var phone = '';
+            if (!isGroup && typeof customerUiPhone === 'function') phone = customerUiPhone(cust) || '';
+            var previewFn = (typeof convListPreviewText === 'function') ? convListPreviewText : function(raw) { return String(raw || '').trim(); };
+            var preview = previewFn((c && c.lastMessagePreview) || '');
+            var pic = (cust.profilePic && String(cust.profilePic).trim()) ? String(cust.profilePic).trim() : '';
+            return {
+                name: name,
+                phone: phone,
+                isGroup: isGroup,
+                customerId: cust.id || '',
+                profilePic: pic,
+                preview: preview
+            };
+        }
+        function dashboardQueueSkeleton() {
+            return '<div class="dash-queue-skel loading-skeleton" aria-hidden="true"></div><div class="dash-queue-skel loading-skeleton" aria-hidden="true"></div><div class="dash-queue-skel loading-skeleton" aria-hidden="true"></div>';
+        }
+        async function fetchDashboardQueue(canConversations, stats) {
+            if (!canConversations || typeof apiFetch !== 'function') return { rows: [], kind: 'none' };
+            var nn = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            var tries = [];
+            if (nn(stats && stats.unansweredConversations) > 0) tries.push({ url: '/api/conversations?unanswered=1&limit=8', kind: 'unanswered' });
+            if (nn(stats && stats.unreadConversations) > 0) tries.push({ url: '/api/conversations?unread=1&limit=8', kind: 'unread' });
+            tries.push({ url: '/api/conversations?status=open&limit=8', kind: 'open' });
+            var seen = {};
+            var i;
+            for (i = 0; i < tries.length; i++) {
+                if (seen[tries[i].kind]) continue;
+                seen[tries[i].kind] = true;
+                try {
+                    var res = await apiFetch(tries[i].url, { timeoutMs: 12000 });
+                    if (!res || !res.ok) continue;
+                    var payload = res.data || {};
+                    var rows = payload.data || payload.rows || [];
+                    if (Array.isArray(rows) && rows.length) return { rows: rows, kind: tries[i].kind };
+                    if (tries[i].kind === 'open') return { rows: [], kind: 'open' };
+                } catch (_e) { /* try next */ }
+            }
+            return { rows: [], kind: 'none' };
+        }
+        function renderDashboardQueue(queueEl, wrapEl, allLink, result, canConversations) {
+            if (wrapEl) wrapEl.hidden = !canConversations;
+            if (!queueEl) return;
+            if (!canConversations) {
+                queueEl.innerHTML = '';
+                return;
+            }
+            var rows = (result && result.rows) || [];
+            if (allLink) {
+                var tab = result && result.kind === 'unread' ? 'unread' : (result && result.kind === 'open' ? 'open' : 'unanswered');
+                allLink.setAttribute('data-conv-tab', tab);
+            }
+            if (!rows.length) {
+                queueEl.innerHTML = '<p class="dash-queue-empty">' + escapeHtml(t('dashboard_queue_empty') || tt('چیزی در صف نیست.', 'The queue is empty.', 'Kuyruk boş.')) + '</p>';
+                return;
+            }
+            queueEl.innerHTML = rows.map(function(c) {
+                var info = dashQueueDisplay(c);
+                var unread = Number(c.unreadCount) || 0;
+                var timeStr = c.lastMessageAt
+                    ? (typeof timeAgo === 'function' ? timeAgo(c.lastMessageAt) : (typeof fmtTZ === 'function' ? fmtTZ(c.lastMessageAt, 'time') : ''))
+                    : '';
+                var tallyCls = 'dash-queue-tally' + (unread ? '' : ' is-zero');
+                var tally = unread > 99 ? '99+' : String(unread);
+                var preview = info.preview || '';
+                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '"><div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><time class="dash-queue-time">' + escapeHtml(timeStr) + '</time><span class="' + tallyCls + '">' + escapeHtml(tally) + '</span></a>';
+            }).join('');
+        }
         function refreshDashboardUiAfterLang() {
             try {
                 if (typeof loadDashboard === 'function') loadDashboard();
@@ -1088,7 +1228,13 @@
         function dashboardSummarySkeleton(count) {
             var n = count || 4;
             var html = '';
-            for (var i = 0; i < n; i++) html += '<div class="dashboard-stat-box dashboard-stat-skeleton loading-skeleton" aria-hidden="true"></div>';
+            for (var i = 0; i < n; i++) html += '<div class="dash-blotter-cell dashboard-stat-skeleton loading-skeleton" aria-hidden="true"></div>';
+            return html;
+        }
+        function dashboardDefSkeleton(count) {
+            var n = count || 5;
+            var html = '';
+            for (var i = 0; i < n; i++) html += '<div class="dash-def-row dashboard-stat-skeleton loading-skeleton" aria-hidden="true"></div>';
             return html;
         }
         let _loadDashboardSeq = 0;
@@ -1100,11 +1246,16 @@
             const attentionEl = document.getElementById('dashboardAttention');
             const cardsTitleEl = document.getElementById('dashboardCardsTitle');
             const lastUpdatedEl = document.getElementById('dashboardLastUpdated');
+            const queueEl = document.getElementById('dashboardQueue');
+            const queueWrapEl = document.getElementById('dashboardQueueWrap');
+            const queueAllLink = document.querySelector('#dashboardQueueWrap .dash-panel-link');
             if (!container) return;
             const seq = ++_loadDashboardSeq;
+            paintDashboardGreeting();
+            syncDashboardWaChip();
             if (!currentUser || !currentUser.id) {
                 if (kpiPrimaryEl && !kpiPrimaryEl.innerHTML) kpiPrimaryEl.innerHTML = typeof dashboardSummarySkeleton === 'function' ? dashboardSummarySkeleton(4) : '';
-                if (summaryEl && !summaryEl.innerHTML) summaryEl.innerHTML = typeof dashboardSummarySkeleton === 'function' ? dashboardSummarySkeleton(6) : '';
+                if (summaryEl && !summaryEl.innerHTML) summaryEl.innerHTML = typeof dashboardDefSkeleton === 'function' ? dashboardDefSkeleton(6) : '';
                 if ((_attempt || 0) < 20) {
                     setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 500);
                 } else {
@@ -1196,7 +1347,9 @@
                 if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
             };
             if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = can('conversations') ? dashboardSummarySkeleton(4) : '';
-            if (summaryEl) summaryEl.innerHTML = dashboardSummarySkeleton(6);
+            if (summaryEl) summaryEl.innerHTML = dashboardDefSkeleton(6);
+            if (queueEl && can('conversations')) queueEl.innerHTML = dashboardQueueSkeleton();
+            if (queueWrapEl) queueWrapEl.hidden = !can('conversations');
             if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
@@ -1205,6 +1358,7 @@
                 if (seq !== _loadDashboardSeq) return;
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + t('loading_err') + '</div>';
                 if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
+                if (queueEl) queueEl.innerHTML = '<p class="dash-queue-error">' + escapeHtml(t('loading_err')) + '</p>';
                 setDashboardError(container, cardsTitleEl, t('loading_err'));
                 return;
             }
@@ -1216,6 +1370,7 @@
                     : ((res.data && res.data.error) ? res.data.error : t('loading_err'));
                 if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(errMsg) + '</div>';
                 if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
+                if (queueEl) queueEl.innerHTML = '<p class="dash-queue-error">' + escapeHtml(errMsg) + '</p>';
                 setDashboardError(container, cardsTitleEl, errMsg);
                 if (res.status === 429 && (_attempt || 0) < 2) {
                     setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 2500);
@@ -1230,16 +1385,13 @@
             }
             if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
             if (quickEl) quickEl.innerHTML = '';
-            if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.unansweredConversations) > 0 || n(stats.unassignedConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
+            if (attentionEl && (n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
-                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + dashFormatNum(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
-                if (can('conversations') && n(stats.unansweredConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unanswered">' + dashFormatNum(stats.unansweredConversations) + ' ' + t('dashboard_stat_unanswered') + '</a>');
-                if (can('conversations') && n(stats.unassignedConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unassigned">' + dashFormatNum(stats.unassignedConversations) + ' ' + t('dashboard_stat_unassigned') + '</a>');
                 if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + dashFormatNum(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + dashFormatNum(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
                     var needsLabel = (t('dashboard_needs_attention') || tt('نیاز به توجه', 'Needs attention', 'Dikkat')).replace(/[:：]\s*$/, '');
-                    attentionEl.innerHTML = '<span class="dashboard-attention-label">' + escapeHtml(needsLabel) + '</span><span class="dashboard-attention-chips">' + parts.join('') + '</span>';
+                    attentionEl.innerHTML = '<span class="dashboard-attention-label">' + escapeHtml(needsLabel) + '</span><span class="dashboard-attention-chips">' + parts.join('<span class="dash-att-sep" aria-hidden="true">·</span>') + '</span>';
                     attentionEl.style.display = 'flex';
                 }
             }
@@ -1250,7 +1402,7 @@
                     { page: 'conversations', num: dashFormatNum(n(stats.unansweredConversations)), label: t('dashboard_stat_unanswered'), warn: n(stats.unansweredConversations) > 0, convTab: 'unanswered' },
                     { page: 'conversations', num: dashFormatNum(n(stats.unassignedConversations)), label: t('dashboard_stat_unassigned'), warn: n(stats.unassignedConversations) > 0, convTab: 'unassigned' }
                 ];
-                kpiPrimaryEl.innerHTML = primaryItems.map(function(item) { return renderDashboardStatBox(item, true); }).join('');
+                kpiPrimaryEl.innerHTML = primaryItems.map(function(item) { return renderDashBlotterCell(item); }).join('');
             } else if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
             if (summaryEl) {
                 const summaryItems = [];
@@ -1268,8 +1420,14 @@
                 }
                 if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/' + dashFormatNum(5), label: (t('dashboard_stat_satisfaction') || 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
-                summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + tt('آمار دیگری برای نمایش نیست.', 'No additional stats.', 'Başka istatistik yok.') + '</div>';
+                summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashDefRow(item); }).join('') || '<div class="dash-def-empty">' + tt('آمار دیگری برای نمایش نیست.', 'No additional stats.', 'Başka istatistik yok.') + '</div>';
             }
+            var queueResult = { rows: [], kind: 'none' };
+            if (can('conversations')) {
+                try { queueResult = await fetchDashboardQueue(true, stats); } catch (_qErr) { queueResult = { rows: [], kind: 'none' }; }
+                if (seq !== _loadDashboardSeq) return;
+            }
+            renderDashboardQueue(queueEl, queueWrapEl, queueAllLink, queueResult, can('conversations'));
             if (quickEl) {
                 const quickBtns = [];
                 if (can('conversations')) quickBtns.push({ label: t('dashboard_quick_new_conv'), icon: 'icon-chat', quickAction: 'conv-new' });
@@ -1938,7 +2096,7 @@
                     showPage(dashCard.getAttribute('data-page') || '');
                     return;
                 }
-                const dashStat = targetEl && targetEl.closest && targetEl.closest('.dashboard-stat-box[data-dashboard-page]');
+                const dashStat = targetEl && targetEl.closest && targetEl.closest('.dashboard-stat-box[data-dashboard-page], .dash-blotter-cell[data-dashboard-page], .dash-def-row[data-dashboard-page], .dash-panel-link[data-dashboard-page]');
                 if (dashStat && typeof showPage === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
@@ -1946,6 +2104,23 @@
                     var _statConvTab = dashStat.getAttribute('data-conv-tab');
                     if (_statConvTab && _statPage === 'conversations') window._pendingConvQuickTab = _statConvTab;
                     showPage(_statPage);
+                    return;
+                }
+                const dashQueue = targetEl && targetEl.closest && targetEl.closest('.dash-queue-row[data-id]');
+                if (dashQueue && typeof showPage === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var _qid = dashQueue.getAttribute('data-id') || '';
+                    var _qname = dashQueue.getAttribute('data-name') || '';
+                    var _qphone = dashQueue.getAttribute('data-phone') || '';
+                    var _qpic = dashQueue.getAttribute('data-profile-pic') || '';
+                    var _qgroup = dashQueue.getAttribute('data-is-group') === '1';
+                    var _qcust = dashQueue.getAttribute('data-customer-id') || '';
+                    if (typeof persistLastConv === 'function') persistLastConv(_qid, _qname, _qphone, _qpic, _qgroup, _qcust);
+                    showPage('conversations');
+                    if (_qid && typeof openChat === 'function') {
+                        openChat(_qid, _qname, _qphone, _qpic, _qgroup, _qcust);
+                    }
                     return;
                 }
                 const dashAtt = targetEl && targetEl.closest && targetEl.closest('.dashboard-attention-link[data-dashboard-page]');
