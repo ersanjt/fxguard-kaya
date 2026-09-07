@@ -55,8 +55,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: artifacts/kaya-staff-android
 
-      - name: Ensure staff APK directory on server
+      - name: Flatten Android APK files
         if: github.event_name == 'workflow_run' && hashFiles('artifacts/kaya-staff-android/kaya-staff.apk') != ''
+        run: |
+          mkdir -p staff-apk-flat
+          cp artifacts/kaya-staff-android/kaya-staff.apk staff-apk-flat/kaya-staff.apk
+          cp artifacts/kaya-staff-android/android-version.json staff-apk-flat/android-version.json
+
+      - name: Ensure staff APK directory on server
+        if: github.event_name == 'workflow_run' && hashFiles('staff-apk-flat/kaya-staff.apk') != ''
         continue-on-error: true
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -67,15 +74,16 @@ jobs:
           script: mkdir -p /var/www/kayaCRM-kaya/backend/uploads/releases
 
       - name: Upload Android APK to server
-        if: github.event_name == 'workflow_run' && hashFiles('artifacts/kaya-staff-android/kaya-staff.apk') != ''
+        if: github.event_name == 'workflow_run' && hashFiles('staff-apk-flat/kaya-staff.apk') != ''
         continue-on-error: true
         uses: appleboy/scp-action@v1.0.0
         with:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: artifacts/kaya-staff-android/kaya-staff.apk,artifacts/kaya-staff-android/android-version.json
+          source: staff-apk-flat/*
           target: /var/www/kayaCRM-kaya/backend/uploads/releases
+          strip_components: 1
           overwrite: true
           timeout: 5m
 
@@ -275,9 +283,24 @@ jobs:
             echo "  ✅ $(cat backend/public/crm-build.json | tr '\n' ' ')"
 
             echo "📱 ثبت APK کارکنان برای دانلود از پروفایل ..."
-            if [ -f backend/uploads/releases/kaya-staff.apk ]; then
-              chmod 644 backend/uploads/releases/kaya-staff.apk
-              chmod 644 backend/uploads/releases/android-version.json 2>/dev/null || true
+            RELEASES_DIR="backend/uploads/releases"
+            mkdir -p "$RELEASES_DIR"
+            if [ ! -f "$RELEASES_DIR/kaya-staff.apk" ]; then
+              NESTED_APK=$(find "$RELEASES_DIR" -name 'kaya-staff.apk' -type f 2>/dev/null | head -n 1)
+              if [ -n "$NESTED_APK" ]; then
+                mv "$NESTED_APK" "$RELEASES_DIR/kaya-staff.apk"
+                echo "  ✅ APK از مسیر تودرتوی scp به جای اصلی منتقل شد"
+              fi
+            fi
+            if [ ! -f "$RELEASES_DIR/android-version.json" ]; then
+              NESTED_JSON=$(find "$RELEASES_DIR" -name 'android-version.json' -type f 2>/dev/null | head -n 1)
+              if [ -n "$NESTED_JSON" ]; then
+                mv "$NESTED_JSON" "$RELEASES_DIR/android-version.json"
+              fi
+            fi
+            if [ -f "$RELEASES_DIR/kaya-staff.apk" ]; then
+              chmod 644 "$RELEASES_DIR/kaya-staff.apk"
+              chmod 644 "$RELEASES_DIR/android-version.json" 2>/dev/null || true
               node backend/scripts/set-staff-app-install-urls.js
               echo "  ✅ APK در /uploads/releases/kaya-staff.apk"
             else

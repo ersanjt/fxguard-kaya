@@ -42,7 +42,14 @@ test('default releases path is managed', () => {
 test('Play Store / App Store URLs are not managed', () => {
     assert.strictEqual(isManagedInstallUrl('https://play.google.com/store/apps/details?id=io.fxguard.kaya.staff', 'android'), false);
     assert.strictEqual(isManagedInstallUrl('https://apps.apple.com/app/id123', 'ios'), false);
-    assert.strictEqual(isManagedInstallUrl('/uploads/mobile-builds/app-1.apk', 'android'), false);
+});
+
+test('first-party /uploads APK links are replaced by the CI file', () => {
+    assert.strictEqual(isManagedInstallUrl('/uploads/mobile-builds/app-1.apk', 'android'), true);
+    assert.strictEqual(
+        isManagedInstallUrl('https://kaya.fxguard.io/uploads/mobile-builds/app-1.apk', 'android'),
+        true
+    );
 });
 
 test('fallback fills Android when APK exists and URL is empty', () => {

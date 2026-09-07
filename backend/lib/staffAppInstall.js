@@ -33,13 +33,29 @@ function iosIpaExists() {
     return fileExists(IOS_FILE);
 }
 
+function isFirstPartyUploadUrl(url) {
+    const s = String(url || '').trim();
+    if (!s) return false;
+    if (s.startsWith('/uploads/')) return true;
+    try {
+        const u = new URL(s);
+        const host = String(u.hostname || '')
+            .replace(/^www\./i, '')
+            .toLowerCase();
+        if (host !== 'kaya.fxguard.io') return false;
+        return String(u.pathname || '').startsWith('/uploads/');
+    } catch (_e) {
+        return false;
+    }
+}
+
 function isManagedInstallUrl(url, kind) {
     const s = String(url || '').trim();
     if (!s) return true;
     if (kind === 'ios') {
-        return /\/uploads\/releases\/kaya-staff\.ipa(\?|#|$)/i.test(s) || s === IOS_REL;
+        return isFirstPartyUploadUrl(s) && /\.ipa(\?|#|$)/i.test(s);
     }
-    return /\/uploads\/releases\/kaya-staff\.apk(\?|#|$)/i.test(s) || s === ANDROID_REL;
+    return isFirstPartyUploadUrl(s);
 }
 
 function applyStaffAppUrlFallbacks(settings, opts) {
