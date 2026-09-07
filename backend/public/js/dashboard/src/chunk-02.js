@@ -524,6 +524,75 @@
             renderProfile(u);
             setupProfileEventHandlers();
             await refreshTelegramProfileSection();
+            applyProfileMobileApps();
+        }
+        function isDirectMobileInstallUrl(url) {
+            var u = String(url || '').trim();
+            if (!u) return false;
+            return /\.(apk|ipa)(\?|#|$)/i.test(u) || /\/uploads\/(releases|mobile)\//i.test(u);
+        }
+        function bindProfileAppTile(el, url) {
+            if (!el) return;
+            var ready = !!(url && (/^https?:\/\//i.test(url) || url.charAt(0) === '/'));
+            var meta = el.querySelector('.profile-app-tile-sub');
+            el.classList.toggle('is-ready', ready);
+            el.classList.toggle('is-unavailable', !ready);
+            el.setAttribute('aria-disabled', ready ? 'false' : 'true');
+            if (ready) {
+                el.href = url;
+                el.target = '_blank';
+                el.rel = 'noopener noreferrer';
+                if (isDirectMobileInstallUrl(url)) el.setAttribute('download', '');
+                else el.removeAttribute('download');
+                if (meta) meta.textContent = t('profile_mobile_ready');
+            } else {
+                el.href = '#';
+                el.removeAttribute('download');
+                el.removeAttribute('target');
+                if (meta) meta.textContent = t('profile_mobile_missing');
+            }
+            if (!el._crmAppTileBound) {
+                el._crmAppTileBound = true;
+                el.addEventListener('click', function(e) {
+                    if (el.classList.contains('is-unavailable')) {
+                        e.preventDefault();
+                        if (typeof toast === 'function') toast(t('profile_mobile_apps_empty'), true);
+                    }
+                });
+            }
+        }
+        async function applyProfileMobileApps() {
+            var androidEl = document.getElementById('profileAndroidAppLink');
+            var iosEl = document.getElementById('profileIosAppLink');
+            var emptyEl = document.getElementById('profileMobileAppsEmpty');
+            var settingsBtn = document.getElementById('profileMobileAppsOpenSettings');
+            if (!androidEl && !iosEl) return;
+            var branding = (typeof PANEL_BRANDING_STATE !== 'undefined' && PANEL_BRANDING_STATE) ? PANEL_BRANDING_STATE : {};
+            var androidUrl = String(branding.androidAppUrl || '').trim();
+            var iosUrl = String(branding.iosAppUrl || '').trim();
+            if (!androidUrl) {
+                try {
+                    var cfg = await apiFetch('/api/config');
+                    if (cfg && cfg.ok && cfg.data && cfg.data.androidAppUpdate && cfg.data.androidAppUpdate.apkUrl) {
+                        androidUrl = String(cfg.data.androidAppUpdate.apkUrl).trim();
+                    }
+                } catch (_e) {}
+            }
+            bindProfileAppTile(androidEl, androidUrl);
+            bindProfileAppTile(iosEl, iosUrl);
+            var any = !!(androidUrl || iosUrl);
+            if (emptyEl) emptyEl.style.display = any ? 'none' : '';
+            var canSettings = typeof canAccessSection === 'function' && canAccessSection('panel_settings');
+            if (settingsBtn) {
+                settingsBtn.style.display = canSettings ? '' : 'none';
+                if (!settingsBtn._crmAppSettingsBound) {
+                    settingsBtn._crmAppSettingsBound = true;
+                    settingsBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (typeof showPage === 'function') showPage('panel-settings');
+                    });
+                }
+            }
         }
         function renderProfile(u) {
             if (u) {

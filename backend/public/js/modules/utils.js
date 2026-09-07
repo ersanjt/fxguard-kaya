@@ -64,9 +64,19 @@
         return (num > 0 ? '+' : '−') + out;
     }
 
+    function looksLikeTechnicalWhatsAppLabel(val) {
+        const s = String(val || '').trim();
+        if (!s) return false;
+        if (/^unknown user$/i.test(s)) return true;
+        if (/^(lid|c\.us|s\.whatsapp\.net)@/i.test(s)) return true;
+        if (/@(lid|c\.us|s\.whatsapp\.net|g\.us)\b/i.test(s)) return true;
+        if (/^(مشتری|customer|müşteri)\s+/i.test(s) && /(@|lid@|c\.us@)/i.test(s)) return true;
+        return false;
+    }
+
     function looksLikePhone(val) {
         const s = String(val || '').trim();
-        if (!s || /@g\.us$/i.test(s)) return false;
+        if (!s || /@g\.us$/i.test(s) || looksLikeTechnicalWhatsAppLabel(s)) return false;
         const stripped = s
             .replace(/^مشتری\s+/i, '')
             .replace(/^customer\s+/i, '')
@@ -79,6 +89,21 @@
         return false;
     }
 
+    function displayableWhatsAppPhone(val) {
+        const s = String(val || '').trim();
+        if (!s || /@g\.us$/i.test(s)) return '';
+        let digits = s
+            .replace(/^(lid|c\.us|s\.whatsapp\.net)@/i, '')
+            .replace(/@(c\.us|s\.whatsapp\.net|lid)$/i, '')
+            .replace(/\D/g, '');
+        while (digits.indexOf('00') === 0) digits = digits.slice(2);
+        if (/^0\d{9,11}$/.test(digits)) digits = digits.slice(1);
+        if (/^989\d{9}$/.test(digits) || /^90\d{10}$/.test(digits) || /^98\d{10}$/.test(digits)) return digits;
+        if (/@lid\b/i.test(s) || /^lid@/i.test(s)) return '';
+        if (/^\d{8,15}$/.test(digits) && !/@lid\b/i.test(s)) return digits;
+        return '';
+    }
+
     function customerDisplayName(cust, opts) {
         opts = opts || {};
         const seePhone = !!opts.seePhone;
@@ -86,16 +111,17 @@
         const c = cust || {};
         const rawName = String(c.name || '').trim();
         const phone = String(c.phone || '').trim();
-        if (rawName && (seePhone || !looksLikePhone(rawName))) return rawName;
-        if (seePhone && phone && !/@g\.us$/i.test(phone)) return phone;
+        if (rawName && !looksLikeTechnicalWhatsAppLabel(rawName) && (seePhone || !looksLikePhone(rawName))) {
+            return rawName;
+        }
+        const shownPhone = displayableWhatsAppPhone(phone);
+        if (seePhone && shownPhone) return shownPhone;
         return fallback;
     }
 
     function visibleCustomerPhone(cust, seePhone) {
         if (!seePhone) return '';
-        const p = String((cust && cust.phone) || '').trim();
-        if (!p || /@g\.us$/i.test(p)) return '';
-        return p;
+        return displayableWhatsAppPhone((cust && cust.phone) || '');
     }
 
     window.CRM = window.CRM || {};
@@ -105,6 +131,8 @@
         formatPrice: formatPrice,
         formatChange: formatChange,
         looksLikePhone: looksLikePhone,
+        looksLikeTechnicalWhatsAppLabel: looksLikeTechnicalWhatsAppLabel,
+        displayableWhatsAppPhone: displayableWhatsAppPhone,
         customerDisplayName: customerDisplayName,
         visibleCustomerPhone: visibleCustomerPhone,
     };

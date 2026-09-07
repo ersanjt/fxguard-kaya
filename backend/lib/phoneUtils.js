@@ -43,6 +43,30 @@ function isKnownPhoneDigits(digits) {
     return PHONE_CC_PREFIXES.some((cc) => digits.startsWith(cc) && digits.length >= cc.length + 8 && digits.length <= cc.length + 12);
 }
 
+/** برچسب فنی واتساپ (LID / JID / Unknown user) که نباید به‌جای اسم مخاطب دیده شود */
+function looksLikeTechnicalWhatsAppLabel(val) {
+    const s = String(val || '').trim();
+    if (!s) return false;
+    if (/^unknown user$/i.test(s)) return true;
+    if (/^(lid|c\.us|s\.whatsapp\.net)@/i.test(s)) return true;
+    if (/@(lid|c\.us|s\.whatsapp\.net|g\.us)\b/i.test(s)) return true;
+    if (/^(مشتری|customer|müşteri)\s+/i.test(s) && /(@|lid@|c\.us@)/i.test(s)) return true;
+    return false;
+}
+
+/** شمارهٔ قابل‌نمایش؛ LID خام را نشان نده مگر رقم‌ها واقعاً E.164 باشند */
+function displayableWhatsAppPhone(val) {
+    const s = String(val || '').trim();
+    if (!s || isGroupJid(s)) return '';
+    const digits = canonicalizePhoneDigits(s);
+    if (isKnownPhoneDigits(digits)) return digits;
+    if (isLikelyWhatsAppLid(s) || /@lid$/i.test(s) || /^lid@/i.test(s)) return '';
+    if (/@(c\.us|s\.whatsapp\.net)$/i.test(s) || /^c\.us@/i.test(s)) {
+        return digits || '';
+    }
+    return '';
+}
+
 /** آیا این مقدار شناسهٔ گروه واتساپ است؟ */
 function isGroupJid(val) {
     return /@g\.us$/i.test(String(val || '').trim());
@@ -118,4 +142,6 @@ module.exports = {
     stripWhatsAppSuffix,
     canonicalizePhoneDigits,
     isKnownPhoneDigits,
+    looksLikeTechnicalWhatsAppLabel,
+    displayableWhatsAppPhone,
 };

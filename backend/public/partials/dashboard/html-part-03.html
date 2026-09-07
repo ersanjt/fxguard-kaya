@@ -288,27 +288,42 @@
                             <button type="button" class="btn-primary" id="btnRefreshSystemStatus" onclick="loadSystemStatus(true)" data-i18n="sys_refresh">بروزرسانی</button>
                         </div>
                     </div>
-                    <div id="sysOverallBanner" class="sys-overall-banner" aria-live="polite">
+                    <div id="sysOverallBanner" class="sys-overall-banner sys-tip" tabindex="0" aria-live="polite">
                         <span class="sys-overall-dot" aria-hidden="true"></span>
                         <span id="sysOverallLabel" data-i18n="loading">در حال بارگذاری...</span>
+                        <span class="sys-tip-mark" aria-hidden="true">?</span>
+                        <div class="sys-tip-bubble" role="tooltip" data-i18n="sys_help_overall">جمع‌بندی سلامت سرویس‌های اجباری پنل. سالم یعنی پایگاه‌داده و اتصال واتساپ در دسترس‌اند.</div>
                     </div>
                     <div id="sysStatusChecks" class="sys-check-grid"></div>
                     <div class="sys-metrics-row">
-                        <section class="sys-panel">
-                            <h3 data-i18n="sys_ops_counts">آمار عملیاتی</h3>
+                        <section class="sys-panel sys-tip" tabindex="0">
+                            <div class="sys-panel-head">
+                                <h3 data-i18n="sys_ops_counts">آمار عملیاتی</h3>
+                                <span class="sys-tip-mark" aria-hidden="true">?</span>
+                            </div>
+                            <div class="sys-tip-bubble" role="tooltip" data-i18n="sys_help_ops">شمارنده‌های کار روزمره: مکالمات باز، پیام امروز، کاربران و مشتریان فعال.</div>
                             <div id="sysOpsCounts" class="sys-stat-cards"></div>
                         </section>
-                        <section class="sys-panel">
-                            <h3 data-i18n="sys_process">فرآیند سرور</h3>
+                        <section class="sys-panel sys-tip" tabindex="0">
+                            <div class="sys-panel-head">
+                                <h3 data-i18n="sys_process">فرآیند سرور</h3>
+                                <span class="sys-tip-mark" aria-hidden="true">?</span>
+                            </div>
+                            <div class="sys-tip-bubble" role="tooltip" data-i18n="sys_help_process">وضعیت خودِ برنامهٔ بک‌اند روی سرور: از آخرین ری‌استارت چقدر گذشته و چقدر RAM می‌گیرد.</div>
                             <div id="sysProcessInfo" class="sys-kv"></div>
                         </section>
-                        <section class="sys-panel">
-                            <h3 data-i18n="sys_http_counters">شمارنده‌های HTTP</h3>
+                        <section class="sys-panel sys-tip" tabindex="0">
+                            <div class="sys-panel-head">
+                                <h3 data-i18n="sys_http_counters">شمارنده‌های HTTP</h3>
+                                <span class="sys-tip-mark" aria-hidden="true">?</span>
+                            </div>
+                            <div class="sys-tip-bubble" role="tooltip" data-i18n="sys_help_http">تعداد درخواست‌های وب از زمان روشن شدن فرایند. خطای ۵xx یعنی پاسخ شکست‌خوردهٔ سرور.</div>
                             <div id="sysHttpCounters" class="sys-kv"></div>
                         </section>
                     </div>
-                    <details class="sys-raw-details">
+                    <details class="sys-raw-details sys-tip" tabindex="0">
                         <summary data-i18n="sys_raw_json">خروجی خام JSON</summary>
+                        <div class="sys-tip-bubble" role="tooltip" data-i18n="sys_help_raw">همان داده‌های این صفحه به صورت خام برای عیب‌یابی فنی.</div>
                         <pre id="sysStatusRaw" class="sys-raw-pre"></pre>
                     </details>
                 </div>

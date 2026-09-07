@@ -2897,6 +2897,75 @@
             renderProfile(u);
             setupProfileEventHandlers();
             await refreshTelegramProfileSection();
+            applyProfileMobileApps();
+        }
+        function isDirectMobileInstallUrl(url) {
+            var u = String(url || '').trim();
+            if (!u) return false;
+            return /\.(apk|ipa)(\?|#|$)/i.test(u) || /\/uploads\/(releases|mobile)\//i.test(u);
+        }
+        function bindProfileAppTile(el, url) {
+            if (!el) return;
+            var ready = !!(url && (/^https?:\/\//i.test(url) || url.charAt(0) === '/'));
+            var meta = el.querySelector('.profile-app-tile-sub');
+            el.classList.toggle('is-ready', ready);
+            el.classList.toggle('is-unavailable', !ready);
+            el.setAttribute('aria-disabled', ready ? 'false' : 'true');
+            if (ready) {
+                el.href = url;
+                el.target = '_blank';
+                el.rel = 'noopener noreferrer';
+                if (isDirectMobileInstallUrl(url)) el.setAttribute('download', '');
+                else el.removeAttribute('download');
+                if (meta) meta.textContent = t('profile_mobile_ready');
+            } else {
+                el.href = '#';
+                el.removeAttribute('download');
+                el.removeAttribute('target');
+                if (meta) meta.textContent = t('profile_mobile_missing');
+            }
+            if (!el._crmAppTileBound) {
+                el._crmAppTileBound = true;
+                el.addEventListener('click', function(e) {
+                    if (el.classList.contains('is-unavailable')) {
+                        e.preventDefault();
+                        if (typeof toast === 'function') toast(t('profile_mobile_apps_empty'), true);
+                    }
+                });
+            }
+        }
+        async function applyProfileMobileApps() {
+            var androidEl = document.getElementById('profileAndroidAppLink');
+            var iosEl = document.getElementById('profileIosAppLink');
+            var emptyEl = document.getElementById('profileMobileAppsEmpty');
+            var settingsBtn = document.getElementById('profileMobileAppsOpenSettings');
+            if (!androidEl && !iosEl) return;
+            var branding = (typeof PANEL_BRANDING_STATE !== 'undefined' && PANEL_BRANDING_STATE) ? PANEL_BRANDING_STATE : {};
+            var androidUrl = String(branding.androidAppUrl || '').trim();
+            var iosUrl = String(branding.iosAppUrl || '').trim();
+            if (!androidUrl) {
+                try {
+                    var cfg = await apiFetch('/api/config');
+                    if (cfg && cfg.ok && cfg.data && cfg.data.androidAppUpdate && cfg.data.androidAppUpdate.apkUrl) {
+                        androidUrl = String(cfg.data.androidAppUpdate.apkUrl).trim();
+                    }
+                } catch (_e) {}
+            }
+            bindProfileAppTile(androidEl, androidUrl);
+            bindProfileAppTile(iosEl, iosUrl);
+            var any = !!(androidUrl || iosUrl);
+            if (emptyEl) emptyEl.style.display = any ? 'none' : '';
+            var canSettings = typeof canAccessSection === 'function' && canAccessSection('panel_settings');
+            if (settingsBtn) {
+                settingsBtn.style.display = canSettings ? '' : 'none';
+                if (!settingsBtn._crmAppSettingsBound) {
+                    settingsBtn._crmAppSettingsBound = true;
+                    settingsBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        if (typeof showPage === 'function') showPage('panel-settings');
+                    });
+                }
+            }
         }
         function renderProfile(u) {
             if (u) {
@@ -6004,6 +6073,16 @@
                 if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
                     return false;
                 }
+                const cust = c.customer || {};
+                const isGroup = !!(c.metadata && c.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
+                const tech = window.CRM && CRM.Utils && typeof CRM.Utils.looksLikeTechnicalWhatsAppLabel === 'function'
+                    ? (CRM.Utils.looksLikeTechnicalWhatsAppLabel(cust.name) || CRM.Utils.looksLikeTechnicalWhatsAppLabel(cust.phone))
+                    : false;
+                const noCrmActivity = !c.lastIncomingMessageAt && !c.lastOutgoingMessageAt && !String(c.lastMessagePreview || '').trim();
+                // مخاطب خالی LID/JID که در اپ واتساپ چت واقعی نیست — از «همه» پنهان
+                if (!isGroup && tech && noCrmActivity && convQuickTab !== 'archived' && convQuickTab !== 'restricted') {
+                    return false;
+                }
                 return true;
             });
             if (visibleRows.length === 0) {
@@ -6030,7 +6109,9 @@
                 }
                 metaObj = metaObj || {};
                 const looksLikeJid = function(s) {
-                    return !s || /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
+                    if (!s) return true;
+                    if (window.CRM && CRM.Utils && typeof CRM.Utils.looksLikeTechnicalWhatsAppLabel === 'function' && CRM.Utils.looksLikeTechnicalWhatsAppLabel(s)) return true;
+                    return /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
                 };
                 const groupName = String(metaObj.groupName || metaObj.name || metaObj.subject || metaObj.formattedTitle || '').trim();
                 const custName = String(cust.name || '').trim();
@@ -6170,6 +6251,9 @@
                 return CRM.Utils.visibleCustomerPhone(cust, canViewCustomerPhoneUi());
             }
             if (!canViewCustomerPhoneUi()) return '';
+            if (window.CRM && CRM.Utils && typeof CRM.Utils.displayableWhatsAppPhone === 'function') {
+                return CRM.Utils.displayableWhatsAppPhone((cust && cust.phone) || '');
+            }
             const p = String((cust && cust.phone) || '').trim();
             return /@g\.us$/i.test(p) ? '' : p;
         }
@@ -6217,6 +6301,9 @@
         function convListPreviewText(raw) {
             var p = String(raw || '').trim();
             if (!p) return '';
+            if (p.length > 72 && /^[A-Za-z0-9+/=\s]+$/.test(p) && p.replace(/\s/g, '').length > 72) {
+                return (typeof t === 'function' && t('preview_file')) || (LANG === 'fa' ? '📎 فایل' : LANG === 'tr' ? '📎 Dosya' : '📎 File');
+            }
             if (/^(voice|audio|ptt)(\.(ogg|opus|oga|webm|m4a|mp3|wav))?$/i.test(p) || (/\.(ogg|opus|oga)$/i.test(p) && /voice|ptt/i.test(p))) {
                 return (typeof t === 'function' && t('preview_voice')) || (LANG === 'fa' ? '🎤 پیام صوتی' : LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
             }
@@ -9998,6 +10085,7 @@
             if (window.LoginBootstrap && typeof window.LoginBootstrap.cachePanelBranding === 'function') {
                 window.LoginBootstrap.cachePanelBranding(b);
             }
+            if (typeof applyProfileMobileApps === 'function') applyProfileMobileApps();
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
@@ -15966,6 +16054,12 @@
             return t(map[key] || key);
         }
 
+        function sysHelpBubble(helpKey) {
+            var text = t(helpKey);
+            if (!text || text === helpKey) return '';
+            return '<span class="sys-tip-mark" aria-hidden="true">?</span><div class="sys-tip-bubble" role="tooltip">' + escapeHtml(text) + '</div>';
+        }
+
         function sysStatusClass(st) {
             st = String(st || '').toLowerCase();
             if (st === 'ok' || st === 'disabled' || st === 'skipped') return 'is-ok';
@@ -16022,14 +16116,14 @@
                 var res = await apiFetch('/api/system-status');
                 if (res.needLogin) return;
                 if (!res.ok) {
-                    if (banner) banner.className = 'sys-overall-banner is-error';
+                    if (banner) banner.className = 'sys-overall-banner sys-tip is-error';
                     if (labelEl) labelEl.textContent = (res.data && res.data.error) || t('err_generic');
                     checksEl.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
                     return;
                 }
                 var data = res.data || {};
                 var overall = data.status || 'degraded';
-                if (banner) banner.className = 'sys-overall-banner ' + sysStatusClass(overall);
+                if (banner) banner.className = 'sys-overall-banner sys-tip ' + sysStatusClass(overall);
                 if (labelEl) labelEl.textContent = sysOverallLabel(overall);
 
                 var updated = document.getElementById('sysStatusUpdatedAt');
@@ -16056,8 +16150,8 @@
                     if (c.latest && c.latest.name) meta.push(c.latest.name + (c.ageHours != null ? ' (' + c.ageHours + 'h)' : ''));
                     if (c.count != null && key === 'backups') meta.push('n=' + c.count);
                     if (c.error) meta.push(String(c.error));
-                    html += '<article class="sys-check-card ' + sysStatusClass(st) + '">';
-                    html += '<div class="sys-check-title">' + escapeHtml(sysCheckLabel(key)) + '</div>';
+                    html += '<article class="sys-check-card sys-tip ' + sysStatusClass(st) + '" tabindex="0">';
+                    html += '<div class="sys-check-head"><div class="sys-check-title">' + escapeHtml(sysCheckLabel(key)) + '</div>' + sysHelpBubble('sys_help_' + key) + '</div>';
                     html += '<div class="sys-check-status">' + escapeHtml(String(st)) + '</div>';
                     if (meta.length) html += '<div class="sys-check-meta">' + escapeHtml(meta.join(' · ')) + '</div>';
                     html += '</article>';
@@ -16068,10 +16162,10 @@
                 var ops = document.getElementById('sysOpsCounts');
                 if (ops) {
                     ops.innerHTML =
-                        '<div class="sys-stat-card"><div class="val">' + (counts.openConversations || 0) + '</div><div class="label">' + escapeHtml(t('sys_open_conversations')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.todayMessages || 0) + '</div><div class="label">' + escapeHtml(t('sys_today_messages')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.activeUsers || 0) + '</div><div class="label">' + escapeHtml(t('sys_active_users')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.customers || 0) + '</div><div class="label">' + escapeHtml(t('sys_customers')) + '</div></div>';
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.openConversations || 0) + '</div><div class="label">' + escapeHtml(t('sys_open_conversations')) + '</div>' + sysHelpBubble('sys_help_open_conversations') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.todayMessages || 0) + '</div><div class="label">' + escapeHtml(t('sys_today_messages')) + '</div>' + sysHelpBubble('sys_help_today_messages') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.activeUsers || 0) + '</div><div class="label">' + escapeHtml(t('sys_active_users')) + '</div>' + sysHelpBubble('sys_help_active_users') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.customers || 0) + '</div><div class="label">' + escapeHtml(t('sys_customers')) + '</div>' + sysHelpBubble('sys_help_customers') + '</div>';
                 }
 
                 var proc = data.process || {};
@@ -16079,21 +16173,21 @@
                 if (procEl) {
                     var mem = (proc.memory && proc.memory.rss) || 0;
                     procEl.innerHTML =
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_uptime')) + '</span><span>' + escapeHtml(formatUptime(data.uptime || proc.uptimeSec)) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_memory_rss')) + '</span><span>' + escapeHtml(formatBytes(mem)) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_node')) + '</span><span>' + escapeHtml(proc.node || '—') + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_env')) + '</span><span>' + escapeHtml(proc.env || '—') + '</span></div>' +
-                        '<div class="sys-kv-row"><span>PID</span><span>' + escapeHtml(String(proc.pid || '—')) + '</span></div>';
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_uptime')) + '</span><span>' + escapeHtml(formatUptime(data.uptime || proc.uptimeSec)) + '</span>' + sysHelpBubble('sys_help_uptime') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_memory_rss')) + '</span><span>' + escapeHtml(formatBytes(mem)) + '</span>' + sysHelpBubble('sys_help_memory') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_node')) + '</span><span>' + escapeHtml(proc.node || '—') + '</span>' + sysHelpBubble('sys_help_node') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_env')) + '</span><span>' + escapeHtml(proc.env || '—') + '</span>' + sysHelpBubble('sys_help_env') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>PID</span><span>' + escapeHtml(String(proc.pid || '—')) + '</span>' + sysHelpBubble('sys_help_pid') + '</div>';
                 }
 
                 var ctr = data.counters || {};
                 var ctrEl = document.getElementById('sysHttpCounters');
                 if (ctrEl) {
                     ctrEl.innerHTML =
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_total')) + '</span><span>' + (ctr.httpRequestsTotal || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_5xx')) + '</span><span>' + (ctr.http5xxTotal || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_checks')) + '</span><span>' + (ctr.gatewayStatusChecks || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_failures')) + '</span><span>' + (ctr.gatewayStatusFailures || 0) + '</span></div>';
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_http_total')) + '</span><span>' + (ctr.httpRequestsTotal || 0) + '</span>' + sysHelpBubble('sys_help_http_total') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_http_5xx')) + '</span><span>' + (ctr.http5xxTotal || 0) + '</span>' + sysHelpBubble('sys_help_http_5xx') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_gw_checks')) + '</span><span>' + (ctr.gatewayStatusChecks || 0) + '</span>' + sysHelpBubble('sys_help_gw_checks') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_gw_failures')) + '</span><span>' + (ctr.gatewayStatusFailures || 0) + '</span>' + sysHelpBubble('sys_help_gw_failures') + '</div>';
                 }
 
                 var raw = document.getElementById('sysStatusRaw');
@@ -16101,7 +16195,7 @@
                     try { raw.textContent = JSON.stringify(data, null, 2); } catch (_) { raw.textContent = ''; }
                 }
             } catch (e) {
-                if (banner) banner.className = 'sys-overall-banner is-error';
+                if (banner) banner.className = 'sys-overall-banner sys-tip is-error';
                 if (labelEl) labelEl.textContent = t('err_generic');
                 checksEl.innerHTML = '<div class="empty">' + escapeHtml(t('err_generic')) + '</div>';
             } finally {

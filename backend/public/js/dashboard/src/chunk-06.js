@@ -2106,6 +2106,12 @@
             return t(map[key] || key);
         }
 
+        function sysHelpBubble(helpKey) {
+            var text = t(helpKey);
+            if (!text || text === helpKey) return '';
+            return '<span class="sys-tip-mark" aria-hidden="true">?</span><div class="sys-tip-bubble" role="tooltip">' + escapeHtml(text) + '</div>';
+        }
+
         function sysStatusClass(st) {
             st = String(st || '').toLowerCase();
             if (st === 'ok' || st === 'disabled' || st === 'skipped') return 'is-ok';
@@ -2162,14 +2168,14 @@
                 var res = await apiFetch('/api/system-status');
                 if (res.needLogin) return;
                 if (!res.ok) {
-                    if (banner) banner.className = 'sys-overall-banner is-error';
+                    if (banner) banner.className = 'sys-overall-banner sys-tip is-error';
                     if (labelEl) labelEl.textContent = (res.data && res.data.error) || t('err_generic');
                     checksEl.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
                     return;
                 }
                 var data = res.data || {};
                 var overall = data.status || 'degraded';
-                if (banner) banner.className = 'sys-overall-banner ' + sysStatusClass(overall);
+                if (banner) banner.className = 'sys-overall-banner sys-tip ' + sysStatusClass(overall);
                 if (labelEl) labelEl.textContent = sysOverallLabel(overall);
 
                 var updated = document.getElementById('sysStatusUpdatedAt');
@@ -2196,8 +2202,8 @@
                     if (c.latest && c.latest.name) meta.push(c.latest.name + (c.ageHours != null ? ' (' + c.ageHours + 'h)' : ''));
                     if (c.count != null && key === 'backups') meta.push('n=' + c.count);
                     if (c.error) meta.push(String(c.error));
-                    html += '<article class="sys-check-card ' + sysStatusClass(st) + '">';
-                    html += '<div class="sys-check-title">' + escapeHtml(sysCheckLabel(key)) + '</div>';
+                    html += '<article class="sys-check-card sys-tip ' + sysStatusClass(st) + '" tabindex="0">';
+                    html += '<div class="sys-check-head"><div class="sys-check-title">' + escapeHtml(sysCheckLabel(key)) + '</div>' + sysHelpBubble('sys_help_' + key) + '</div>';
                     html += '<div class="sys-check-status">' + escapeHtml(String(st)) + '</div>';
                     if (meta.length) html += '<div class="sys-check-meta">' + escapeHtml(meta.join(' · ')) + '</div>';
                     html += '</article>';
@@ -2208,10 +2214,10 @@
                 var ops = document.getElementById('sysOpsCounts');
                 if (ops) {
                     ops.innerHTML =
-                        '<div class="sys-stat-card"><div class="val">' + (counts.openConversations || 0) + '</div><div class="label">' + escapeHtml(t('sys_open_conversations')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.todayMessages || 0) + '</div><div class="label">' + escapeHtml(t('sys_today_messages')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.activeUsers || 0) + '</div><div class="label">' + escapeHtml(t('sys_active_users')) + '</div></div>' +
-                        '<div class="sys-stat-card"><div class="val">' + (counts.customers || 0) + '</div><div class="label">' + escapeHtml(t('sys_customers')) + '</div></div>';
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.openConversations || 0) + '</div><div class="label">' + escapeHtml(t('sys_open_conversations')) + '</div>' + sysHelpBubble('sys_help_open_conversations') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.todayMessages || 0) + '</div><div class="label">' + escapeHtml(t('sys_today_messages')) + '</div>' + sysHelpBubble('sys_help_today_messages') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.activeUsers || 0) + '</div><div class="label">' + escapeHtml(t('sys_active_users')) + '</div>' + sysHelpBubble('sys_help_active_users') + '</div>' +
+                        '<div class="sys-stat-card sys-tip" tabindex="0"><div class="val">' + (counts.customers || 0) + '</div><div class="label">' + escapeHtml(t('sys_customers')) + '</div>' + sysHelpBubble('sys_help_customers') + '</div>';
                 }
 
                 var proc = data.process || {};
@@ -2219,21 +2225,21 @@
                 if (procEl) {
                     var mem = (proc.memory && proc.memory.rss) || 0;
                     procEl.innerHTML =
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_uptime')) + '</span><span>' + escapeHtml(formatUptime(data.uptime || proc.uptimeSec)) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_memory_rss')) + '</span><span>' + escapeHtml(formatBytes(mem)) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_node')) + '</span><span>' + escapeHtml(proc.node || '—') + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_env')) + '</span><span>' + escapeHtml(proc.env || '—') + '</span></div>' +
-                        '<div class="sys-kv-row"><span>PID</span><span>' + escapeHtml(String(proc.pid || '—')) + '</span></div>';
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_uptime')) + '</span><span>' + escapeHtml(formatUptime(data.uptime || proc.uptimeSec)) + '</span>' + sysHelpBubble('sys_help_uptime') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_memory_rss')) + '</span><span>' + escapeHtml(formatBytes(mem)) + '</span>' + sysHelpBubble('sys_help_memory') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_node')) + '</span><span>' + escapeHtml(proc.node || '—') + '</span>' + sysHelpBubble('sys_help_node') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_env')) + '</span><span>' + escapeHtml(proc.env || '—') + '</span>' + sysHelpBubble('sys_help_env') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>PID</span><span>' + escapeHtml(String(proc.pid || '—')) + '</span>' + sysHelpBubble('sys_help_pid') + '</div>';
                 }
 
                 var ctr = data.counters || {};
                 var ctrEl = document.getElementById('sysHttpCounters');
                 if (ctrEl) {
                     ctrEl.innerHTML =
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_total')) + '</span><span>' + (ctr.httpRequestsTotal || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_5xx')) + '</span><span>' + (ctr.http5xxTotal || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_checks')) + '</span><span>' + (ctr.gatewayStatusChecks || 0) + '</span></div>' +
-                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_failures')) + '</span><span>' + (ctr.gatewayStatusFailures || 0) + '</span></div>';
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_http_total')) + '</span><span>' + (ctr.httpRequestsTotal || 0) + '</span>' + sysHelpBubble('sys_help_http_total') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_http_5xx')) + '</span><span>' + (ctr.http5xxTotal || 0) + '</span>' + sysHelpBubble('sys_help_http_5xx') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_gw_checks')) + '</span><span>' + (ctr.gatewayStatusChecks || 0) + '</span>' + sysHelpBubble('sys_help_gw_checks') + '</div>' +
+                        '<div class="sys-kv-row sys-tip" tabindex="0"><span>' + escapeHtml(t('sys_gw_failures')) + '</span><span>' + (ctr.gatewayStatusFailures || 0) + '</span>' + sysHelpBubble('sys_help_gw_failures') + '</div>';
                 }
 
                 var raw = document.getElementById('sysStatusRaw');
@@ -2241,7 +2247,7 @@
                     try { raw.textContent = JSON.stringify(data, null, 2); } catch (_) { raw.textContent = ''; }
                 }
             } catch (e) {
-                if (banner) banner.className = 'sys-overall-banner is-error';
+                if (banner) banner.className = 'sys-overall-banner sys-tip is-error';
                 if (labelEl) labelEl.textContent = t('err_generic');
                 checksEl.innerHTML = '<div class="empty">' + escapeHtml(t('err_generic')) + '</div>';
             } finally {

@@ -1045,6 +1045,16 @@
                 if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
                     return false;
                 }
+                const cust = c.customer || {};
+                const isGroup = !!(c.metadata && c.metadata.isGroup) || /@g\.us$/i.test(cust.phone || '');
+                const tech = window.CRM && CRM.Utils && typeof CRM.Utils.looksLikeTechnicalWhatsAppLabel === 'function'
+                    ? (CRM.Utils.looksLikeTechnicalWhatsAppLabel(cust.name) || CRM.Utils.looksLikeTechnicalWhatsAppLabel(cust.phone))
+                    : false;
+                const noCrmActivity = !c.lastIncomingMessageAt && !c.lastOutgoingMessageAt && !String(c.lastMessagePreview || '').trim();
+                // مخاطب خالی LID/JID که در اپ واتساپ چت واقعی نیست — از «همه» پنهان
+                if (!isGroup && tech && noCrmActivity && convQuickTab !== 'archived' && convQuickTab !== 'restricted') {
+                    return false;
+                }
                 return true;
             });
             if (visibleRows.length === 0) {
@@ -1071,7 +1081,9 @@
                 }
                 metaObj = metaObj || {};
                 const looksLikeJid = function(s) {
-                    return !s || /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
+                    if (!s) return true;
+                    if (window.CRM && CRM.Utils && typeof CRM.Utils.looksLikeTechnicalWhatsAppLabel === 'function' && CRM.Utils.looksLikeTechnicalWhatsAppLabel(s)) return true;
+                    return /@g\.us$/i.test(s) || /^گروه\s+\d/i.test(s) || /^\d{10,}@/.test(s);
                 };
                 const groupName = String(metaObj.groupName || metaObj.name || metaObj.subject || metaObj.formattedTitle || '').trim();
                 const custName = String(cust.name || '').trim();
@@ -1211,6 +1223,9 @@
                 return CRM.Utils.visibleCustomerPhone(cust, canViewCustomerPhoneUi());
             }
             if (!canViewCustomerPhoneUi()) return '';
+            if (window.CRM && CRM.Utils && typeof CRM.Utils.displayableWhatsAppPhone === 'function') {
+                return CRM.Utils.displayableWhatsAppPhone((cust && cust.phone) || '');
+            }
             const p = String((cust && cust.phone) || '').trim();
             return /@g\.us$/i.test(p) ? '' : p;
         }
@@ -1258,6 +1273,9 @@
         function convListPreviewText(raw) {
             var p = String(raw || '').trim();
             if (!p) return '';
+            if (p.length > 72 && /^[A-Za-z0-9+/=\s]+$/.test(p) && p.replace(/\s/g, '').length > 72) {
+                return (typeof t === 'function' && t('preview_file')) || (LANG === 'fa' ? '📎 فایل' : LANG === 'tr' ? '📎 Dosya' : '📎 File');
+            }
             if (/^(voice|audio|ptt)(\.(ogg|opus|oga|webm|m4a|mp3|wav))?$/i.test(p) || (/\.(ogg|opus|oga)$/i.test(p) && /voice|ptt/i.test(p))) {
                 return (typeof t === 'function' && t('preview_voice')) || (LANG === 'fa' ? '🎤 پیام صوتی' : LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
             }

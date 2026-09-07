@@ -38,6 +38,7 @@ const {
     publicCustomerSocketPayload,
 } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
+const { looksLikeTechnicalWhatsAppLabel } = require('../lib/phoneUtils');
 const { dedupeChatRows, findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
@@ -433,6 +434,14 @@ router.post('/sync-groups', async (req, res, next) => {
             const chatId = row.id;
             const chatName = row.name;
             const isGroup = !!row.isGroup;
+            if (
+                !isGroup &&
+                !row.lastPreview &&
+                !row.timestamp &&
+                looksLikeTechnicalWhatsAppLabel(chatName || row.id || row.phone)
+            ) {
+                continue;
+            }
             const t = await sequelize.transaction();
             try {
                 const customer = await findOrCreateSyncedCustomer(row, {
@@ -445,7 +454,9 @@ router.post('/sync-groups', async (req, res, next) => {
                     continue;
                 }
                 const looksLikeJidName = (s) =>
-                    /@g\.us$/i.test(String(s || '')) || /^گروه\s+\d/i.test(String(s || ''));
+                    /@g\.us$/i.test(String(s || '')) ||
+                    /^گروه\s+\d/i.test(String(s || '')) ||
+                    looksLikeTechnicalWhatsAppLabel(s);
                 const custUpdates = {};
                 if (chatName && !looksLikeJidName(chatName) && customer.name !== chatName) {
                     custUpdates.name = chatName;

@@ -434,12 +434,30 @@
                             </div>
                             <div id="profileMobileAppsSection" class="profile-readonly-section">
                                 <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_mobile_apps_title">اپ موبایل</span></h3>
-                                <p id="profileMobileAppsDesc" class="profile-intro text-muted" style="margin-bottom:10px; display:none;" data-i18n="profile_mobile_apps_desc">برای نصب روی گوشی یکی از دکمه‌های زیر را بزنید.</p>
-                                <p id="profileMobileAppsEmpty" class="profile-intro text-muted" style="margin-bottom:10px;" data-i18n="profile_mobile_apps_empty">هنوز لینک رسمی App Store / Play Store یا فایل نصب توسط مدیر در «ظاهر پنل» ثبت نشده است.</p>
-                                <div class="profile-form-actions" style="justify-content:flex-start; gap:8px; flex-wrap:wrap;">
-                                    <a id="profileIosAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_ios_btn">دانلود iOS</a>
-                                    <a id="profileAndroidAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:none;" data-i18n="profile_mobile_android_btn">دانلود Android</a>
-                                    <button type="button" id="profileMobileAppsOpenSettings" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_apps_settings" onclick="if(typeof showPage==='function'){showPage('panel-settings');} return false;">تنظیم لینک‌ها در ظاهر پنل</button>
+                                <p id="profileMobileAppsDesc" class="profile-intro text-muted" style="margin-bottom:10px;" data-i18n="profile_mobile_apps_desc">روی لوگوی اندروید یا iOS بزنید تا فایل نصب همان پلتفرم باز شود.</p>
+                                <div class="profile-app-store" role="group" aria-label="دانلود اپ موبایل">
+                                    <a id="profileAndroidAppLink" href="#" class="profile-app-tile is-unavailable" aria-disabled="true">
+                                        <span class="profile-app-logo profile-app-logo--android" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" width="40" height="40"><path fill="#3DDC84" d="M17.6 9.48l1.84-3.18a.5.5 0 0 0-.2-.68.5.5 0 0 0-.68.2L16.66 9.1A7.7 7.7 0 0 0 12 8c-1.7 0-3.27.45-4.66 1.1L5.44 5.82a.5.5 0 0 0-.68-.2.5.5 0 0 0-.2.68L6.4 9.48C4.36 10.86 3 13.07 3 15.6v.4c0 .55.45 1 1 1h1v2.2c0 .66.54 1.2 1.2 1.2s1.2-.54 1.2-1.2V17h8.2v2.2c0 .66.54 1.2 1.2 1.2s1.2-.54 1.2-1.2V17h1c.55 0 1-.45 1-1v-.4c0-2.53-1.36-4.74-3.4-6.12zM8.2 14.1a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2zm7.6 0a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2z"/></svg>
+                                        </span>
+                                        <span class="profile-app-tile-text">
+                                            <strong data-i18n="profile_mobile_android_btn">Android</strong>
+                                            <span class="profile-app-tile-sub" id="profileAndroidAppMeta" data-i18n="profile_mobile_missing">فایل نصب هنوز ثبت نشده</span>
+                                        </span>
+                                    </a>
+                                    <a id="profileIosAppLink" href="#" class="profile-app-tile is-unavailable" aria-disabled="true">
+                                        <span class="profile-app-logo profile-app-logo--ios" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" width="40" height="40"><path fill="currentColor" d="M16.7 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.3 2.9 2.3 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-.1 2.9-2.3c1-.1 2-1.1 2.5-2.2-2.2-1-2.6-2.8-2.6-2.9zm-2.5-7.3c.6-.8 1.1-1.8.9-2.9-1 .05-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.8 1.1.1 2.2-.5 2.9-1.4z"/></svg>
+                                        </span>
+                                        <span class="profile-app-tile-text">
+                                            <strong data-i18n="profile_mobile_ios_btn">iOS</strong>
+                                            <span class="profile-app-tile-sub" id="profileIosAppMeta" data-i18n="profile_mobile_missing">فایل نصب هنوز ثبت نشده</span>
+                                        </span>
+                                    </a>
+                                </div>
+                                <p id="profileMobileAppsEmpty" class="profile-intro text-muted" style="margin:10px 0 0; display:none;" data-i18n="profile_mobile_apps_empty">هنوز لینک رسمی فروشگاه یا فایل نصب توسط مدیر در «ظاهر پنل» ثبت نشده است.</p>
+                                <div class="profile-form-actions" style="justify-content:flex-start; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                                    <button type="button" id="profileMobileAppsOpenSettings" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_apps_settings">تنظیم لینک‌ها در ظاهر پنل</button>
                                 </div>
                             </div>
                         </div>

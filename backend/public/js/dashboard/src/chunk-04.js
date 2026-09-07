@@ -890,6 +890,7 @@
             if (window.LoginBootstrap && typeof window.LoginBootstrap.cachePanelBranding === 'function') {
                 window.LoginBootstrap.cachePanelBranding(b);
             }
+            if (typeof applyProfileMobileApps === 'function') applyProfileMobileApps();
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
