@@ -18,6 +18,7 @@ const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPanelSettings } = require('../services/panelSettingsLoader');
+const { getAndroidUpdateSource } = require('../lib/staffAppInstall');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -127,10 +128,10 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     }
 
     function parseAndroidAppUpdate(req) {
-        const code = parseInt(String(process.env.ANDROID_APP_VERSION_CODE || '').trim(), 10);
-        const rawUrl = String(process.env.ANDROID_APP_APK_URL || '').trim();
-        const name = String(process.env.ANDROID_APP_VERSION_NAME || '').trim();
-        const apkUrl = resolveAndroidApkUrl(rawUrl, req);
+        const src = getAndroidUpdateSource();
+        const code = src.versionCode;
+        const name = src.versionName;
+        const apkUrl = resolveAndroidApkUrl(src.rawUrl, req);
         if (!Number.isFinite(code) || code < 1 || !apkUrl || !name) return null;
         const notes = String(process.env.ANDROID_APP_RELEASE_NOTES || '').trim().slice(0, 4000);
         const mandatory = process.env.ANDROID_APP_UPDATE_MANDATORY === 'true' || process.env.ANDROID_APP_UPDATE_MANDATORY === '1';

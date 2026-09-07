@@ -97,3 +97,22 @@ jobs:
       - name: Lint debug
         working-directory: android-app
         run: ./gradlew :app:lintDebug --no-daemon
+      - name: Stage Android APK for deploy
+        run: |
+          mkdir -p artifacts/kaya-staff-android
+          cp android-app/app/build/outputs/apk/debug/app-debug.apk artifacts/kaya-staff-android/kaya-staff.apk
+          node -e '
+            const fs = require("fs");
+            const src = fs.readFileSync("android-app/app/build.gradle.kts", "utf8");
+            const code = Number((src.match(/versionCode\s*=\s*(\d+)/) || [])[1] || 0);
+            const name = String((src.match(/versionName\s*=\s*"([^"]+)"/) || [])[1] || "");
+            if (!code || !name) { console.error("could not parse version from build.gradle.kts"); process.exit(1); }
+            fs.writeFileSync("artifacts/kaya-staff-android/android-version.json", JSON.stringify({ versionCode: code, versionName: name }, null, 2) + "\n");
+            console.log("android version", code, name);
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kaya-staff-android-apk
+          path: artifacts/kaya-staff-android/
+          if-no-files-found: error
+          retention-days: 14

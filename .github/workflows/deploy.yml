@@ -23,6 +23,7 @@ jobs:
     timeout-minutes: 90
     permissions:
       contents: read
+      actions: read
 
     steps:
       - name: Run info
@@ -44,7 +45,40 @@ jobs:
 
       - uses: actions/checkout@v5
 
-      # اگر android-app برگردد، مراحل Gradle/APK را دوباره فعال کنید.
+      - name: Download Android APK from CI
+        if: github.event_name == 'workflow_run'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: kaya-staff-android-apk
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: artifacts/kaya-staff-android
+
+      - name: Ensure staff APK directory on server
+        if: github.event_name == 'workflow_run' && hashFiles('artifacts/kaya-staff-android/kaya-staff.apk') != ''
+        continue-on-error: true
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 1m
+          script: mkdir -p /var/www/kayaCRM-kaya/backend/uploads/releases
+
+      - name: Upload Android APK to server
+        if: github.event_name == 'workflow_run' && hashFiles('artifacts/kaya-staff-android/kaya-staff.apk') != ''
+        continue-on-error: true
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: artifacts/kaya-staff-android/kaya-staff.apk,artifacts/kaya-staff-android/android-version.json
+          target: /var/www/kayaCRM-kaya/backend/uploads/releases
+          overwrite: true
+          timeout: 5m
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
         env:
@@ -231,12 +265,24 @@ jobs:
             node --check routes/api.js
             node --check routes/panelSettings.js
             node --check scripts/upsert-dotenv.js
+            node --check scripts/set-staff-app-install-urls.js
+            node --check lib/staffAppInstall.js
             cd ..
             echo "  ✅ syntax بدون خطا"
 
             echo "🏷️ ثبت gitSha روی crm-build.json ..."
             node backend/scripts/stamp-deploy-manifest.js
             echo "  ✅ $(cat backend/public/crm-build.json | tr '\n' ' ')"
+
+            echo "📱 ثبت APK کارکنان برای دانلود از پروفایل ..."
+            if [ -f backend/uploads/releases/kaya-staff.apk ]; then
+              chmod 644 backend/uploads/releases/kaya-staff.apk
+              chmod 644 backend/uploads/releases/android-version.json 2>/dev/null || true
+              node backend/scripts/set-staff-app-install-urls.js
+              echo "  ✅ APK در /uploads/releases/kaya-staff.apk"
+            else
+              echo "⚠️ APK در uploads/releases نیست — کاشی اندروید پروفایل تا دیپلوی بعدی خالی می‌ماند"
+            fi
 
             # ---- restart با PM2 (نام‌های واقعی روی سرور کایا) ----
             echo "🔄 restart سرویس‌های کایا (نه crm-backend-app) ..."
@@ -322,5 +368,5 @@ jobs:
           {
             echo ""
             echo "### نتیجه"
-            echo "دیپلوی این کامیت تمام شد: \`git pull\` روی سرور، \`npm ci\`، migrationها، PM2 reload، و \`/api/ping\` پاسخ داد."
+            echo "دیپلوی این کامیت تمام شد: \`git pull\` روی سرور، \`npm ci\`، migrationها، APK کارکنان در پروفایل، PM2 reload، و \`/api/ping\` پاسخ داد."
           } >> "$GITHUB_STEP_SUMMARY"

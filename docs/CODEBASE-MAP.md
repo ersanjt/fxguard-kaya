@@ -204,8 +204,8 @@ gateway/
 
 | Workflow | فایل | شاخه |
 |----------|------|------|
-| Lint + Test + Build | `.github/workflows/ci.yml` | `main` |
-| Deploy SSH | `.github/workflows/deploy.yml` | `main` → سرور |
+| Lint + Test + Build + APK | `.github/workflows/ci.yml` | `main` |
+| Deploy SSH + کپی APK پروفایل | `.github/workflows/deploy.yml` | `main` → سرور (`/uploads/releases/kaya-staff.apk`) |
 
 بعد از تغییر chunk یا partial: **حتماً** `npm run build:dashboard` و commit خروجی‌ها.
 

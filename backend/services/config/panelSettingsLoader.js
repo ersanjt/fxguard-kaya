@@ -1,7 +1,12 @@
 /**
  * Panel settings loader — used by routes and email service
+ * @file    backend/services/config/panelSettingsLoader.js
+ * @layer   backend
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
  */
 const { PanelSetting } = require('../../models');
+const { applyStaffAppUrlFallbacks } = require('../../lib/staffAppInstall');
 
 const DEFAULT = {
     siteName: 'صرافی کایا',
@@ -90,8 +95,8 @@ function parseHiddenSections(val) {
 
 async function getPanelSettings() {
     const row = await PanelSetting.findByPk('default');
-    if (!row) return { ...DEFAULT };
-    return {
+    if (!row) return applyStaffAppUrlFallbacks({ ...DEFAULT });
+    return applyStaffAppUrlFallbacks({
         siteName: row.siteName != null ? row.siteName : DEFAULT.siteName,
         logoUrl: row.logoUrl || null,
         faviconUrl: row.faviconUrl || null,
@@ -146,7 +151,7 @@ async function getPanelSettings() {
         alanChandApiKey: row.alanChandApiKey || null,
         ratesApiProvider: row.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan',
         planTier: row.planTier || null,
-    };
+    });
 }
 
 function getSupportedLanguages(settings) {

@@ -462,7 +462,11 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
             const isInline = inlineExts.includes(ext);
             res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
             res.setHeader('X-Content-Type-Options', 'nosniff');
-            if (ext === '.svg') {
+            if (ext === '.apk') {
+                res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+            } else if (ext === '.ipa') {
+                res.setHeader('Content-Type', 'application/octet-stream');
+            } else if (ext === '.svg') {
                 res.setHeader('Content-Type', 'application/octet-stream');
             }
             next();

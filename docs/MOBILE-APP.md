@@ -75,6 +75,12 @@ cd android-app
 
 **iOS (فقط macOS + Xcode):** پروژه `ios-app/KayaStaff.xcodeproj` را باز کنید، Team را برای Signing بگذارید، روی دستگاه یا شبیه‌ساز Run کنید. انتشار: `docs/STORE-RELEASE.md`.
 
+## دانلود از پروفایل پنل
+
+هر CI موفق روی `main`، APK دیباگ را به‌صورت artifact ذخیره می‌کند و workflow دیپلوی آن را به `backend/uploads/releases/kaya-staff.apk` روی سرور کپی می‌کند. کاشی اندروید در `#profile` به `/uploads/releases/kaya-staff.apk` وصل می‌شود (بدون آپلود دستی در ظاهر پنل). لینک فروشگاه سفارشی در ظاهر پنل بازنویسی نمی‌شود.
+
+iOS در GitHub Actions ساخته نمی‌شود. تا وقتی IPA از مک در ظاهر پنل آپلود نشود، کاشی iOS غیرفعال می‌ماند.
+
 ## امنیت
 
 - توکن JWT و JSON کاربر در **EncryptedSharedPreferences** (اندروید) و **Keychain** (iOS، بدون iCloud sync)
