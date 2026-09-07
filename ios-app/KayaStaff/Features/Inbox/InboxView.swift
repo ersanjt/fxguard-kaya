@@ -168,6 +168,7 @@ struct InboxView: View {
                         url: model.customerAvatarUrl(row.customerId),
                         name: row.customerName,
                         token: model.authToken,
+                        apiHost: model.session.apiHost,
                         size: 48,
                         tile: false
                     )
@@ -248,6 +249,7 @@ struct InboxView: View {
                                     url: model.customerAvatarUrl(row.id),
                                     name: row.name,
                                     token: model.authToken,
+                                    apiHost: model.session.apiHost,
                                     size: 40,
                                     tile: false
                                 )
@@ -316,7 +318,13 @@ struct ChatView: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(model.messages) { msg in
-                            ChatBubbleRow(msg: msg, lang: model.lang, mediaURL: model.mediaURL)
+                            ChatBubbleRow(
+                                msg: msg,
+                                lang: model.lang,
+                                mediaURL: model.mediaURL,
+                                token: model.authToken,
+                                apiHost: model.session.apiHost
+                            )
                                 .id(msg.id)
                         }
                     }
@@ -403,6 +411,7 @@ struct ChatView: View {
                             url: model.customerAvatarUrl(chat?.customerId),
                             name: chat?.customerName ?? "?",
                             token: model.authToken,
+                            apiHost: model.session.apiHost,
                             size: 40,
                             tile: false
                         )
@@ -556,6 +565,8 @@ private struct ChatBubbleRow: View {
     let msg: ChatMessage
     let lang: String
     let mediaURL: (String?) -> URL?
+    var token: String?
+    var apiHost: String?
 
     var body: some View {
         let mine = msg.direction == "outgoing"
@@ -575,19 +586,19 @@ private struct ChatBubbleRow: View {
                     Text(name).font(.caption2).foregroundStyle(mine ? .white.opacity(0.9) : KayaColor.accent)
                 }
                 if msg.isVoice, let url = mediaURL(msg.mediaUrl) {
-                    VoicePlayerView(url: url, mine: mine, lang: lang)
+                    VoicePlayerView(url: url, mine: mine, lang: lang, token: token, apiHost: apiHost)
                 } else if msg.isImage, let url = mediaURL(msg.mediaUrl) {
-                    AsyncImage(url: url) { image in
-                        image.resizable().scaledToFill()
-                    } placeholder: {
-                        ProgressView()
-                    }
-                    .frame(maxWidth: 240, maxHeight: 160)
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    AuthRemoteImage(url: url, token: token, apiHost: apiHost)
                 } else if msg.hasMedia, let url = mediaURL(msg.mediaUrl) {
+                    let sameHost = (url.host?.lowercased() ?? "") == (apiHost ?? "")
+                    if sameHost {
+                        Label(msg.mediaName ?? L10n.t(lang, "file"), systemImage: "paperclip")
+                            .foregroundStyle(mine ? .white : KayaColor.text)
+                    } else {
                     Link(destination: url) {
                         Label(msg.mediaName ?? L10n.t(lang, "file"), systemImage: "arrow.down.circle")
                             .foregroundStyle(mine ? .white : KayaColor.text)
+                    }
                     }
                 }
                 if !msg.content.isEmpty && !msg.isVoice {
@@ -617,9 +628,12 @@ private struct VoicePlayerView: View {
     let url: URL
     let mine: Bool
     let lang: String
+    var token: String?
+    var apiHost: String?
     @State private var player: AVPlayer?
     @State private var playing = false
     @State private var rate: Float = 1
+    @State private var localURL: URL?
 
     var body: some View {
         HStack(spacing: 8) {
@@ -628,10 +642,7 @@ private struct VoicePlayerView: View {
                     player?.pause()
                     playing = false
                 } else {
-                    if player == nil { player = AVPlayer(url: url) }
-                    player?.rate = rate
-                    player?.play()
-                    playing = true
+                    Task { await play() }
                 }
             } label: {
                 ZStack {
@@ -651,14 +662,26 @@ private struct VoicePlayerView: View {
                     .font(.caption.bold())
                     .foregroundStyle(mine ? .white : KayaColor.text)
             }
-            Link(destination: url) {
-                Image(systemName: "arrow.down.to.line")
-                    .foregroundStyle(mine ? .white.opacity(0.8) : KayaColor.text2)
-            }
         }
         .padding(10)
         .background(mine ? KayaColor.accent : Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func play() async {
+        if player == nil {
+            if let data = await StaffMediaLoader.data(url: url, token: token, apiHost: apiHost) {
+                let tmp = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".m4a")
+                try? data.write(to: tmp)
+                localURL = tmp
+                player = AVPlayer(url: tmp)
+            } else {
+                player = AVPlayer(url: url)
+            }
+        }
+        player?.rate = rate
+        player?.play()
+        playing = true
     }
 }
 

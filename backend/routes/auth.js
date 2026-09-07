@@ -16,6 +16,7 @@ const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone, canManageConversations } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
+const { wantsBearerToken } = require('../lib/staffAppClient');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { issueStaffToken, revokeStaffSessions, disconnectStaffSockets } = require('../lib/staffSession');
 
@@ -73,6 +74,36 @@ async function clearTotpAttempts(redisClient, jti) {
 
 function issueToken(user) {
     return issueStaffToken(user);
+}
+
+function loginUserPayload(user, permissions, extra) {
+    return {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        avatar: user.avatar,
+        role: user.role,
+        departmentId: user.departmentId,
+        branchId: user.branchId,
+        status: 'online',
+        permissions,
+        totpEnabled: false,
+        canDeleteCustomer: canDeleteCustomer(user),
+        canDeleteUser: canDeleteUser(user),
+        canManageTickets: canManageTickets(user),
+        canViewCustomerPhone: canViewCustomerPhone(user),
+        canManageConversations: canManageConversations(user),
+        ...(extra || {})
+    };
+}
+
+function loginSuccessBody(req, token, user, permissions, extra) {
+    const body = { user: loginUserPayload(user, permissions, extra) };
+    if (wantsBearerToken(req)) body.token = token;
+    return body;
 }
 
 router.post('/login', async (req, res, _next) => {
@@ -199,29 +230,7 @@ router.post('/login', async (req, res, _next) => {
                 );
             } catch (_) {}
         });
-        sendJson(200, {
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                departmentId: user.departmentId,
-                branchId: user.branchId,
-                status: 'online',
-                permissions,
-                totpEnabled: false,
-                canDeleteCustomer: canDeleteCustomer(user),
-                canDeleteUser: canDeleteUser(user),
-                canManageTickets: canManageTickets(user),
-                canViewCustomerPhone: canViewCustomerPhone(user),
-                canManageConversations: canManageConversations(user)
-            }
-        });
+        sendJson(200, loginSuccessBody(req, token, user, permissions));
     } catch (err) {
         logger.error('Login error', { error: err.message });
         sendJson(500, { error: 'خطای سرور. لطفاً دوباره تلاش کنید.' });
@@ -382,29 +391,7 @@ router.post('/totp/verify-login', async (req, res, next) => {
                 );
             } catch (_) {}
         });
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                username: user.username,
-                name: user.name,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                avatar: user.avatar,
-                role: user.role,
-                departmentId: user.departmentId,
-                branchId: user.branchId,
-                status: 'online',
-                permissions,
-                totpEnabled: true,
-                canDeleteCustomer: canDeleteCustomer(user),
-                canDeleteUser: canDeleteUser(user),
-                canManageTickets: canManageTickets(user),
-                canViewCustomerPhone: canViewCustomerPhone(user),
-                canManageConversations: canManageConversations(user)
-            }
-        });
+        res.json(loginSuccessBody(req, token, user, permissions, { totpEnabled: true }));
     } catch (err) {
         if (err.name === 'TokenExpiredError') return res.status(401).json({ error: 'زمان ورود تمام شده. دوباره وارد شوید.' });
         next(err);

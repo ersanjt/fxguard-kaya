@@ -104,11 +104,13 @@ struct MainShellView: View {
                 ZStack {
                     Circle().fill(KayaColor.accent.opacity(0.15))
                     if let url = model.avatarUrl {
-                        AsyncImage(url: url) { image in
-                            image.resizable().scaledToFill()
-                        } placeholder: {
-                            Text(model.avatarLetter).foregroundStyle(KayaColor.accent)
-                        }
+                        AuthRemoteImage(
+                            url: url,
+                            token: model.authToken,
+                            apiHost: model.session.apiHost,
+                            maxWidth: 44,
+                            maxHeight: 44
+                        )
                     } else {
                         Text(model.avatarLetter).foregroundStyle(KayaColor.accent)
                     }

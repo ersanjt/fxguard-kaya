@@ -77,9 +77,12 @@ cd android-app
 
 ## امنیت
 
-- توکن JWT در **EncryptedSharedPreferences** (اندروید) و **Keychain** (iOS)
-- همهٔ درخواست‌های محافظت‌شده با `Authorization: Bearer`
+- توکن JWT و JSON کاربر در **EncryptedSharedPreferences** (اندروید) و **Keychain** (iOS، بدون iCloud sync)
+- همهٔ درخواست‌های محافظت‌شده با `Authorization: Bearer` فقط به هاست همان API
 - کوکی وب لازم نیست؛ بک‌اند از قبل Bearer را می‌پذیرد (`middleware/auth.js`)
-- آدرس سرور قابل تنظیم است (white-label / محیط لوکال)
+- ورود وب JWT را در JSON برنمی‌گرداند؛ اپ موبایل با هدر `X-Kaya-Client: staff-app` توکن می‌گیرد
+- آدرس سرور قابل تنظیم است (white-label / محیط لوکال)؛ ذخیرهٔ سرور سوکت را دوباره وصل می‌کند
+- سوکت زنده: اندروید و iOS هر دو Socket.IO با توکن در header/auth (نه query string)
+- اعلان iOS در پیش‌زمینه/پس‌زمینهٔ کوتاه: بنر محلی با باز کردن گفتگو/رشته هنگام ضربه؛ **APNs هنوز فاز ۲** است
 
-*آخرین به‌روزرسانی: اوت ۲۰۲۶ — Ersan Jahed Tabrizi*
+*آخرین به‌روزرسانی: سپتامبر ۲۰۲۶ — Ersan Jahed Tabrizi*

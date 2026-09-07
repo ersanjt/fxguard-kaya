@@ -37,7 +37,6 @@ class SocketService(private val session: SessionStore) {
         val opts = IO.Options().apply {
             auth = mapOf("token" to token)
             extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
-            query = "token=$token"
             reconnection = true
             transports = arrayOf("websocket", "polling")
         }

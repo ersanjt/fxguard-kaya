@@ -47,6 +47,8 @@ final class SessionStore: ObservableObject {
 
     var isLoggedIn: Bool { !(token ?? "").isEmpty }
 
+    var apiHost: String? { URL(string: baseUrl)?.host?.lowercased() }
+
     init() {
         language = UserDefaults.standard.string(forKey: "kaya.lang") ?? "fa"
         let stored = UserDefaults.standard.string(forKey: "kaya.base") ?? SessionStore.defaultURL
@@ -98,6 +100,7 @@ enum Keychain {
         var add = query
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
+        add[kSecAttrSynchronizable as String] = kCFBooleanFalse
         SecItemAdd(add as CFDictionary, nil)
     }
 

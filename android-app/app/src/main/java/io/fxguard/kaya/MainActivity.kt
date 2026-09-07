@@ -279,6 +279,7 @@ class StaffViewModel(
     private var bannerHideJob: Job? = null
 
     init {
+        api.onSessionExpired = { kickExpiredSession() }
         viewModelScope.launch { bootstrap() }
         viewModelScope.launch {
             NotificationHelper.banners.collect { item ->
@@ -403,12 +404,16 @@ class StaffViewModel(
         }
         session.baseUrl = normalized
         serverUrl = normalized
+        if (gate == Gate.App) {
+            socket.connect()
+        }
         return true
     }
 
     private suspend fun bootstrap() {
         val branded = runCatching { api.branding() }
         branding = branded.getOrNull()
+        KayaColors.applyBrandColor(branding?.primaryColor)
         if (branded.isFailure && !session.isLoggedIn) {
             authError = branded.exceptionOrNull()?.let { L10n.error(it, lang) } ?: L10n.t(lang, "connect_fail")
         }
@@ -428,6 +433,10 @@ class StaffViewModel(
     }
 
     fun login(identifier: String, password: String) {
+        if (!session.secureStorageOk) {
+            setAuthI18n("secure_storage_fail")
+            return
+        }
         if (identifier.isBlank() || password.isBlank()) {
             setAuthI18n("required")
             return
@@ -460,6 +469,10 @@ class StaffViewModel(
     }
 
     fun verifyTotp(code: String) {
+        if (!session.secureStorageOk) {
+            setAuthI18n("secure_storage_fail")
+            return
+        }
         val tmp = tempToken
         if (tmp.isNullOrBlank() || code.length != 6) {
             setAuthI18n("required")
@@ -595,6 +608,21 @@ class StaffViewModel(
             PushRegistrar.onLoggedOut(api)
             socket.disconnect()
             runCatching { api.logout() }
+            resetToLogin()
+        }
+    }
+
+    private fun kickExpiredSession() {
+        if (gate == Gate.Login || gate == Gate.Totp || gate == Gate.Splash) return
+        viewModelScope.launch {
+            PushRegistrar.onLoggedOut(api)
+            socket.disconnect()
+            resetToLogin()
+            setAuthI18n("session_expired")
+        }
+    }
+
+    private fun resetToLogin() {
             session.clearSession()
             user = null
             inbox = emptyList()
@@ -615,7 +643,6 @@ class StaffViewModel(
             tab = StaffTab.Dashboard
             moreDest = MoreDest.Menu
             gate = Gate.Login
-        }
     }
 
     fun onInboxSearch(q: String) {

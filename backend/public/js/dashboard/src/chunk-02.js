@@ -1719,10 +1719,106 @@
         function setupGlobalDelegatedHandlers() {
             if (window._crmDelegatedHandlersBound) return;
             window._crmDelegatedHandlersBound = true;
+            document.addEventListener('change', function(e) {
+                const el = e.target;
+                if (!el || !el.classList || !el.classList.contains('stmt-check')) return;
+                const row = el.closest && el.closest('tr[data-id]');
+                const id = row && row.getAttribute('data-id');
+                if (id && typeof toggleStmtMark === 'function') toggleStmtMark(el, id);
+            });
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 const target = e.target;
                 const targetEl = (target && target.nodeType === 1) ? target : (target && target.parentElement);
+                const ratesAct = targetEl && targetEl.closest && targetEl.closest('[data-rates-act]');
+                if (ratesAct) {
+                    const row = ratesAct.closest('.rates-currency-row');
+                    const key = row && row.getAttribute('data-key');
+                    if (key) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (ratesAct.getAttribute('data-rates-act') === 'edit' && typeof openCurrencyModal === 'function') openCurrencyModal(key);
+                        else if (ratesAct.getAttribute('data-rates-act') === 'delete' && typeof deleteCurrency === 'function') deleteCurrency(key);
+                    }
+                    return;
+                }
+                const histItem = targetEl && targetEl.closest && targetEl.closest('.cust-hist-item, .customer-timeline-conv');
+                if (histItem && typeof openChatFromHistory === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openChatFromHistory(histItem);
+                    return;
+                }
+                const staffConv = targetEl && targetEl.closest && targetEl.closest('.staff-conv-item[data-convid]');
+                if (staffConv && typeof openChat === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openChat(staffConv.getAttribute('data-convid'), staffConv.getAttribute('data-custname') || '', '');
+                    if (typeof showPage === 'function') showPage('conversations');
+                    if (typeof closeStaffDetailModal === 'function') closeStaffDetailModal();
+                    return;
+                }
+                const fxBtn = targetEl && targetEl.closest && targetEl.closest('[data-fx]');
+                if (fxBtn) {
+                    const act = fxBtn.getAttribute('data-fx');
+                    const id = fxBtn.getAttribute('data-id') || '';
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (act === 'cashbox-add' && typeof openCashBoxModal === 'function') openCashBoxModal();
+                    else if (act === 'cashbox-edit' && typeof openCashBoxModal === 'function') openCashBoxModal(id);
+                    else if (act === 'cashbox-delete' && typeof deleteCashBox === 'function') deleteCashBox(id);
+                    else if (act === 'bank-add' && typeof openBankAccountModal === 'function') openBankAccountModal();
+                    else if (act === 'bank-edit' && typeof openBankAccountModal === 'function') openBankAccountModal(id);
+                    else if (act === 'bank-delete' && typeof deleteBankAccount === 'function') deleteBankAccount(id);
+                    else if (act === 'tx-edit' && typeof openTransactionModalForEdit === 'function') openTransactionModalForEdit(id);
+                    else if (act === 'tx-approve' && typeof approveTransaction === 'function') approveTransaction(id);
+                    else if (act === 'tx-reject' && typeof rejectTransaction === 'function') rejectTransaction(id);
+                    else if (act === 'tx-view' && typeof viewTransactionDetail === 'function') viewTransactionDetail(id);
+                    else if (act === 'tx-customer' && typeof showPage === 'function' && typeof showCustomerHistory === 'function') {
+                        showPage('customers');
+                        showCustomerHistory(id);
+                    }
+                    else if (act === 'service-edit' && typeof openServiceModal === 'function') openServiceModal(id);
+                    else if (act === 'service-delete' && typeof deleteService === 'function') deleteService(id);
+                    else if (act === 'services-tab' && typeof switchServicesTab === 'function') switchServicesTab(fxBtn.getAttribute('data-tab') || '');
+                    else if (act === 'rates-chart' && typeof setRatesChartCurrency === 'function') setRatesChartCurrency(fxBtn.getAttribute('data-currency') || id);
+                    else if (act === 'rates-retry' && typeof loadRatesCharts === 'function') loadRatesCharts();
+                    else if (act === 'doc-delete' && typeof deleteCustomerDoc === 'function') deleteCustomerDoc(id, fxBtn.getAttribute('data-cust-id') || '');
+                    else if (act === 'tag-remove' && typeof removeCustomerModalTag === 'function') removeCustomerModalTag(id);
+                    else if (act === 'process-start' && typeof openProcessStartInstanceModal === 'function') openProcessStartInstanceModal(id);
+                    else if (act === 'process-edit' && typeof openProcessTemplateModal === 'function') openProcessTemplateModal(id);
+                    else if (act === 'process-delete' && typeof deleteProcessTemplate === 'function') deleteProcessTemplate(id);
+                    else if (act === 'process-advance' && typeof advanceProcessInstance === 'function') advanceProcessInstance(fxBtn.getAttribute('data-complete') === '1');
+                    else if (act === 'sup-internal' && typeof openSupInternalChatDetail === 'function') openSupInternalChatDetail(id);
+                    else if (act === 'perm-group' && typeof userPermsSelectGroup === 'function') {
+                        userPermsSelectGroup(fxBtn.getAttribute('data-group') || '', fxBtn.getAttribute('data-on') === '1');
+                    }
+                    return;
+                }
+                const staffRow = targetEl && targetEl.closest && targetEl.closest('.staff-row[data-user-id], .sup-user-card[data-user-id]');
+                if (staffRow && typeof openStaffDetailModal === 'function' && !(targetEl.closest && targetEl.closest('a, button'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openStaffDetailModal(staffRow.getAttribute('data-user-id'));
+                    return;
+                }
+                const deptEdit = targetEl && targetEl.closest && targetEl.closest('.dept-edit-btn[data-idx]');
+                if (deptEdit && typeof editDepartment === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    editDepartment(parseInt(deptEdit.getAttribute('data-idx'), 10));
+                    return;
+                }
+                const branchEdit = targetEl && targetEl.closest && targetEl.closest('.branch-edit-btn');
+                if (branchEdit && typeof editBranch === 'function') {
+                    const card = branchEdit.closest('.branch-card');
+                    if (card) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        editBranch(card.getAttribute('data-id'), card.getAttribute('data-name') || '', card.getAttribute('data-city') || '', card.getAttribute('data-country') || '');
+                    }
+                    return;
+                }
                 // تب‌های مودال ویرایش کاربر (اطلاعات پایه / دسترسی‌ها) — delegation تا همیشه کار کند
                 const userEditTabEl = targetEl && targetEl.closest && targetEl.closest('#userEditModal .user-edit-tab[data-tab]');
                 if (userEditTabEl) {
@@ -2303,16 +2399,11 @@
                     if (typeof submitTicketReply === 'function') submitTicketReply();
                     return;
                 }
-                else if (target.closest('.ticket-card[data-ticket-id]') || target.closest('.ticket-card[onclick*="loadTicketDetail"]')) {
+                else if (target.closest('.ticket-card[data-ticket-id]')) {
                     e.preventDefault();
                     e.stopPropagation();
                     var ticketCard = target.closest('.ticket-card');
                     var ticketId = (ticketCard && (ticketCard.getAttribute('data-ticket-id') || '')) || '';
-                    if (!ticketId && ticketCard) {
-                        var oc = ticketCard.getAttribute('onclick') || '';
-                        var m = oc.match(/loadTicketDetail\(['"]([^'"]+)['"]\)/);
-                        if (m) ticketId = m[1];
-                    }
                     if (ticketId && typeof loadTicketDetail === 'function') loadTicketDetail(ticketId);
                     return;
                 }

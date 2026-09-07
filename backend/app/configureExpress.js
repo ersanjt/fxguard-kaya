@@ -7,13 +7,13 @@
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const crypto = require('crypto');
 
-const { allowedOrigins } = require('../config/cors');
+const { isAllowedOrigin, isCredentialOrigin } = require('../config/cors');
+const { cookieOriginGuard } = require('../lib/cookieOriginGuard');
 const { createRedisClient } = require('../services/redis');
 const { createApiRouter } = require('../routes/api');
 const { setupSocketHandlers } = require('../socket/handlers');
@@ -98,20 +98,32 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
             crossOriginEmbedderPolicy: false
         })
     );
-    app.use(
-        cors({
-            origin: (origin, cb) => {
-                if (!origin) return cb(null, true);
-                if (allowedOrigins.includes(origin)) return cb(null, true);
-                cb(new Error(`CORS: origin not allowed: ${origin}`));
-            },
-            credentials: true,
-            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-            allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
-        })
-    );
+    app.use((req, res, next) => {
+        const origin = req.headers.origin;
+        if (origin && isCredentialOrigin(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Access-Control-Allow-Credentials', 'true');
+            res.setHeader('Vary', 'Origin');
+            res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+        } else if (origin && isAllowedOrigin(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin);
+            res.setHeader('Vary', 'Origin');
+            res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
+        }
+        if (
+            req.method === 'OPTIONS' &&
+            origin &&
+            (isCredentialOrigin(origin) || isAllowedOrigin(origin))
+        ) {
+            return res.status(204).end();
+        }
+        next();
+    });
     app.use(compression());
     app.use(cookieParser());
+    app.use(cookieOriginGuard);
 
     app.use((req, res, next) => {
         if (!isPostIncomingMessageWebhook(req)) return next();

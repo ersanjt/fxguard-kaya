@@ -3725,7 +3725,6 @@
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
-                const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(String(c.id)) >= 0 ? ' checked' : '';
                 const phoneShown = customerUiPhone(c);
                 const restrictedBadge = c.isRestrictedFromStaff

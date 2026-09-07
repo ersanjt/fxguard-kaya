@@ -20,4 +20,6 @@ Bundle ID: `io.fxguard.kaya.staff`
 
 ## معماری
 
-`Features/` صفحه‌ها · `Core/` HTTP، Keychain، i18n · `Data/Models` · `StaffAppModel` معادل ViewModel اندروید.
+`Features/` صفحه‌ها · `Core/` HTTP، Keychain، Socket.IO، i18n · `Data/Models` · `StaffAppModel` معادل ViewModel اندروید.
+
+سوکت زنده با `SocketService` (websocket + Bearer در header). پوش APNs هنوز نیست؛ بنر محلی هنگام باز بودن اپ کار می‌کند و ضربه روی بنر گفتگو یا چت داخلی را باز می‌کند.

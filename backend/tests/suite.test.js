@@ -49,6 +49,7 @@ function section(name) {
 let req;
 let adminToken = null;
 let agentToken = null;
+const STAFF_APP = { 'X-Kaya-Client': 'staff-app' };
 let createdUserId = null;
 let createdCustomerId = null;
 let createdConversationId = null;
@@ -88,6 +89,7 @@ async function runTests() {
         const r = await req.get('/api/config');
         assert.strictEqual(r.status, 200);
         assert(r.body.timezone, 'Expected timezone in config');
+        assert.strictEqual(r.body.webrtcIceServers, null, 'TURN credentials must not be public');
     });
 
     // ── Auth: Login ──────────────────────────────────────────────────────────
@@ -116,6 +118,7 @@ async function runTests() {
     await test('Login with valid admin credentials returns token', async () => {
         const r = await req
             .post('/api/auth/login')
+            .set(STAFF_APP)
             .send({ email: 'admin@test.com', password: 'Admin@Test123!' });
         assert.strictEqual(r.status, 200, `Login failed: ${JSON.stringify(r.body)}`);
         assert(r.body.token, 'Expected token');
@@ -123,6 +126,15 @@ async function runTests() {
         assert.strictEqual(r.body.user.email, 'admin@test.com');
         assert(!r.body.user.password, 'Password must not be in response');
         adminToken = r.body.token;
+    });
+
+    await test('Browser login omits JWT from JSON body', async () => {
+        const r = await req
+            .post('/api/auth/login')
+            .send({ email: 'admin@test.com', password: 'Admin@Test123!' });
+        assert.strictEqual(r.status, 200);
+        assert(r.body.user);
+        assert.strictEqual(r.body.token, undefined);
     });
 
     // ── Auth: /me ────────────────────────────────────────────────────────────
@@ -333,6 +345,7 @@ async function runTests() {
     await test('Agent can login with created credentials', async () => {
         const r = await req
             .post('/api/auth/login')
+            .set(STAFF_APP)
             .send({ email: 'agent@test.com', password: 'Agent@Test123!' });
         assert.strictEqual(r.status, 200);
         assert(r.body.token);
@@ -1514,7 +1527,7 @@ async function runTests() {
                 role: 'agent',
             });
         assert.strictEqual(created.status, 201, JSON.stringify(created.body));
-        const login = await req.post('/api/auth/login').send({
+        const login = await req.post('/api/auth/login').set(STAFF_APP).send({
             email: created.body.email,
             password: 'Session@Test123',
         });

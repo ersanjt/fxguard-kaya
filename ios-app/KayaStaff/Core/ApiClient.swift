@@ -10,6 +10,7 @@ import Foundation
 final class ApiClient {
     private let session: SessionStore
     private let urlSession: URLSession
+    var onSessionExpired: (() -> Void)?
 
     init(session: SessionStore) {
         self.session = session
@@ -20,7 +21,17 @@ final class ApiClient {
 
     func resolveUrl(_ path: String?) -> URL? {
         guard let path, !path.isEmpty else { return nil }
-        if path.hasPrefix("http://") || path.hasPrefix("https://") { return URL(string: path) }
+        if path.hasPrefix("http://") || path.hasPrefix("https://") {
+            guard let url = URL(string: path),
+                  let scheme = url.scheme?.lowercased(),
+                  let host = url.host?.lowercased(),
+                  !host.isEmpty
+            else { return nil }
+            let loopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "10.0.2.2"
+            if scheme == "https" { return url }
+            if scheme == "http" { return loopback ? url : nil }
+            return nil
+        }
         return URL(string: session.baseUrl + (path.hasPrefix("/") ? path : "/\(path)"))
     }
 
@@ -177,6 +188,8 @@ final class ApiClient {
         req.httpMethod = "POST"
         req.timeoutInterval = 90
         req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.setValue("staff-app", forHTTPHeaderField: "X-Kaya-Client")
+        req.setValue("KayaStaff-iOS/1.0", forHTTPHeaderField: "User-Agent")
         req.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         if let token = session.token, !token.isEmpty {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -197,6 +210,7 @@ final class ApiClient {
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         if status == 401 {
+            expireSession()
             throw ApiError(message: extractError(respData) ?? "نشست منقضی شد. دوباره وارد شوید.", status: 401)
         }
         if !(200 ... 299).contains(status) {
@@ -819,6 +833,8 @@ final class ApiClient {
         var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue("application/json", forHTTPHeaderField: "Accept")
+        req.setValue("staff-app", forHTTPHeaderField: "X-Kaya-Client")
+        req.setValue("KayaStaff-iOS/1.0", forHTTPHeaderField: "User-Agent")
         if let token = session.token, !token.isEmpty {
             req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
@@ -838,7 +854,7 @@ final class ApiClient {
             let handshake = path.hasPrefix("/api/auth/login")
                 || path.hasPrefix("/api/auth/forgot-password")
                 || path.hasPrefix("/api/auth/totp/")
-            if !handshake { session.clearSession() }
+            if !handshake { expireSession() }
             throw ApiError(
                 message: extractError(data) ?? (handshake ? "ورود ناموفق بود" : "نشست منقضی شد. دوباره وارد شوید."),
                 status: 401
@@ -859,6 +875,12 @@ final class ApiClient {
         if let obj = raw as? [String: Any] { return obj }
         if let arr = raw as? [Any] { return ["data": arr] }
         return [:]
+    }
+
+    private func expireSession() {
+        let had = !(session.token ?? "").isEmpty || session.user != nil
+        session.clearSession()
+        if had { onSessionExpired?() }
     }
 
     private func extractError(_ data: Data) -> String? {

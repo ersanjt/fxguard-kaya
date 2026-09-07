@@ -13,6 +13,7 @@ import coil.ImageLoaderFactory
 import io.fxguard.kaya.di.AppGraph
 import io.fxguard.kaya.push.NotificationHelper
 import io.fxguard.kaya.push.PushRegistrar
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 
 class KayaCrmApp : Application(), ImageLoaderFactory {
@@ -32,10 +33,17 @@ class KayaCrmApp : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader {
         val http = OkHttpClient.Builder()
             .addInterceptor { chain ->
+                val original = chain.request()
                 val token = graph.session.token
-                val req = chain.request().newBuilder()
-                if (!token.isNullOrBlank()) req.header("Authorization", "Bearer $token")
-                chain.proceed(req.build())
+                val apiHost = graph.session.baseUrl.toHttpUrlOrNull()?.host
+                val sameHost = !apiHost.isNullOrBlank() &&
+                    original.url.host.equals(apiHost, ignoreCase = true)
+                val req = if (!token.isNullOrBlank() && sameHost) {
+                    original.newBuilder().header("Authorization", "Bearer $token").build()
+                } else {
+                    original
+                }
+                chain.proceed(req)
             }
             .build()
         return ImageLoader.Builder(this)

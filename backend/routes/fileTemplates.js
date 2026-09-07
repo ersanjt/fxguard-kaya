@@ -24,6 +24,14 @@ function publicFileTemplateUrl(filepathOrName) {
     return '/uploads/file-templates/' + encodeURIComponent(fname);
 }
 
+function toPublicFileTemplate(row) {
+    const plain = row && row.toJSON ? row.toJSON() : Object.assign({}, row || {});
+    const fname = path.basename(plain.filepath || plain.filename || '');
+    plain.url = publicFileTemplateUrl(fname);
+    delete plain.filepath;
+    return plain;
+}
+
 // تنظیمات multer برای آپلود فایل
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
@@ -118,12 +126,7 @@ router.get('/', async (req, res, next) => {
             });
         }
 
-        const result = filtered.map(ft => {
-            const plain = ft.toJSON ? ft.toJSON() : ft;
-            const fname = path.basename(plain.filepath || plain.filename || '');
-            plain.url = publicFileTemplateUrl(fname);
-            return plain;
-        });
+        const result = filtered.map(ft => toPublicFileTemplate(ft));
         res.json({ data: result });
     } catch (err) {
         logger.error('Error loading file templates', { error: err.message });
@@ -173,10 +176,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
             }]
         });
 
-        const plain = result.toJSON ? result.toJSON() : result;
-        const fname = path.basename(plain.filepath || plain.filename || '');
-        plain.url = publicFileTemplateUrl(fname);
-        res.status(201).json(plain);
+        res.status(201).json(toPublicFileTemplate(result));
     } catch (err) {
         logger.error('Error uploading file template', { error: err.message });
         // حذف فایل در صورت خطا
@@ -230,10 +230,7 @@ router.get('/:id', async (req, res, next) => {
             return res.status(404).json({ error: 'فایل یافت نشد' });
         }
 
-        const plain = fileTemplate.toJSON ? fileTemplate.toJSON() : fileTemplate;
-        const fname = path.basename(plain.filepath || plain.filename || '');
-        plain.url = publicFileTemplateUrl(fname);
-        res.json(plain);
+        res.json(toPublicFileTemplate(fileTemplate));
     } catch (err) {
         logger.error('Error getting file template', { error: err.message });
         next(err);
@@ -310,10 +307,7 @@ router.put('/:id', async (req, res, next) => {
             }]
         });
 
-        const plain2 = result.toJSON ? result.toJSON() : result;
-        const fname2 = path.basename(plain2.filepath || plain2.filename || '');
-        plain2.url = publicFileTemplateUrl(fname2);
-        res.json(plain2);
+        res.json(toPublicFileTemplate(result));
     } catch (err) {
         logger.error('Error updating file template', { error: err.message });
         next(err);
@@ -366,7 +360,7 @@ router.post('/:id/use', async (req, res, next) => {
         await fileTemplate.increment('usageCount');
         await fileTemplate.reload();
 
-        res.json(fileTemplate);
+        res.json(toPublicFileTemplate(fileTemplate));
     } catch (err) {
         logger.error('Error incrementing file template usage', { error: err.message });
         next(err);

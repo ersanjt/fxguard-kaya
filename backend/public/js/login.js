@@ -285,8 +285,8 @@
 
     /* ── Post-login redirect ─────────────────────── */
     function saveSessionToken(data) {
-        if (!data || !data.token) return;
-        try { sessionStorage.setItem('crm_token', data.token); } catch (_) {}
+        try { sessionStorage.removeItem('crm_token'); } catch (_) {}
+        void data;
     }
     function postLoginRedirect(data) {
         saveSessionToken(data);
@@ -713,9 +713,7 @@
             });
         }).then(function(res) {
             if (res.ok && res.d && (res.d.id || res.d.email) && !res.d.error) {
-                if (res.d.token) {
-                    try { sessionStorage.setItem('crm_token', res.d.token); } catch (_) {}
-                }
+                try { sessionStorage.removeItem('crm_token'); } catch (_) {}
                 var returnTo = '';
                 try {
                     returnTo = new URLSearchParams(window.location.search).get('return') || '';

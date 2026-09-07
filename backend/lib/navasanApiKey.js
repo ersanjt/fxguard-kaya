@@ -34,12 +34,12 @@ async function getNavasanApiKey() {
 
 function navasanLatestUrl(apiKey) {
     const key = normalizeNavasanApiKey(apiKey);
-    return key ? `http://api.navasan.tech/latest/?api_key=${encodeURIComponent(key)}` : null;
+    return key ? `https://api.navasan.tech/latest/?api_key=${encodeURIComponent(key)}` : null;
 }
 
 function navasanUsageUrl(apiKey) {
     const key = normalizeNavasanApiKey(apiKey);
-    return key ? `http://api.navasan.tech/usage/?api_key=${encodeURIComponent(key)}` : null;
+    return key ? `https://api.navasan.tech/usage/?api_key=${encodeURIComponent(key)}` : null;
 }
 
 function navasanApiErrorMessage(status, body) {

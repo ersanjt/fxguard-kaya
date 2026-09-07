@@ -23,8 +23,7 @@
 
     function hasAuthToken() {
         try {
-            var t = global.sessionStorage.getItem('crm_token');
-            return !!(t && t.length);
+            return document.documentElement.classList.contains('auth-has-token');
         } catch (_e) {
             return false;
         }

@@ -343,9 +343,9 @@
                 const cnt = (tpl.instanceCount || 0);
                 return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
                     '<div><span class="name">' + escapeHtml(tpl.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
-                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + tpl.id + '\')">' + t('process_start_instance') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + tpl.id + '\')">' + t('edit') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + tpl.id + '\')">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
+                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-start" data-id="' + escapeHtml(tpl.id) + '">' + t('process_start_instance') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-edit" data-id="' + escapeHtml(tpl.id) + '">' + t('edit') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-delete" data-id="' + escapeHtml(tpl.id) + '">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
             }).join('');
         }
         async function loadProcessInstances() {
@@ -369,7 +369,7 @@
                 const statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
                 const templateName = (i.template && i.template.name) ? i.template.name : '�';
                 const assignee = userDisplayHtml(i.assignee) || '\u2014';
-                return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
+                return '<div class="list-item" data-fx="process-open" data-id="' + escapeHtml(i.id) + '" style="cursor:pointer;" role="button" tabindex="0"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
             }).join('');
         }
         let currentProcessInstanceId = null;
@@ -405,7 +405,7 @@
             if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
             const isLast = currentIdx >= stages.length - 1;
             advanceBox.innerHTML = '<label>' + t('process_notes') + '</label><textarea id="processAdvanceNotes" rows="2" style="width:100%; margin-bottom:8px;"></textarea>' +
-                (isLast ? '<button type="button" class="btn-primary" onclick="advanceProcessInstance(true)">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" onclick="advanceProcessInstance(false)">' + t('process_advance') + '</button>');
+                (isLast ? '<button type="button" class="btn-primary" data-fx="process-advance" data-complete="1">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" data-fx="process-advance" data-complete="0">' + t('process_advance') + '</button>');
         }
         async function advanceProcessInstance(complete) {
             if (!currentProcessInstanceId) return;
@@ -795,7 +795,7 @@
                 const visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
                 if (visibleKeys.length === 0) return;
                 html += '<div class="user-edit-perm-group" data-group="' + gr.key + '">';
-                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
+                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" data-fx="perm-group" data-group="' + escapeHtml(gr.key) + '" data-on="1"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" data-fx="perm-group" data-group="' + escapeHtml(gr.key) + '" data-on="0"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
                     const checked = perms[k] ? ' checked' : '';
@@ -952,7 +952,7 @@
         ];
         (function loadWebrtcIceFromConfig() {
             try {
-                fetch((typeof API !== 'undefined' ? API : '') + '/api/config')
+                fetch((typeof API !== 'undefined' ? API : '') + '/api/config', { credentials: 'same-origin' })
                     .then(function (r) { return r.json(); })
                     .then(function (c) {
                         if (c && Array.isArray(c.webrtcIceServers) && c.webrtcIceServers.length) {

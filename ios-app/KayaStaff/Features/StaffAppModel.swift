@@ -15,6 +15,7 @@ enum MoreDest { case menu, tickets, tasks, team, profile }
 final class StaffAppModel: ObservableObject {
     let session: SessionStore
     private let api: ApiClient
+    private let socket: SocketService
 
     @Published var gate: Gate = .splash
     @Published var branding: Branding?
@@ -96,8 +97,15 @@ final class StaffAppModel: ObservableObject {
     init(session: SessionStore) {
         self.session = session
         self.api = ApiClient(session: session)
+        self.socket = SocketService(session: session)
         self.serverUrl = session.baseUrl
         self.user = session.user
+        api.onSessionExpired = { [weak self] in
+            Task { @MainActor in self?.kickExpiredSession() }
+        }
+        socket.onEvent = { [weak self] ev in
+            Task { @MainActor in self?.handleSocket(ev) }
+        }
         Task { await bootstrap() }
         startPolling()
     }
@@ -118,6 +126,9 @@ final class StaffAppModel: ObservableObject {
         }
         session.baseUrl = normalized
         serverUrl = normalized
+        if gate == .app {
+            socket.connect()
+        }
         return true
     }
 
@@ -203,6 +214,7 @@ final class StaffAppModel: ObservableObject {
 
     private func bootstrap() async {
         branding = try? await api.branding()
+        KayaColor.applyBrandColor(branding?.primaryColor)
         guard session.isLoggedIn else {
             gate = .login
             return
@@ -299,6 +311,11 @@ final class StaffAppModel: ObservableObject {
 
     private func enterApp() {
         gate = .app
+        StaffLocalPush.shared.attach()
+        StaffLocalPush.shared.onTap = { [weak self] conversationId, threadId in
+            self?.openFromLocalPush(conversationId: conversationId, threadId: threadId)
+        }
+        socket.connect()
         Task { await api.setOnline() }
         refreshInbox()
         refreshCustomers()
@@ -310,7 +327,22 @@ final class StaffAppModel: ObservableObject {
 
     func logout() {
         Task {
+            socket.disconnect()
             await api.logout()
+            resetToLogin()
+        }
+    }
+
+    private func kickExpiredSession() {
+        if gate == .login || gate == .totp || gate == .splash { return }
+        socket.disconnect()
+        resetToLogin()
+        authIsSuccess = false
+        authError = L10n.t(lang, "session_expired")
+    }
+
+    private func resetToLogin() {
+            session.clearSession()
             inbox = []
             customers = []
             tickets = []
@@ -328,12 +360,12 @@ final class StaffAppModel: ObservableObject {
             dashModuleItems = []
             dashModuleError = nil
             openChat = nil
+            openThread = nil
             customerProfile = nil
             user = nil
             tab = .dashboard
             moreDest = .menu
             gate = .login
-        }
     }
 
     func onInboxSearch(_ q: String) {
@@ -392,6 +424,7 @@ final class StaffAppModel: ObservableObject {
         chatError = nil
         chatNotice = nil
         chatLoading = true
+        socket.emitRead(conversationId: row.id)
         Task {
             do {
                 messages = try await api.messages(conversationId: row.id)
@@ -530,6 +563,11 @@ final class StaffAppModel: ObservableObject {
         chatNotice = msg
     }
 
+    func resumeRealtime() {
+        guard gate == .app else { return }
+        if !socket.isConnected { socket.connect() }
+    }
+
     func mediaURL(_ path: String?) -> URL? { api.resolveUrl(path) }
 
     func onCustomerSearch(_ q: String) {
@@ -629,6 +667,22 @@ final class StaffAppModel: ObservableObject {
                 openConversation(conv)
             } catch {
                 customersError = errMsg(error)
+            }
+        }
+    }
+
+    func openFromLocalPush(conversationId: String?, threadId: String?) {
+        if let id = conversationId, !id.isEmpty {
+            tab = .inbox
+            openTimelineConversation(id)
+            return
+        }
+        if let id = threadId, !id.isEmpty {
+            openMore(.team)
+            if let existing = teamThreads.first(where: { $0.id == id }) {
+                openTeamThread(existing)
+            } else {
+                openTeamThread(TeamThread(id: id, displayName: "", lastPreview: nil, unreadCount: 0))
             }
         }
     }
@@ -903,6 +957,7 @@ final class StaffAppModel: ObservableObject {
 
     private func errMsg(_ error: Error) -> String {
         if let api = error as? ApiError {
+            if api.status == 401 { return L10n.t(lang, "session_expired") }
             if api.isNetwork { return L10n.t(lang, "connect_fail") }
             if Self.isSystemNetwork(api.message) { return L10n.t(lang, "connect_fail") }
             return api.message
@@ -933,10 +988,58 @@ final class StaffAppModel: ObservableObject {
         }
     }
 
+    private func handleSocket(_ ev: SocketEvent) {
+        if ev.name == "session_revoked" {
+            kickExpiredSession()
+            return
+        }
+        guard gate == .app else { return }
+        refreshInbox(silent: true)
+        if let id = ev.conversationId, id == openChat?.id {
+            Task {
+                if let latest = try? await api.messages(conversationId: id) {
+                    messages = latest
+                }
+            }
+        }
+        if let id = ev.threadId, id == openThread?.id {
+            let me = user?.id ?? ""
+            Task {
+                if let latest = try? await api.teamMessages(threadId: id, meId: me) {
+                    teamMessages = latest
+                }
+            }
+        }
+        let watchingChat = ev.conversationId != nil && ev.conversationId == openChat?.id
+        let watchingThread = ev.threadId != nil && ev.threadId == openThread?.id
+        if !ev.silent && !watchingChat && !watchingThread {
+            StaffLocalPush.shared.show(
+                title: ev.title ?? L10n.t(lang, "inbox"),
+                body: ev.body ?? L10n.t(lang, "notify"),
+                conversationId: ev.conversationId,
+                threadId: ev.threadId
+            )
+        }
+        switch ev.name {
+        case "ticket_assigned", "ticket_reply_notification":
+            refreshTickets()
+        case "task_assigned":
+            refreshTasks()
+        case "internal_message", "internal_thread_updated":
+            refreshTeam()
+        case "important_announcement":
+            refreshAnnouncements()
+        default:
+            break
+        }
+    }
+
     private func startPolling() {
         Task {
             while !Task.isCancelled {
-                let interval: UInt64 = (openChat != nil || openThread != nil) ? 3_000_000_000 : 8_000_000_000
+                let interval: UInt64 = socket.isConnected
+                    ? 20_000_000_000
+                    : ((openChat != nil || openThread != nil) ? 3_000_000_000 : 8_000_000_000)
                 try? await Task.sleep(nanoseconds: interval)
                 guard gate == .app else { continue }
                 refreshInbox(silent: true)

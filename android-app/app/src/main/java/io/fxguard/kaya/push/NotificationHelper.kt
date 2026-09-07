@@ -45,12 +45,12 @@ object NotificationHelper {
     private val _banners = MutableSharedFlow<InAppPush>(extraBufferCapacity = 16)
     val banners: SharedFlow<InAppPush> = _banners.asSharedFlow()
 
-    const val CHANNEL_STATUS = "kaya_status_v2"
-    const val CHANNEL_MESSAGES = "kaya_messages_v2"
-    const val CHANNEL_INTERNAL = "kaya_internal_v2"
-    const val CHANNEL_WORK = "kaya_work_v2"
-    const val CHANNEL_ANNOUNCEMENTS = "kaya_announcements_v2"
-    const val CHANNEL_CALLS = "kaya_calls_v2"
+    const val CHANNEL_STATUS = "kaya_status_v3"
+    const val CHANNEL_MESSAGES = "kaya_messages_v3"
+    const val CHANNEL_INTERNAL = "kaya_internal_v3"
+    const val CHANNEL_WORK = "kaya_work_v3"
+    const val CHANNEL_ANNOUNCEMENTS = "kaya_announcements_v3"
+    const val CHANNEL_CALLS = "kaya_calls_v3"
 
     const val STATUS_NOTIFICATION_ID = 1001
 
@@ -89,7 +89,10 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val lang = language()
         val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        listOf("kaya_status", "kaya_messages", "kaya_internal", "kaya_work", "kaya_announcements", "kaya_calls").forEach {
+        listOf(
+            "kaya_status", "kaya_messages", "kaya_internal", "kaya_work", "kaya_announcements", "kaya_calls",
+            "kaya_status_v2", "kaya_messages_v2", "kaya_internal_v2", "kaya_work_v2", "kaya_announcements_v2", "kaya_calls_v2",
+        ).forEach {
             runCatching { mgr.deleteNotificationChannel(it) }
         }
         val attrs = AudioAttributes.Builder()
@@ -104,7 +107,11 @@ object NotificationHelper {
                 vibrationPattern = vibe
                 enableLights(true)
                 setSound(sound, attrs)
-                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                lockscreenVisibility = if (id == CHANNEL_CALLS) {
+                    Notification.VISIBILITY_PUBLIC
+                } else {
+                    Notification.VISIBILITY_PRIVATE
+                }
                 setShowBadge(true)
                 setBypassDnd(id == CHANNEL_CALLS)
             }
@@ -204,7 +211,10 @@ object NotificationHelper {
             .setVibrate(longArrayOf(0, 220, 160, 220))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(if (type == "call") NotificationCompat.CATEGORY_CALL else NotificationCompat.CATEGORY_MESSAGE)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(
+                if (type == "call") NotificationCompat.VISIBILITY_PUBLIC
+                else NotificationCompat.VISIBILITY_PRIVATE,
+            )
             .setNumber(1)
             .setContentIntent(tap)
             .setWhen(now)

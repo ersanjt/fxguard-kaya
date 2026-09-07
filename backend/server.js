@@ -17,7 +17,7 @@ const socketIo = require('socket.io');
 const mongoose = require('mongoose');
 
 const logger = require('./config/logger');
-const { allowedOrigins } = require('./config/cors');
+const { isCredentialOrigin } = require('./config/cors');
 const { connectDatabases } = require('./services/database');
 const { ensureAdminUser } = require('./services/seed');
 const { connectRabbitMQ, getRabbitChannel } = require('./services/rabbitmq');
@@ -44,7 +44,7 @@ const io = socketIo(server, {
     cors: {
         origin: (origin, cb) => {
             if (!origin) return cb(null, true);
-            if (allowedOrigins.includes(origin)) return cb(null, true);
+            if (isCredentialOrigin(origin)) return cb(null, true);
             cb(new Error(`CORS: origin not allowed: ${origin}`));
         },
         credentials: true,

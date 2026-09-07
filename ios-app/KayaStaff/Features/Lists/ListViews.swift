@@ -1201,7 +1201,8 @@ struct CustomersView: View {
             CustomerPhotoView(
                 url: model.customerAvatarUrl(row.id),
                 name: row.name,
-                token: model.authToken
+                token: model.authToken,
+                apiHost: model.session.apiHost
             )
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
@@ -1309,7 +1310,8 @@ struct CustomerDetailView: View {
                         CustomerPhotoView(
                             url: model.customerAvatarUrl(c.id),
                             name: c.name,
-                            token: model.authToken
+                            token: model.authToken,
+                            apiHost: model.session.apiHost
                         )
                         VStack(alignment: .leading, spacing: 4) {
                             Text(PhoneDisplay.label(c.name)).font(.title3.weight(.semibold)).foregroundStyle(KayaColor.text)
@@ -1824,12 +1826,13 @@ struct ProfileView: View {
                     ZStack {
                         Circle().fill(KayaColor.accent.opacity(0.15)).frame(width: 72, height: 72)
                         if let url = model.avatarUrl {
-                            AsyncImage(url: url) { image in
-                                image.resizable().scaledToFill()
-                            } placeholder: {
-                                Text(model.avatarLetter).font(.title).foregroundStyle(KayaColor.accent)
-                            }
-                            .frame(width: 72, height: 72)
+                            AuthRemoteImage(
+                                url: url,
+                                token: model.authToken,
+                                apiHost: model.session.apiHost,
+                                maxWidth: 72,
+                                maxHeight: 72
+                            )
                             .clipShape(Circle())
                         } else {
                             Text(model.avatarLetter).font(.title).foregroundStyle(KayaColor.accent)

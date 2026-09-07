@@ -189,6 +189,9 @@ gateway/
 | موضوع | محل |
 |-------|-----|
 | JWT + کوکی httpOnly | `backend/lib/authCookie.js`, `middleware/auth.js` |
+| CORS + محافظ Origin کوکی | `backend/config/cors.js`, `backend/lib/cookieOriginGuard.js` |
+| JWT فقط برای اپ موبایل | `backend/lib/staffAppClient.js` + `X-Kaya-Client: staff-app` |
+| محدودهٔ شعبهٔ صرافی | `backend/lib/exchangeBranchScope.js` + `routes/exchange.js` |
 | دسترسی نقش/بخش | `backend/lib/permissions.js` |
 | دسترسی مکالمه | `backend/lib/conversationAccess.js` |
 | CSP / هدرها | `backend/app/configureExpress.js` |

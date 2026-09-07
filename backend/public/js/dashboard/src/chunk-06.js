@@ -895,17 +895,31 @@
             const box = document.getElementById('whatsappUnassignedBox');
             const list = document.getElementById('whatsappUnassignedList');
             if (!box || !list) return;
+            if (!list._unassignedBound) {
+                list._unassignedBound = true;
+                list.addEventListener('click', function (e) {
+                    const item = e.target && e.target.closest ? e.target.closest('.wa-unassigned-item') : null;
+                    if (!item) return;
+                    const id = item.getAttribute('data-convid');
+                    const nm = item.getAttribute('data-name') || '';
+                    if (id && typeof openChat === 'function') openChat(id, nm, '');
+                    if (typeof showPage === 'function') showPage('conversations');
+                });
+            }
             const res = await apiFetch('/api/conversations?status=open&unassigned=1&limit=15');
             if (res.needLogin) return;
             if (!res.ok || !res.data) return;
             const convs = res.data.data || [];
             if (convs.length === 0) { box.style.display = 'none'; return; }
+            const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                ? window.CRM.Utils.escapeAttr
+                : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
             box.style.display = 'block';
             list.innerHTML = convs.map(function(c) {
                 const name = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (typeof convListPreviewText === 'function' ? convListPreviewText(c.lastMessagePreview || '') : (c.lastMessagePreview || '')).slice(0, 50);
                 if (preview.length >= 50) preview += '…';
-                return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
+                return '<div class="list-item wa-unassigned-item" data-convid="' + attrEsc(c.id) + '" data-name="' + attrEsc(name) + '" role="button" tabindex="0" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
             }).join('');
         }
 
@@ -1376,7 +1390,7 @@
                 const meta = [d.description, branchName].filter(Boolean).join(' · ');
                 const inactive = d.isActive === false;
                 const defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
-                const editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" data-idx="' + idx + '">' + t('edit') + '</button>' : '';
                 const metaHtml = meta ? '<div class="dept-card-meta">' + escapeHtml(meta) + '</div>' : '';
                 const kwHtml = kw ? '<div class="dept-card-keywords">' + escapeHtml(kw) + '</div>' : '';
                 return '<div class="dept-card' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div class="dept-card-header"><div class="dept-card-title"><span class="dept-card-color" style="background:' + color + ';"></span><span class="dept-card-name">' + defBadge + escapeHtml(d.name || '') + '</span></div><div class="dept-card-actions">' + editBtn + '</div></div>' + metaHtml + kwHtml + '</div>';
@@ -1411,7 +1425,7 @@
                 const name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                const editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn" onclick="var c=this.closest(\'.branch-card\'); editBranch(c.getAttribute(\'data-id\'), c.getAttribute(\'data-name\')||\'\', c.getAttribute(\'data-city\')||\'\', c.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '';
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn">' + t('edit') + '</button>' : '';
                 const iconHtml = '<span class="branch-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-building-2"/></svg></span>';
                 return '<div class="branch-card" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div class="branch-card-header"><div class="branch-card-title">' + iconHtml + '<span class="branch-card-name">' + escapeHtml(b.name) + '</span></div><div class="branch-card-actions">' + editBtn + '</div></div>' + (loc ? '<div class="branch-card-meta">' + escapeHtml(loc) + '</div>' : '') + '</div>';
             }).join('');
@@ -1516,7 +1530,7 @@
             }
             if (d.users && d.users.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
-                d.users.forEach(function(u) { const bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '\u2014') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const u2 = u; const extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
+                d.users.forEach(function(u) { html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '\u2014') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const extras = []; if (u.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
                 html += '</div>';
             }
             el.className = '';
@@ -1607,7 +1621,7 @@
             const branchName = (u.branch && u.branch.name) ? u.branch.name : '';
             const deptName = (u.department && u.department.name) ? u.department.name : '';
             const lbl = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
-            var html = '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
+            var html = '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" style="cursor:pointer">' +
                 '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(u)) + '</span><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
                 '<td data-label="' + lbl[1] + '">' + staffEmptyOrText(u.email) + '</td>' +
                 '<td data-label="' + lbl[2] + '">' + staffEmptyOrText(branchName) + '</td>' +
@@ -1652,7 +1666,7 @@
             const branch = r.branch ? r.branch.name : '';
             const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
             const uid = r.userId || (user && user.id) || '';
-            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" style="cursor:pointer"' : '';
             const ll = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
             var html = '<tr' + rowAttrs + '><td data-label="' + ll[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(user)) + '</span>' + escapeHtml(userDisplay(user)) + '</span></td><td data-label="' + ll[1] + '">' + staffEmptyOrText(user.email) + '</td><td data-label="' + ll[2] + '">' + staffEmptyOrText(branch) + '</td><td data-label="' + ll[3] + '">' + (time ? escapeHtml(time) : staffEmptyOrText('')) + '</td>';
             if (opts.showNet) {
@@ -1966,8 +1980,7 @@
                     d.conversations.forEach(function(c) {
                         const custName = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         const lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
-                        const safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(safeName) + '" onclick="var el=event.currentTarget;openChat(el.getAttribute(\'data-convid\'),el.getAttribute(\'data-custname\')||\'\',\'\');showPage(\'conversations\');closeStaffDetailModal();" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
+                        html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(custName) + '" role="button" tabindex="0" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
                     });
                     html += '</div>';
                 }
@@ -2026,7 +2039,7 @@
                 const names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
                 const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 60) + ((t.lastMessage.content || '').length > 60 ? '\u2026' : '') : '\u2014';
                 const from = t.lastMessage && t.lastMessage.fromUser ? t.lastMessage.fromUser.name || '' : '';
-                return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" onclick="openSupInternalChatDetail(\'' + escapeHtml(t.id) + '\')">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
+                return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" data-fx="sup-internal" data-id="' + escapeHtml(t.id) + '">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
             }).join('') + '</tbody></table>';
         }
         function openSupInternalChatDetail(threadId) {

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct RootView: View {
     @EnvironmentObject var model: StaffAppModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -25,5 +26,9 @@ struct RootView: View {
             }
         }
         .environment(\.layoutDirection, L10n.isRtl(model.session.language) ? .rightToLeft : .leftToRight)
+        .id(model.branding?.primaryColor ?? "accent-default")
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { model.resumeRealtime() }
+        }
     }
 }

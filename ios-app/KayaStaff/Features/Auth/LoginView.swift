@@ -84,6 +84,9 @@ struct LoginView: View {
                         Button(t("server")) { showServer.toggle() }.font(.caption).foregroundStyle(KayaColor.text3)
                         if showServer {
                             field(t("server"), text: $model.serverUrl)
+                            Button(t("save_server")) { _ = model.persistServer() }
+                                .font(.caption)
+                                .foregroundStyle(KayaColor.accent)
                         }
                         if let url = URL(string: model.serverUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/privacy") {
                             Link(t("privacy"), destination: url)

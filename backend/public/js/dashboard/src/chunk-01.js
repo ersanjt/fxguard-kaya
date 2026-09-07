@@ -27,10 +27,7 @@
         let token = null;
         function persistAuthToken(t) {
             token = t || null;
-            try {
-                if (t) sessionStorage.setItem('crm_token', t);
-                else sessionStorage.removeItem('crm_token');
-            } catch (_) {}
+            try { sessionStorage.removeItem('crm_token'); } catch (_) {}
         }
         /** نشست کارکنان با کوکی httpOnly هم معتبر است — token در حافظه ممکن است خالی بماند. */
         function hasStaffAuth() {
@@ -43,10 +40,7 @@
             }
         }
         function loadStoredAuthToken() {
-            try {
-                const t = sessionStorage.getItem('crm_token');
-                if (t) token = t;
-            } catch (_) {}
+            try { sessionStorage.removeItem('crm_token'); } catch (_) {}
         }
         function redirectToLoginPage(opts) {
             const o = opts || {};
@@ -237,9 +231,9 @@
 
         function headers() {
             const h = { 'Content-Type': 'application/json' };
-            // Cookie is primary; Bearer from sessionStorage covers cases where Set-Cookie is dropped
+            // Cookie httpOnly is primary; in-memory token covers the same tab after login
             try {
-                const t = token || sessionStorage.getItem('crm_token');
+                const t = token;
                 if (t) h.Authorization = 'Bearer ' + t;
             } catch (_) {}
             return h;
@@ -527,7 +521,7 @@
             if (exportBtn) exportBtn.hidden = true;
             if (!summaryEl) return;
             const retry = withRetry
-                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
+                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" data-fx="rates-retry">' + escapeHtml(t('rates_charts_retry')) + '</button>'
                 : '';
             const msgHtml = allowHtml ? message : escapeHtml(message);
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
@@ -612,7 +606,7 @@
             visible.forEach(function(key) {
                 const info = available.find(function(a) { return a.key === key; }) || { key: key, label: key };
                 const active = key === ratesChartCurrentCurrency ? ' active' : '';
-                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(key) + '\')" role="tab">' +
+                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" data-fx="rates-chart" role="tab">' +
                     '<span class="tab-icon">' + escapeHtml(ratesChartsCurrencyIcon(key)) + '</span> ' + escapeHtml(ratesChartsCurrencyLabel(key, info.label)) + '</button>';
             });
             tabsEl.innerHTML = html;
@@ -637,7 +631,7 @@
                 const chStr = ch != null ? ((ch > 0 ? '+' : '') + ch.toFixed(1) + '%') : '';
                 const active = it.key === ratesChartCurrentCurrency ? ' active' : '';
                 const valStr = (it.value != null && it.value !== '' && it.value !== '—') ? formatPrice(it.value) : '—';
-                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(it.key) + '\')">' +
+                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" data-fx="rates-chart">' +
                     '<span class="overview-card-icon">' + escapeHtml(ratesChartsCurrencyIcon(it.key)) + '</span>' +
                     '<span class="overview-card-label">' + escapeHtml(it.label || ratesChartsCurrencyLabel(it.key)) + '</span>' +
                     '<span class="overview-card-value">' + escapeHtml(valStr) + '</span>' +
@@ -951,7 +945,7 @@
                 const apiStr = (c.apiKeys && c.apiKeys.length) ? c.apiKeys.join(', ') : '—';
                 const apiDataAttr = (c.apiKeys && c.apiKeys.length) ? escapeHtml(apiStr.replace(/"/g, '&quot;')) : '';
                 const labelAttr = escapeHtml((c.label || c.key).replace(/"/g, '&quot;'));
-                return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
+                return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" data-rates-act="edit">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" data-rates-act="delete">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
             }).join('');
         }
         function ratesApiStatusElSet(el, text, kind) {
@@ -960,6 +954,31 @@
             el.hidden = false;
             el.textContent = text;
             el.className = 'rates-api-test-status' + (kind === 'ok' ? ' is-ok' : kind === 'err' ? ' is-err' : '');
+        }
+        function setRatesApiKeyState(el, kind) {
+            if (!el) return;
+            el.className = 'rates-api-key-state' + (kind ? ' is-' + kind : '');
+            if (kind === 'saved') el.textContent = t('rates_api_state_saved');
+            else if (kind === 'env') el.textContent = t('rates_api_state_env');
+            else el.textContent = t('rates_api_state_empty');
+        }
+        function syncRatesApiProviderUi() {
+            const provider = selectedRatesApiProvider();
+            document.querySelectorAll('.rates-api-key-card').forEach(function(card) {
+                card.classList.toggle('is-selected', card.getAttribute('data-provider') === provider);
+            });
+            document.querySelectorAll('.rates-api-chip').forEach(function(lab) {
+                const input = lab.querySelector('input');
+                lab.classList.toggle('is-on', !!(input && input.checked));
+            });
+        }
+        function bindRatesApiKeysUi() {
+            const box = document.getElementById('ratesApiKeysBox');
+            if (!box || box.dataset.uiBound === '1') return;
+            box.dataset.uiBound = '1';
+            box.addEventListener('change', function(e) {
+                if (e.target && e.target.name === 'ratesApiProvider') syncRatesApiProviderUi();
+            });
         }
         function applyRatesApiKeyHints(d) {
             const navHint = document.getElementById('ratesNavasanKeyHint');
@@ -974,11 +993,14 @@
                 else if (d.alanChandApiKeyFromEnv) alanHint.textContent = t('rates_api_key_env_alanchand');
                 else alanHint.textContent = t('rates_api_key_none');
             }
+            setRatesApiKeyState(document.getElementById('ratesNavasanState'), d.navasanApiKeySet ? 'saved' : (d.navasanApiKeyFromEnv ? 'env' : 'empty'));
+            setRatesApiKeyState(document.getElementById('ratesAlanChandState'), d.alanChandApiKeySet ? 'saved' : (d.alanChandApiKeyFromEnv ? 'env' : 'empty'));
             const navRadio = document.getElementById('ratesApiProviderNavasan');
             const alanRadio = document.getElementById('ratesApiProviderAlanChand');
             const preferred = d.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan';
             if (navRadio) navRadio.checked = preferred === 'navasan';
             if (alanRadio) alanRadio.checked = preferred === 'alanchand';
+            syncRatesApiProviderUi();
             const status = document.getElementById('ratesApiStatus');
             if (status) {
                 if (d.hasApiKey || d.activeProvider) {
@@ -991,6 +1013,7 @@
             }
         }
         async function checkRatesApiKeyStatus() {
+            bindRatesApiKeysUi();
             const header = document.querySelector('#pageRates .rates-page-header');
             const existingAlert = document.getElementById('ratesApiKeyAlert');
             if (existingAlert) existingAlert.remove();
@@ -1238,7 +1261,7 @@
             var msg = escapeHtml(t(messageKey) || fallback);
             var cta = '';
             if (ctaTab && ctaKey) {
-                cta = '<button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab(\'' + ctaTab + '\')">' + escapeHtml(t(ctaKey)) + '</button>';
+                cta = '<button type="button" class="btn-secondary btn-sm" data-fx="services-tab" data-tab="' + escapeHtml(ctaTab) + '">' + escapeHtml(t(ctaKey)) + '</button>';
             }
             return '<div class="empty exchange-summary-empty"><p>' + msg + '</p>' + cta + '</div>';
         }
@@ -1330,12 +1353,12 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) {
-                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" onclick="openCashBoxModal()">' + escapeHtml(t('cashbox_add')) + '</button></div>';
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" data-fx="cashbox-add">' + escapeHtml(t('cashbox_add')) + '</button></div>';
                 return;
             }
             list.innerHTML = data.map(function(b) {
                 const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="cashbox-edit" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="cashbox-delete" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadBankAccounts() {
@@ -1346,12 +1369,12 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) {
-                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" onclick="openBankAccountModal()">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" data-fx="bank-add">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
                 return;
             }
             list.innerHTML = data.map(function(b) {
                 const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="bank-edit" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="bank-delete" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadTransactions() {
@@ -1378,13 +1401,13 @@
                 const desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
                 const ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
                 const custName = (tx.customer && (typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || ''))) ? escapeHtml(typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || '')) : '';
-                const custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
+                const custLink = tx.customerId ? '<a href="#" class="tx-customer-link" data-fx="tx-customer" data-id="' + escapeHtml(tx.customerId) + '">' + custName + '</a>' : '';
                 const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
                 let actions = '<div class="tx-row-actions">';
-                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                actions += '<button type="button" class="btn-secondary btn-sm" data-fx="tx-edit" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
-                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
-                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                    actions += ' <button type="button" class="btn-primary btn-sm" data-fx="tx-approve" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" data-fx="tx-reject" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
                 }
                 actions += '</div>';
                 return '<div class="transaction-row" data-tx-id="' + tx.id + '"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span> ' + statusBadge + (custLink ? ' <span class="tx-cust">' + custLink + '</span>' : '') + '<div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div class="tx-row-right"><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span>' + actions + '</div></div>';
@@ -1589,7 +1612,7 @@
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز سرویسی تعریف نشده. با دکمه افزودن سرویس اضافه کنید.' : 'No services yet. Add one with the button above.') + '</div>'; return; }
             list.innerHTML = data.map(function(s) {
                 const badge = s.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openServiceModal(\'' + s.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteService(\'' + s.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="service-edit" data-id="' + escapeHtml(s.id) + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="service-delete" data-id="' + escapeHtml(s.id) + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         function openServiceModal(serviceId) {
@@ -1712,8 +1735,8 @@
             const bg = isMarked ? ' style="background:' + isMarked + ';"' : '';
             const checkAttr = isMarked ? ' checked' : '';
             return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
-                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + ' onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
-                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
+                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + '></td>' +
+                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" data-fx="tx-view" data-id="' + escapeHtml(item.id) + '" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" data-fx="tx-edit" data-id="' + escapeHtml(item.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
                 '<td>' + escapeHtml(item.date || '') + '</td>' +
                 '<td><span class="stmt-type-badge stmt-type-' + item.typeRaw + '">' + escapeHtml(item.type) + '</span></td>' +
                 '<td>' + escapeHtml(item.number) + '</td>' +
@@ -2159,14 +2182,15 @@
             if (msg && typeof toast === 'function') toast(msg, false);
         }
         function connectSocket() {
-            if (!token) return;
             if (socket) {
                 try { socket.disconnect(); } catch (_e) {}
                 socket = null;
             }
             try {
                 if (typeof io !== 'undefined') {
-                    socket = io({ auth: { token: token } });
+                    var sockOpts = { withCredentials: true };
+                    if (token) sockOpts.auth = { token: token };
+                    socket = io(sockOpts);
                     socket.on('session_revoked', function() {
                         if (typeof logout === 'function') logout();
                     });

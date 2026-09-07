@@ -27,10 +27,7 @@
         let token = null;
         function persistAuthToken(t) {
             token = t || null;
-            try {
-                if (t) sessionStorage.setItem('crm_token', t);
-                else sessionStorage.removeItem('crm_token');
-            } catch (_) {}
+            try { sessionStorage.removeItem('crm_token'); } catch (_) {}
         }
         /** نشست کارکنان با کوکی httpOnly هم معتبر است — token در حافظه ممکن است خالی بماند. */
         function hasStaffAuth() {
@@ -43,10 +40,7 @@
             }
         }
         function loadStoredAuthToken() {
-            try {
-                const t = sessionStorage.getItem('crm_token');
-                if (t) token = t;
-            } catch (_) {}
+            try { sessionStorage.removeItem('crm_token'); } catch (_) {}
         }
         function redirectToLoginPage(opts) {
             const o = opts || {};
@@ -237,9 +231,9 @@
 
         function headers() {
             const h = { 'Content-Type': 'application/json' };
-            // Cookie is primary; Bearer from sessionStorage covers cases where Set-Cookie is dropped
+            // Cookie httpOnly is primary; in-memory token covers the same tab after login
             try {
-                const t = token || sessionStorage.getItem('crm_token');
+                const t = token;
                 if (t) h.Authorization = 'Bearer ' + t;
             } catch (_) {}
             return h;
@@ -527,7 +521,7 @@
             if (exportBtn) exportBtn.hidden = true;
             if (!summaryEl) return;
             const retry = withRetry
-                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
+                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" data-fx="rates-retry">' + escapeHtml(t('rates_charts_retry')) + '</button>'
                 : '';
             const msgHtml = allowHtml ? message : escapeHtml(message);
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
@@ -612,7 +606,7 @@
             visible.forEach(function(key) {
                 const info = available.find(function(a) { return a.key === key; }) || { key: key, label: key };
                 const active = key === ratesChartCurrentCurrency ? ' active' : '';
-                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(key) + '\')" role="tab">' +
+                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" data-fx="rates-chart" role="tab">' +
                     '<span class="tab-icon">' + escapeHtml(ratesChartsCurrencyIcon(key)) + '</span> ' + escapeHtml(ratesChartsCurrencyLabel(key, info.label)) + '</button>';
             });
             tabsEl.innerHTML = html;
@@ -637,7 +631,7 @@
                 const chStr = ch != null ? ((ch > 0 ? '+' : '') + ch.toFixed(1) + '%') : '';
                 const active = it.key === ratesChartCurrentCurrency ? ' active' : '';
                 const valStr = (it.value != null && it.value !== '' && it.value !== '—') ? formatPrice(it.value) : '—';
-                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(it.key) + '\')">' +
+                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" data-fx="rates-chart">' +
                     '<span class="overview-card-icon">' + escapeHtml(ratesChartsCurrencyIcon(it.key)) + '</span>' +
                     '<span class="overview-card-label">' + escapeHtml(it.label || ratesChartsCurrencyLabel(it.key)) + '</span>' +
                     '<span class="overview-card-value">' + escapeHtml(valStr) + '</span>' +
@@ -951,7 +945,7 @@
                 const apiStr = (c.apiKeys && c.apiKeys.length) ? c.apiKeys.join(', ') : '—';
                 const apiDataAttr = (c.apiKeys && c.apiKeys.length) ? escapeHtml(apiStr.replace(/"/g, '&quot;')) : '';
                 const labelAttr = escapeHtml((c.label || c.key).replace(/"/g, '&quot;'));
-                return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
+                return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" data-rates-act="edit">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" data-rates-act="delete">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
             }).join('');
         }
         function ratesApiStatusElSet(el, text, kind) {
@@ -960,6 +954,31 @@
             el.hidden = false;
             el.textContent = text;
             el.className = 'rates-api-test-status' + (kind === 'ok' ? ' is-ok' : kind === 'err' ? ' is-err' : '');
+        }
+        function setRatesApiKeyState(el, kind) {
+            if (!el) return;
+            el.className = 'rates-api-key-state' + (kind ? ' is-' + kind : '');
+            if (kind === 'saved') el.textContent = t('rates_api_state_saved');
+            else if (kind === 'env') el.textContent = t('rates_api_state_env');
+            else el.textContent = t('rates_api_state_empty');
+        }
+        function syncRatesApiProviderUi() {
+            const provider = selectedRatesApiProvider();
+            document.querySelectorAll('.rates-api-key-card').forEach(function(card) {
+                card.classList.toggle('is-selected', card.getAttribute('data-provider') === provider);
+            });
+            document.querySelectorAll('.rates-api-chip').forEach(function(lab) {
+                const input = lab.querySelector('input');
+                lab.classList.toggle('is-on', !!(input && input.checked));
+            });
+        }
+        function bindRatesApiKeysUi() {
+            const box = document.getElementById('ratesApiKeysBox');
+            if (!box || box.dataset.uiBound === '1') return;
+            box.dataset.uiBound = '1';
+            box.addEventListener('change', function(e) {
+                if (e.target && e.target.name === 'ratesApiProvider') syncRatesApiProviderUi();
+            });
         }
         function applyRatesApiKeyHints(d) {
             const navHint = document.getElementById('ratesNavasanKeyHint');
@@ -974,11 +993,14 @@
                 else if (d.alanChandApiKeyFromEnv) alanHint.textContent = t('rates_api_key_env_alanchand');
                 else alanHint.textContent = t('rates_api_key_none');
             }
+            setRatesApiKeyState(document.getElementById('ratesNavasanState'), d.navasanApiKeySet ? 'saved' : (d.navasanApiKeyFromEnv ? 'env' : 'empty'));
+            setRatesApiKeyState(document.getElementById('ratesAlanChandState'), d.alanChandApiKeySet ? 'saved' : (d.alanChandApiKeyFromEnv ? 'env' : 'empty'));
             const navRadio = document.getElementById('ratesApiProviderNavasan');
             const alanRadio = document.getElementById('ratesApiProviderAlanChand');
             const preferred = d.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan';
             if (navRadio) navRadio.checked = preferred === 'navasan';
             if (alanRadio) alanRadio.checked = preferred === 'alanchand';
+            syncRatesApiProviderUi();
             const status = document.getElementById('ratesApiStatus');
             if (status) {
                 if (d.hasApiKey || d.activeProvider) {
@@ -991,6 +1013,7 @@
             }
         }
         async function checkRatesApiKeyStatus() {
+            bindRatesApiKeysUi();
             const header = document.querySelector('#pageRates .rates-page-header');
             const existingAlert = document.getElementById('ratesApiKeyAlert');
             if (existingAlert) existingAlert.remove();
@@ -1238,7 +1261,7 @@
             var msg = escapeHtml(t(messageKey) || fallback);
             var cta = '';
             if (ctaTab && ctaKey) {
-                cta = '<button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab(\'' + ctaTab + '\')">' + escapeHtml(t(ctaKey)) + '</button>';
+                cta = '<button type="button" class="btn-secondary btn-sm" data-fx="services-tab" data-tab="' + escapeHtml(ctaTab) + '">' + escapeHtml(t(ctaKey)) + '</button>';
             }
             return '<div class="empty exchange-summary-empty"><p>' + msg + '</p>' + cta + '</div>';
         }
@@ -1330,12 +1353,12 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) {
-                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" onclick="openCashBoxModal()">' + escapeHtml(t('cashbox_add')) + '</button></div>';
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" data-fx="cashbox-add">' + escapeHtml(t('cashbox_add')) + '</button></div>';
                 return;
             }
             list.innerHTML = data.map(function(b) {
                 const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="cashbox-edit" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="cashbox-delete" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadBankAccounts() {
@@ -1346,12 +1369,12 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) {
-                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" onclick="openBankAccountModal()">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" data-fx="bank-add">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
                 return;
             }
             list.innerHTML = data.map(function(b) {
                 const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="bank-edit" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="bank-delete" data-id="' + escapeHtml(b.id) + '">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadTransactions() {
@@ -1378,13 +1401,13 @@
                 const desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
                 const ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
                 const custName = (tx.customer && (typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || ''))) ? escapeHtml(typeof customerUiName === 'function' ? customerUiName(tx.customer) : (tx.customer.name || '')) : '';
-                const custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
+                const custLink = tx.customerId ? '<a href="#" class="tx-customer-link" data-fx="tx-customer" data-id="' + escapeHtml(tx.customerId) + '">' + custName + '</a>' : '';
                 const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
                 let actions = '<div class="tx-row-actions">';
-                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                actions += '<button type="button" class="btn-secondary btn-sm" data-fx="tx-edit" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
-                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
-                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                    actions += ' <button type="button" class="btn-primary btn-sm" data-fx="tx-approve" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" data-fx="tx-reject" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
                 }
                 actions += '</div>';
                 return '<div class="transaction-row" data-tx-id="' + tx.id + '"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span> ' + statusBadge + (custLink ? ' <span class="tx-cust">' + custLink + '</span>' : '') + '<div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div class="tx-row-right"><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span>' + actions + '</div></div>';
@@ -1589,7 +1612,7 @@
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز سرویسی تعریف نشده. با دکمه افزودن سرویس اضافه کنید.' : 'No services yet. Add one with the button above.') + '</div>'; return; }
             list.innerHTML = data.map(function(s) {
                 const badge = s.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openServiceModal(\'' + s.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteService(\'' + s.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" data-fx="service-edit" data-id="' + escapeHtml(s.id) + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" data-fx="service-delete" data-id="' + escapeHtml(s.id) + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         function openServiceModal(serviceId) {
@@ -1712,8 +1735,8 @@
             const bg = isMarked ? ' style="background:' + isMarked + ';"' : '';
             const checkAttr = isMarked ? ' checked' : '';
             return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
-                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + ' onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
-                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
+                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + '></td>' +
+                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" data-fx="tx-view" data-id="' + escapeHtml(item.id) + '" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" data-fx="tx-edit" data-id="' + escapeHtml(item.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
                 '<td>' + escapeHtml(item.date || '') + '</td>' +
                 '<td><span class="stmt-type-badge stmt-type-' + item.typeRaw + '">' + escapeHtml(item.type) + '</span></td>' +
                 '<td>' + escapeHtml(item.number) + '</td>' +
@@ -2159,14 +2182,15 @@
             if (msg && typeof toast === 'function') toast(msg, false);
         }
         function connectSocket() {
-            if (!token) return;
             if (socket) {
                 try { socket.disconnect(); } catch (_e) {}
                 socket = null;
             }
             try {
                 if (typeof io !== 'undefined') {
-                    socket = io({ auth: { token: token } });
+                    var sockOpts = { withCredentials: true };
+                    if (token) sockOpts.auth = { token: token };
+                    socket = io(sockOpts);
                     socket.on('session_revoked', function() {
                         if (typeof logout === 'function') logout();
                     });
@@ -4068,10 +4092,106 @@
         function setupGlobalDelegatedHandlers() {
             if (window._crmDelegatedHandlersBound) return;
             window._crmDelegatedHandlersBound = true;
+            document.addEventListener('change', function(e) {
+                const el = e.target;
+                if (!el || !el.classList || !el.classList.contains('stmt-check')) return;
+                const row = el.closest && el.closest('tr[data-id]');
+                const id = row && row.getAttribute('data-id');
+                if (id && typeof toggleStmtMark === 'function') toggleStmtMark(el, id);
+            });
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 const target = e.target;
                 const targetEl = (target && target.nodeType === 1) ? target : (target && target.parentElement);
+                const ratesAct = targetEl && targetEl.closest && targetEl.closest('[data-rates-act]');
+                if (ratesAct) {
+                    const row = ratesAct.closest('.rates-currency-row');
+                    const key = row && row.getAttribute('data-key');
+                    if (key) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (ratesAct.getAttribute('data-rates-act') === 'edit' && typeof openCurrencyModal === 'function') openCurrencyModal(key);
+                        else if (ratesAct.getAttribute('data-rates-act') === 'delete' && typeof deleteCurrency === 'function') deleteCurrency(key);
+                    }
+                    return;
+                }
+                const histItem = targetEl && targetEl.closest && targetEl.closest('.cust-hist-item, .customer-timeline-conv');
+                if (histItem && typeof openChatFromHistory === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openChatFromHistory(histItem);
+                    return;
+                }
+                const staffConv = targetEl && targetEl.closest && targetEl.closest('.staff-conv-item[data-convid]');
+                if (staffConv && typeof openChat === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openChat(staffConv.getAttribute('data-convid'), staffConv.getAttribute('data-custname') || '', '');
+                    if (typeof showPage === 'function') showPage('conversations');
+                    if (typeof closeStaffDetailModal === 'function') closeStaffDetailModal();
+                    return;
+                }
+                const fxBtn = targetEl && targetEl.closest && targetEl.closest('[data-fx]');
+                if (fxBtn) {
+                    const act = fxBtn.getAttribute('data-fx');
+                    const id = fxBtn.getAttribute('data-id') || '';
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (act === 'cashbox-add' && typeof openCashBoxModal === 'function') openCashBoxModal();
+                    else if (act === 'cashbox-edit' && typeof openCashBoxModal === 'function') openCashBoxModal(id);
+                    else if (act === 'cashbox-delete' && typeof deleteCashBox === 'function') deleteCashBox(id);
+                    else if (act === 'bank-add' && typeof openBankAccountModal === 'function') openBankAccountModal();
+                    else if (act === 'bank-edit' && typeof openBankAccountModal === 'function') openBankAccountModal(id);
+                    else if (act === 'bank-delete' && typeof deleteBankAccount === 'function') deleteBankAccount(id);
+                    else if (act === 'tx-edit' && typeof openTransactionModalForEdit === 'function') openTransactionModalForEdit(id);
+                    else if (act === 'tx-approve' && typeof approveTransaction === 'function') approveTransaction(id);
+                    else if (act === 'tx-reject' && typeof rejectTransaction === 'function') rejectTransaction(id);
+                    else if (act === 'tx-view' && typeof viewTransactionDetail === 'function') viewTransactionDetail(id);
+                    else if (act === 'tx-customer' && typeof showPage === 'function' && typeof showCustomerHistory === 'function') {
+                        showPage('customers');
+                        showCustomerHistory(id);
+                    }
+                    else if (act === 'service-edit' && typeof openServiceModal === 'function') openServiceModal(id);
+                    else if (act === 'service-delete' && typeof deleteService === 'function') deleteService(id);
+                    else if (act === 'services-tab' && typeof switchServicesTab === 'function') switchServicesTab(fxBtn.getAttribute('data-tab') || '');
+                    else if (act === 'rates-chart' && typeof setRatesChartCurrency === 'function') setRatesChartCurrency(fxBtn.getAttribute('data-currency') || id);
+                    else if (act === 'rates-retry' && typeof loadRatesCharts === 'function') loadRatesCharts();
+                    else if (act === 'doc-delete' && typeof deleteCustomerDoc === 'function') deleteCustomerDoc(id, fxBtn.getAttribute('data-cust-id') || '');
+                    else if (act === 'tag-remove' && typeof removeCustomerModalTag === 'function') removeCustomerModalTag(id);
+                    else if (act === 'process-start' && typeof openProcessStartInstanceModal === 'function') openProcessStartInstanceModal(id);
+                    else if (act === 'process-edit' && typeof openProcessTemplateModal === 'function') openProcessTemplateModal(id);
+                    else if (act === 'process-delete' && typeof deleteProcessTemplate === 'function') deleteProcessTemplate(id);
+                    else if (act === 'process-advance' && typeof advanceProcessInstance === 'function') advanceProcessInstance(fxBtn.getAttribute('data-complete') === '1');
+                    else if (act === 'sup-internal' && typeof openSupInternalChatDetail === 'function') openSupInternalChatDetail(id);
+                    else if (act === 'perm-group' && typeof userPermsSelectGroup === 'function') {
+                        userPermsSelectGroup(fxBtn.getAttribute('data-group') || '', fxBtn.getAttribute('data-on') === '1');
+                    }
+                    return;
+                }
+                const staffRow = targetEl && targetEl.closest && targetEl.closest('.staff-row[data-user-id], .sup-user-card[data-user-id]');
+                if (staffRow && typeof openStaffDetailModal === 'function' && !(targetEl.closest && targetEl.closest('a, button'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openStaffDetailModal(staffRow.getAttribute('data-user-id'));
+                    return;
+                }
+                const deptEdit = targetEl && targetEl.closest && targetEl.closest('.dept-edit-btn[data-idx]');
+                if (deptEdit && typeof editDepartment === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    editDepartment(parseInt(deptEdit.getAttribute('data-idx'), 10));
+                    return;
+                }
+                const branchEdit = targetEl && targetEl.closest && targetEl.closest('.branch-edit-btn');
+                if (branchEdit && typeof editBranch === 'function') {
+                    const card = branchEdit.closest('.branch-card');
+                    if (card) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        editBranch(card.getAttribute('data-id'), card.getAttribute('data-name') || '', card.getAttribute('data-city') || '', card.getAttribute('data-country') || '');
+                    }
+                    return;
+                }
                 // تب‌های مودال ویرایش کاربر (اطلاعات پایه / دسترسی‌ها) — delegation تا همیشه کار کند
                 const userEditTabEl = targetEl && targetEl.closest && targetEl.closest('#userEditModal .user-edit-tab[data-tab]');
                 if (userEditTabEl) {
@@ -4652,16 +4772,11 @@
                     if (typeof submitTicketReply === 'function') submitTicketReply();
                     return;
                 }
-                else if (target.closest('.ticket-card[data-ticket-id]') || target.closest('.ticket-card[onclick*="loadTicketDetail"]')) {
+                else if (target.closest('.ticket-card[data-ticket-id]')) {
                     e.preventDefault();
                     e.stopPropagation();
                     var ticketCard = target.closest('.ticket-card');
                     var ticketId = (ticketCard && (ticketCard.getAttribute('data-ticket-id') || '')) || '';
-                    if (!ticketId && ticketCard) {
-                        var oc = ticketCard.getAttribute('onclick') || '';
-                        var m = oc.match(/loadTicketDetail\(['"]([^'"]+)['"]\)/);
-                        if (m) ticketId = m[1];
-                    }
                     if (ticketId && typeof loadTicketDetail === 'function') loadTicketDetail(ticketId);
                     return;
                 }
@@ -8569,7 +8684,6 @@
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
-                const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(String(c.id)) >= 0 ? ' checked' : '';
                 const phoneShown = customerUiPhone(c);
                 const restrictedBadge = c.isRestrictedFromStaff
@@ -9055,7 +9169,7 @@
                     if (assignee) metaParts.push((LANG === 'fa' ? 'مسئول: ' : 'By: ') + assignee);
                     if (dept) metaParts.push(dept);
                     if (date) metaParts.push(date);
-                    return '<div class="cust-hist-item" data-convid="' + attrEsc(conv.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)" role="button" tabindex="0">' +
+                    return '<div class="cust-hist-item" data-convid="' + attrEsc(conv.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" role="button" tabindex="0">' +
                         '<div class="cust-hist-icon">' + (isGrp ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') + '</div>' +
                         '<div class="cust-hist-body">' +
                             '<div class="cust-hist-top"><span class="cust-hist-title">' + (isGrp ? (LANG === 'fa' ? 'گفتگوی گروهی' : 'Group Chat') : (LANG === 'fa' ? 'مکالمه' : 'Conversation')) + '</span>' +
@@ -9151,14 +9265,17 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const items = (res.data && res.data.data) || [];
             if (items.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + (LANG === 'fa' ? 'هنوز فعالیتی ثبت نشده.' : 'No activity yet.') + '</div>'; return; }
-            const safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
+            const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                ? window.CRM.Utils.escapeAttr
+                : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+            const safeName = attrEsc((currentCustomerData && currentCustomerData.name) ? currentCustomerData.name : '');
             list.innerHTML = items.map(function(item) {
                 const date = item.date ? fmtTZ(item.date, 'datetime') : '';
                 if (item.type === 'conversation') {
                     const d = item.data;
                     const who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
                     const isGrp = !!(d.metadata && d.metadata.isGroup);
-                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
+                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + attrEsc(d.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" role="button" tabindex="0"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
                 }
                 if (item.type === 'note') {
                     const n = item.data;
@@ -9247,7 +9364,7 @@
                         (expiry ? '<div class="customer-doc-card-expiry">' + expiry + '</div>' : '') +
                         '<div class="customer-doc-card-actions">' +
                         previewBtn + dlBtn +
-                        '<button type="button" class="btn-doc-delete" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
+                        '<button type="button" class="btn-doc-delete" data-fx="doc-delete" data-id="' + escapeHtml(d.id) + '" data-cust-id="' + escapeHtml(custId) + '" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
                         '</div></article>'
                     );
                 }).join('');
@@ -9344,10 +9461,10 @@
                 const ref = tx.reference ? ' \u00B7 ' + escapeHtml(tx.reference) : '';
                 const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
                 let actions = '<div class="tx-row-actions">';
-                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                actions += '<button type="button" class="btn-secondary btn-sm" data-fx="tx-edit" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
-                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
-                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                    actions += ' <button type="button" class="btn-primary btn-sm" data-fx="tx-approve" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" data-fx="tx-reject" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
                 }
                 actions += '</div>';
                 const dateStr = tx.transactionDate || (tx.createdAt ? tx.createdAt.toString().slice(0, 10) : '');
@@ -9489,7 +9606,7 @@
             if (!list) return;
             const tags = allTagsCache.filter(function(t) { return customerModalSelectedTags.indexOf(t.id) >= 0; });
             list.innerHTML = tags.map(function(t) {
-                return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" onclick="removeCustomerModalTag(\'' + escapeHtml(t.id) + '\')">&times;</span></span>';
+                return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" data-fx="tag-remove" data-id="' + escapeHtml(t.id) + '">&times;</span></span>';
             }).join('');
         }
         function removeCustomerModalTag(tagId) {
@@ -11156,7 +11273,7 @@
                     const deleteBtn = canManageTickets()
                         ? '<button type="button" class="btn-danger btn-sm ticket-card-delete" data-ticket-id="' + safeId + '">' + (t('btn_delete') || (LANG === 'fa' ? 'حذف' : 'Delete')) + '</button>'
                         : '';
-                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
+                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" role="button" tabindex="0"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
                 }).join('');
             } catch (e) {
                 list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (e && e.message ? escapeHtml(e.message) : '') + '</div>';
@@ -11672,9 +11789,9 @@
                 const cnt = (tpl.instanceCount || 0);
                 return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
                     '<div><span class="name">' + escapeHtml(tpl.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
-                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + tpl.id + '\')">' + t('process_start_instance') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + tpl.id + '\')">' + t('edit') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + tpl.id + '\')">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
+                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-start" data-id="' + escapeHtml(tpl.id) + '">' + t('process_start_instance') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-edit" data-id="' + escapeHtml(tpl.id) + '">' + t('edit') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" data-fx="process-delete" data-id="' + escapeHtml(tpl.id) + '">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
             }).join('');
         }
         async function loadProcessInstances() {
@@ -11698,7 +11815,7 @@
                 const statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
                 const templateName = (i.template && i.template.name) ? i.template.name : '�';
                 const assignee = userDisplayHtml(i.assignee) || '\u2014';
-                return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
+                return '<div class="list-item" data-fx="process-open" data-id="' + escapeHtml(i.id) + '" style="cursor:pointer;" role="button" tabindex="0"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
             }).join('');
         }
         let currentProcessInstanceId = null;
@@ -11734,7 +11851,7 @@
             if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
             const isLast = currentIdx >= stages.length - 1;
             advanceBox.innerHTML = '<label>' + t('process_notes') + '</label><textarea id="processAdvanceNotes" rows="2" style="width:100%; margin-bottom:8px;"></textarea>' +
-                (isLast ? '<button type="button" class="btn-primary" onclick="advanceProcessInstance(true)">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" onclick="advanceProcessInstance(false)">' + t('process_advance') + '</button>');
+                (isLast ? '<button type="button" class="btn-primary" data-fx="process-advance" data-complete="1">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" data-fx="process-advance" data-complete="0">' + t('process_advance') + '</button>');
         }
         async function advanceProcessInstance(complete) {
             if (!currentProcessInstanceId) return;
@@ -12124,7 +12241,7 @@
                 const visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
                 if (visibleKeys.length === 0) return;
                 html += '<div class="user-edit-perm-group" data-group="' + gr.key + '">';
-                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
+                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" data-fx="perm-group" data-group="' + escapeHtml(gr.key) + '" data-on="1"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" data-fx="perm-group" data-group="' + escapeHtml(gr.key) + '" data-on="0"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
                     const checked = perms[k] ? ' checked' : '';
@@ -12281,7 +12398,7 @@
         ];
         (function loadWebrtcIceFromConfig() {
             try {
-                fetch((typeof API !== 'undefined' ? API : '') + '/api/config')
+                fetch((typeof API !== 'undefined' ? API : '') + '/api/config', { credentials: 'same-origin' })
                     .then(function (r) { return r.json(); })
                     .then(function (c) {
                         if (c && Array.isArray(c.webrtcIceServers) && c.webrtcIceServers.length) {
@@ -14638,17 +14755,31 @@
             const box = document.getElementById('whatsappUnassignedBox');
             const list = document.getElementById('whatsappUnassignedList');
             if (!box || !list) return;
+            if (!list._unassignedBound) {
+                list._unassignedBound = true;
+                list.addEventListener('click', function (e) {
+                    const item = e.target && e.target.closest ? e.target.closest('.wa-unassigned-item') : null;
+                    if (!item) return;
+                    const id = item.getAttribute('data-convid');
+                    const nm = item.getAttribute('data-name') || '';
+                    if (id && typeof openChat === 'function') openChat(id, nm, '');
+                    if (typeof showPage === 'function') showPage('conversations');
+                });
+            }
             const res = await apiFetch('/api/conversations?status=open&unassigned=1&limit=15');
             if (res.needLogin) return;
             if (!res.ok || !res.data) return;
             const convs = res.data.data || [];
             if (convs.length === 0) { box.style.display = 'none'; return; }
+            const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                ? window.CRM.Utils.escapeAttr
+                : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
             box.style.display = 'block';
             list.innerHTML = convs.map(function(c) {
                 const name = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (typeof convListPreviewText === 'function' ? convListPreviewText(c.lastMessagePreview || '') : (c.lastMessagePreview || '')).slice(0, 50);
                 if (preview.length >= 50) preview += '…';
-                return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
+                return '<div class="list-item wa-unassigned-item" data-convid="' + attrEsc(c.id) + '" data-name="' + attrEsc(name) + '" role="button" tabindex="0" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
             }).join('');
         }
 
@@ -15119,7 +15250,7 @@
                 const meta = [d.description, branchName].filter(Boolean).join(' · ');
                 const inactive = d.isActive === false;
                 const defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
-                const editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" data-idx="' + idx + '">' + t('edit') + '</button>' : '';
                 const metaHtml = meta ? '<div class="dept-card-meta">' + escapeHtml(meta) + '</div>' : '';
                 const kwHtml = kw ? '<div class="dept-card-keywords">' + escapeHtml(kw) + '</div>' : '';
                 return '<div class="dept-card' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div class="dept-card-header"><div class="dept-card-title"><span class="dept-card-color" style="background:' + color + ';"></span><span class="dept-card-name">' + defBadge + escapeHtml(d.name || '') + '</span></div><div class="dept-card-actions">' + editBtn + '</div></div>' + metaHtml + kwHtml + '</div>';
@@ -15154,7 +15285,7 @@
                 const name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 const country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                const editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn" onclick="var c=this.closest(\'.branch-card\'); editBranch(c.getAttribute(\'data-id\'), c.getAttribute(\'data-name\')||\'\', c.getAttribute(\'data-city\')||\'\', c.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '';
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn">' + t('edit') + '</button>' : '';
                 const iconHtml = '<span class="branch-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-building-2"/></svg></span>';
                 return '<div class="branch-card" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div class="branch-card-header"><div class="branch-card-title">' + iconHtml + '<span class="branch-card-name">' + escapeHtml(b.name) + '</span></div><div class="branch-card-actions">' + editBtn + '</div></div>' + (loc ? '<div class="branch-card-meta">' + escapeHtml(loc) + '</div>' : '') + '</div>';
             }).join('');
@@ -15259,7 +15390,7 @@
             }
             if (d.users && d.users.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
-                d.users.forEach(function(u) { const bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '\u2014') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const u2 = u; const extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
+                d.users.forEach(function(u) { html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '\u2014') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const extras = []; if (u.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
                 html += '</div>';
             }
             el.className = '';
@@ -15350,7 +15481,7 @@
             const branchName = (u.branch && u.branch.name) ? u.branch.name : '';
             const deptName = (u.department && u.department.name) ? u.department.name : '';
             const lbl = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
-            var html = '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
+            var html = '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" style="cursor:pointer">' +
                 '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(u)) + '</span><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
                 '<td data-label="' + lbl[1] + '">' + staffEmptyOrText(u.email) + '</td>' +
                 '<td data-label="' + lbl[2] + '">' + staffEmptyOrText(branchName) + '</td>' +
@@ -15395,7 +15526,7 @@
             const branch = r.branch ? r.branch.name : '';
             const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
             const uid = r.userId || (user && user.id) || '';
-            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" style="cursor:pointer"' : '';
             const ll = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
             var html = '<tr' + rowAttrs + '><td data-label="' + ll[0] + '"><span class="staff-row-name"><span class="staff-avatar" aria-hidden="true">' + escapeHtml(staffAvatarLetter(user)) + '</span>' + escapeHtml(userDisplay(user)) + '</span></td><td data-label="' + ll[1] + '">' + staffEmptyOrText(user.email) + '</td><td data-label="' + ll[2] + '">' + staffEmptyOrText(branch) + '</td><td data-label="' + ll[3] + '">' + (time ? escapeHtml(time) : staffEmptyOrText('')) + '</td>';
             if (opts.showNet) {
@@ -15709,8 +15840,7 @@
                     d.conversations.forEach(function(c) {
                         const custName = (c.customer && (typeof customerUiName === 'function' ? customerUiName(c.customer) : c.customer.name)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         const lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
-                        const safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                        html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(safeName) + '" onclick="var el=event.currentTarget;openChat(el.getAttribute(\'data-convid\'),el.getAttribute(\'data-custname\')||\'\',\'\');showPage(\'conversations\');closeStaffDetailModal();" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
+                        html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(custName) + '" role="button" tabindex="0" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
                     });
                     html += '</div>';
                 }
@@ -15769,7 +15899,7 @@
                 const names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
                 const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 60) + ((t.lastMessage.content || '').length > 60 ? '\u2026' : '') : '\u2014';
                 const from = t.lastMessage && t.lastMessage.fromUser ? t.lastMessage.fromUser.name || '' : '';
-                return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" onclick="openSupInternalChatDetail(\'' + escapeHtml(t.id) + '\')">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
+                return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" data-fx="sup-internal" data-id="' + escapeHtml(t.id) + '">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
             }).join('') + '</tbody></table>';
         }
         function openSupInternalChatDetail(threadId) {

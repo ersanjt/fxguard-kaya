@@ -143,31 +143,32 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         };
     }
 
-    apiRouter.get('/config', (req, res) => {
+    apiRouter.get('/config', optionalAuthMiddleware, (req, res) => {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
         const androidAppUpdate = parseAndroidAppUpdate(req);
+        function parseIce() {
+            const raw = (process.env.WEBRTC_ICE_SERVERS || '').trim();
+            if (!raw) return null;
+            try {
+                if (raw.startsWith('[')) return JSON.parse(raw);
+            } catch (_) {}
+            return raw.split(';').map(function (part) {
+                const bits = part.split('|').map(function (s) { return s.trim(); }).filter(Boolean);
+                if (!bits[0]) return null;
+                const entry = { urls: bits[0] };
+                if (bits[1]) entry.username = bits[1];
+                if (bits[2]) entry.credential = bits[2];
+                return entry;
+            }).filter(Boolean);
+        }
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
             androidAppUpdate,
-            // Optional TURN for internal WebRTC (comma-separated: turn:host:3478|user|pass)
-            webrtcIceServers: (function parseIce() {
-                const raw = (process.env.WEBRTC_ICE_SERVERS || '').trim();
-                if (!raw) return null;
-                try {
-                    if (raw.startsWith('[')) return JSON.parse(raw);
-                } catch (_) {}
-                return raw.split(';').map(function (part) {
-                    const bits = part.split('|').map(function (s) { return s.trim(); }).filter(Boolean);
-                    if (!bits[0]) return null;
-                    const entry = { urls: bits[0] };
-                    if (bits[1]) entry.username = bits[1];
-                    if (bits[2]) entry.credential = bits[2];
-                    return entry;
-                }).filter(Boolean);
-            })()
+            // TURN credentials only for authenticated staff (internal WebRTC)
+            webrtcIceServers: req.user ? parseIce() : null
         });
     });
 

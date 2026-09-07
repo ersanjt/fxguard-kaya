@@ -48,6 +48,8 @@ object L10n {
         "forgot_send" to "ارسال لینک بازیابی",
         "connect_fail" to "اتصال به سرور برقرار نشد.",
         "server_https" to "آدرس سرور باید با https شروع شود (فقط localhost می‌تواند http باشد).",
+        "secure_storage_fail" to "ذخیره امن نشست روی این دستگاه در دسترس نیست. ورود ممکن نیست.",
+        "session_expired" to "نشست منقضی شد. دوباره وارد شوید.",
         "required" to "این فیلد الزامی است",
         "toggle_show" to "نمایش رمز عبور",
         "toggle_hide" to "پنهان کردن رمز عبور",
@@ -325,6 +327,8 @@ object L10n {
         "forgot_send" to "Send reset link",
         "connect_fail" to "Could not reach the server.",
         "server_https" to "Server URL must use https (http is only allowed for localhost).",
+        "secure_storage_fail" to "Secure session storage is unavailable on this device. Sign-in is blocked.",
+        "session_expired" to "Session expired. Please sign in again.",
         "required" to "This field is required",
         "toggle_show" to "Show password",
         "toggle_hide" to "Hide password",
@@ -602,6 +606,8 @@ object L10n {
         "forgot_send" to "Sıfırlama bağlantısı gönder",
         "connect_fail" to "Sunucuya ulaşılamadı.",
         "server_https" to "Sunucu adresi https olmalıdır (http yalnızca localhost için).",
+        "secure_storage_fail" to "Bu cihazda güvenli oturum deposu kullanılamıyor. Giriş engellendi.",
+        "session_expired" to "Oturumun süresi doldu. Lütfen yeniden giriş yapın.",
         "required" to "Bu alan zorunludur",
         "toggle_show" to "Şifreyi göster",
         "toggle_hide" to "Şifreyi gizle",
@@ -855,6 +861,7 @@ object L10n {
     fun isRtl(lang: String): Boolean = lang == "fa"
 
     fun error(e: Throwable, lang: String): String {
+        if (e is ApiException && e.status == 401) return t(lang, "session_expired")
         if (e is ApiException && e.isNetwork) return t(lang, "connect_fail")
         if (e is IOException) return t(lang, "connect_fail")
         val msg = e.message.orEmpty()

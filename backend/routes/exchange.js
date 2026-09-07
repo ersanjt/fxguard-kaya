@@ -8,8 +8,30 @@ const logger = require('../config/logger');
 const { logActivity } = require('../services/activityLog');
 const { redactCustomerPhone, redactNestedCustomer } = require('../lib/customerPhoneVisibility');
 const { requireFxModule } = require('../lib/planLimits');
+const {
+    applyExchangeBranchFilter,
+    denyIfWrongBranch,
+    assignWriteBranchId
+} = require('../lib/exchangeBranchScope');
 
 router.use(requireFxModule);
+
+function scopeFail(res, scoped) {
+    if (!scoped.ok) {
+        res.status(scoped.status || 403).json({ error: scoped.error });
+        return true;
+    }
+    return false;
+}
+
+function branchDenied(req, res, recordBranchId) {
+    const access = denyIfWrongBranch(req.user, recordBranchId);
+    if (!access.ok) {
+        res.status(access.status || 403).json({ error: access.error });
+        return true;
+    }
+    return false;
+}
 
 function serverError(res, err, context) {
     logger.error(`exchange.js error [${context}]`, { error: err?.message });
@@ -45,10 +67,11 @@ function safeParseFloat(val, defaultValue = 0) {
 // ========== Cash Boxes (صندوق‌ها) ==========
 router.get('/cash-boxes', requireServices, async (req, res) => {
     try {
-        const where = {};
-        if (req.query.branchId) where.branchId = req.query.branchId;
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json([]);
         const list = await CashBox.findAll({
-            where,
+            where: scoped.where,
             include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
             order: [['sortOrder', 'ASC'], ['name', 'ASC']]
         });
@@ -61,9 +84,11 @@ router.get('/cash-boxes', requireServices, async (req, res) => {
 router.post('/cash-boxes', requireServices, async (req, res) => {
     try {
         const { name, branchId, currency, balance, description, isActive } = req.body;
+        const assigned = assignWriteBranchId(req.user, branchId);
+        if (scopeFail(res, assigned)) return;
         const item = await CashBox.create({
             name: name || 'صندوق جدید',
-            branchId: branchId || null,
+            branchId: assigned.branchId,
             currency: currency || 'IRR',
             balance: safeParseFloat(balance, 0),
             description: description || null,
@@ -80,9 +105,14 @@ router.put('/cash-boxes/:id', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await CashBox.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'صندوق یافت نشد' });
+        if (branchDenied(req, res, item.branchId)) return;
         const { name, branchId, currency, balance, description, isActive } = req.body;
         if (name !== undefined) item.name = name;
-        if (branchId !== undefined) item.branchId = branchId || null;
+        if (branchId !== undefined) {
+            const assigned = assignWriteBranchId(req.user, branchId);
+            if (scopeFail(res, assigned)) return;
+            item.branchId = assigned.branchId;
+        }
         if (currency !== undefined) item.currency = currency;
         if (balance !== undefined) {
             const val = safeParseFloat(balance, null);
@@ -103,6 +133,7 @@ router.delete('/cash-boxes/:id', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await CashBox.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'صندوق یافت نشد' });
+        if (branchDenied(req, res, item.branchId)) return;
         await item.destroy();
         res.json({ ok: true });
     } catch (e) {
@@ -113,10 +144,11 @@ router.delete('/cash-boxes/:id', requireServices, async (req, res) => {
 // ========== Bank Accounts (حساب‌های بانکی) ==========
 router.get('/bank-accounts', requireServices, async (req, res) => {
     try {
-        const where = {};
-        if (req.query.branchId) where.branchId = req.query.branchId;
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json([]);
         const list = await BankAccount.findAll({
-            where,
+            where: scoped.where,
             include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
             order: [['sortOrder', 'ASC'], ['name', 'ASC']]
         });
@@ -129,12 +161,14 @@ router.get('/bank-accounts', requireServices, async (req, res) => {
 router.post('/bank-accounts', requireServices, async (req, res) => {
     try {
         const { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive } = req.body;
+        const assigned = assignWriteBranchId(req.user, branchId);
+        if (scopeFail(res, assigned)) return;
         const item = await BankAccount.create({
             name: name || 'حساب جدید',
             bankName: bankName || null,
             accountNumber: accountNumber || null,
             iban: iban || null,
-            branchId: branchId || null,
+            branchId: assigned.branchId,
             currency: currency || 'IRR',
             balance: safeParseFloat(balance, 0),
             description: description || null,
@@ -151,12 +185,17 @@ router.put('/bank-accounts/:id', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await BankAccount.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'حساب بانکی یافت نشد' });
+        if (branchDenied(req, res, item.branchId)) return;
         const { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive } = req.body;
         if (name !== undefined) item.name = name;
         if (bankName !== undefined) item.bankName = bankName;
         if (accountNumber !== undefined) item.accountNumber = accountNumber;
         if (iban !== undefined) item.iban = iban;
-        if (branchId !== undefined) item.branchId = branchId || null;
+        if (branchId !== undefined) {
+            const assigned = assignWriteBranchId(req.user, branchId);
+            if (scopeFail(res, assigned)) return;
+            item.branchId = assigned.branchId;
+        }
         if (currency !== undefined) item.currency = currency;
         if (balance !== undefined) {
             const val = safeParseFloat(balance, null);
@@ -177,6 +216,7 @@ router.delete('/bank-accounts/:id', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await BankAccount.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'حساب بانکی یافت نشد' });
+        if (branchDenied(req, res, item.branchId)) return;
         await item.destroy();
         res.json({ ok: true });
     } catch (e) {
@@ -187,8 +227,10 @@ router.delete('/bank-accounts/:id', requireServices, async (req, res) => {
 // ========== Transactions (تراکنش‌ها) ==========
 router.get('/transactions', requireServices, async (req, res) => {
     try {
-        const where = {};
-        if (req.query.branchId) where.branchId = req.query.branchId;
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json({ count: 0, rows: [], page: parsePagination(req.query.page, req.query.limit, 500).page });
+        const where = { ...scoped.where };
         if (req.query.type) where.type = req.query.type;
         if (req.query.fromDate || req.query.toDate) {
             where.transactionDate = {};
@@ -250,6 +292,7 @@ router.get('/transactions/:id', requireServices, async (req, res) => {
             ]
         });
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (branchDenied(req, res, tx.branchId)) return;
         res.json(redactNestedCustomer(tx, req.user));
     } catch (e) {
         serverError(res, e, 'exchange');
@@ -332,6 +375,8 @@ router.post('/transactions', requireServices, async (req, res) => {
         if (toBankAccountId && !isValidUUID(toBankAccountId)) return res.status(400).json({ error: 'شناسه حساب بانکی مقصد نامعتبر است' });
         if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
         if (customerId && !isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
+        const assigned = assignWriteBranchId(req.user, branchId);
+        if (scopeFail(res, assigned)) return;
 
         const tx = await Transaction.create({
             type,
@@ -344,7 +389,7 @@ router.post('/transactions', requireServices, async (req, res) => {
             description: description || null,
             reference: reference || null,
             transactionDate: transactionDate || new Date().toISOString().slice(0, 10),
-            branchId: branchId || null,
+            branchId: assigned.branchId,
             userId: req.user?.id || null,
             customerId: customerId || null,
             status: 'pending'
@@ -361,6 +406,7 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (branchDenied(req, res, tx.branchId)) return;
         const { description, reference, transactionDate, customerId, type, amount, currency, fromCashBoxId, toCashBoxId, fromBankAccountId, toBankAccountId } = req.body;
         const isApproved = (tx.status || 'approved') === 'approved';
         if (isApproved) {
@@ -421,6 +467,7 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (branchDenied(req, res, tx.branchId)) return;
         if (tx.status === 'approved') return res.status(400).json({ error: 'این تراکنش قبلاً تایید شده است' });
         if (tx.status === 'rejected') return res.status(400).json({ error: 'تراکنش رد شده قابل تایید نیست' });
         const role = req.user?.role || '';
@@ -444,6 +491,7 @@ router.post('/transactions/:id/reject', requireServices, async (req, res) => {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (branchDenied(req, res, tx.branchId)) return;
         if (tx.status === 'approved') return res.status(400).json({ error: 'تراکنش تاییدشده قابل رد نیست' });
         if (tx.status === 'rejected') return res.status(400).json({ error: 'این تراکنش قبلاً رد شده است' });
         const role = req.user?.role || '';
@@ -464,9 +512,15 @@ router.post('/transactions/:id/reject', requireServices, async (req, res) => {
 // خلاصه موجودی‌ها
 router.get('/summary', requireServices, async (req, res) => {
     try {
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) {
+            return res.json({ cashBoxes: [], bankAccounts: [], totalCash: 0, totalBank: 0, total: 0 });
+        }
+        const boxWhere = { isActive: true, ...scoped.where };
         const [cashBoxes, bankAccounts] = await Promise.all([
-            CashBox.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] }),
-            BankAccount.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] })
+            CashBox.findAll({ where: boxWhere, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] }),
+            BankAccount.findAll({ where: boxWhere, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] })
         ]);
         const totalCash = cashBoxes.reduce((s, b) => s.plus(safeDecimal(b.balance)), new Decimal(0)).toNumber();
         const totalBank = bankAccounts.reduce((s, b) => s.plus(safeDecimal(b.balance)), new Decimal(0)).toNumber();
@@ -486,6 +540,10 @@ router.get('/summary', requireServices, async (req, res) => {
 router.get('/statement', requireServices, async (req, res) => {
     try {
         const where = { status: 'approved' };
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) where.id = { [Op.in]: [] };
+        else Object.assign(where, scoped.where);
         if (req.query.customerId) where.customerId = req.query.customerId;
         if (req.query.type) where.type = req.query.type;
         if (req.query.currency) where.currency = req.query.currency;
@@ -506,7 +564,6 @@ router.get('/statement', requireServices, async (req, res) => {
             where.type = { [Op.in]: ['cash_in', 'bank_deposit', 'income', 'sell', 'transfer_box', 'bank_withdraw', 'transfer_account'] };
         }
         if (req.query.userId) where.userId = req.query.userId;
-        if (req.query.branchId) where.branchId = req.query.branchId;
         if (req.query.cashBoxId) {
             where[Op.or] = where[Op.or] || [];
             where[Op.or].push({ fromCashBoxId: req.query.cashBoxId }, { toCashBoxId: req.query.cashBoxId });
@@ -654,9 +711,15 @@ router.get('/statement', requireServices, async (req, res) => {
 // ========== Currency Position — وضعیت ارزی ==========
 router.get('/currency-position', requireServices, async (req, res) => {
     try {
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        const emptyWhere = scoped.empty ? { id: { [Op.in]: [] } } : { isActive: true, ...scoped.where };
+        const pendingWhere = scoped.empty
+            ? { id: { [Op.in]: [] } }
+            : { status: 'pending', ...scoped.where };
         const [cashBoxes, bankAccounts] = await Promise.all([
-            CashBox.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] }),
-            BankAccount.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] })
+            CashBox.findAll({ where: emptyWhere, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] }),
+            BankAccount.findAll({ where: emptyWhere, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] })
         ]);
 
         const currencyTotalsDec = {};
@@ -676,7 +739,6 @@ router.get('/currency-position', requireServices, async (req, res) => {
             currencyTotals[c] = { cashBoxes: v.cashBoxes.toNumber(), bankAccounts: v.bankAccounts.toNumber(), total };
         }
 
-        const pendingWhere = { status: 'pending' };
         const pendingTx = await Transaction.findAll({ where: pendingWhere, attributes: ['type', 'amount', 'currency'] });
 
         const pendingInwardDec = {};
@@ -753,6 +815,10 @@ router.get('/account-balance', requireServices, async (req, res) => {
         if (!customerId) return res.status(400).json({ error: 'customerId الزامی است' });
 
         const where = { customerId, status: 'approved' };
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json({});
+        Object.assign(where, scoped.where);
         if (req.query.currency) where.currency = req.query.currency;
 
         const transactions = await Transaction.findAll({
@@ -796,6 +862,10 @@ router.get('/account-balance', requireServices, async (req, res) => {
 router.get('/account-turnover', requireServices, async (req, res) => {
     try {
         const where = { status: 'approved' };
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json([]);
+        Object.assign(where, scoped.where);
         if (req.query.fromDate || req.query.toDate) {
             where.transactionDate = {};
             if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
@@ -808,9 +878,10 @@ router.get('/account-turnover', requireServices, async (req, res) => {
             attributes: ['type', 'amount', 'currency', 'fromCashBoxId', 'toCashBoxId', 'fromBankAccountId', 'toBankAccountId'],
         });
 
+        const boxWhere = { isActive: true, ...scoped.where };
         const [cashBoxes, bankAccounts] = await Promise.all([
-            CashBox.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'currency', 'balance'] }),
-            BankAccount.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'bankName', 'currency', 'balance'] })
+            CashBox.findAll({ where: boxWhere, attributes: ['id', 'name', 'currency', 'balance'] }),
+            BankAccount.findAll({ where: boxWhere, attributes: ['id', 'name', 'bankName', 'currency', 'balance'] })
         ]);
 
         const accountMap = {};
@@ -861,6 +932,14 @@ router.get('/account-turnover', requireServices, async (req, res) => {
 router.get('/profit-loss', requireServices, async (req, res) => {
     try {
         const where = { status: 'approved' };
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) {
+            return res.json({
+                totalIncome: 0, totalExpense: 0, totalBuy: 0, totalSell: 0, grossProfit: 0, byCurrency: {}
+            });
+        }
+        Object.assign(where, scoped.where);
         if (req.query.fromDate || req.query.toDate) {
             where.transactionDate = {};
             if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
@@ -914,6 +993,10 @@ router.get('/profit-loss', requireServices, async (req, res) => {
 router.get('/expense-journal', requireServices, async (req, res) => {
     try {
         const where = { status: 'approved', type: { [Op.in]: ['expense', 'buy'] } };
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json({ rows: [], totalAmount: 0, count: 0 });
+        Object.assign(where, scoped.where);
         if (req.query.fromDate || req.query.toDate) {
             where.transactionDate = {};
             if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
@@ -958,12 +1041,17 @@ router.get('/expense-journal', requireServices, async (req, res) => {
 // ========== Cash Bank Status — وضعیت صندوق و بانک ==========
 router.get('/cash-bank-status', requireServices, async (req, res) => {
     try {
+        const scoped = applyExchangeBranchFilter(req.user, req.query.branchId);
+        if (scopeFail(res, scoped)) return;
+        if (scoped.empty) return res.json({});
         const [cashBoxes, bankAccounts] = await Promise.all([
             CashBox.findAll({
+                where: scoped.where,
                 include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
                 order: [['currency', 'ASC'], ['name', 'ASC']]
             }),
             BankAccount.findAll({
+                where: scoped.where,
                 include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
                 order: [['currency', 'ASC'], ['name', 'ASC']]
             })

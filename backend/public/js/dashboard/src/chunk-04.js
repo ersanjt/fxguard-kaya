@@ -61,7 +61,7 @@
                     if (assignee) metaParts.push((LANG === 'fa' ? 'مسئول: ' : 'By: ') + assignee);
                     if (dept) metaParts.push(dept);
                     if (date) metaParts.push(date);
-                    return '<div class="cust-hist-item" data-convid="' + attrEsc(conv.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)" role="button" tabindex="0">' +
+                    return '<div class="cust-hist-item" data-convid="' + attrEsc(conv.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" role="button" tabindex="0">' +
                         '<div class="cust-hist-icon">' + (isGrp ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') + '</div>' +
                         '<div class="cust-hist-body">' +
                             '<div class="cust-hist-top"><span class="cust-hist-title">' + (isGrp ? (LANG === 'fa' ? 'گفتگوی گروهی' : 'Group Chat') : (LANG === 'fa' ? 'مکالمه' : 'Conversation')) + '</span>' +
@@ -157,14 +157,17 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const items = (res.data && res.data.data) || [];
             if (items.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + (LANG === 'fa' ? 'هنوز فعالیتی ثبت نشده.' : 'No activity yet.') + '</div>'; return; }
-            const safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
+            const attrEsc = (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeAttr === 'function')
+                ? window.CRM.Utils.escapeAttr
+                : function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+            const safeName = attrEsc((currentCustomerData && currentCustomerData.name) ? currentCustomerData.name : '');
             list.innerHTML = items.map(function(item) {
                 const date = item.date ? fmtTZ(item.date, 'datetime') : '';
                 if (item.type === 'conversation') {
                     const d = item.data;
                     const who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
                     const isGrp = !!(d.metadata && d.metadata.isGroup);
-                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
+                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + attrEsc(d.id) + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" role="button" tabindex="0"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
                 }
                 if (item.type === 'note') {
                     const n = item.data;
@@ -253,7 +256,7 @@
                         (expiry ? '<div class="customer-doc-card-expiry">' + expiry + '</div>' : '') +
                         '<div class="customer-doc-card-actions">' +
                         previewBtn + dlBtn +
-                        '<button type="button" class="btn-doc-delete" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
+                        '<button type="button" class="btn-doc-delete" data-fx="doc-delete" data-id="' + escapeHtml(d.id) + '" data-cust-id="' + escapeHtml(custId) + '" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
                         '</div></article>'
                     );
                 }).join('');
@@ -350,10 +353,10 @@
                 const ref = tx.reference ? ' \u00B7 ' + escapeHtml(tx.reference) : '';
                 const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
                 let actions = '<div class="tx-row-actions">';
-                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                actions += '<button type="button" class="btn-secondary btn-sm" data-fx="tx-edit" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
-                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
-                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                    actions += ' <button type="button" class="btn-primary btn-sm" data-fx="tx-approve" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" data-fx="tx-reject" data-id="' + escapeHtml(tx.id) + '" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
                 }
                 actions += '</div>';
                 const dateStr = tx.transactionDate || (tx.createdAt ? tx.createdAt.toString().slice(0, 10) : '');
@@ -495,7 +498,7 @@
             if (!list) return;
             const tags = allTagsCache.filter(function(t) { return customerModalSelectedTags.indexOf(t.id) >= 0; });
             list.innerHTML = tags.map(function(t) {
-                return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" onclick="removeCustomerModalTag(\'' + escapeHtml(t.id) + '\')">&times;</span></span>';
+                return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" data-fx="tag-remove" data-id="' + escapeHtml(t.id) + '">&times;</span></span>';
             }).join('');
         }
         function removeCustomerModalTag(tagId) {
@@ -2162,7 +2165,7 @@
                     const deleteBtn = canManageTickets()
                         ? '<button type="button" class="btn-danger btn-sm ticket-card-delete" data-ticket-id="' + safeId + '">' + (t('btn_delete') || (LANG === 'fa' ? 'حذف' : 'Delete')) + '</button>'
                         : '';
-                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
+                    return '<div class="ticket-card" data-ticket-id="' + safeId + '" role="button" tabindex="0"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>' + deleteBtn + '</div></div>';
                 }).join('');
             } catch (e) {
                 list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (e && e.message ? escapeHtml(e.message) : '') + '</div>';

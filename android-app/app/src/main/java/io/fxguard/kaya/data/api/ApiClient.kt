@@ -53,6 +53,8 @@ class ApiException(
 ) : Exception(message)
 
 class ApiClient(private val session: SessionStore) {
+    @Volatile var onSessionExpired: (() -> Unit)? = null
+
     private val jsonType = "application/json; charset=utf-8".toMediaType()
     private val http = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -66,7 +68,22 @@ class ApiClient(private val session: SessionStore) {
 
     fun resolveUrl(pathOrUrl: String?): String? {
         if (pathOrUrl.isNullOrBlank()) return null
-        if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) return pathOrUrl
+        if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+            val uri = try {
+                java.net.URI(pathOrUrl)
+            } catch (_: Exception) {
+                return null
+            }
+            val scheme = uri.scheme?.lowercase() ?: return null
+            val host = uri.host?.lowercase() ?: return null
+            if (host.isBlank()) return null
+            val loopback = host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "10.0.2.2"
+            return when (scheme) {
+                "https" -> pathOrUrl
+                "http" -> if (loopback) pathOrUrl else null
+                else -> null
+            }
+        }
         return session.baseUrl + if (pathOrUrl.startsWith("/")) pathOrUrl else "/$pathOrUrl"
     }
 
@@ -210,6 +227,7 @@ class ApiClient(private val session: SessionStore) {
             session.token?.let { builder.header("Authorization", "Bearer $it") }
             builder.header("Accept", "application/json")
             builder.header("User-Agent", "KayaStaff-Android/1.0")
+            builder.header("X-Kaya-Client", "staff-app")
             builder.post(body)
             val res = try {
                 uploadHttp.newCall(builder.build()).execute()
@@ -219,6 +237,7 @@ class ApiClient(private val session: SessionStore) {
             res.use {
                 val text = it.body?.string().orEmpty()
                 if (it.code == 401) {
+                    expireSession()
                     throw ApiException(extractError(text, "نشست منقضی شد. دوباره وارد شوید."), 401)
                 }
                 if (!it.isSuccessful) {
@@ -902,6 +921,7 @@ class ApiClient(private val session: SessionStore) {
         session.token?.let { builder.header("Authorization", "Bearer $it") }
         builder.header("Accept", "application/json")
         builder.header("User-Agent", "KayaStaff-Android/1.0")
+        builder.header("X-Kaya-Client", "staff-app")
         val reqBody = body?.toString()?.toRequestBody(jsonType)
         when (method) {
             "POST" -> builder.post(reqBody ?: EMPTY)
@@ -921,9 +941,7 @@ class ApiClient(private val session: SessionStore) {
                 val authHandshake = path.startsWith("/api/auth/login") ||
                     path.startsWith("/api/auth/forgot-password") ||
                     path.startsWith("/api/auth/totp/")
-                val kickSession = !authHandshake &&
-                    (path == "/api/auth/me" || path.startsWith("/api/conversations"))
-                if (kickSession) session.clearSession()
+                if (!authHandshake) expireSession()
                 throw ApiException(
                     extractError(
                         text,
@@ -954,6 +972,12 @@ class ApiClient(private val session: SessionStore) {
                 throw ApiException(e.message ?: "پاسخ نامعتبر سرور", it.code)
             }
         }
+    }
+
+    private fun expireSession() {
+        val hadSession = !session.token.isNullOrBlank() || session.readUser() != null
+        session.clearSession()
+        if (hadSession) onSessionExpired?.invoke()
     }
 
     private fun extractError(text: String, fallback: String): String {

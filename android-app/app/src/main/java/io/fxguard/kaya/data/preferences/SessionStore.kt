@@ -17,9 +17,11 @@ import org.json.JSONObject
 class SessionStore(context: Context) {
     private val prefs: SharedPreferences
     private val secure: SharedPreferences
+    val secureStorageOk: Boolean
 
     init {
         prefs = context.getSharedPreferences("kaya_staff", Context.MODE_PRIVATE)
+        var encryptedOk = false
         secure = try {
             val master = MasterKey.Builder(context)
                 .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
@@ -30,10 +32,20 @@ class SessionStore(context: Context) {
                 master,
                 EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-            )
+            ).also { encryptedOk = true }
         } catch (_: Exception) {
-            context.getSharedPreferences("kaya_staff_secure_fallback", Context.MODE_PRIVATE)
+            context.getSharedPreferences("kaya_staff_secure_fallback", Context.MODE_PRIVATE).also { fallback ->
+                fallback.edit().clear().apply()
+            }
         }
+        secureStorageOk = encryptedOk
+        if (encryptedOk) {
+            val legacyUser = prefs.getString(KEY_USER, null)
+            if (!legacyUser.isNullOrBlank() && secure.getString(KEY_USER, null).isNullOrBlank()) {
+                secure.edit().putString(KEY_USER, legacyUser).apply()
+            }
+        }
+        prefs.edit().remove(KEY_USER).apply()
     }
 
     var baseUrl: String
@@ -53,24 +65,28 @@ class SessionStore(context: Context) {
         }
 
     var token: String?
-        get() = secure.getString(KEY_TOKEN, null)
+        get() = if (secureStorageOk) secure.getString(KEY_TOKEN, null) else null
         set(value) {
+            if (!secureStorageOk) return
             val editor = secure.edit()
             if (value.isNullOrBlank()) editor.remove(KEY_TOKEN) else editor.putString(KEY_TOKEN, value)
             editor.apply()
         }
 
     var userJson: String?
-        get() = prefs.getString(KEY_USER, null)
+        get() = if (secureStorageOk) secure.getString(KEY_USER, null) else null
         set(value) {
-            val editor = prefs.edit()
+            if (!secureStorageOk) return
+            val editor = secure.edit()
             if (value.isNullOrBlank()) editor.remove(KEY_USER) else editor.putString(KEY_USER, value)
             editor.apply()
+            prefs.edit().remove(KEY_USER).apply()
         }
 
     val isLoggedIn: Boolean get() = !token.isNullOrBlank()
 
     fun saveLogin(token: String, user: StaffUser) {
+        if (!secureStorageOk) return
         this.token = token
         userJson = user.toJson().toString()
     }
