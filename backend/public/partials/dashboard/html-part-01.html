@@ -302,7 +302,7 @@
                         <div class="dash-masthead-copy">
                             <p class="dash-kicker" data-i18n="dashboard_kicker">میز کار امروز</p>
                             <h2 id="dashboardGreeting">داشبورد</h2>
-                            <p class="dashboard-sub" data-i18n="dashboard_welcome">صف پاسخ‌نداده و آمار مکالمات — کار از اینجا شروع می‌شود</p>
+                            <p class="dashboard-sub" data-i18n="dashboard_welcome">مکالمات منتظر پاسخ، آمار روز و میانبر همه بخش‌ها</p>
                         </div>
                         <div class="dash-masthead-meta">
                             <span id="dashboardWaChip" class="dash-wa-chip" hidden></span>
@@ -317,13 +317,13 @@
                     <div class="dash-desk-body">
                         <section class="dash-queue-panel" id="dashboardQueueWrap">
                             <header class="dash-panel-head">
-                                <h3 class="dash-panel-title" data-i18n="dashboard_queue_title">صف کار</h3>
-                                <a href="#conversations" class="dash-panel-link" data-dashboard-page="conversations" data-conv-tab="unanswered" data-i18n="dashboard_queue_all">همه مکالمات</a>
+                                <h3 class="dash-panel-title"><span data-i18n="dashboard_queue_title">نیاز به پاسخ</span><span id="dashboardQueueCount" class="dash-queue-count is-zero" hidden></span></h3>
+                                <a href="#conversations" class="dash-panel-link" data-dashboard-page="conversations" data-conv-tab="unanswered" data-i18n="dashboard_queue_all">مشاهده همه</a>
                             </header>
                             <div id="dashboardQueue" class="dash-queue" aria-live="polite"></div>
                         </section>
                         <aside class="dash-aside">
-                            <h3 class="dash-aside-title" data-i18n="dashboard_aside_title">سایر آمار</h3>
+                            <h3 class="dash-aside-title" data-i18n="dashboard_aside_title">آمار امروز</h3>
                             <div id="dashboardSummary" class="dash-def-list" aria-label="سایر آمار"></div>
                             <div id="dashboardProductFit" class="dashboard-product-fit" hidden></div>
                             <div id="dashboardContactFunnel" class="dashboard-product-fit" hidden></div>

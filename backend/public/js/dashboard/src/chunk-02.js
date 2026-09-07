@@ -1163,9 +1163,9 @@
             if (!canConversations || typeof apiFetch !== 'function') return { rows: [], kind: 'none' };
             var nn = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             var tries = [];
-            if (nn(stats && stats.unansweredConversations) > 0) tries.push({ url: '/api/conversations?unanswered=1&limit=8', kind: 'unanswered' });
-            if (nn(stats && stats.unreadConversations) > 0) tries.push({ url: '/api/conversations?unread=1&limit=8', kind: 'unread' });
-            tries.push({ url: '/api/conversations?status=open&limit=8', kind: 'open' });
+            if (nn(stats && stats.unansweredConversations) > 0) tries.push({ url: '/api/conversations?unanswered=1&limit=12', kind: 'unanswered' });
+            if (nn(stats && stats.unreadConversations) > 0) tries.push({ url: '/api/conversations?unread=1&limit=12', kind: 'unread' });
+            tries.push({ url: '/api/conversations?status=open&limit=12', kind: 'open' });
             var seen = {};
             var i;
             for (i = 0; i < tries.length; i++) {
@@ -1182,11 +1182,33 @@
             }
             return { rows: [], kind: 'none' };
         }
+        function dashQueueWaitLabel(c) {
+            if (!c || !c.lastIncomingMessageAt) return '';
+            if (c.lastOutgoingMessageAt && new Date(c.lastIncomingMessageAt) <= new Date(c.lastOutgoingMessageAt)) return '';
+            var mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
+            if (!isFinite(mins) || mins < 0) return '';
+            if (mins < 60) return dashFormatNum(mins) + ' ' + (t('dashboard_min') || tt('دقیقه', 'min', 'dk'));
+            if (mins < 1440) return dashFormatNum(Math.floor(mins / 60)) + ' ' + (t('dashboard_hour') || tt('ساعت', 'h', 'sa'));
+            return dashFormatNum(Math.floor(mins / 1440)) + ' ' + (t('dashboard_day') || tt('روز', 'd', 'gün'));
+        }
+        function dashQueueAvatarHtml(info) {
+            var initial = info.isGroup ? '👥' : ((info.name && info.name[0]) ? info.name[0].toUpperCase() : '?');
+            var picSrc = '';
+            if (typeof customerAvatarDisplaySrc === 'function') {
+                picSrc = customerAvatarDisplaySrc({ profilePic: info.profilePic, id: info.customerId }, info.customerId) || '';
+            } else if (typeof resolveAvatarUrl === 'function') {
+                picSrc = resolveAvatarUrl(info.profilePic) || '';
+            }
+            var canShow = picSrc && (typeof profilePicShowsImage !== 'function' || profilePicShowsImage(info.profilePic, info.customerId));
+            return '<span class="dash-queue-avatar' + (info.isGroup ? ' is-group' : '') + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span>' + (canShow ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '') + '</span>';
+        }
         function renderDashboardQueue(queueEl, wrapEl, allLink, result, canConversations) {
             if (wrapEl) wrapEl.hidden = !canConversations;
             if (!queueEl) return;
+            var countEl = document.getElementById('dashboardQueueCount');
             if (!canConversations) {
                 queueEl.innerHTML = '';
+                if (countEl) { countEl.hidden = true; countEl.textContent = ''; }
                 return;
             }
             var rows = (result && result.rows) || [];
@@ -1194,8 +1216,13 @@
                 var tab = result && result.kind === 'unread' ? 'unread' : (result && result.kind === 'open' ? 'open' : 'unanswered');
                 allLink.setAttribute('data-conv-tab', tab);
             }
+            if (countEl) {
+                countEl.hidden = false;
+                countEl.textContent = dashFormatNum(rows.length);
+                countEl.classList.toggle('is-zero', !rows.length);
+            }
             if (!rows.length) {
-                queueEl.innerHTML = '<p class="dash-queue-empty">' + escapeHtml(t('dashboard_queue_empty') || tt('چیزی در صف نیست.', 'The queue is empty.', 'Kuyruk boş.')) + '</p>';
+                queueEl.innerHTML = '<div class="dash-queue-empty"><p>' + escapeHtml(t('dashboard_queue_empty') || tt('الان چیزی در صف پاسخ نیست.', 'Nothing waiting in the queue.', 'Kuyrukta bekleyen yok.')) + '</p><a href="#conversations" class="dash-queue-empty-cta" data-dashboard-page="conversations">' + escapeHtml(t('dashboard_queue_empty_cta') || tt('رفتن به مکالمات', 'Open conversations', 'Konuşmalara git')) + '</a></div>';
                 return;
             }
             queueEl.innerHTML = rows.map(function(c) {
@@ -1204,10 +1231,14 @@
                 var timeStr = c.lastMessageAt
                     ? (typeof timeAgo === 'function' ? timeAgo(c.lastMessageAt) : (typeof fmtTZ === 'function' ? fmtTZ(c.lastMessageAt, 'time') : ''))
                     : '';
-                var tallyCls = 'dash-queue-tally' + (unread ? '' : ' is-zero');
                 var tally = unread > 99 ? '99+' : String(unread);
                 var preview = info.preview || '';
-                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '"><div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><time class="dash-queue-time">' + escapeHtml(timeStr) + '</time><span class="' + tallyCls + '">' + escapeHtml(tally) + '</span></a>';
+                var wait = dashQueueWaitLabel(c);
+                var tallyHtml = unread
+                    ? '<span class="dash-queue-tally">' + escapeHtml(tally) + '</span>'
+                    : '<span class="dash-queue-tally is-zero"></span>';
+                var waitHtml = wait ? '<span class="dash-queue-wait">' + escapeHtml(wait) + '</span>' : '';
+                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + waitHtml + '<time class="dash-queue-time">' + escapeHtml(timeStr) + '</time>' + tallyHtml + '</div></a>';
             }).join('');
         }
         function refreshDashboardUiAfterLang() {
@@ -1385,8 +1416,11 @@
             }
             if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
             if (quickEl) quickEl.innerHTML = '';
-            if (attentionEl && (n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
+            if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.unansweredConversations) > 0 || n(stats.unassignedConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
+                if (can('conversations') && n(stats.unansweredConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unanswered">' + dashFormatNum(stats.unansweredConversations) + ' ' + t('dashboard_stat_unanswered') + '</a>');
+                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + dashFormatNum(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
+                if (can('conversations') && n(stats.unassignedConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unassigned">' + dashFormatNum(stats.unassignedConversations) + ' ' + t('dashboard_stat_unassigned') + '</a>');
                 if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + dashFormatNum(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + dashFormatNum(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
@@ -2096,7 +2130,7 @@
                     showPage(dashCard.getAttribute('data-page') || '');
                     return;
                 }
-                const dashStat = targetEl && targetEl.closest && targetEl.closest('.dashboard-stat-box[data-dashboard-page], .dash-blotter-cell[data-dashboard-page], .dash-def-row[data-dashboard-page], .dash-panel-link[data-dashboard-page]');
+                const dashStat = targetEl && targetEl.closest && targetEl.closest('.dashboard-stat-box[data-dashboard-page], .dash-blotter-cell[data-dashboard-page], .dash-def-row[data-dashboard-page], .dash-panel-link[data-dashboard-page], .dash-queue-empty-cta[data-dashboard-page]');
                 if (dashStat && typeof showPage === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
