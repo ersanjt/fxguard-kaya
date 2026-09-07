@@ -2831,10 +2831,12 @@
             window.submitBulkSend = typeof submitBulkSend === 'function' ? submitBulkSend : undefined;
             window.bulkSelectFiltered = typeof bulkSelectFiltered === 'function' ? bulkSelectFiltered : undefined;
             window.bulkClearSelection = typeof bulkClearSelection === 'function' ? bulkClearSelection : undefined;
+            window.bulkDeleteCustomers = typeof bulkDeleteCustomers === 'function' ? bulkDeleteCustomers : undefined;
             window.openCustomerModal = typeof openCustomerModal === 'function' ? openCustomerModal : undefined;
             window.closeCustomerModal = typeof closeCustomerModal === 'function' ? closeCustomerModal : undefined;
             window.saveCustomerFromModal = typeof saveCustomerFromModal === 'function' ? saveCustomerFromModal : undefined;
             window.loadCustomers = typeof loadCustomers === 'function' ? loadCustomers : undefined;
+            window.deleteCustomer = typeof deleteCustomer === 'function' ? deleteCustomer : undefined;
             window.startInternalCall = typeof startInternalCall === 'function' ? startInternalCall : undefined;
             window.acceptInternalCall = typeof acceptInternalCall === 'function' ? acceptInternalCall : undefined;
             window.rejectInternalCall = typeof rejectInternalCall === 'function' ? rejectInternalCall : undefined;

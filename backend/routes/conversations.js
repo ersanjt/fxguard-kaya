@@ -39,7 +39,12 @@ const {
 } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 const { looksLikeTechnicalWhatsAppLabel } = require('../lib/phoneUtils');
-const { dedupeChatRows, findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+const {
+    dedupeChatRows,
+    findOrCreateSyncedCustomer,
+    preferCustomerName,
+    ensureDuplicateIdentityRepair,
+} = require('../lib/whatsappCustomerIdentity');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -458,8 +463,9 @@ router.post('/sync-groups', async (req, res, next) => {
                     /^گروه\s+\d/i.test(String(s || '')) ||
                     looksLikeTechnicalWhatsAppLabel(s);
                 const custUpdates = {};
-                if (chatName && !looksLikeJidName(chatName) && customer.name !== chatName) {
-                    custUpdates.name = chatName;
+                if (chatName && !looksLikeJidName(chatName)) {
+                    const nextName = preferCustomerName(customer.name, chatName);
+                    if (nextName && nextName !== customer.name) custUpdates.name = nextName;
                 }
                 if (customer.isRestrictedFromStaff) custUpdates.isRestrictedFromStaff = false;
                 if (Object.keys(custUpdates).length) {
@@ -658,6 +664,9 @@ router.get('/', async (req, res, next) => {
         try {
             const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
             await ensureLegacyCutover(null, { reason: 'conversations_list' });
+        } catch (_) {}
+        try {
+            await ensureDuplicateIdentityRepair();
         } catch (_) {}
         const {
             status,

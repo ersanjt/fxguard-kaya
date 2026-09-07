@@ -17,7 +17,8 @@
                         <div class="customer-filters-backdrop" id="customerFiltersBackdrop" onclick="document.getElementById('customerFilterToggle').click()"></div>
                     </div>
                     <div class="customer-view-tabs" id="customerViewTabs" role="tablist" aria-label="Customer views">
-                        <button type="button" class="conv-tab active" role="tab" aria-selected="true" data-cust-tab="active" id="custTabActive" data-i18n="customers_tab_active">مشتریان فعال</button>
+                        <button type="button" class="conv-tab active" role="tab" aria-selected="true" data-cust-tab="active" id="custTabActive" data-i18n="customers_tab_active">مشتریان</button>
+                        <button type="button" class="conv-tab" role="tab" aria-selected="false" data-cust-tab="groups" id="custTabGroups" data-i18n="customers_tab_groups">گروه‌ها</button>
                         <button type="button" class="conv-tab" role="tab" aria-selected="false" data-cust-tab="archive" id="custTabArchive" style="display:none;" data-i18n="customers_tab_archive">آرشیو (شماره قبلی)</button>
                     </div>
                     <p id="customerArchiveHint" class="customer-archive-hint text-muted" style="display:none;" data-i18n="customers_archive_hint">شماره‌هایی که پس از تعویض واتساپ قفل شده‌اند؛ فقط ادمین سطح بالا می‌بیند.</p>
@@ -32,6 +33,7 @@
                     <div id="customerBulkBar" class="customer-bulk-bar" style="display:none;">
                         <span id="customerBulkBarCount" class="customer-bulk-bar-count">۰ انتخاب شده</span>
                         <button type="button" class="btn-primary btn-sm" onclick="openBulkSendModal()" data-i18n="bulk_send">ارسال انبوه</button>
+                        <button type="button" class="btn-danger btn-sm" id="customerBulkDeleteBtn" onclick="bulkDeleteCustomers()" data-i18n="bulk_delete">حذف انتخاب‌شده‌ها</button>
                         <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن</button>
                     </div>
                     <div id="customerList" class="customer-list-grid"></div>

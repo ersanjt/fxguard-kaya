@@ -24,6 +24,26 @@ function extractDigits(val) {
 }
 
 /**
+ * موبایل ایران با ۹ و ترکیه با ۵ شروع می‌شود.
+ * اگر کد کشور جابه‌جا ذخیره شده باشد (۹۰ به‌جای ۹۸ یا برعکس) درستش کن.
+ */
+function repairIranTurkeyMobileCc(digits) {
+    const s = String(digits || '');
+    if (/^909\d{9}$/.test(s)) return `98${s.slice(2)}`;
+    if (/^985\d{9}$/.test(s)) return `90${s.slice(2)}`;
+    return s;
+}
+
+function iranTurkeyMobileSibling(digits) {
+    const s = String(digits || '');
+    if (/^989\d{9}$/.test(s)) return `90${s.slice(2)}`;
+    if (/^909\d{9}$/.test(s)) return `98${s.slice(2)}`;
+    if (/^905\d{9}$/.test(s)) return `98${s.slice(2)}`;
+    if (/^985\d{9}$/.test(s)) return `90${s.slice(2)}`;
+    return '';
+}
+
+/**
  * رقم‌های شماره را برای تشخیص E.164 آماده می‌کند:
  * ۰۰ بین‌المللی و صفر محلی (۰۹…) را حذف می‌کند.
  * بدون این، «۰۰۹۸۹…» به‌اشتباه LID می‌شود.
@@ -32,15 +52,45 @@ function canonicalizePhoneDigits(val) {
     let s = extractDigits(val);
     while (s.startsWith('00')) s = s.slice(2);
     if (/^0\d{9,11}$/.test(s)) s = s.slice(1);
-    return s;
+    return repairIranTurkeyMobileCc(s);
 }
 
 function isKnownPhoneDigits(digits) {
     if (!digits) return false;
     if (/^989\d{9}$/.test(digits)) return true;
+    if (/^905\d{9}$/.test(digits)) return true;
     if (/^90\d{10}$/.test(digits)) return true;
     if (/^971\d{8,9}$/.test(digits)) return true;
     return PHONE_CC_PREFIXES.some((cc) => digits.startsWith(cc) && digits.length >= cc.length + 8 && digits.length <= cc.length + 12);
+}
+
+/** شکل‌های ذخیره‌شدهٔ یک شماره تا مشتری تکراری با ۰۰ / @c.us پیدا شود */
+function phoneStorageVariants(val) {
+    const raw = String(val || '').trim();
+    const canonical = canonicalizePhoneDigits(raw);
+    const out = new Set();
+    const add = (v) => {
+        if (v) out.add(String(v));
+    };
+    add(raw);
+    add(canonical);
+    if (!canonical || isGroupJid(raw)) return [...out];
+    add(`00${canonical}`);
+    add(`+${canonical}`);
+    add(`${canonical}@c.us`);
+    add(`00${canonical}@c.us`);
+    add(`+${canonical}@c.us`);
+    if (/^(98|90)\d{10}$/.test(canonical)) {
+        add(`0${canonical.slice(2)}`);
+    }
+    const sibling = iranTurkeyMobileSibling(canonical);
+    if (sibling) {
+        add(sibling);
+        add(`00${sibling}`);
+        add(`${sibling}@c.us`);
+        add(`00${sibling}@c.us`);
+    }
+    return [...out];
 }
 
 /** برچسب فنی واتساپ (LID / JID / Unknown user) که نباید به‌جای اسم مخاطب دیده شود */
@@ -65,6 +115,24 @@ function displayableWhatsAppPhone(val) {
         return digits || '';
     }
     return '';
+}
+
+function prettyWhatsAppPhone(val) {
+    const digits = displayableWhatsAppPhone(val);
+    if (!digits) return '';
+    if (/^989\d{9}$/.test(digits)) {
+        return '+98 ' + digits.slice(2, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+    }
+    if (/^905\d{9}$/.test(digits)) {
+        return '+90 ' + digits.slice(2, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+    }
+    if (/^971\d{8,9}$/.test(digits)) {
+        return '+971 ' + digits.slice(3, 5) + ' ' + digits.slice(5);
+    }
+    if (/^90\d{10}$/.test(digits) || /^98\d{10}$/.test(digits)) {
+        return '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
+    }
+    return digits;
 }
 
 /** آیا این مقدار شناسهٔ گروه واتساپ است؟ */
@@ -95,9 +163,12 @@ function normalizePhone(val) {
     if (isLikelyWhatsAppLid(raw) && !isKnownPhoneDigits(s)) {
         return s;
     }
-    // اگر کد کشور ندارد و طول مناسب است، 98 اضافه کن
-    if (s && !s.startsWith('98') && s.length <= 10) s = '98' + s;
-    return s;
+    // اگر کد کشور ندارد و طول مناسب است: موبایل ترکیه ۹۰، بقیه پیش‌فرض ایران ۹۸
+    if (s && s.length <= 10) {
+        if (/^5\d{9}$/.test(s)) s = `90${s}`;
+        else if (!s.startsWith('98') && !s.startsWith('90')) s = `98${s}`;
+    }
+    return repairIranTurkeyMobileCc(s);
 }
 
 /**
@@ -144,4 +215,8 @@ module.exports = {
     isKnownPhoneDigits,
     looksLikeTechnicalWhatsAppLabel,
     displayableWhatsAppPhone,
+    prettyWhatsAppPhone,
+    repairIranTurkeyMobileCc,
+    iranTurkeyMobileSibling,
+    phoneStorageVariants,
 };

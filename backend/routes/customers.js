@@ -7,7 +7,7 @@ const { sequelize, Customer, Conversation, Message, CustomerNote, CustomerDocume
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
-const { normalizePhone } = require('../lib/phoneUtils');
+const { normalizePhone, isGroupJid } = require('../lib/phoneUtils');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
 const { getCustomerAvatar } = require('./customerAvatar');
@@ -43,6 +43,10 @@ router.get('/', async (req, res, next) => {
             const { ensureLegacyCutover } = require('../services/legacyCrmLockdown');
             await ensureLegacyCutover(null, { reason: 'customers_list' });
         } catch (_) {}
+        try {
+            const { ensureDuplicateIdentityRepair } = require('../lib/whatsappCustomerIdentity');
+            await ensureDuplicateIdentityRepair();
+        } catch (_) {}
         const { page = 1, limit = 100, search, status } = req.query;
         const { page: p, limit: l, offset } = parsePagination(page, limit, 200);
         const customerIds = await getAccessibleCustomerIds(req, {
@@ -75,11 +79,23 @@ router.get('/', async (req, res, next) => {
         }
         const restrictedOnly =
             req.query.restrictedOnly === '1' || req.query.restrictedOnly === 'true';
+        const groupsOnly = req.query.isGroup === '1' || req.query.isGroup === 'true';
+        const groupClause = groupsOnly
+            ? { phone: { [Op.like]: '%@g.us' } }
+            : {
+                  [Op.or]: [
+                      { phone: { [Op.notLike]: '%@g.us' } },
+                      { phone: null },
+                      { phone: '' },
+                  ],
+              };
+        where[Op.and] = (where[Op.and] || []).concat([groupClause]);
         const statsWhere = restrictedOnly
             ? { isRestrictedFromStaff: true }
             : customerIds
               ? { id: { [Op.in]: customerIds } }
               : { isRestrictedFromStaff: false };
+        statsWhere[Op.and] = (statsWhere[Op.and] || []).concat([groupClause]);
         const [stats, { rows, count }] = await Promise.all([
             !search ? Customer.findAll({
                 where: statsWhere,
@@ -113,12 +129,26 @@ router.get('/', async (req, res, next) => {
             convs.forEach(c => { if (!byCust[c.customerId]) byCust[c.customerId] = c; });
             return byCust;
         }) : {};
+        const convCountMap = {};
+        if (custIds.length) {
+            const countRows = await Conversation.findAll({
+                where: { customerId: { [Op.in]: custIds } },
+                attributes: ['customerId', [sequelize.fn('COUNT', sequelize.col('id')), 'cnt']],
+                group: ['customerId'],
+                raw: true,
+            });
+            countRows.forEach((r) => {
+                convCountMap[r.customerId] = parseInt(r.cnt, 10) || 0;
+            });
+        }
         const enriched = rows.map(c => {
             const plain = c.get ? c.get({ plain: true }) : c;
             const cid = plain.id;
             const lc = latestConvs[cid];
             const row = {
                 ...plain,
+                isGroup: isGroupJid(plain.phone),
+                totalConversations: convCountMap[cid] || 0,
                 lastOpenConv: lc ? { id: lc.id, assignee: lc.assignee ? lc.assignee.get ? lc.assignee.get({ plain: true }) : lc.assignee : null, department: lc.department ? (lc.department.get ? lc.department.get({ plain: true }) : lc.department) : null, status: lc.status } : null
             };
             return redactCustomerPhone(row, req.user);
@@ -379,6 +409,99 @@ router.put('/:id', async (req, res, next) => {
     }
 });
 
+const BULK_DELETE_MAX = 50;
+
+async function softRemoveCustomer(customer, userId) {
+    const customerId = customer.id;
+    const cf = Object.assign({}, customer.customFields || {}, {
+        softDeletedAt: new Date().toISOString(),
+        softDeletedBy: userId || null,
+    });
+    const t = await sequelize.transaction();
+    try {
+        await customer.update(
+            {
+                status: 'inactive',
+                isRestrictedFromStaff: true,
+                customFields: cf,
+            },
+            { transaction: t }
+        );
+        await Conversation.update(
+            {
+                status: 'archived',
+                isHiddenFromStaff: true,
+            },
+            { where: { customerId }, transaction: t }
+        );
+        await t.commit();
+    } catch (txErr) {
+        await t.rollback();
+        throw txErr;
+    }
+    await logActivity({
+        userId: userId || null,
+        action: 'customer_deleted',
+        entityType: 'customer',
+        entityId: customerId,
+        customerId,
+        summary: 'مشتری از دسترس خارج شد (حذف نرم — پیام‌ها حفظ شدند)',
+        metadata: { name: customer.name, phone: customer.phone, softDelete: true },
+    });
+    return customerId;
+}
+
+router.post('/bulk-delete', async (req, res, next) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!req.canDeleteCustomer()) {
+            return res.status(403).json({
+                error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند مشتری را از دسترس خارج کند',
+            });
+        }
+        const rawIds = Array.isArray(req.body && req.body.customerIds) ? req.body.customerIds : [];
+        const ids = [];
+        const seen = {};
+        rawIds.forEach(function (id) {
+            const s = String(id || '').trim();
+            if (!s || seen[s] || !isValidUUID(s)) return;
+            seen[s] = true;
+            ids.push(s);
+        });
+        if (!ids.length) return res.status(400).json({ error: 'حداقل یک مشتری انتخاب کنید' });
+        if (ids.length > BULK_DELETE_MAX) {
+            return res.status(400).json({ error: 'حداکثر ' + BULK_DELETE_MAX + ' مشتری در هر حذف' });
+        }
+        let deleted = 0;
+        let skipped = 0;
+        for (const id of ids) {
+            const customer = await Customer.findByPk(id);
+            if (!customer || (customer.customFields && customer.customFields.softDeletedAt)) {
+                skipped += 1;
+                continue;
+            }
+            const allowed = await canAccessCustomer(req, customer.id);
+            if (!allowed) {
+                skipped += 1;
+                continue;
+            }
+            await softRemoveCustomer(customer, req.userId);
+            deleted += 1;
+        }
+        res.json({
+            message: deleted
+                ? (deleted + ' مشتری از دسترس خارج شد. پیام‌ها و سوابق حذف نشدند.')
+                : 'مشتری جدیدی از دسترس خارج نشد.',
+            deleted,
+            skipped,
+            softDeleted: true,
+            messagesPreserved: true,
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // حذف نرم مشتری — فقط مالک/ادمین اصلی؛ پیام‌ها و مکالمات هرگز destroy نمی‌شوند
 router.delete('/:id', async (req, res, next) => {
     try {
@@ -394,45 +517,7 @@ router.delete('/:id', async (req, res, next) => {
         const allowed = await canAccessCustomer(req, customer.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
 
-        const customerId = customer.id;
-        const cf = Object.assign({}, customer.customFields || {}, {
-            softDeletedAt: new Date().toISOString(),
-            softDeletedBy: req.userId || null,
-        });
-
-        const t = await sequelize.transaction();
-        try {
-            await customer.update(
-                {
-                    status: 'inactive',
-                    isRestrictedFromStaff: true,
-                    customFields: cf,
-                },
-                { transaction: t }
-            );
-            // مکالمات آرشیو می‌شوند؛ پیام‌ها دست‌نخورده می‌مانند
-            await Conversation.update(
-                {
-                    status: 'archived',
-                    isHiddenFromStaff: true,
-                },
-                { where: { customerId }, transaction: t }
-            );
-            await t.commit();
-        } catch (txErr) {
-            await t.rollback();
-            throw txErr;
-        }
-
-        await logActivity({
-            userId: req.userId,
-            action: 'customer_deleted',
-            entityType: 'customer',
-            entityId: customerId,
-            customerId,
-            summary: 'مشتری از دسترس خارج شد (حذف نرم — پیام‌ها حفظ شدند)',
-            metadata: { name: customer.name, phone: customer.phone, softDelete: true },
-        });
+        await softRemoveCustomer(customer, req.userId);
         res.json({
             message: 'مشتری از دسترس خارج شد. پیام‌ها و سوابق حذف نشدند.',
             softDeleted: true,

@@ -359,7 +359,7 @@
             let html = '';
             for (let i = 0; i < (count || 5); i++) {
                 if (isTicketList) html += '<div class="ticket-card ticket-card-skeleton"><div class="ticket-card-body"><div class="loading-skeleton" style="height:12px;width:80px;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:16px;width:90%;margin-bottom:6px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div><div class="ticket-card-badges"><span class="loading-skeleton" style="height:24px;width:50px;border-radius:8px;"></span><span class="loading-skeleton" style="height:24px;width:60px;border-radius:8px;"></span></div></div>';
-                else if (isCustomerList) html += '<div class="customer-card customer-card-skeleton"><div class="customer-card-main"><div class="loading-skeleton" style="width:44px;height:44px;border-radius:10px;"></div><div class="customer-card-body" style="flex:1;"><div class="loading-skeleton" style="height:14px;width:70%;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:12px;width:90%;margin-bottom:4px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div></div><div class="loading-skeleton" style="width:70px;height:36px;border-radius:8px;"></div></div>';
+                else if (isCustomerList) html += '<div class="customer-card customer-card-skeleton"><div class="loading-skeleton" style="width:18px;height:18px;border-radius:4px;flex-shrink:0;"></div><div class="loading-skeleton" style="width:44px;height:44px;border-radius:12px;flex-shrink:0;"></div><div class="customer-card-body" style="flex:1;min-width:0;"><div class="loading-skeleton" style="height:14px;width:40%;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:12px;width:55%;"></div></div><div class="loading-skeleton" style="width:88px;height:12px;border-radius:6px;"></div></div>';
                 else html += '<div class="loading-skeleton loading-row"></div>';
             }
             list.innerHTML = html;
@@ -2711,13 +2711,21 @@
                     var custPhone = btn.getAttribute('data-customer-phone') || btn.getAttribute('data-cust-phone') || '';
                     if (custId) startCustomerChat(custId, custName, custPhone);
                 }
+                else if (target.closest('.customer-delete-btn')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var delBtn = target.closest('.customer-delete-btn');
+                    var delId = delBtn.getAttribute('data-customer-id') || '';
+                    var delName = delBtn.getAttribute('data-customer-name') || '';
+                    if (delId && typeof deleteCustomer === 'function') deleteCustomer(delId, delName);
+                }
                 else if (target.closest('.bulk-customer-check')) {
                     e.stopPropagation();
                     toggleBulkSelect(target.closest('.bulk-customer-check'));
                 }
                 else if (target.closest('.customer-card') && !target.closest('.customer-card-skeleton')) {
                     const card = target.closest('.customer-card');
-                    if (!card || target.closest('.bulk-customer-check') || target.closest('.customer-send-btn')) return;
+                    if (!card || target.closest('.bulk-customer-check') || target.closest('.customer-send-btn') || target.closest('.customer-delete-btn')) return;
                     e.preventDefault();
                     var custId = card.getAttribute('data-customer-id');
                     var custName = card.getAttribute('data-customer-name') || '';
@@ -2756,7 +2764,7 @@
                     if (src) { e.preventDefault(); if (typeof openImagePreviewModal === 'function') openImagePreviewModal(src); }
                     return;
                 }
-                if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn')) return;
+                if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn') || active.closest('.customer-delete-btn')) return;
                 const card = active.closest('.customer-card:not(.customer-card-skeleton)');
                 if (card) {
                     const custId = card.getAttribute('data-customer-id');

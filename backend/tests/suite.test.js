@@ -629,6 +629,32 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(typeof r.body.total === 'number');
+        if (r.body.data.length) {
+            assert.strictEqual(typeof r.body.data[0].totalConversations, 'number');
+            assert.strictEqual(typeof r.body.data[0].isGroup, 'boolean');
+            assert(
+                !r.body.data.some((c) => /@g\.us$/i.test(c.phone || '')),
+                'default customer club must not mix WhatsApp groups'
+            );
+        }
+    });
+
+    await test('GET /api/customers?isGroup=true lists only groups', async () => {
+        const { Customer } = require('../models');
+        await Customer.findOrCreate({
+            where: { phone: '120363000000333000@g.us' },
+            defaults: { name: 'Test Group Club', source: 'whatsapp', status: 'active' },
+        });
+        const groups = await req
+            .get('/api/customers?isGroup=true')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(groups.status, 200);
+        assert(Array.isArray(groups.body.data));
+        assert(
+            groups.body.data.every((c) => /@g\.us$/i.test(c.phone || '')),
+            'groups tab must only return @g.us rows'
+        );
+        assert(groups.body.data.some((c) => c.phone === '120363000000333000@g.us'));
     });
 
     await test('GET /api/customers?search=Ali returns results', async () => {
@@ -1676,6 +1702,54 @@ async function runTests() {
         assert.strictEqual(dr.status, 200, `delete: ${JSON.stringify(dr.body)}`);
     });
 
+    await test('POST /api/customers/bulk-delete without auth returns 401', async () => {
+        const r = await req.post('/api/customers/bulk-delete').send({ customerIds: [] });
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('POST /api/customers/bulk-delete as agent returns 403', async () => {
+        const r = await req
+            .post('/api/customers/bulk-delete')
+            .set('Authorization', `Bearer ${agentToken}`)
+            .send({ customerIds: [createdCustomerId] });
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('POST /api/customers/bulk-delete without ids returns 400', async () => {
+        const r = await req
+            .post('/api/customers/bulk-delete')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerIds: [] });
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/customers/bulk-delete soft-deletes selected customers', async () => {
+        const { Customer } = require('../models');
+        const a = await req
+            .post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Bulk Del A', phone: '0900' + String(Date.now()).slice(-7), status: 'active' });
+        const b = await req
+            .post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Bulk Del B', phone: '0901' + String(Date.now()).slice(-7), status: 'active' });
+        assert.strictEqual(a.status, 201, JSON.stringify(a.body));
+        assert.strictEqual(b.status, 201, JSON.stringify(b.body));
+        const r = await req
+            .post('/api/customers/bulk-delete')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerIds: [a.body.id, b.body.id] });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        assert.strictEqual(r.body.deleted, 2);
+        assert.strictEqual(r.body.messagesPreserved, true);
+        const ca = await Customer.findByPk(a.body.id);
+        const cb = await Customer.findByPk(b.body.id);
+        assert.strictEqual(ca.status, 'inactive');
+        assert.strictEqual(cb.status, 'inactive');
+        assert(ca.isRestrictedFromStaff);
+        assert(cb.isRestrictedFromStaff);
+    });
+
     await test('DELETE /api/customers/:id with invalid UUID returns 400', async () => {
         const r = await req
             .delete('/api/customers/bad-id')
@@ -1899,12 +1973,18 @@ async function runTests() {
 
     await test('chatIdVariants and normalizeLinkedNumber', async () => {
         const { chatIdVariants, normalizeLinkedNumber } = require('../services/legacyCrmLockdown');
+        const { normalizePhone, canonicalizePhoneDigits } = require('../lib/phoneUtils');
         const v = chatIdVariants('905551112233@c.us');
         assert(v.includes('905551112233'));
         assert(v.includes('905551112233@c.us'));
         const iran = chatIdVariants('9121234567@c.us');
         assert(iran.includes('989121234567'), 'local Iranian number must match stored 98 prefix');
         assert.strictEqual(normalizeLinkedNumber('+90 555 111 22 33'), '905551112233');
+        assert.strictEqual(canonicalizePhoneDigits('00989305880135'), '989305880135');
+        assert.strictEqual(normalizePhone('00989305880135'), '989305880135');
+        assert.strictEqual(canonicalizePhoneDigits('985010676486'), '905010676486');
+        assert.strictEqual(canonicalizePhoneDigits('909305880135'), '989305880135');
+        assert(chatIdVariants('989305880135@c.us').includes('00989305880135'));
     });
 
     await test('sync chat rows merge @c.us and @lid for the same phone', async () => {
@@ -1999,6 +2079,126 @@ async function runTests() {
         assert.strictEqual(keep.id, phoneCust.id);
         await lidCust.reload();
         assert.strictEqual(lidCust.isRestrictedFromStaff, true);
+    });
+
+    await test('sync merges 00-prefixed duplicate of the same Iranian number', async () => {
+        const { Customer, Conversation } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '989305880188';
+        const [keep] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'Ersan Full Name', source: 'whatsapp' },
+        });
+        const [dup] = await Customer.findOrCreate({
+            where: { phone: `00${phone}` },
+            defaults: { name: 'ersan', source: 'whatsapp', isRestrictedFromStaff: false },
+        });
+        await Conversation.create({
+            customerId: dup.id,
+            status: 'open',
+            source: 'whatsapp',
+            lastMessagePreview: 'salam',
+            lastMessageAt: new Date('2026-08-15T12:00:00Z'),
+        });
+        const found = await findOrCreateSyncedCustomer({
+            id: `${phone}@c.us`,
+            phone,
+            name: 'Ersan Full Name',
+            isGroup: false,
+        });
+        assert.strictEqual(found.id, keep.id);
+        await keep.reload();
+        assert.strictEqual(keep.name, 'Ersan Full Name');
+        await dup.reload();
+        assert.strictEqual(dup.isRestrictedFromStaff, true);
+    });
+
+    await test('sync merges 98-prefixed duplicate of a Turkish mobile', async () => {
+        const { Customer } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '905010676499';
+        const [keep] = await Customer.findOrCreate({
+            where: { phone: `${phone}@c.us` },
+            defaults: { name: 'TR Contact', source: 'whatsapp' },
+        });
+        const [dup] = await Customer.findOrCreate({
+            where: { phone: `98${phone.slice(2)}` },
+            defaults: { name: 'Unknown user', source: 'whatsapp', isRestrictedFromStaff: false },
+        });
+        const found = await findOrCreateSyncedCustomer({
+            id: `${phone}@c.us`,
+            phone,
+            name: 'TR Contact',
+            isGroup: false,
+        });
+        assert.strictEqual(found.id, keep.id);
+        await dup.reload();
+        assert.strictEqual(dup.isRestrictedFromStaff, true);
+    });
+
+    await test('sync does not merge different numbers that only share a display name', async () => {
+        const { Customer } = require('../models');
+        const { findOrCreateSyncedCustomer } = require('../lib/whatsappCustomerIdentity');
+        const iran = '989305880177';
+        const turkey = '905010676477';
+        const [a] = await Customer.findOrCreate({
+            where: { phone: iran },
+            defaults: { name: 'Same Name', source: 'whatsapp' },
+        });
+        const [b] = await Customer.findOrCreate({
+            where: { phone: turkey },
+            defaults: { name: 'Same Name', source: 'whatsapp' },
+        });
+        const first = await findOrCreateSyncedCustomer({
+            id: `${iran}@c.us`,
+            phone: iran,
+            name: 'Same Name',
+            isGroup: false,
+        });
+        const second = await findOrCreateSyncedCustomer({
+            id: `${turkey}@c.us`,
+            phone: turkey,
+            name: 'Same Name',
+            isGroup: false,
+        });
+        assert.strictEqual(first.id, a.id);
+        assert.strictEqual(second.id, b.id);
+        assert.notStrictEqual(first.id, second.id);
+        await a.reload();
+        await b.reload();
+        assert.strictEqual(a.isRestrictedFromStaff, false);
+        assert.strictEqual(b.isRestrictedFromStaff, false);
+    });
+
+    await test('extra open chats for the same customer are archived', async () => {
+        const { Customer, Conversation } = require('../models');
+        const { collapseOpenConversationsForCustomer } = require('../lib/whatsappCustomerIdentity');
+        const phone = '989121230022';
+        const [cust] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: { name: 'One Person', source: 'whatsapp' },
+        });
+        const keepConv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            lastMessagePreview: 'keep',
+            lastMessageAt: new Date('2026-08-20T12:00:00Z'),
+        });
+        const extraConv = await Conversation.create({
+            customerId: cust.id,
+            status: 'open',
+            source: 'whatsapp',
+            lastMessagePreview: 'extra',
+            lastMessageAt: new Date('2026-08-10T12:00:00Z'),
+        });
+        await collapseOpenConversationsForCustomer(cust.id);
+        await keepConv.reload();
+        await extraConv.reload();
+        assert.strictEqual(keepConv.status, 'open');
+        assert.strictEqual(keepConv.isHiddenFromStaff, false);
+        assert.strictEqual(extraConv.status, 'archived');
+        assert.strictEqual(extraConv.isHiddenFromStaff, true);
     });
 
     await test('hidden restricted conversation is denied to assigned agent without grant', async () => {

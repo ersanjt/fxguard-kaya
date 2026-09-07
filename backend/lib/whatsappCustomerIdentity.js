@@ -3,13 +3,16 @@
  * همگام‌سازی چت نباید برای @c.us و @lid یک نفر دو مشتری بسازد.
  */
 const { Op } = require('sequelize');
-const { sequelize, Customer } = require('../models');
+const { sequelize, Customer, Conversation } = require('../models');
 const {
     normalizePhone,
     isLikelyWhatsAppLid,
     isGroupJid,
     extractDigits,
     isKnownPhoneDigits,
+    canonicalizePhoneDigits,
+    looksLikeTechnicalWhatsAppLabel,
+    phoneStorageVariants,
 } = require('./phoneUtils');
 const { chatIdVariants } = require('../services/legacyCrmLockdown');
 
@@ -81,7 +84,10 @@ function identityVariants(row) {
         if (!item) continue;
         out.push(...chatIdVariants(item));
         const normalized = realPhoneFromValue(item);
-        if (normalized) out.push(...chatIdVariants(normalized));
+        if (normalized) {
+            out.push(...chatIdVariants(normalized));
+            out.push(...phoneStorageVariants(normalized));
+        }
     }
     return uniqueNonEmpty(out);
 }
@@ -224,6 +230,46 @@ async function rememberCustomerLid(customer, lidDigits, transaction) {
     customer.customFields = cf;
 }
 
+async function collapseOpenConversationsForCustomer(customerId, transaction) {
+    if (!customerId) return;
+    const rows = await Conversation.findAll({
+        where: {
+            customerId,
+            status: { [Op.notIn]: ['closed', 'archived'] },
+            isHiddenFromStaff: false,
+        },
+        order: [
+            ['lastMessageAt', 'DESC'],
+            ['updatedAt', 'DESC'],
+        ],
+        transaction,
+    });
+    for (let i = 1; i < rows.length; i++) {
+        await rows[i].update({ status: 'archived', isHiddenFromStaff: true }, { transaction });
+    }
+}
+
+function isPlaceholderCustomerName(name) {
+    const s = String(name || '').trim();
+    if (!s) return true;
+    if (/^unknown user$/i.test(s)) return true;
+    if (/^(مشتری|customer|müşteri)(\s|$)/i.test(s)) return true;
+    if (looksLikeTechnicalWhatsAppLabel(s)) return true;
+    const digits = canonicalizePhoneDigits(s);
+    if (digits && isKnownPhoneDigits(digits) && extractDigits(s).length >= 8) return true;
+    return false;
+}
+
+function preferCustomerName(current, incoming) {
+    const cur = String(current || '').trim();
+    const next = String(incoming || '').trim();
+    if (!next) return cur;
+    if (isPlaceholderCustomerName(next) && !isPlaceholderCustomerName(cur)) return cur;
+    if (isPlaceholderCustomerName(cur)) return next;
+    if (next.length > cur.length + 2) return next;
+    return cur;
+}
+
 async function absorbIdentityDuplicates(keepCustomer, phones, transaction) {
     const list = uniqueNonEmpty(phones);
     if (!keepCustomer || !list.length) return;
@@ -234,10 +280,17 @@ async function absorbIdentityDuplicates(keepCustomer, phones, transaction) {
         },
         transaction,
     });
+    let bestName = keepCustomer.name;
     for (const extra of extras) {
+        bestName = preferCustomerName(bestName, extra.name);
         if (!extra.isRestrictedFromStaff) {
             await extra.update({ isRestrictedFromStaff: true }, { transaction });
         }
+        await collapseOpenConversationsForCustomer(extra.id, transaction);
+    }
+    if (bestName && bestName !== keepCustomer.name) {
+        await keepCustomer.update({ name: bestName }, { transaction });
+        keepCustomer.name = bestName;
     }
 }
 
@@ -246,14 +299,35 @@ function pickPreferredCustomer(matches, identity) {
     if (matches.length === 1) return matches[0];
     const score = (c) => {
         const phone = String(c.phone || '');
+        const canonical = canonicalizePhoneDigits(phone);
+        const phoneBare = phone.replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
         let n = 0;
-        if (identity.phone && phone === identity.phone) n += 8;
-        if (identity.phone && !isLikelyWhatsAppLid(phone) && !/@/.test(phone)) n += 4;
+        if (identity.phone && (phone === identity.phone || phoneBare === identity.phone)) n += 8;
+        else if (identity.phone && canonical === identity.phone) n += 5;
+        if (identity.phone && !isLikelyWhatsAppLid(phone) && phone === canonical && !/@/.test(phone) && !phone.startsWith('00')) n += 4;
         if (!c.isRestrictedFromStaff) n += 2;
         if ((c.customFields || {}).whatsappLid) n += 1;
+        if (isPlaceholderCustomerName(c.name)) n -= 5;
+        else n += Math.min(String(c.name || '').trim().length, 24) / 6;
         return n;
     };
     return [...matches].sort((a, b) => score(b) - score(a))[0];
+}
+
+async function canonicalizeStoredCustomerPhone(customer, identity, transaction) {
+    if (!customer || isGroupJid(customer.phone)) return customer;
+    const canonical = identity.phone || normalizePhone(customer.phone);
+    if (!canonical || String(customer.phone) === canonical) return customer;
+    const clash = await Customer.findOne({
+        where: { phone: canonical },
+        transaction,
+    });
+    if (!clash) {
+        await customer.update({ phone: canonical }, { transaction });
+        return customer;
+    }
+    if (clash.id !== customer.id) return clash;
+    return customer;
 }
 
 async function findOrCreateSyncedCustomer(row, { transaction, chatName, isGroup } = {}) {
@@ -313,12 +387,110 @@ async function findOrCreateSyncedCustomer(row, { transaction, chatName, isGroup 
     if (identity.lid) {
         await rememberCustomerLid(customer, identity.lid, transaction);
     }
+    const kept = await canonicalizeStoredCustomerPhone(customer, identity, transaction);
+    if (kept && kept.id !== customer.id) {
+        await absorbIdentityDuplicates(
+            kept,
+            [...uniqueVariants, customer.phone, identity.lid, identity.lid ? `${identity.lid}@lid` : '', createPhone],
+            transaction
+        );
+        customer = kept;
+    }
     await absorbIdentityDuplicates(
         customer,
-        [...uniqueVariants, identity.lid, identity.lid ? `${identity.lid}@lid` : '', createPhone],
+        [
+            ...uniqueVariants,
+            identity.lid,
+            identity.lid ? `${identity.lid}@lid` : '',
+            createPhone,
+            customer.phone,
+            ...(identity.phone ? phoneStorageVariants(identity.phone) : []),
+        ],
         transaction
     );
+    await collapseOpenConversationsForCustomer(customer.id, transaction);
     return customer;
+}
+
+let _identityRepairAt = 0;
+
+async function collapseDuplicateOpenConversations(transaction) {
+    const open = await Conversation.findAll({
+        where: {
+            status: { [Op.notIn]: ['closed', 'archived'] },
+            isHiddenFromStaff: false,
+        },
+        attributes: ['id', 'customerId', 'lastMessageAt'],
+        order: [['lastMessageAt', 'DESC']],
+        transaction,
+    });
+    const seen = new Set();
+    const dupCustomerIds = [];
+    for (const row of open) {
+        const cid = row.customerId;
+        if (!cid) continue;
+        if (seen.has(cid)) {
+            if (!dupCustomerIds.includes(cid)) dupCustomerIds.push(cid);
+        } else {
+            seen.add(cid);
+        }
+    }
+    for (const cid of dupCustomerIds) {
+        await collapseOpenConversationsForCustomer(cid, transaction);
+    }
+    return dupCustomerIds.length;
+}
+
+async function repairDuplicateWhatsappIdentities() {
+    const customers = await Customer.findAll({
+        attributes: ['id', 'phone', 'name', 'isRestrictedFromStaff', 'customFields'],
+    });
+    const groups = new Map();
+    for (const c of customers) {
+        if (!c.phone || isGroupJid(c.phone)) continue;
+        const key = normalizePhone(c.phone);
+        if (!key || !isKnownPhoneDigits(key)) continue;
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(c);
+    }
+    let merged = 0;
+    for (const [key, list] of groups) {
+        if (!list.length) continue;
+        const keep = pickPreferredCustomer(list, { phone: key }) || list[0];
+        const t = await sequelize.transaction();
+        try {
+            const canonicalKeep = await canonicalizeStoredCustomerPhone(keep, { phone: key }, t);
+            const target = canonicalKeep || keep;
+            if (list.length > 1) {
+                await absorbIdentityDuplicates(
+                    target,
+                    list.flatMap((c) => phoneStorageVariants(c.phone)),
+                    t
+                );
+                merged += 1;
+            }
+            await collapseOpenConversationsForCustomer(target.id, t);
+            await t.commit();
+        } catch (_) {
+            try {
+                await t.rollback();
+            } catch (__) {}
+        }
+    }
+    const collapsed = await collapseDuplicateOpenConversations();
+    return { merged, collapsed };
+}
+
+async function ensureDuplicateIdentityRepair() {
+    if (process.env.NODE_ENV === 'test') return null;
+    const now = Date.now();
+    if (now - _identityRepairAt < 30000) return null;
+    _identityRepairAt = now;
+    try {
+        return await repairDuplicateWhatsappIdentities();
+    } catch (_) {
+        return null;
+    }
 }
 
 module.exports = {
@@ -332,4 +504,9 @@ module.exports = {
     findOrCreateSyncedCustomer,
     findCustomerByStoredLid,
     rememberCustomerLid,
+    preferCustomerName,
+    isPlaceholderCustomerName,
+    collapseOpenConversationsForCustomer,
+    repairDuplicateWhatsappIdentities,
+    ensureDuplicateIdentityRepair,
 };

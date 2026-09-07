@@ -30,9 +30,15 @@
             if (cardEl) {
                 const seePhoneDetail = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
                 const detailName = typeof customerUiName === 'function' ? customerUiName(c) : (c.name || (seePhoneDetail ? c.phone : '') || t('customer'));
-                const detailPhoneLine = seePhoneDetail && c.phone
-                    ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—'))
-                    : '';
+                const detailPhoneRaw = typeof customerUiPhone === 'function' ? customerUiPhone(c) : '';
+                const detailPhonePretty = detailPhoneRaw && window.CRM && CRM.Utils && typeof CRM.Utils.prettyWhatsAppPhone === 'function'
+                    ? (CRM.Utils.prettyWhatsAppPhone(c.phone) || detailPhoneRaw)
+                    : detailPhoneRaw;
+                const detailPhoneLine = seePhoneDetail && detailPhonePretty
+                    ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + '<span dir="ltr">' + escapeHtml(detailPhonePretty) + '</span>')
+                    : (seePhoneDetail && c.phone && !/@g\.us$/i.test(c.phone)
+                        ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + '<span dir="ltr">' + escapeHtml(c.phone || '—') + '</span>')
+                        : '');
                 cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + attrEsc(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(detailName) + '</h3>' + (detailPhoneLine ? '<div class="customer-meta">' + detailPhoneLine + '</div>' : '') + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             }            const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
@@ -597,11 +603,13 @@
             }
         }
         function closeCustomerModal() { const m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
-        async function deleteCustomer(custId) {
+        async function deleteCustomer(custId, displayName) {
             if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'فقط مالک یا ادمین اصلی می‌تواند مشتری را از دسترس خارج کند' : 'Only owner/main admin can remove customers', true); return; }
-            const name = (currentCustomerData && currentCustomerData.id === custId)
-                ? (typeof customerUiName === 'function' ? customerUiName(currentCustomerData) : currentCustomerData.name)
-                : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || custId;
+            const name = displayName
+                || (currentCustomerData && currentCustomerData.id === custId
+                    ? (typeof customerUiName === 'function' ? customerUiName(currentCustomerData) : currentCustomerData.name)
+                    : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value))
+                || custId;
             const msg = (LANG === 'fa' ? 'مشتری «' : 'Remove customer "') + (name || custId) + (LANG === 'fa' ? '» از دسترس خارج شود؟ پیام‌ها و سوابق حذف نمی‌شوند؛ فقط از لیست فعال کنار می‌رود.' : '" from active list? Messages and history are preserved.');
             if (!confirm(msg)) return;
             const res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });

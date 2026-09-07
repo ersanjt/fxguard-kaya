@@ -98,10 +98,30 @@
             .replace(/\D/g, '');
         while (digits.indexOf('00') === 0) digits = digits.slice(2);
         if (/^0\d{9,11}$/.test(digits)) digits = digits.slice(1);
-        if (/^989\d{9}$/.test(digits) || /^90\d{10}$/.test(digits) || /^98\d{10}$/.test(digits)) return digits;
+        if (/^909\d{9}$/.test(digits)) digits = '98' + digits.slice(2);
+        if (/^985\d{9}$/.test(digits)) digits = '90' + digits.slice(2);
+        if (/^989\d{9}$/.test(digits) || /^905\d{9}$/.test(digits) || /^90\d{10}$/.test(digits) || /^98\d{10}$/.test(digits)) return digits;
         if (/@lid\b/i.test(s) || /^lid@/i.test(s)) return '';
         if (/^\d{8,15}$/.test(digits) && !/@lid\b/i.test(s)) return digits;
         return '';
+    }
+
+    function prettyWhatsAppPhone(val) {
+        const digits = displayableWhatsAppPhone(val);
+        if (!digits) return '';
+        if (/^989\d{9}$/.test(digits)) {
+            return '+98 ' + digits.slice(2, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+        }
+        if (/^905\d{9}$/.test(digits)) {
+            return '+90 ' + digits.slice(2, 5) + ' ' + digits.slice(5, 8) + ' ' + digits.slice(8);
+        }
+        if (/^971\d{8,9}$/.test(digits)) {
+            return '+971 ' + digits.slice(3, 5) + ' ' + digits.slice(5);
+        }
+        if (/^90\d{10}$/.test(digits) || /^98\d{10}$/.test(digits)) {
+            return '+' + digits.slice(0, 2) + ' ' + digits.slice(2);
+        }
+        return digits;
     }
 
     function customerDisplayName(cust, opts) {
@@ -133,6 +153,7 @@
         looksLikePhone: looksLikePhone,
         looksLikeTechnicalWhatsAppLabel: looksLikeTechnicalWhatsAppLabel,
         displayableWhatsAppPhone: displayableWhatsAppPhone,
+        prettyWhatsAppPhone: prettyWhatsAppPhone,
         customerDisplayName: customerDisplayName,
         visibleCustomerPhone: visibleCustomerPhone,
     };

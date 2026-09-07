@@ -5,7 +5,7 @@
  */
 const { Op } = require('sequelize');
 const { Conversation, Customer, WhatsappConnection } = require('../models');
-const { normalizePhone } = require('../lib/phoneUtils');
+const { normalizePhone, phoneStorageVariants } = require('../lib/phoneUtils');
 const logger = require('../config/logger');
 
 function normalizeLinkedNumber(num) {
@@ -59,12 +59,16 @@ function chatIdVariants(id) {
             out.add(`${userDigits}@${host}`);
         }
     }
-    // 912… ↔ 98912… تا مشتری ساخته‌شده از پیام ورودی با همگام‌سازی یکی شود
+    // 912… ↔ 98912… و ۰۰۹۸… تا مشتری ساخته‌شده از پیام ورودی با همگام‌سازی یکی شود
     const normalized = normalizePhone(s);
     if (normalized && !out.has(normalized)) {
         out.add(normalized);
         out.add(`${normalized}@c.us`);
         out.add(`${normalized}@s.whatsapp.net`);
+    }
+    for (const variant of phoneStorageVariants(s)) out.add(variant);
+    if (normalized) {
+        for (const variant of phoneStorageVariants(normalized)) out.add(variant);
     }
     return [...out];
 }

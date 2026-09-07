@@ -4,6 +4,7 @@ const assert = require('assert');
 const {
     looksLikeTechnicalWhatsAppLabel,
     displayableWhatsAppPhone,
+    prettyWhatsAppPhone,
 } = require('../lib/phoneUtils');
 
 function test(name, fn) {
@@ -33,6 +34,15 @@ test('hides LID digits and keeps real E.164 phones', () => {
     assert.strictEqual(displayableWhatsAppPhone('989305880135@c.us'), '989305880135');
     assert.strictEqual(displayableWhatsAppPhone('00989305880135'), '989305880135');
     assert.strictEqual(displayableWhatsAppPhone('c.us@989144098041'), '989144098041');
+    assert.strictEqual(displayableWhatsAppPhone('985010676486'), '905010676486');
+    assert.strictEqual(displayableWhatsAppPhone('909305880135'), '989305880135');
 });
 
-console.log('\nResults: 2 passed, 0 failed');
+test('formats Iran and Turkey mobiles for staff UI', () => {
+    assert.strictEqual(prettyWhatsAppPhone('989305880135@c.us'), '+98 930 588 0135');
+    assert.strictEqual(prettyWhatsAppPhone('00989305880135'), '+98 930 588 0135');
+    assert.strictEqual(prettyWhatsAppPhone('905010676486'), '+90 501 067 6486');
+    assert.strictEqual(prettyWhatsAppPhone('lid@249331944788048'), '');
+});
+
+console.log('\nResults: 3 passed, 0 failed');
