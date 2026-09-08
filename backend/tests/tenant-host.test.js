@@ -120,5 +120,35 @@ test('trial lock after end; platform never locked', () => {
     assert.strictEqual(publicTenantPayload({ isPlatform: true, id: 'p' }, now), null);
 });
 
+test('self-serve apex hides copied Kaya brand; tenant desks keep theirs', () => {
+    const { overlaySelfServePlatformBranding, FXGUARD_LOGO } = require('../lib/selfServeBranding');
+    const env = { SELF_SERVE_SIGNUP: 'true', TENANT_BASE_HOST: 'app.fxguard.io' };
+    const kayaCopy = {
+        siteName: 'KAYA HOLDING',
+        logoUrl: '/brand/kaya-logo.png',
+        loginLogoUrl: '/brand/kaya-logo.png',
+        faviconUrl: '/brand/kaya-favicon-32.png',
+        loginTitle: 'ورود | KAYA',
+        pageTitle: 'ورود | KAYA',
+    };
+    const apex = overlaySelfServePlatformBranding(kayaCopy, { host: 'app.fxguard.io', env });
+    assert.strictEqual(apex.siteName, 'FXGuard');
+    assert.strictEqual(apex.logoUrl, FXGUARD_LOGO);
+    assert.strictEqual(apex.loginLogoUrl, FXGUARD_LOGO);
+    const tenant = overlaySelfServePlatformBranding(kayaCopy, { host: 'acme.app.fxguard.io', env });
+    assert.strictEqual(tenant.siteName, 'KAYA HOLDING');
+    assert.strictEqual(tenant.logoUrl, '/brand/kaya-logo.png');
+    const kayaHost = overlaySelfServePlatformBranding(kayaCopy, {
+        host: 'kaya.fxguard.io',
+        env,
+    });
+    assert.strictEqual(kayaHost.siteName, 'KAYA HOLDING');
+    const customFx = overlaySelfServePlatformBranding(
+        { siteName: 'FXGuard', logoUrl: '/uploads/fx.png' },
+        { host: 'app.fxguard.io', env }
+    );
+    assert.strictEqual(customFx.logoUrl, '/uploads/fx.png');
+});
+
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

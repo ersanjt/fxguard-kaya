@@ -21,10 +21,20 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=t1a8c0e2b901">
+    <link rel="stylesheet" href="/css/login.css?v=ssbrand2">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
+        var h=(location.hostname||'').toLowerCase();
+        if(h==='app.fxguard.io'||h.slice(-15)==='.app.fxguard.io'){
+            document.title='ورود | FXGuard';
+            var f=document.getElementById('lpFavicon');
+            if(f){f.type='image/svg+xml';f.href='/brand/fxguard-logo.svg?v=ssbrand2';}
+            var a=document.getElementById('lpAppleTouch');
+            if(a)a.href='/brand/fxguard-logo.svg?v=ssbrand2';
+            var t=document.getElementById('lpAppTitle');
+            if(t)t.setAttribute('content','FXGuard');
+        }
     }catch(e){}})();</script>
 </head>
 <body>
@@ -76,6 +86,15 @@
             <h1 class="lp-brand lp-sr-only" id="lpBrandName">KAYA</h1>
             <p class="lp-brand-sub" id="lpBrandSub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
         </header>
+        <script>(function(){try{
+            var h=(location.hostname||'').toLowerCase();
+            if(h!=='app.fxguard.io'&&h.slice(-15)!=='.app.fxguard.io')return;
+            var wrap=document.getElementById('lpLogoWrap');
+            var img=wrap&&wrap.querySelector('img');
+            if(img){img.src='/brand/fxguard-logo.svg';img.alt='FXGuard';}
+            var n=document.getElementById('lpBrandName');
+            if(n)n.textContent='FXGuard';
+        }catch(e){}})();</script>
 
         <!-- Language switcher — NO onclick, handled by JS -->
         <div class="lp-lang-wrap" id="lpLangWrap">
@@ -226,6 +245,6 @@
     </div>
 </main>
 
-<script src="/js/login.js?v=t1a8c0e2b901"></script>
+<script src="/js/login.js?v=ssbrand2"></script>
 </body>
 </html>

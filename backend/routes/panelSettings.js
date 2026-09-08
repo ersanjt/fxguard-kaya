@@ -18,6 +18,8 @@ const {
 } = require('../lib/planLimits');
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
+const { requestHostname } = require('../lib/tenantHost');
+const { overlaySelfServePlatformBranding } = require('../lib/selfServeBranding');
 
 /** مسیرهای آپلود و URLها: بک‌اسلش، کاراکترهای نامرئی bidi، فاصلهٔ اضافه */
 function normalizePanelMediaUrl(v) {
@@ -32,25 +34,28 @@ router.get('/public/branding', async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
         const s = await getPanelSettings();
-        const out = {
-            siteName: s.siteName,
-            logoUrl: s.logoUrl,
-            faviconUrl: s.faviconUrl,
-            loginLogoUrl: s.loginLogoUrl,
-            loginTitle: s.loginTitle,
-            pageTitle: s.pageTitle,
-            footerText: s.footerText,
-            showFooter: s.showFooter !== false,
-            footerStyle: s.footerStyle || 'accent',
-            primaryColor: s.primaryColor,
-            fontFamily: s.fontFamily,
-            fontSize: s.fontSize || 'medium',
-            fontWeight: s.fontWeight || 'normal',
-            uiTheme: s.uiTheme || 'default',
-            sidebarOrder: s.sidebarOrder,
-            iosAppUrl: s.iosAppUrl || null,
-            androidAppUrl: s.androidAppUrl || null,
-        };
+        const out = overlaySelfServePlatformBranding(
+            {
+                siteName: s.siteName,
+                logoUrl: s.logoUrl,
+                faviconUrl: s.faviconUrl,
+                loginLogoUrl: s.loginLogoUrl,
+                loginTitle: s.loginTitle,
+                pageTitle: s.pageTitle,
+                footerText: s.footerText,
+                showFooter: s.showFooter !== false,
+                footerStyle: s.footerStyle || 'accent',
+                primaryColor: s.primaryColor,
+                fontFamily: s.fontFamily,
+                fontSize: s.fontSize || 'medium',
+                fontWeight: s.fontWeight || 'normal',
+                uiTheme: s.uiTheme || 'default',
+                sidebarOrder: s.sidebarOrder,
+                iosAppUrl: s.iosAppUrl || null,
+                androidAppUrl: s.androidAppUrl || null,
+            },
+            { host: requestHostname(req), env: process.env }
+        );
         res.json(out);
     } catch (err) {
         next(err);

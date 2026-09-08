@@ -557,9 +557,15 @@
     }
 
     /* ── Load Branding (اولویت از تنظیمات وبسایت پنل) ───────────────── */
-    var LP_DEFAULT_LOGO = '/brand/kaya-logo.png';
-    var LP_DEFAULT_FAVICON = '/brand/kaya-favicon-32.png?v=2';
-    var LP_DEFAULT_APPLE = '/brand/kaya-apple-touch.png?v=2';
+    function lpIsFxguardAppHost() {
+        var h = (location.hostname || '').toLowerCase();
+        return h === 'app.fxguard.io' || h.slice(-15) === '.app.fxguard.io';
+    }
+    var LP_ON_APP = lpIsFxguardAppHost();
+    var LP_DEFAULT_LOGO = LP_ON_APP ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+    var LP_DEFAULT_NAME = LP_ON_APP ? 'FXGuard' : 'KAYA';
+    var LP_DEFAULT_FAVICON = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-favicon-32.png?v=2';
+    var LP_DEFAULT_APPLE = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-apple-touch.png?v=2';
 
     function lpSafeHref(raw, fallback) {
         var s = String(raw || '').trim();
@@ -595,7 +601,7 @@
         if (!logoWrap || !src) return;
         var img = document.createElement('img');
         img.src = src;
-        img.alt = siteName || 'KAYA';
+        img.alt = siteName || LP_DEFAULT_NAME;
         img.width = 112;
         img.height = 112;
         img.decoding = 'async';
@@ -622,7 +628,7 @@
             })
             .then(function(d) {
                 d = d || {};
-                lpApplyLoginLogo(lpResolveLoginLogoSrc(d), d.siteName || 'KAYA');
+                lpApplyLoginLogo(lpResolveLoginLogoSrc(d), d.siteName || LP_DEFAULT_NAME);
 
                 var favHref = lpSafeHref(lpResolveFaviconHref(d), LP_DEFAULT_FAVICON);
                 var fav = document.getElementById('lpFavicon');
@@ -662,7 +668,7 @@
                 }
             })
             .catch(function() {
-                lpApplyLoginLogo(LP_DEFAULT_LOGO, 'KAYA');
+                lpApplyLoginLogo(LP_DEFAULT_LOGO, LP_DEFAULT_NAME);
             });
     }
     function loadPublicConfigAndBranding() {
