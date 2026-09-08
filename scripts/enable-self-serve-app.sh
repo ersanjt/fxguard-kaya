@@ -59,10 +59,6 @@ case "$ENV_FILE" in
   *"$KAYA_MARK"*) abort ".env کایا است. abort" ;;
 esac
 
-if grep -Eq 'kaya\.fxguard\.io' "$ENV_FILE"; then
-  abort ".env شامل kaya.fxguard.io است — این اسکریپت فقط برای app است"
-fi
-
 UPSERT=""
 if [ -f "$ROOT/backend/scripts/upsert-dotenv.js" ]; then
   UPSERT="$ROOT/backend/scripts/upsert-dotenv.js"
@@ -86,7 +82,10 @@ if [ -n "$CORS_VAL" ] && printf '%s' "$CORS_VAL" | grep -Fvq "app.fxguard.io"; t
 fi
 
 FRONTEND_VAL="$(grep "^FRONTEND_URL=" "$ENV_FILE" | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ' || true)"
-if [ -z "$FRONTEND_VAL" ]; then
+if [ -z "$FRONTEND_VAL" ] || printf '%s' "$FRONTEND_VAL" | grep -Eq 'kaya\.fxguard\.io'; then
+  if [ -n "$FRONTEND_VAL" ]; then
+    echo "⚠️ FRONTEND_URL این پروسه روی کایا بود؛ برای crm-backend-app به app.fxguard.io عوض می‌شود"
+  fi
   node "$UPSERT" "$ENV_FILE" FRONTEND_URL https://app.fxguard.io
 fi
 
