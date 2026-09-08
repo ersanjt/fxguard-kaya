@@ -47,7 +47,7 @@
 | HTML پنل | `backend/public/partials/dashboard/html-part-NN.html` | `backend/public/dashboard.html` | همان |
 | استایل پنل | `backend/public/css/dashboard.css` | — | bump `?v=` در partial-01 و partial-06 |
 | صفحه ورود حرفه‌ای | `backend/public/login.html` + `css/login.css` + `js/login.js` | — | bump `?v=` در login.html |
-| ثبت‌نام خودخدمت | `backend/public/signup.html` + `js/signup.js` + `routes/tenants.js` + `lib/selfServeBranding.js` | `/signup` | فقط با `SELF_SERVE_SIGNUP=true` روی **app**؛ لوگوی عمومی FXGuard است نه Kaya؛ روی **kaya** خاموش بماند |
+| ثبت‌نام خودخدمت | `backend/public/signup.html` + `js/signup.js` + `routes/tenants.js` + `lib/selfServeBranding.js` | `/signup` | فقط با `SELF_SERVE_SIGNUP=true` روی **app**؛ لوگوی عمومی FXGuard است نه Kaya؛ روی **kaya** خاموش بماند. تا قبل از DNS وایلدکارد، ورود `app.fxguard.io/login?panel=slug` است |
 | حریم خصوصی / شرایط / حذف حساب | `backend/public/privacy.html` · `terms.html` · `account-deletion.html` + `css/legal.css` + `js/legal.js` | مسیرهای `/privacy` `/terms` `/account-deletion` | بعد از دیپلوی برای ریویو استور |
 | تدارکات / خلاصه امنیت | `backend/public/procurement.html` (+ کپی `cpanel-landing/`) | `/procurement` | چاپ PDF برای فاکتور |
 | لندینگ **kaya.fxguard.io** | `cpanel-landing/` سپس همگام `backend/public/` | `/` `/pricing` `/whatsapp-crm` `/contact` | `LANDING-SYNC.md` — پنل کارکنان |

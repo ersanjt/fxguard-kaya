@@ -169,12 +169,38 @@ function parseTenantSlugFromHost(host, env) {
     return { kind: 'custom', slug: null, host: h };
 }
 
+function tenantWildcardDnsReady(env) {
+    return envFlagOn((env || process.env).TENANT_WILDCARD_DNS);
+}
+
 function tenantLoginUrl(slug, env, proto) {
     const s = normalizeSlug(slug);
-    const base = tenantBaseHost(env);
+    const src = env || process.env;
+    const base = tenantBaseHost(src);
     const scheme = proto === 'http' ? 'http' : 'https';
     if (!s) return scheme + '://' + base + '/login';
-    return scheme + '://' + s + '.' + base + '/login';
+    if (tenantWildcardDnsReady(src)) {
+        return scheme + '://' + s + '.' + base + '/login';
+    }
+    return scheme + '://' + base + '/login?panel=' + encodeURIComponent(s);
+}
+
+function readApexPanelSlug(req) {
+    if (!req) return '';
+    const q = req.query || {};
+    const raw = q.panel || q.desk || '';
+    const slug = normalizeSlug(raw);
+    if (!slug || slug === PLATFORM_SLUG || slugError(slug)) return '';
+    return slug;
+}
+
+function isSelfServeSignupPath(req) {
+    const p = String((req && (req.originalUrl || req.url)) || '').split('?')[0];
+    return (
+        p === '/signup' ||
+        p.indexOf('/api/tenants/signup') === 0 ||
+        p.indexOf('/api/tenants/check-slug') === 0
+    );
 }
 
 function publicSelfServeConfig(env, host) {
@@ -185,6 +211,8 @@ function publicSelfServeConfig(env, host) {
         trialDays: trialDays(src),
         parentHost: tenantBaseHost(src),
         signupPath: '/signup',
+        wildcardDns: tenantWildcardDnsReady(src),
+        panelQuery: 'panel',
     };
 }
 
@@ -208,5 +236,8 @@ module.exports = {
     panelKeyForSlug,
     parseTenantSlugFromHost,
     tenantLoginUrl,
+    tenantWildcardDnsReady,
+    readApexPanelSlug,
+    isSelfServeSignupPath,
     publicSelfServeConfig,
 };

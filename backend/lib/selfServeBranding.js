@@ -52,6 +52,10 @@ function overlaySelfServePlatformBranding(branding, opts) {
     const env = (opts && opts.env) || process.env;
     if (!isSelfServeEnabled(env, host)) return branding;
     if (isKayaStaffHost(host)) return branding;
+    const tenant = opts && opts.tenant;
+    if (tenant && !tenant.isPlatform && tenant.slug && tenant.slug !== 'platform' && !tenant.missing) {
+        return branding;
+    }
     const parsed = parseTenantSlugFromHost(host, env);
     if (!parsed || parsed.kind !== 'platform') return branding;
     const src = branding && typeof branding === 'object' ? branding : {};

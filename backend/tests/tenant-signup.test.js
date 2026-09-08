@@ -80,7 +80,7 @@ async function main() {
             assert.strictEqual(r.body.ok, true);
             assert.strictEqual(r.body.slug, 'acme');
             assert.strictEqual(r.body.status, 'trial');
-            assert.ok(String(r.body.loginUrl).indexOf('acme.app.fxguard.io') >= 0);
+            assert.ok(String(r.body.loginUrl).indexOf('app.fxguard.io/login?panel=acme') >= 0);
         });
 
         await test('duplicate slug is rejected', async () => {
@@ -93,13 +93,19 @@ async function main() {
             assert.strictEqual(r.status, 409);
         });
 
-        await test('owner logs in only on tenant host', async () => {
+        await test('owner logs in on apex with panel query, not bare apex', async () => {
             const onTenant = await req
                 .post('/api/auth/login')
                 .set('Host', 'acme.app.fxguard.io')
                 .send({ email: 'owner@acme.test', password: 'Secret123' });
             assert.strictEqual(onTenant.status, 200, JSON.stringify(onTenant.body));
             assert.ok(onTenant.body.user && onTenant.body.user.email === 'owner@acme.test');
+
+            const onApexPanel = await req
+                .post('/api/auth/login?panel=acme')
+                .set('Host', 'app.fxguard.io')
+                .send({ email: 'owner@acme.test', password: 'Secret123' });
+            assert.strictEqual(onApexPanel.status, 200, JSON.stringify(onApexPanel.body));
 
             const onApex = await req
                 .post('/api/auth/login')

@@ -54,7 +54,7 @@ router.get('/public/branding', async (req, res, next) => {
                 iosAppUrl: s.iosAppUrl || null,
                 androidAppUrl: s.androidAppUrl || null,
             },
-            { host: requestHostname(req), env: process.env }
+            { host: requestHostname(req), env: process.env, tenant: req.tenant }
         );
         res.json(out);
     } catch (err) {

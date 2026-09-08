@@ -94,4 +94,5 @@ pm2 restart "$PM2_NAME" --update-env
 
 echo "✅ ثبت‌نام خودخدمت روی app روشن شد (SELF_SERVE_SIGNUP=true)."
 echo "   nginx wildcard: deploy/nginx-app-wildcard.conf.example"
-echo "   گواهی *.app.fxguard.io باید جداگانه با DNS-01 صادر شود."
+echo "   تا قبل از DNS وایلدکارد، ورود با https://app.fxguard.io/login?panel=SLUG است."
+echo "   گواهی *.app.fxguard.io باید جداگانه با DNS-01 صادر شود؛ سپس TENANT_WILDCARD_DNS=true"

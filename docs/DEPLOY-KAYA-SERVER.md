@@ -131,6 +131,8 @@ pm2 start crm-gateway-kaya --update-env
 
 فعال‌سازی app: `scripts/enable-self-serve-app.sh` و `.github/workflows/deploy-app.yml`. نمونهٔ nginx: `deploy/nginx-app-wildcard.conf.example`.
 
+تا وقتی `*.app.fxguard.io` در DNS نباشد، لینک ورود `https://app.fxguard.io/login?panel={slug}` است. بعد از ست شدن وایلدکارد و گواهی، `TENANT_WILDCARD_DNS=true` را روی app بگذارید.
+
 ---
 
 ## مستندات مرتبط

@@ -36,9 +36,17 @@
     function updateHint() {
         var slug = normalizeSlug(slugEl && slugEl.value);
         if (hintEl) {
-            hintEl.textContent = slug ? slug + '.' + parentHost : 'your-desk.' + parentHost;
+            if (wildcardDns) {
+                hintEl.textContent = slug ? slug + '.' + parentHost : 'your-desk.' + parentHost;
+            } else {
+                hintEl.textContent = slug
+                    ? parentHost + '/login?panel=' + slug
+                    : parentHost + '/login?panel=your-desk';
+            }
         }
     }
+
+    var wildcardDns = false;
 
     fetch('/api/config', { credentials: 'same-origin' })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
@@ -49,6 +57,7 @@
                 return;
             }
             if (c.selfServe.parentHost) parentHost = c.selfServe.parentHost;
+            wildcardDns = !!(c.selfServe && c.selfServe.wildcardDns);
             updateHint();
         })
         .catch(function () {

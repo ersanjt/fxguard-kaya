@@ -22,6 +22,9 @@
             login_loading:        'در حال ورود...',
             login_forgot_password:'فراموشی رمز عبور',
             login_signup:         '۷ روز رایگان — ساخت پنل',
+            login_panel_lbl:      'شناسه پنل',
+            login_panel_ph:       'مثلاً nikaaesthetic',
+            login_panel_required: 'شناسه پنل را وارد کنید.',
             login_email_required: 'ایمیل یا نام کاربری را وارد کنید.',
             login_pass_required:  'رمز عبور را وارد کنید.',
             login_err_connect:    'اتصال به سرور برقرار نشد. لطفاً دوباره تلاش کنید.',
@@ -81,6 +84,9 @@
             login_loading:        'Signing in...',
             login_forgot_password:'Forgot password',
             login_signup:         '7-day free trial — create your panel',
+            login_panel_lbl:      'Panel ID',
+            login_panel_ph:       'e.g. nikaaesthetic',
+            login_panel_required: 'Enter your panel ID.',
             login_email_required: 'Please enter your email or username.',
             login_pass_required:  'Please enter your password.',
             login_err_connect:    'Could not connect to server. Please try again.',
@@ -140,6 +146,9 @@
             login_loading:        'Giriş yapılıyor...',
             login_forgot_password:'Şifremi unuttum',
             login_signup:         '7 gün ücretsiz — panel oluştur',
+            login_panel_lbl:      'Panel kimliği',
+            login_panel_ph:       'ör. nikaaesthetic',
+            login_panel_required: 'Panel kimliğini girin.',
             login_email_required: 'E-posta veya kullanıcı adınızı girin.',
             login_pass_required:  'Şifrenizi girin.',
             login_err_connect:    'Sunucuya bağlanılamadı. Lütfen tekrar deneyin.',
@@ -196,6 +205,35 @@
     var lang = localStorage.getItem('crm_lang') || 'fa';
     if (SUPPORTED.indexOf(lang) < 0) lang = 'fa';
     function loginIsPublicRestricted() { return false; }
+
+    function lpIsAppApex() {
+        return (location.hostname || '').toLowerCase() === 'app.fxguard.io';
+    }
+    function lpPanelSlug() {
+        var el = document.getElementById('lpPanelSlug');
+        try {
+            var q = new URLSearchParams(window.location.search).get('panel');
+            if (q) return String(q).trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        } catch (_) {}
+        if (el && el.value) return String(el.value).trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+        return '';
+    }
+    function lpWithPanel(url) {
+        var s = lpPanelSlug();
+        if (!s) return url;
+        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'panel=' + encodeURIComponent(s);
+    }
+    function lpShowApexPanelField() {
+        if (!lpIsAppApex()) return;
+        var row = document.getElementById('lpPanelRow');
+        if (row) row.hidden = false;
+        var el = document.getElementById('lpPanelSlug');
+        if (el && !el.value) {
+            try {
+                el.value = new URLSearchParams(window.location.search).get('panel') || '';
+            } catch (_) {}
+        }
+    }
 
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
@@ -320,10 +358,11 @@
 
         if (!email) { setMsg('loginMsg', t('login_email_required')); return; }
         if (!pass)  { setMsg('loginMsg', t('login_pass_required'));  return; }
+        if (lpIsAppApex() && !lpPanelSlug()) { setMsg('loginMsg', t('login_panel_required')); return; }
 
         setBtnLoading('btnLogin', true, t('login_loading'));
 
-        fetch('/api/auth/login', {
+        fetch(lpWithPanel('/api/auth/login'), {
             method: 'POST', credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email, password: pass })
@@ -383,7 +422,7 @@
 
         setBtnLoading('btnTotpVerify', true, t('totp_loading'));
 
-        fetch('/api/auth/totp/verify-login', {
+        fetch(lpWithPanel('/api/auth/totp/verify-login'), {
             method: 'POST', credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ tempToken: window._lpTotpTemp, code: code })
@@ -432,7 +471,7 @@
 
         var ac = new AbortController();
         var tid = setTimeout(function() { ac.abort(); }, 32000);
-        fetch('/api/auth/forgot-password', {
+        fetch(lpWithPanel('/api/auth/forgot-password'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email }),
@@ -489,7 +528,7 @@
 
         setBtnLoading('btnResetSubmit', true, t('reset_loading'));
 
-        fetch('/api/auth/reset-password', {
+        fetch(lpWithPanel('/api/auth/reset-password'), {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: window._lpResetToken, newPassword: np })
@@ -619,7 +658,7 @@
         }
     }
     function loadBranding() {
-        fetch('/api/panel-settings/public/branding', { cache: 'no-store', credentials: 'same-origin' })
+        fetch(lpWithPanel('/api/panel-settings/public/branding'), { cache: 'no-store', credentials: 'same-origin' })
             .then(function(r) {
                 return r.text().then(function(text) {
                     if ((text || '').trim().startsWith('<')) return {};
@@ -672,7 +711,7 @@
             });
     }
     function loadPublicConfigAndBranding() {
-        fetch('/api/config')
+        fetch(lpWithPanel('/api/config'))
             .then(function(r) { return r.json().catch(function() { return {}; }); })
             .then(function(c) {
                 c = c || {};
@@ -724,7 +763,7 @@
             try { sessionStorage.removeItem('crm_token'); } catch (_) {}
             return;
         }
-        fetch('/api/auth/me', {
+        fetch(lpWithPanel('/api/auth/me'), {
             credentials: 'include',
             cache: 'no-store',
             headers: { Accept: 'application/json' }
@@ -804,7 +843,7 @@
         initToggle();
 
         /* Enter key on inputs */
-        ['lpEmail', 'lpPass', 'lpTotpCode', 'lpForgotEmail', 'lpResetNew', 'lpResetConfirm'].forEach(function(id) {
+        ['lpPanelSlug', 'lpEmail', 'lpPass', 'lpTotpCode', 'lpForgotEmail', 'lpResetNew', 'lpResetConfirm'].forEach(function(id) {
             var el = document.getElementById(id);
             if (el) el.addEventListener('keydown', onEnterKey);
         });
@@ -825,6 +864,8 @@
                 }).catch(function () {});
             }
         }
+
+        lpShowApexPanelField();
 
         /* Config + panel branding */
         loadPublicConfigAndBranding();

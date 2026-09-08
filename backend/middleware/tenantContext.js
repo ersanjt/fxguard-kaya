@@ -7,6 +7,7 @@
  */
 'use strict';
 
+const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const {
     PLATFORM_SLUG,
@@ -14,8 +15,12 @@ const {
     parseTenantSlugFromHost,
     panelKeyForSlug,
     normalizeSlug,
+    isSelfServeEnabled,
+    isSelfServeSignupPath,
+    readApexPanelSlug,
 } = require('../lib/tenantHost');
 const { runWithTenant, setPlatformTenantCache, getCachedPlatformTenant } = require('../lib/tenantContext');
+const { COOKIE_NAME } = require('../lib/authCookie');
 
 function platformShape(row) {
     if (row) {
@@ -75,6 +80,39 @@ async function loadPlatformTenant() {
     }
 }
 
+async function loadTenantBySlug(slug, host) {
+    const s = normalizeSlug(slug);
+    if (!s) return null;
+    try {
+        const { Tenant } = require('../models');
+        const row = await Tenant.findOne({ where: { slug: s } });
+        if (row) return tenantShape(row, { host });
+    } catch (_) {}
+    return null;
+}
+
+async function loadTenantById(id, host) {
+    if (!id) return null;
+    try {
+        const { Tenant } = require('../models');
+        const row = await Tenant.findByPk(id);
+        if (row && row.slug !== PLATFORM_SLUG) return tenantShape(row, { host });
+    } catch (_) {}
+    return null;
+}
+
+async function tenantFromAuthCookie(req, host) {
+    const tok = req.cookies && req.cookies[COOKIE_NAME];
+    if (!tok || !process.env.JWT_SECRET) return null;
+    try {
+        const decoded = jwt.verify(tok, process.env.JWT_SECRET);
+        if (!decoded || decoded.totpStep || !decoded.tid) return null;
+        return loadTenantById(decoded.tid, host);
+    } catch (_) {
+        return null;
+    }
+}
+
 async function resolveTenantFromRequest(req) {
     const host = requestHostname(req);
     const parsed = parseTenantSlugFromHost(host);
@@ -84,20 +122,14 @@ async function resolveTenantFromRequest(req) {
         const q = req.query && req.query.tenant;
         const override = normalizeSlug(headerSlug || q || '');
         if (override && override !== PLATFORM_SLUG) {
-            try {
-                const { Tenant } = require('../models');
-                const row = await Tenant.findOne({ where: { slug: override } });
-                if (row) return tenantShape(row, { host });
-            } catch (_) {}
+            const row = await loadTenantBySlug(override, host);
+            if (row) return row;
         }
     }
 
     if (parsed.kind === 'subdomain' && parsed.slug) {
-        try {
-            const { Tenant } = require('../models');
-            const row = await Tenant.findOne({ where: { slug: parsed.slug } });
-            if (row) return tenantShape(row, { host });
-        } catch (_) {}
+        const row = await loadTenantBySlug(parsed.slug, host);
+        if (row) return row;
         return tenantShape(
             {
                 id: null,
@@ -121,6 +153,34 @@ async function resolveTenantFromRequest(req) {
             });
             if (row) return tenantShape(row, { host: parsed.host });
         } catch (_) {}
+    }
+
+    const allowApexPanel =
+        isSelfServeEnabled(process.env, host) &&
+        parsed.kind === 'platform' &&
+        !isSelfServeSignupPath(req);
+
+    if (allowApexPanel) {
+        const panelSlug = readApexPanelSlug(req);
+        if (panelSlug) {
+            const row = await loadTenantBySlug(panelSlug, host);
+            if (row) return row;
+            return tenantShape(
+                {
+                    id: null,
+                    slug: panelSlug,
+                    name: panelSlug,
+                    status: 'unknown',
+                    planTier: 'start',
+                    trialEndsAt: null,
+                    panelKey: panelKeyForSlug(panelSlug),
+                    customDomain: null,
+                },
+                { host, missing: true, isPlatform: false }
+            );
+        }
+        const fromJwt = await tenantFromAuthCookie(req, host);
+        if (fromJwt) return fromJwt;
     }
 
     const platform = await loadPlatformTenant();

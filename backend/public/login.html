@@ -21,7 +21,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=ssbrand2">
+    <link rel="stylesheet" href="/css/login.css?v=ssdesk1">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -110,6 +110,13 @@
             <h2 class="lp-step-title" data-i18n="login_title">پورتال کارکنان</h2>
 
             <form id="lpLoginForm" novalidate>
+            <div class="lp-field" id="lpPanelRow" hidden>
+                <label for="lpPanelSlug" data-i18n="login_panel_lbl">شناسه پنل</label>
+                <input type="text" id="lpPanelSlug" class="lp-input"
+                       data-i18n-ph="login_panel_ph"
+                       placeholder="مثلاً nikaaesthetic"
+                       autocomplete="off" autocapitalize="none" spellcheck="false" dir="ltr" maxlength="24">
+            </div>
             <div class="lp-field">
                 <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
                 <input type="text" id="lpEmail" class="lp-input"
@@ -245,6 +252,6 @@
     </div>
 </main>
 
-<script src="/js/login.js?v=ssbrand2"></script>
+<script src="/js/login.js?v=ssdesk1"></script>
 </body>
 </html>
