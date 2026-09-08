@@ -67,11 +67,62 @@ jobs:
             esac
 
             if [ -d "$ROOT/.git" ]; then
-              echo "📥 git pull در $ROOT"
-              git -C "$ROOT" fetch origin
-              git -C "$ROOT" reset --hard origin/main
+              echo "📥 به‌روزرسانی کد در $ROOT"
+              KAYA_REMOTE=""
+              if [ -d /var/www/kayaCRM-kaya/.git ]; then
+                KAYA_REMOTE="$(git -C /var/www/kayaCRM-kaya remote get-url origin || true)"
+              fi
+              if [ -n "$KAYA_REMOTE" ]; then
+                git -C "$ROOT" remote get-url origin >/dev/null 2>&1 || git -C "$ROOT" remote add origin "$KAYA_REMOTE"
+                git -C "$ROOT" fetch "$KAYA_REMOTE" '+refs/heads/*:refs/remotes/origin/*' || git -C "$ROOT" fetch origin || true
+              else
+                git -C "$ROOT" fetch origin || true
+              fi
+              if git -C "$ROOT" rev-parse --verify origin/main >/dev/null 2>&1; then
+                git -C "$ROOT" reset --hard origin/main
+              elif git -C "$ROOT" rev-parse --verify origin/master >/dev/null 2>&1; then
+                git -C "$ROOT" reset --hard origin/master
+              elif [ -d /var/www/kayaCRM-kaya ]; then
+                echo "⚠️ origin/main نیست — همگام از کایا بدون .env"
+                rsync -a \
+                  --exclude '.git' \
+                  --exclude '.env' \
+                  --exclude 'backend/.env' \
+                  --exclude 'gateway/.env' \
+                  --exclude 'node_modules' \
+                  --exclude 'backend/node_modules' \
+                  --exclude 'gateway/node_modules' \
+                  --exclude 'sessions' \
+                  --exclude 'backend/sessions' \
+                  --exclude 'gateway/sessions' \
+                  --exclude '*.sqlite' \
+                  --exclude '*.sqlite-*' \
+                  --exclude 'backend/uploads' \
+                  --exclude 'uploads' \
+                  /var/www/kayaCRM-kaya/ "$ROOT/"
+              else
+                echo "❌ نتوانستم کد app را به‌روز کنم"
+                exit 1
+              fi
+              echo "📌 app HEAD: $(git -C "$ROOT" log -1 --oneline 2>/dev/null || echo rsync)"
             else
-              echo "⚠️ $ROOT گیت نیست؛ فقط env را به‌روز می‌کنیم"
+              echo "⚠️ $ROOT گیت نیست؛ همگام از کایا بدون .env"
+              rsync -a \
+                --exclude '.git' \
+                --exclude '.env' \
+                --exclude 'backend/.env' \
+                --exclude 'gateway/.env' \
+                --exclude 'node_modules' \
+                --exclude 'backend/node_modules' \
+                --exclude 'gateway/node_modules' \
+                --exclude 'sessions' \
+                --exclude 'backend/sessions' \
+                --exclude 'gateway/sessions' \
+                --exclude '*.sqlite' \
+                --exclude '*.sqlite-*' \
+                --exclude 'backend/uploads' \
+                --exclude 'uploads' \
+                /var/www/kayaCRM-kaya/ "$ROOT/"
             fi
 
             ENABLE="$ROOT/scripts/enable-self-serve-app.sh"

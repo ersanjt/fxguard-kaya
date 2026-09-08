@@ -263,6 +263,7 @@ jobs:
             node scripts/add-conversation-indexes.js
             node scripts/add-customer-profile-fields.js
             node scripts/add-plan-tier-trial-columns.js
+            node scripts/add-tenant-id-columns.js
             echo "  ✅ migration scripts اجرا شد"
             cd ..
 
