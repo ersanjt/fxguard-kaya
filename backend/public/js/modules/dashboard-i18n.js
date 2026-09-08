@@ -24,6 +24,29 @@ if (window.__I18N_EN) Object.assign(I18N.en, window.__I18N_EN);
 if (window.__I18N_TR) Object.assign(I18N.tr, window.__I18N_TR);
 window.LANG = LANG;
 
+(function applyFxguardProductCopy() {
+    if (!isFxguardPublicHost()) return;
+    var copy = {
+        fa: { logo_kaya: 'FXGuard', footer_text: 'FXGuard — پورتال کارکنان', page_title: 'FXGuard | پورتال کارکنان' },
+        en: { logo_kaya: 'FXGuard', footer_text: 'FXGuard — Staff Portal', page_title: 'FXGuard | Staff Portal' },
+        tr: { logo_kaya: 'FXGuard', footer_text: 'FXGuard — Personel portalı', page_title: 'FXGuard | Personel portalı' }
+    };
+    ['fa', 'en', 'tr'].forEach(function (lang) {
+        var pack = copy[lang];
+        Object.keys(pack).forEach(function (k) {
+            if (I18N[lang]) I18N[lang][k] = pack[k];
+        });
+    });
+    var packs = { fa: window.__I18N_FA, en: window.__I18N_EN, tr: window.__I18N_TR };
+    Object.keys(packs).forEach(function (lang) {
+        var dest = packs[lang];
+        if (!dest) return;
+        Object.keys(copy[lang]).forEach(function (k) {
+            dest[k] = copy[lang][k];
+        });
+    });
+})();
+
 window.t = function (k) {
     if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
     if (LANG === 'en' && window.__I18N_EN && window.__I18N_EN[k] !== undefined) return window.__I18N_EN[k];
@@ -87,6 +110,7 @@ window.setLang = function (l) {
 
 window.applyTranslations = function () {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        if (el.getAttribute('data-branded') === '1') return;
         var k = el.getAttribute('data-i18n');
         if (!k) return;
         var txt = t(k);
@@ -116,6 +140,7 @@ window.applyTranslations = function () {
     if (typeof window.refreshConversationUiAfterLang === 'function') window.refreshConversationUiAfterLang();
     if (typeof window.refreshDashboardUiAfterLang === 'function') window.refreshDashboardUiAfterLang();
     if (typeof window.applyPhoneSearchPlaceholders === 'function') window.applyPhoneSearchPlaceholders();
+    if (typeof window.reapplyFxguardPublicBranding === 'function') window.reapplyFxguardPublicBranding();
 };
 
 window.SUPPORTED_LANGUAGES = isFxguardPublicHost() ? ['en', 'tr'] : window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];

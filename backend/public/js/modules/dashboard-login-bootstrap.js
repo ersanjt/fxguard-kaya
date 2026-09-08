@@ -120,11 +120,42 @@
     }
 
     function resolveLoginLogoSrc(b) {
+        if (isFxguardHost()) {
+            if (!b) return '/brand/fxguard-logo.svg';
+            var loginFx = b.loginLogoUrl && String(b.loginLogoUrl).trim();
+            if (loginFx) return loginFx;
+            var logoFx = b.logoUrl && String(b.logoUrl).trim();
+            return logoFx || '/brand/fxguard-logo.svg';
+        }
         if (!b) return '/brand/kaya-logo.png';
         var login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
         if (login) return login;
         var logo = b.logoUrl && String(b.logoUrl).trim();
         return logo || '/brand/kaya-logo.png';
+    }
+
+    function applyChromeBrand(b) {
+        if (!b || !document.body) return;
+        var site = (b.siteName && String(b.siteName).trim()) || (isFxguardHost() ? 'FXGuard' : '');
+        var footer = (b.footerText && String(b.footerText).trim()) || (isFxguardHost() ? 'FXGuard — Staff Portal' : '');
+        var nameEl = document.getElementById('headerLogoText');
+        if (nameEl && site) {
+            nameEl.textContent = site;
+            nameEl.setAttribute('data-branded', '1');
+        }
+        var footerEl = document.getElementById('appFooterBrand');
+        if (footerEl && footer) {
+            footerEl.textContent = footer;
+            footerEl.setAttribute('data-branded', '1');
+        }
+        var icon = document.getElementById('headerLogoIcon');
+        var src = resolveLoginLogoSrc(b);
+        if (icon && src) {
+            icon.classList.add('logo-icon--custom');
+            icon.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" alt="" style="width:28px;height:28px;object-fit:contain">';
+        }
+        if (b.pageTitle) document.title = b.pageTitle;
+        else if (site) document.title = site;
     }
 
     function applyBrandingEarly(b) {
@@ -134,10 +165,10 @@
         if (b.pageTitle) document.title = b.pageTitle;
         else if (b.loginTitle) document.title = b.loginTitle;
         var fav = document.getElementById('favicon');
-        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || '/brand/kaya-favicon-32.png?v=2';
+        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png?v=2');
         if (fav) fav.href = favHref;
         var ath = document.getElementById('appleTouchIcon');
-        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || '/brand/kaya-apple-touch.png?v=2');
+        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-apple-touch.png?v=2'));
         var amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         if (amTitle && b.siteName) amTitle.setAttribute('content', b.siteName);
         if (b.uiTheme && b.uiTheme !== 'default' && document.body) {
@@ -149,6 +180,7 @@
     function applyBrandingDom(b, lang) {
         if (!b || !document.body) return;
         applyBrandingEarly(b);
+        applyChromeBrand(b);
         var loginTitleEl = document.getElementById('loginTitle');
         if (loginTitleEl) {
             loginTitleEl.textContent =
@@ -229,14 +261,14 @@
 
     function fetchPublicSettings() {
         return Promise.all([
-            fetch('/api/panel-settings/public/branding')
+            fetch('/api/panel-settings/public/branding', { credentials: 'same-origin', cache: 'no-store' })
                 .then(function (r) {
                     return r.json();
                 })
                 .catch(function () {
                     return null;
                 }),
-            fetch('/api/panel-settings/public/languages')
+            fetch('/api/panel-settings/public/languages', { credentials: 'same-origin', cache: 'no-store' })
                 .then(function (r) {
                     return r.json();
                 })

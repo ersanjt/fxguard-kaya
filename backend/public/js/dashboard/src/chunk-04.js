@@ -783,31 +783,61 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
+        function isFxguardAppHost() {
+            try {
+                var h = (location.hostname || '').toLowerCase();
+                return h === 'app.fxguard.io' || h.slice(-15) === '.app.fxguard.io';
+            } catch (_) {
+                return false;
+            }
+        }
+        function defaultPanelLogoSrc() {
+            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+        }
+        function defaultPanelFaviconSrc() {
+            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png';
+        }
+        function defaultBrandSiteName() {
+            if (isFxguardAppHost()) return 'FXGuard';
+            return LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange';
+        }
+        function defaultBrandFooterText() {
+            if (isFxguardAppHost()) {
+                return LANG === 'tr' ? 'FXGuard — Personel portalı' : (LANG === 'fa' ? 'FXGuard — پورتال کارکنان' : 'FXGuard — Staff Portal');
+            }
+            return LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal';
+        }
+        function defaultBrandPageTitle() {
+            if (isFxguardAppHost()) {
+                return LANG === 'tr' ? 'FXGuard | Personel portalı' : (LANG === 'fa' ? 'FXGuard | پورتال کارکنان' : 'FXGuard | Staff Portal');
+            }
+            return LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal';
+        }
         /** فاویکون تب: تنظیمات وبسایت — اول faviconUrl سپس logoUrl سپس پیش‌فرض */
         function resolvePanelFaviconHref(b) {
-            if (!b) return '/brand/kaya-favicon-32.png';
+            if (!b) return defaultPanelFaviconSrc();
             const fav = b.faviconUrl && String(b.faviconUrl).trim();
             if (fav) return fav;
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
-            return '/brand/kaya-favicon-32.png';
+            return defaultPanelFaviconSrc();
         }
         /** آیکن هدر: لوگوی پنل، در نبود لوگو از favicon تنظیمات */
         function resolvePanelHeaderLogoSrc(b) {
-            if (!b) return '/brand/kaya-logo.png';
+            if (!b) return defaultPanelLogoSrc();
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
             const fav = b.faviconUrl && String(b.faviconUrl).trim();
-            return fav || '/brand/kaya-logo.png';
+            return fav || defaultPanelLogoSrc();
         }
         /** لوگوی کارت ورود داخل داشبورد: ورود اختصاصی → لوگو پنل → فاویکون */
         function resolvePanelLoginLogoSrc(b) {
-            if (!b) return '/brand/kaya-logo.png';
+            if (!b) return defaultPanelLogoSrc();
             const login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
             if (login) return login;
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
-            return (b.faviconUrl && String(b.faviconUrl).trim()) || '/brand/kaya-logo.png';
+            return (b.faviconUrl && String(b.faviconUrl).trim()) || defaultPanelLogoSrc();
         }
         var PANEL_BRANDING_STATE = {};
         function applyBranding(s, brandingOpts) {
@@ -819,9 +849,9 @@
                 PANEL_BRANDING_STATE = Object.assign({}, PANEL_BRANDING_STATE, s);
             }
             const b = PANEL_BRANDING_STATE;
-            const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
-            const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
-            const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            const defTitle = defaultBrandPageTitle();
+            const defSite = defaultBrandSiteName();
+            const defFooter = defaultBrandFooterText();
             if (b.pageTitle) document.title = b.pageTitle; else document.title = defTitle;
             const fav = document.getElementById('favicon');
             if (fav) fav.href = resolvePanelFaviconHref(b);
@@ -841,13 +871,19 @@
                 }
             }
             const headerLogoText = document.getElementById('headerLogoText');
-            if (headerLogoText) headerLogoText.textContent = logoText;
+            if (headerLogoText) {
+                headerLogoText.textContent = logoText;
+                headerLogoText.setAttribute('data-branded', '1');
+            }
             const amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
             if (amTitle && logoText) amTitle.setAttribute('content', logoText);
             const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
-            if (footerBrand) footerBrand.textContent = (b.footerText && String(b.footerText).trim()) ? b.footerText : defFooter;
+            if (footerBrand) {
+                footerBrand.textContent = (b.footerText && String(b.footerText).trim()) ? b.footerText : defFooter;
+                footerBrand.setAttribute('data-branded', '1');
+            }
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (b.showFooter === false) ? 'none' : '';
@@ -900,6 +936,10 @@
             }
             if (typeof applyProfileMobileApps === 'function') applyProfileMobileApps();
         }
+        window.reapplyFxguardPublicBranding = function () {
+            if (!PANEL_BRANDING_STATE || !Object.keys(PANEL_BRANDING_STATE).length) return;
+            applyBranding(PANEL_BRANDING_STATE);
+        };
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
@@ -1509,9 +1549,9 @@
         }
         function updatePanelLivePreview() {
             applyThemeFromForm();
-            const siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
-            const pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
-            const footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            const siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || defaultBrandSiteName();
+            const pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || defaultBrandPageTitle();
+            const footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || defaultBrandFooterText();
             const hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
             const logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
             const faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
