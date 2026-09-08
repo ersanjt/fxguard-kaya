@@ -8,6 +8,11 @@ const ConversationModel = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'سازمان خودخدمت'
+        },
         customerId: {
             type: DataTypes.UUID,
             allowNull: false
@@ -107,6 +112,7 @@ const ConversationModel = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['customerId'] },
             { fields: ['assignedTo'] },
             { fields: ['status'] },
@@ -161,6 +167,10 @@ const MessageModel = (sequelize) => {
             type: DataTypes.UUID,
             allowNull: false
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         customerId: {
             type: DataTypes.UUID,
             allowNull: false
@@ -208,6 +218,7 @@ const MessageModel = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['conversationId'] },
             { fields: ['customerId'] },
             { fields: ['userId'] },
@@ -241,6 +252,10 @@ const DepartmentModel = (sequelize) => {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
+        },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
         },
         branchId: {
             type: DataTypes.UUID,

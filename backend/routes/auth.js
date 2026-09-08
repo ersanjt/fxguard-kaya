@@ -19,6 +19,8 @@ const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 const { wantsBearerToken } = require('../lib/staffAppClient');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { issueStaffToken, revokeStaffSessions, disconnectStaffSockets } = require('../lib/staffSession');
+const { isPlatformTenant } = require('../lib/tenantContext');
+const { publicTenantPayload } = require('../lib/tenantTrial');
 
 const TOTP_TEMP_EXPIRY = '5m';
 const TOTP_MAX_ATTEMPTS = 5;
@@ -76,6 +78,14 @@ function issueToken(user) {
     return issueStaffToken(user);
 }
 
+function loginTenantWhere(req) {
+    const tenant = req && req.tenant;
+    if (!tenant || isPlatformTenant(tenant) || !tenant.id) {
+        return {};
+    }
+    return { tenantId: tenant.id };
+}
+
 function loginUserPayload(user, permissions, extra) {
     return {
         id: user.id,
@@ -116,6 +126,9 @@ router.post('/login', async (req, res, _next) => {
         }
     };
     try {
+        if (req.tenant && req.tenant.missing) {
+            return sendJson(404, { error: 'این پنل پیدا نشد. شناسه را بررسی کنید یا یک پنل جدید بسازید.' });
+        }
         const identifier = (req.body.email || req.body.username || '').toString().trim();
         const password = req.body.password;
         if (!identifier || !password) {
@@ -123,16 +136,18 @@ router.post('/login', async (req, res, _next) => {
         }
         if (identifier.length > 255) return sendJson(400, { error: 'ایمیل یا نام کاربری نامعتبر است' });
         let user = null;
+        const tenantWhere = loginTenantWhere(req);
         const isEmail = identifier.indexOf('@') >= 0;
         if (isEmail) {
             const emailLower = identifier.toLowerCase();
-            user = await User.findOne({ where: { email: emailLower, isActive: true } });
+            user = await User.findOne({ where: { email: emailLower, isActive: true, ...tenantWhere } });
             if (!user) {
                 user = await User.findOne({
                     where: {
                         [Op.and]: [
                             sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), emailLower),
-                            { isActive: true }
+                            { isActive: true },
+                            tenantWhere
                         ]
                     }
                 });
@@ -144,7 +159,8 @@ router.post('/login', async (req, res, _next) => {
                     [Op.and]: [
                         sequelize.where(sequelize.fn('LOWER', sequelize.col('username')), usernameLower),
                         { isActive: true },
-                        { username: { [Op.ne]: null } }
+                        { username: { [Op.ne]: null } },
+                        tenantWhere
                     ]
                 }
             });
@@ -419,6 +435,8 @@ router.get('/me', authMiddleware, async (req, res, next) => {
         u.canManageTickets = canManageTickets(user);
         u.canViewCustomerPhone = canViewCustomerPhone(user);
         u.canManageConversations = canManageConversations(user);
+        const tenantPublic = publicTenantPayload(req.tenant);
+        if (tenantPublic) u.tenant = tenantPublic;
         const usedBearer = !!(req.headers && req.headers.authorization && String(req.headers.authorization).startsWith('Bearer '));
         if (usedBearer && req.authToken) u.token = req.authToken;
         res.json(u);

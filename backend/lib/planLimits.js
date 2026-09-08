@@ -22,12 +22,21 @@ class PlanLimitError extends Error {
     }
 }
 
-let snapshotCache = { at: 0, value: null };
-let limitsCache = { at: 0, value: null };
+let snapshotCache = { at: 0, value: null, key: '' };
+let limitsCache = { at: 0, value: null, key: '' };
+
+function cacheTenantKey() {
+    try {
+        const { getCurrentTenantId } = require('./tenantContext');
+        return String(getCurrentTenantId() || 'platform');
+    } catch (_) {
+        return 'platform';
+    }
+}
 
 function invalidatePlanCache() {
-    snapshotCache = { at: 0, value: null };
-    limitsCache = { at: 0, value: null };
+    snapshotCache = { at: 0, value: null, key: '' };
+    limitsCache = { at: 0, value: null, key: '' };
 }
 
 function normalizePlanTier(raw) {
@@ -101,17 +110,30 @@ function planErrorPayload(err) {
 
 async function loadStoredPlanTier() {
     const { PanelSetting } = require('../models');
-    const row = await PanelSetting.findByPk('default');
+    const { getPanelSettingsKey } = require('./tenantContext');
+    const row = await PanelSetting.findByPk(getPanelSettingsKey());
     return row && row.planTier != null ? row.planTier : null;
+}
+
+function resolveTierForCurrentTenant(storedTier, env) {
+    try {
+        const { getCurrentTenant, isPlatformTenant } = require('./tenantContext');
+        const t = getCurrentTenant();
+        if (t && !isPlatformTenant(t)) {
+            return normalizePlanTier(storedTier) || normalizePlanTier(t.planTier) || 'start';
+        }
+    } catch (_) {}
+    return resolvePlanTier(storedTier, env);
 }
 
 async function getResolvedLimits() {
     const now = Date.now();
-    if (limitsCache.value && now - limitsCache.at < SNAPSHOT_CACHE_MS) {
+    const key = cacheTenantKey();
+    if (limitsCache.value && limitsCache.key === key && now - limitsCache.at < SNAPSHOT_CACHE_MS) {
         return limitsCache.value;
     }
     const stored = await loadStoredPlanTier();
-    const tier = resolvePlanTier(stored);
+    const tier = resolveTierForCurrentTenant(stored);
     const limits = limitsForTier(tier);
     const locked = isPlanTierLockEnabled() && !!normalizePlanTier(process.env.PLAN_TIER);
     const value = {
@@ -121,7 +143,7 @@ async function getResolvedLimits() {
         branchLimit: limits.branchLimit,
         fxEnabled: limits.fxEnabled !== false,
     };
-    limitsCache = { at: now, value };
+    limitsCache = { at: now, value, key };
     return value;
 }
 
@@ -129,9 +151,11 @@ async function getPlanSnapshot(options) {
     const opts = options || {};
     const withCounts = opts.counts !== false;
     const now = Date.now();
+    const key = cacheTenantKey() + (withCounts ? ':c' : ':n');
     if (
         withCounts &&
         snapshotCache.value &&
+        snapshotCache.key === key &&
         now - snapshotCache.at < SNAPSHOT_CACHE_MS
     ) {
         return snapshotCache.value;
@@ -160,7 +184,7 @@ async function getPlanSnapshot(options) {
     };
 
     if (withCounts) {
-        snapshotCache = { at: now, value: snap };
+        snapshotCache = { at: now, value: snap, key };
     }
     return snap;
 }

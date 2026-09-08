@@ -2456,6 +2456,9 @@
         (function exposeOnclickHandlers() {
             window.logout = logout;
             window.showPage = showPage;
+            window.showTenantPaywall = showTenantPaywall;
+            window.startTenantCheckout = startTenantCheckout;
+            window.saveTenantCustomDomain = saveTenantCustomDomain;
             window.refreshDashboard = refreshDashboard;
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
@@ -3169,6 +3172,9 @@
                 if (u.token) persistAuthToken(u.token);
                 currentUser = u;
                 setUserDisplay(u);
+                if (u.tenant && u.tenant.locked && typeof showTenantPaywall === 'function') {
+                    showTenantPaywall(u.tenant);
+                }
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
                     window.LoginBootstrap.setAuthenticated();
                 } else {

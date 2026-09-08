@@ -21,6 +21,7 @@
             login_btn:            'ورود به سیستم',
             login_loading:        'در حال ورود...',
             login_forgot_password:'فراموشی رمز عبور',
+            login_signup:         '۷ روز رایگان — ساخت پنل',
             login_email_required: 'ایمیل یا نام کاربری را وارد کنید.',
             login_pass_required:  'رمز عبور را وارد کنید.',
             login_err_connect:    'اتصال به سرور برقرار نشد. لطفاً دوباره تلاش کنید.',
@@ -79,6 +80,7 @@
             login_btn:            'Sign in',
             login_loading:        'Signing in...',
             login_forgot_password:'Forgot password',
+            login_signup:         '7-day free trial — create your panel',
             login_email_required: 'Please enter your email or username.',
             login_pass_required:  'Please enter your password.',
             login_err_connect:    'Could not connect to server. Please try again.',
@@ -137,6 +139,7 @@
             login_btn:            'Giriş yap',
             login_loading:        'Giriş yapılıyor...',
             login_forgot_password:'Şifremi unuttum',
+            login_signup:         '7 gün ücretsiz — panel oluştur',
             login_email_required: 'E-posta veya kullanıcı adınızı girin.',
             login_pass_required:  'Şifrenizi girin.',
             login_err_connect:    'Sunucuya bağlanılamadı. Lütfen tekrar deneyin.',
@@ -671,6 +674,21 @@
                 if (supportLink && c.supportUrl) {
                     var safeCfg = lpSafeHref(c.supportUrl, '');
                     if (safeCfg) supportLink.href = safeCfg;
+                }
+                var signupRow = document.getElementById('lpSignupRow');
+                if (signupRow && c.selfServe && c.selfServe.enabled) {
+                    signupRow.hidden = false;
+                }
+                if (c.tenant && c.tenant.missing) {
+                    var loginMsg = document.getElementById('loginMsg');
+                    if (loginMsg) {
+                        loginMsg.textContent = lang === 'en'
+                            ? 'This panel was not found. Check the address or create a new panel.'
+                            : (lang === 'tr'
+                                ? 'Bu panel bulunamadı. Adresi kontrol edin veya yeni panel oluşturun.'
+                                : 'این پنل پیدا نشد. آدرس را بررسی کنید یا پنل جدید بسازید.');
+                        loginMsg.classList.add('show');
+                    }
                 }
                 loadBranding();
                 renderDemoBox();

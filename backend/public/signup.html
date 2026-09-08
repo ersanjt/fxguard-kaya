@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover,user-scalable=yes">
+    <meta name="theme-color" content="#080d1a">
+    <title>ساخت پنل | ۷ روز رایگان</title>
+    <link rel="icon" type="image/png" href="/brand/kaya-favicon-32.png?v=t1a8c0e2b901">
+    <meta name="description" content="پنل واتساپ خود را بسازید — ۷ روز آزمایش رایگان">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/login.css?v=t1a8c0e2b901">
+    <script>(function(){try{
+        document.documentElement.style.background='#080d1a';
+        document.documentElement.style.color='#f0f4fc';
+    }catch(e){}})();</script>
+</head>
+<body>
+<a class="lp-skip" href="#lpMain">رفتن به فرم ثبت‌نام</a>
+<main class="lp-main" id="lpMain">
+    <div class="lp-card">
+        <header class="lp-header">
+            <div class="lp-logo-wrap has-img">
+                <img src="/brand/kaya-logo.png" alt="KAYA" width="112" height="112" decoding="async">
+            </div>
+            <h1 class="lp-brand lp-sr-only">KAYA</h1>
+            <p class="lp-brand-sub" id="suSub">۷ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است</p>
+        </header>
+
+        <section class="lp-step active" aria-label="ساخت پنل">
+            <h2 class="lp-step-title" id="suTitle">ساخت پنل شما</h2>
+            <form id="suForm" novalidate>
+                <div class="lp-field">
+                    <label for="suCompany">نام مجموعه</label>
+                    <input type="text" id="suCompany" class="lp-input" maxlength="120" autocomplete="organization" required>
+                </div>
+                <div class="lp-field">
+                    <label for="suSlug">شناسه پنل (ساب‌دامین)</label>
+                    <input type="text" id="suSlug" class="lp-input" maxlength="24" autocomplete="off" autocapitalize="none" spellcheck="false" dir="ltr" required>
+                    <p class="lp-host-hint" id="suHostHint"></p>
+                </div>
+                <div class="lp-field">
+                    <label for="suEmail">ایمیل مالک</label>
+                    <input type="email" id="suEmail" class="lp-input" autocomplete="email" dir="ltr" required>
+                </div>
+                <div class="lp-field">
+                    <label for="suPass">رمز عبور</label>
+                    <input type="password" id="suPass" class="lp-input" autocomplete="new-password" minlength="8" required>
+                </div>
+                <button type="submit" id="suBtn" class="lp-btn">
+                    <div class="lp-spinner" aria-hidden="true"></div>
+                    <span class="lp-btn-text">شروع آزمایش ۷روزه</span>
+                </button>
+                <div class="lp-msg error" id="suMsg" role="alert" aria-live="polite"></div>
+            </form>
+            <div class="lp-forgot-row">
+                <a href="/login">قبلاً پنل دارید؟ ورود</a>
+            </div>
+        </section>
+    </div>
+</main>
+<script src="/js/signup.js?v=t1a8c0e2b901"></script>
+</body>
+</html>

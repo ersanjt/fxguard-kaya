@@ -228,6 +228,16 @@
             <button type="button" class="btn-primary" onclick="showPage('profile'); document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" style="margin-right:12px; padding:6px 14px;" data-i18n="totp_enable">فعال‌سازی</button>
             <button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" data-i18n="totp_later">بعداً</button>
         </div>
+        <div id="tenantPaywall" class="tenant-paywall" hidden role="dialog" aria-modal="true" aria-labelledby="tenantPaywallTitle" aria-hidden="true">
+            <div class="tenant-paywall-card">
+                <h2 id="tenantPaywallTitle" data-i18n="tenant_paywall_title">دورهٔ آزمایش تمام شده</h2>
+                <p id="tenantPaywallBody" data-i18n="tenant_paywall_body">برای ادامه باید اشتراک را فعال کنید. دادهٔ شما محفوظ است.</p>
+                <div class="tenant-paywall-actions">
+                    <button type="button" class="btn-primary" id="btnTenantPaywallCheckout" data-i18n="tenant_paywall_pay">فعال‌سازی اشتراک</button>
+                    <button type="button" class="btn-secondary" id="btnTenantPaywallWa" data-i18n="tenant_paywall_wa">گفتگو در واتساپ</button>
+                </div>
+            </div>
+        </div>
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()" aria-hidden="true"></div>
         <div class="main" id="mainContent" tabindex="-1">
             <nav class="sidebar" id="sidebar" role="navigation" aria-label="منوی اصلی" data-i18n-aria-label="nav_main_menu">

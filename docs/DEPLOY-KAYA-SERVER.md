@@ -123,6 +123,16 @@ pm2 start crm-gateway-kaya --update-env
 
 ---
 
+## ثبت‌نام خودخدمت — فقط app، هرگز کایا
+
+`SELF_SERVE_SIGNUP` و `TENANT_BASE_HOST=app.fxguard.io` فقط روی پروسهٔ `crm-backend-app` (پورت **3002**) روشن می‌شود.
+
+روی `/var/www/kayaCRM-kaya` این پرچم را نگذارید. Workflow دیپلوی کایا اگر `SELF_SERVE_SIGNUP` یا دامنهٔ `app.fxguard.io` در `.env` کایا باشد **fail** می‌کند.
+
+فعال‌سازی app: `scripts/enable-self-serve-app.sh` و `.github/workflows/deploy-app.yml`. نمونهٔ nginx: `deploy/nginx-app-wildcard.conf.example`.
+
+---
+
 ## مستندات مرتبط
 
 - [SERVER-STATUS-COMMANDS.md](SERVER-STATUS-COMMANDS.md) — دستورات وضعیت

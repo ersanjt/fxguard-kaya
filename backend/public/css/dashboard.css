@@ -435,6 +435,32 @@
         .dashboard-product-fit { margin: 0 0 20px; }
         .dashboard-commercial-banner { margin: 0 0 16px; }
         .commercial-home-card { padding: 16px 18px; border: 1px solid rgba(16,185,129,0.35); border-radius: var(--radius); background: var(--bg-card); }
+        .commercial-home-card.is-tenant-trial { border-color: rgba(59,130,246,0.4); }
+        .commercial-home-card.is-tenant-lock { border-color: rgba(245,158,11,0.5); }
+        .tenant-paywall {
+            position: fixed;
+            inset: 0;
+            z-index: 10050;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(15, 23, 42, 0.72);
+        }
+        .tenant-paywall[hidden] { display: none !important; }
+        .tenant-paywall-card {
+            width: min(440px, 100%);
+            padding: 28px 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            text-align: center;
+            box-shadow: 0 16px 48px rgba(0,0,0,0.28);
+        }
+        .tenant-paywall-card h2 { margin: 0 0 10px; font-size: 1.15rem; }
+        .tenant-paywall-card p { margin: 0 0 18px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+        .tenant-paywall-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        body.tenant-paywall-open { overflow: hidden; }
         .commercial-home-card h3 { margin: 0 0 8px; font-size: 0.98rem; }
         .commercial-home-card p { margin: 0 0 12px; font-size: 0.9rem; color: var(--text-secondary); }
         .commercial-home-actions { display: flex; flex-wrap: wrap; gap: 8px; }

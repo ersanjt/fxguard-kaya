@@ -32,6 +32,7 @@ const { mergeLivePresenceWhere, ACTIVE_PRESENCE_STATUSES } = require('../lib/sta
 const { tallyPurposeCounts } = require('../lib/contactLead');
 const { getPlanSnapshot } = require('../lib/planLimits');
 const { getTrialSnapshot } = require('../lib/whatsappTrial');
+const { publicTenantPayload } = require('../lib/tenantTrial');
 
 /** آیا where خالی نیست؟ (کلیدهای Symbol مثل Op.and/Op.or با Object.keys دیده نمی‌شوند) */
 function hasWhereClauses(where) {
@@ -294,6 +295,7 @@ async function dashboard(req, res, next) {
             contactFunnel: await contactFunnelPayload(req),
             planLimits: await planLimitsPayload(),
             whatsappTrial: await whatsappTrialPayload(req),
+            tenant: publicTenantPayload(req.tenant),
         });
     } catch (err) {
         next(err);

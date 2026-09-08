@@ -56,11 +56,23 @@ function buildCorsConfig(env = process.env) {
 const { allowedOrigins, credentialOrigins } = buildCorsConfig();
 
 function isAllowedOrigin(origin) {
-    return !!origin && allowedOrigins.includes(origin);
+    if (!origin) return false;
+    if (allowedOrigins.includes(origin)) return true;
+    try {
+        const { isSelfServeStaffOrigin } = require('../lib/tenantHost');
+        if (isSelfServeStaffOrigin(origin, process.env)) return true;
+    } catch (_) {}
+    return false;
 }
 
 function isCredentialOrigin(origin) {
-    return !!origin && credentialOrigins.includes(origin);
+    if (!origin) return false;
+    if (credentialOrigins.includes(origin)) return true;
+    try {
+        const { isSelfServeStaffOrigin } = require('../lib/tenantHost');
+        if (isSelfServeStaffOrigin(origin, process.env)) return true;
+    } catch (_) {}
+    return false;
 }
 
 module.exports = {

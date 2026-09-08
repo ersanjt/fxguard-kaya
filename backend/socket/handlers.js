@@ -12,6 +12,7 @@ const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { asCallId, callUserRoom, normalizeCallSignal, canRelayCallSignal } = require('../lib/internalCallSignaling');
 const { countUserSockets } = require('../lib/staffPresence');
+const { bindSocketTenant } = require('../lib/tenantContext');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -51,6 +52,7 @@ setInterval(cleanupStaleCallRooms, 30 * 60 * 1000);
 
 function setupSocketHandlers(io, getRabbitChannel, logger) {
     io.on('connection', async (socket) => {
+        bindSocketTenant(socket);
         logger.info(`🔌 User connected: ${socket.userId}`);
 
         if (socket.userId) socket.join('user_' + String(socket.userId));

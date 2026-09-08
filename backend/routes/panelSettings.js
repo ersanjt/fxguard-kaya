@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
 const { PanelSetting } = require('../models');
+const { getPanelSettingsKey } = require('../lib/tenantContext');
 const {
     getPanelSettings,
     getSupportedLanguages,
@@ -239,7 +240,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(400).json({ error: 'لیست Chat ID تلگرام بیش از حد طولانی است' });
         }
         const [row] = await PanelSetting.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: {},
         });
         const telegramTokenBeforeSave =

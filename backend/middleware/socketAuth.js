@@ -1,7 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User, Tenant } = require('../models');
 const { assertMatchingTokenVersion } = require('../lib/staffSession');
 const { COOKIE_NAME } = require('../lib/authCookie');
+const { getCachedPlatformTenant } = require('../lib/tenantContext');
+const { PLATFORM_SLUG } = require('../lib/tenantHost');
 
 function tokenFromCookieHeader(cookieHeader) {
     const raw = String(cookieHeader || '');
@@ -53,7 +55,7 @@ module.exports = async (socket, next) => {
                     lastErr = new Error('احراز دو مرحله‌ای تکمیل نشده است');
                     continue;
                 }
-                const user = await User.findByPk(decoded.id || decoded.userId);
+                const user = await User.findByPk(decoded.id || decoded.userId, { skipTenantScope: true });
                 if (!user || !user.isActive) {
                     lastErr = new Error('کاربر نامعتبر یا غیرفعال است');
                     continue;
@@ -68,6 +70,26 @@ module.exports = async (socket, next) => {
                 socket.departmentId = user.departmentId;
                 socket.userRole = user.role;
                 socket.user = user;
+                socket.tenantId = user.tenantId || null;
+                socket.tenant = getCachedPlatformTenant();
+                if (user.tenantId) {
+                    try {
+                        const row = await Tenant.findByPk(user.tenantId);
+                        if (row) {
+                            socket.tenant = {
+                                id: row.id,
+                                slug: row.slug,
+                                name: row.name,
+                                status: row.status,
+                                planTier: row.planTier,
+                                trialEndsAt: row.trialEndsAt,
+                                panelKey: row.panelKey || 'default',
+                                customDomain: row.customDomain,
+                                isPlatform: row.slug === PLATFORM_SLUG,
+                            };
+                        }
+                    } catch (_) {}
+                }
                 return next();
             } catch (err) {
                 lastErr = err;

@@ -102,9 +102,13 @@ function createBillingRouter(logger) {
     router.post('/billing/checkout', checkoutLimiter, async (req, res) => {
         try {
             const email = sanitizeCustomerEmail(req.body && req.body.email);
+            const extras = { email };
+            if (req.tenant && req.tenant.id && !req.tenant.isPlatform) {
+                extras.tenantId = req.tenant.id;
+            }
             const session = await createStartCheckoutSession(
                 process.env,
-                { email },
+                extras,
                 stripePostForm
             );
             res.json({ ok: true, url: session.url, id: session.id });
@@ -139,6 +143,12 @@ function createBillingRouter(logger) {
         if (paid) {
             const saved = await persistPaidLead(paid, logger);
             if (saved.created) await notifyPaidLead(paid, logger);
+            try {
+                const { activateTenantFromPaid } = require('../services/tenantProvision');
+                await activateTenantFromPaid(paid, logger);
+            } catch (actErr) {
+                logger.warn('Tenant activation from Stripe failed', { error: actErr.message });
+            }
         }
         res.json({ received: true });
     });

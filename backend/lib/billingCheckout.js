@@ -84,6 +84,11 @@ function buildCheckoutForm(env, extras) {
     params.set('subscription_data[metadata][plan]', 'start');
     const email = sanitizeCustomerEmail(extras && extras.email);
     if (email) params.set('customer_email', email);
+    const tenantId = extras && extras.tenantId ? String(extras.tenantId).trim() : '';
+    if (tenantId) {
+        params.set('metadata[tenantId]', tenantId.slice(0, 64));
+        params.set('subscription_data[metadata][tenantId]', tenantId.slice(0, 64));
+    }
     const priceId = String((env && env.STRIPE_PRICE_ID_START) || '').trim();
     if (priceId.indexOf('price_') === 0) {
         params.set('line_items[0][price]', priceId);
@@ -159,6 +164,7 @@ function extractPaidCheckout(event) {
         email: sanitizeCustomerEmail(details.email || session.customer_email),
         name: String(details.name || '').trim().slice(0, 200),
         plan: String((session.metadata && session.metadata.plan) || 'start').slice(0, 32),
+        tenantId: String((session.metadata && session.metadata.tenantId) || '').slice(0, 64),
         amountTotal: Number(session.amount_total) || START_AMOUNT_CENTS,
         currency: String(session.currency || 'usd').slice(0, 8),
     };

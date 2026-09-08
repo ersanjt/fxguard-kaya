@@ -250,6 +250,9 @@
                         persistAuthToken(null);
                         redirectToLoginPage();
                     }
+                },
+                on402: function (data) {
+                    if (typeof showTenantPaywall === 'function') showTenantPaywall(data);
                 }
             });
         }

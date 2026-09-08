@@ -19,6 +19,8 @@ const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPanelSettings } = require('../services/panelSettingsLoader');
 const { getAndroidUpdateSource } = require('../lib/staffAppInstall');
+const { publicSelfServeConfig, requestHostname } = require('../lib/tenantHost');
+const { createTenantsRouter } = require('./tenants');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -169,7 +171,17 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             supportUrl: supportLink,
             androidAppUpdate,
             // TURN credentials only for authenticated staff (internal WebRTC)
-            webrtcIceServers: req.user ? parseIce() : null
+            webrtcIceServers: req.user ? parseIce() : null,
+            selfServe: publicSelfServeConfig(process.env, requestHostname(req)),
+            tenant: req.tenant && !req.tenant.isPlatform
+                ? {
+                    slug: req.tenant.slug,
+                    status: req.tenant.status,
+                    trialEndsAt: req.tenant.trialEndsAt,
+                    planTier: req.tenant.planTier,
+                    missing: !!req.tenant.missing,
+                }
+                : null
         });
     });
 
@@ -206,6 +218,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
 
     apiRouter.use('/', createContactRouter(logger));
     apiRouter.use('/', createBillingRouter(logger));
+    apiRouter.use('/', createTenantsRouter(logger));
     apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);

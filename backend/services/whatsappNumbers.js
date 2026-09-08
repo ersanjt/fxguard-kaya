@@ -3,6 +3,7 @@
  */
 const { WhatsappNumber, WhatsappConnection } = require('../models');
 const { getWhatsappConnectionConfig, invalidateCache } = require('../lib/whatsappConnectionLoader');
+const { getPanelSettingsKey } = require('../lib/tenantContext');
 
 const PRIMARY_SLOT = 'primary';
 const MAX_STANDBY = 5;
@@ -99,7 +100,7 @@ async function ensurePrimaryNumber() {
     const cfg = await getWhatsappConnectionConfig();
     let connRow = null;
     try {
-        connRow = await WhatsappConnection.findByPk('default');
+        connRow = await WhatsappConnection.findByPk(getPanelSettingsKey());
     } catch (_) {}
 
     const defaults = {
@@ -206,7 +207,7 @@ async function listNumbers() {
     const list = rows.map((r) => assessReady(sanitizeNumberRow(r), baseCfg));
     let failoverEnabled = true;
     try {
-        const conn = await WhatsappConnection.findByPk('default');
+        const conn = await WhatsappConnection.findByPk(getPanelSettingsKey());
         if (conn && conn.numberFailoverEnabled === false) failoverEnabled = false;
     } catch (_) {}
 
@@ -409,7 +410,7 @@ async function resolveOutboundNumberChain(opts = {}) {
     const baseCfg = await getWhatsappConnectionConfig();
     let failoverEnabled = true;
     try {
-        const conn = await WhatsappConnection.findByPk('default');
+        const conn = await WhatsappConnection.findByPk(getPanelSettingsKey());
         if (conn && conn.numberFailoverEnabled === false) failoverEnabled = false;
     } catch (_) {}
 

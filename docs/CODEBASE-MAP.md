@@ -47,6 +47,7 @@
 | HTML پنل | `backend/public/partials/dashboard/html-part-NN.html` | `backend/public/dashboard.html` | همان |
 | استایل پنل | `backend/public/css/dashboard.css` | — | bump `?v=` در partial-01 و partial-06 |
 | صفحه ورود حرفه‌ای | `backend/public/login.html` + `css/login.css` + `js/login.js` | — | bump `?v=` در login.html |
+| ثبت‌نام خودخدمت | `backend/public/signup.html` + `js/signup.js` + `routes/tenants.js` | `/signup` | فقط با `SELF_SERVE_SIGNUP=true` روی **app**؛ روی **kaya** خاموش بماند |
 | حریم خصوصی / شرایط / حذف حساب | `backend/public/privacy.html` · `terms.html` · `account-deletion.html` + `css/legal.css` + `js/legal.js` | مسیرهای `/privacy` `/terms` `/account-deletion` | بعد از دیپلوی برای ریویو استور |
 | تدارکات / خلاصه امنیت | `backend/public/procurement.html` (+ کپی `cpanel-landing/`) | `/procurement` | چاپ PDF برای فاکتور |
 | لندینگ **kaya.fxguard.io** | `cpanel-landing/` سپس همگام `backend/public/` | `/` `/pricing` `/whatsapp-crm` `/contact` | `LANDING-SYNC.md` — پنل کارکنان |
@@ -131,10 +132,11 @@ backend/
 | `/api/rates/*` | `routes/rates.js` | `lib/ratesSnapshot.js` · نوسان + الان‌چند (`lib/alanChandApi.js`) · قفل پلن شروع |
 | `/api/analytics/*` | `routes/analytics.js` | KPI داشبورد + `product-fit` + قیف فرم تماس |
 | `/api/billing/*` | `routes/billing.js` | چک‌اوت Stripe Cloud Start (اختیاری) · `lib/billingCheckout.js` |
+| `/api/tenants/*` | `routes/tenants.js` | ثبت‌نام خودخدمت، ساب‌دامین، دامنهٔ اختصاصی · `services/tenantProvision.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |
 | `/api/supervision/*` | `routes/supervision.js` | آنلاین زنده: `lib/staffPresence.js` |
 | Webhook واتساپ Cloud | `routes/api.js` | `services/incomingMessage.js` |
-| Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — فقط سرنخ paid؛ tenant خودکار ساخته نمی‌شود |
+| Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — سرنخ paid + فعال‌سازی tenant خودخدمت اگر `metadata.tenantId` باشد |
 
 ### ۴.۲ مدل‌های دادهٔ مهم
 
@@ -145,6 +147,7 @@ backend/
 | کاربر | `models/User.js` | `role`, `departmentId`, `permissions`, `status`, `lastSeenAt` |
 | تنظیمات واتساپ | `models/WhatsappConfig.js` | پیام‌های خودکار، AI، `trialStatus` |
 | تنظیمات پنل | `models/PanelSetting.js` | برندینگ، SMTP، زبان، `planTier` |
+| سازمان خودخدمت | `models/Tenant.js` | `slug`, `customDomain`, `status` (trial/active/past_due/suspended), `trialEndsAt`, `panelKey` |
 | توکن پوش دستگاه | `models/DevicePushToken.js` | FCM برای اپ کارکنان |
 | نظرسنجی تناسب | `models/ProductFitSurvey.js` | Sean Ellis: very / somewhat / not |
 | سرنخ لندینگ | `models/ContactLead.js` | purpose فرم تماس |
@@ -208,6 +211,24 @@ gateway/
 | Deploy SSH + کپی APK پروفایل | `.github/workflows/deploy.yml` | `main` → سرور (`/uploads/releases/kaya-staff.apk`) |
 
 بعد از تغییر chunk یا partial: **حتماً** `npm run build:dashboard` و commit خروجی‌ها.
+
+### ۷.۱ ثبت‌نام خودخدمت (SaaS)
+
+پرچم `SELF_SERVE_SIGNUP=true` فقط روی پروسهٔ **app.fxguard.io** (دمو/فروش). روی **kaya.fxguard.io** خاموش بماند — حتی اگر env اشتباه ست شود، Host کایا ثبت‌نام را قطع می‌کند.
+
+| بخش | مسیر |
+|-----|------|
+| تشخیص Host / slug | `lib/tenantHost.js` · `middleware/tenantContext.js` |
+| جداسازی داده | `lib/tenantScope.js` (User/Customer/Conversation/Message/Ticket/Task/Branch/Department) |
+| آزمایش ۷روزه | `lib/tenantTrial.js` · `middleware/tenantTrialGate.js` — بعد از انقضا API به‌جز auth/billing قفل `402` |
+| ساخت پنل | `POST /api/tenants/signup` · صفحه `/signup` |
+| دامنهٔ اختصاصی | `POST /api/tenants/custom-domain` · `GET /api/tenants/me` · UI تب پلن ظاهر پنل — DNS/HTTPS: nginx `*.app.fxguard.io` |
+| پرداخت / قفل آزمایش | Stripe webhook با `metadata.tenantId`؛ داشبورد بنر + overlay روی HTTP `402`. هرگز `SELF_SERVE_SIGNUP` روی کایا |
+| لینک فروش | `fxguard-io-landing/` → `https://app.fxguard.io/signup` — لندینگ کایا (`cpanel-landing`) را برای ثبت‌نام عمومی عوض نکن |
+
+واتساپ QR اشتراکی برای tenantهای جدید خاموش است (`gatewayEnabled: false`)؛ اتصال از Cloud API داخل تنظیمات واتساپ پنل.
+
+فعال‌سازی روی **app** (نه کایا): `scripts/enable-self-serve-app.sh` و workflow `.github/workflows/deploy-app.yml`. نمونهٔ nginx: `deploy/nginx-app-wildcard.conf.example`.
 
 ---
 

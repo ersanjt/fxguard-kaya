@@ -452,6 +452,17 @@
                     error: (data && data.error) ? data.error : t('api_err_reauth')
                 };
             }
+            if (r.status === 402) {
+                if (typeof showTenantPaywall === 'function') showTenantPaywall(data);
+                return {
+                    ok: false,
+                    needLogin: false,
+                    paymentRequired: true,
+                    status: 402,
+                    data: data,
+                    error: (data && data.error) ? data.error : t('tenant_paywall_body')
+                };
+            }
             if (r.status === 429) {
                 return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || t('api_err_429') };
             }
@@ -1491,10 +1502,16 @@
             updateNavBadges(stats);
             renderProductFitCard(stats.productFit);
             renderContactFunnelCard(stats.contactFunnel);
-            renderCommercialBanner(stats.planLimits, stats.whatsappTrial);
+            renderCommercialBanner(
+                stats.planLimits,
+                stats.whatsappTrial,
+                stats.tenant || (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null
+            );
         }
 
-        function commercialHomeKind(plan, trial) {
+        function commercialHomeKind(plan, trial, tenant) {
+            if (tenant && tenant.locked) return 'tenant_expired';
+            if (tenant && tenant.status === 'trial') return 'tenant_trial';
             var status = trial && trial.status;
             if (status === 'active') return 'trial_active';
             if (status === 'expired') return 'trial_expired';
@@ -1502,10 +1519,10 @@
             return 'none';
         }
 
-        function renderCommercialBanner(plan, trial) {
+        function renderCommercialBanner(plan, trial, tenant) {
             var el = document.getElementById('dashboardCommercialBanner');
             if (!el) return;
-            var kind = commercialHomeKind(plan, trial);
+            var kind = commercialHomeKind(plan, trial, tenant);
             if (kind === 'none') {
                 el.hidden = true;
                 el.innerHTML = '';
@@ -1514,7 +1531,18 @@
             var title = '';
             var body = '';
             var actions = '';
-            if (kind === 'trial_active') {
+            var extraClass = '';
+            if (kind === 'tenant_trial') {
+                extraClass = ' is-tenant-trial';
+                title = t('tenant_trial_title');
+                body = t('tenant_trial_body').replace('{days}', String(tenant.remainingDays != null ? tenant.remainingDays : '—'));
+                actions = '<button type="button" class="btn-primary btn-sm" id="btnDashTenantPay">' + escapeHtml(t('tenant_pay_btn')) + '</button>';
+            } else if (kind === 'tenant_expired') {
+                extraClass = ' is-tenant-lock';
+                title = t('tenant_paywall_title');
+                body = tenant && tenant.lockCode === 'TENANT_SUSPENDED' ? t('tenant_paywall_suspended') : t('tenant_paywall_body');
+                actions = '<button type="button" class="btn-primary btn-sm" id="btnDashTenantPay">' + escapeHtml(t('tenant_paywall_pay')) + '</button>';
+            } else if (kind === 'trial_active') {
                 title = t('dash_trial_title');
                 body = t('whatsapp_trial_active').replace('{days}', String(trial.remainingDays != null ? trial.remainingDays : trial.days));
                 actions = '<a href="#whatsapp" class="btn-secondary btn-sm">' + escapeHtml(t('dash_trial_open_wa')) + '</a>';
@@ -1537,9 +1565,63 @@
                 }
                 actions += '<a href="/procurement" target="_blank" rel="noopener" class="btn-secondary btn-sm">' + escapeHtml(t('dash_plan_procurement')) + '</a>';
             }
-            el.innerHTML = '<div class="commercial-home-card"><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(body) + '</p><div class="commercial-home-actions">' + actions + '</div></div>';
+            el.innerHTML = '<div class="commercial-home-card' + extraClass + '"><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(body) + '</p><div class="commercial-home-actions">' + actions + '</div></div>';
             el.hidden = false;
         }
+
+        function showTenantPaywall(payload) {
+            var el = document.getElementById('tenantPaywall');
+            if (!el) return;
+            var data = payload || {};
+            if (data.data && (data.data.code || data.data.lockCode)) data = data.data;
+            var code = data.code || data.lockCode || 'TRIAL_EXPIRED';
+            var titleEl = document.getElementById('tenantPaywallTitle');
+            var bodyEl = document.getElementById('tenantPaywallBody');
+            if (titleEl) titleEl.textContent = t('tenant_paywall_title');
+            if (bodyEl) {
+                bodyEl.textContent = code === 'TENANT_SUSPENDED'
+                    ? t('tenant_paywall_suspended')
+                    : (data.error || t('tenant_paywall_body'));
+            }
+            el.hidden = false;
+            el.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('tenant-paywall-open');
+        }
+        window.showTenantPaywall = showTenantPaywall;
+
+        function hideTenantPaywall() {
+            var el = document.getElementById('tenantPaywall');
+            if (el) {
+                el.hidden = true;
+                el.setAttribute('aria-hidden', 'true');
+            }
+            document.body.classList.remove('tenant-paywall-open');
+        }
+
+        async function startTenantCheckout() {
+            var btn = document.getElementById('btnTenantPaywallCheckout');
+            var dashBtn = document.getElementById('btnDashTenantPay');
+            if (btn) btn.disabled = true;
+            if (dashBtn) dashBtn.disabled = true;
+            try {
+                var res = await apiFetch('/api/billing/checkout', { method: 'POST', body: '{}' });
+                if (res.ok && res.data && res.data.url) {
+                    window.location.href = res.data.url;
+                    return;
+                }
+                var msg = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug)
+                    ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + currentUser.tenant.slug)
+                    : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
+                window.open('https://wa.me/905010676486?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+                if (typeof toast === 'function') {
+                    toast((res && res.error) || t('tenant_paywall_billing_off'), true);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                if (dashBtn) dashBtn.disabled = false;
+            }
+        }
+        window.startTenantCheckout = startTenantCheckout;
 
         function renderContactFunnelCard(funnel) {
             var el = document.getElementById('dashboardContactFunnel');
@@ -2405,6 +2487,28 @@
                 if (target.closest('#btnDisconnectWhatsApp') && typeof disconnectWhatsApp === 'function') { e.preventDefault(); e.stopPropagation(); disconnectWhatsApp(); return; }
                 if (target.closest('#btnWhatsappTrialStart') && typeof startWhatsappOwnNumberTrial === 'function') { e.preventDefault(); e.stopPropagation(); startWhatsappOwnNumberTrial(); return; }
                 if (target.closest('#btnWhatsappTrialConvert, #btnDashTrialConvert') && typeof convertWhatsappOwnNumberTrial === 'function') { e.preventDefault(); e.stopPropagation(); convertWhatsappOwnNumberTrial(); return; }
+                if (target.closest('#btnDashTenantPay, #btnTenantPaywallCheckout') && typeof startTenantCheckout === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startTenantCheckout();
+                    return;
+                }
+                if (target.closest('#btnTenantPaywallWa')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var slug = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug) ? currentUser.tenant.slug : '';
+                    var waMsg = slug
+                        ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + slug)
+                        : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
+                    window.open('https://wa.me/905010676486?text=' + encodeURIComponent(waMsg), '_blank', 'noopener');
+                    return;
+                }
+                if (target.closest('#btnSaveCustomDomain') && typeof saveTenantCustomDomain === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveTenantCustomDomain();
+                    return;
+                }
                 if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }
                 if (target.closest('#whatsappEditDeptsLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('departments'); return; }
                 // ذخیره تنظیمات واتساپ

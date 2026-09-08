@@ -1130,6 +1130,8 @@
                     .replace('{branches}', (p.branchCount != null ? p.branchCount : '—') + ' / ' + branchCap)
                     .replace('{fx}', fx);
             }
+            fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null);
+            loadTenantDomainFromApi();
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -1168,6 +1170,57 @@
             initSidebarOrderList(d.sidebarOrder);
             clearPanelSettingsChanged();
             if (typeof window.applyTranslations === 'function') window.applyTranslations();
+        }
+        function fillTenantDomainUi(tenant) {
+            var wrap = document.getElementById('panelCustomDomainSection');
+            if (!wrap) return;
+            if (!tenant || !tenant.slug) {
+                wrap.hidden = true;
+                return;
+            }
+            wrap.hidden = false;
+            var input = document.getElementById('panelCustomDomain');
+            if (input && document.activeElement !== input) {
+                input.value = tenant.customDomain || '';
+            }
+            var hint = document.getElementById('panelCustomDomainDns');
+            if (hint) {
+                var target = tenant.slug + '.app.fxguard.io';
+                hint.textContent = t('panel_custom_domain_dns').replace('{target}', target);
+            }
+        }
+        async function loadTenantDomainFromApi() {
+            try {
+                var res = await apiFetch('/api/tenants/me');
+                if (res.ok && res.data && res.data.tenant) {
+                    fillTenantDomainUi(res.data.tenant);
+                    if (typeof currentUser !== 'undefined' && currentUser) {
+                        currentUser.tenant = res.data.tenant;
+                    }
+                } else {
+                    fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null);
+                }
+            } catch (_e) {
+                fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null);
+            }
+        }
+        async function saveTenantCustomDomain() {
+            var input = document.getElementById('panelCustomDomain');
+            var domain = input ? String(input.value || '').trim() : '';
+            var res = await apiFetch('/api/tenants/custom-domain', {
+                method: 'POST',
+                body: JSON.stringify({ domain: domain }),
+            });
+            if (!res.ok) {
+                if (typeof toast === 'function') toast(getApiError(res) || t('panel_custom_domain_fail'), true);
+                return;
+            }
+            var next = (res.data && res.data.customDomain) || domain;
+            if (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) {
+                currentUser.tenant.customDomain = next || null;
+            }
+            fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || { slug: (res.data && res.data.slug) || '', customDomain: next });
+            if (typeof toast === 'function') toast(t('panel_custom_domain_saved'));
         }
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },

@@ -2,8 +2,8 @@ const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { getPermissions, canAccess, canManageUsers, canManageTickets, canViewCustomerPhone, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations, canViewHiddenConversations } = require('../lib/permissions');
 const { assertMatchingTokenVersion } = require('../lib/staffSession');
-
 const { COOKIE_NAME } = require('../lib/authCookie');
+const { isPlatformTenant } = require('../lib/tenantContext');
 
 function collectCandidateTokens(req) {
     const tokens = [];
@@ -45,6 +45,7 @@ async function resolveUserFromToken(token) {
         throw err;
     }
     const user = await User.findByPk(decoded.id, {
+        skipTenantScope: true,
         include: [
             { association: 'branch', required: false },
             { association: 'department', required: false }
@@ -57,6 +58,17 @@ async function resolveUserFromToken(token) {
     }
     assertMatchingTokenVersion(decoded, user);
     return user;
+}
+
+function assertUserMatchesRequestTenant(req, user) {
+    const tenant = req && req.tenant;
+    if (!tenant || isPlatformTenant(tenant) || tenant.missing) return;
+    if (!tenant.id) return;
+    if (String(user.tenantId || '') !== String(tenant.id)) {
+        const err = new Error('wrong_tenant');
+        err.code = 'WRONG_TENANT';
+        throw err;
+    }
 }
 
 /**
@@ -74,6 +86,12 @@ async function authMiddleware(req, res, next) {
     for (const token of tokens) {
         try {
             const user = await resolveUserFromToken(token);
+            try {
+                assertUserMatchesRequestTenant(req, user);
+            } catch (mismatch) {
+                lastErr = mismatch;
+                continue;
+            }
             attachAuthUser(req, user, token);
             return next();
         } catch (err) {
@@ -91,6 +109,9 @@ async function authMiddleware(req, res, next) {
     if (lastErr && lastErr.code === 'REVOKED') {
         return res.status(401).json({ error: 'نشست باطل شده است. دوباره وارد شوید' });
     }
+    if (lastErr && lastErr.code === 'WRONG_TENANT') {
+        return res.status(401).json({ error: 'این حساب به این پنل تعلق ندارد' });
+    }
     return res.status(401).json({ error: 'توکن نامعتبر یا منقضی' });
 }
 
@@ -105,6 +126,11 @@ async function optionalAuthMiddleware(req, res, next) {
     for (const token of tokens) {
         try {
             const user = await resolveUserFromToken(token);
+            try {
+                assertUserMatchesRequestTenant(req, user);
+            } catch (_) {
+                continue;
+            }
             attachAuthUser(req, user, token);
             return next();
         } catch (_) {
@@ -123,4 +149,4 @@ function requireSection(section) {
     };
 }
 
-module.exports = { authMiddleware, optionalAuthMiddleware, requireSection, getPermissions, canAccess, canManageUsers };
+module.exports = { authMiddleware, optionalAuthMiddleware, requireSection, getPermissions, canAccess, canManageUsers, assertUserMatchesRequestTenant };

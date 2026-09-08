@@ -3,6 +3,7 @@
  */
 const { Department } = require('../../models');
 const logger = require('../../config/logger');
+const { getCachedPlatformTenant } = require('../../lib/tenantContext');
 
 const DEFAULT_DEPARTMENTS = [
     {
@@ -34,9 +35,13 @@ const DEFAULT_DEPARTMENTS = [
 
 async function ensureDefaultDepartments() {
     try {
+        const where = { isActive: true };
+        const platform = getCachedPlatformTenant();
+        if (platform && platform.id) where.tenantId = platform.id;
         const existing = await Department.findAll({
-            where: { isActive: true },
+            where,
             attributes: ['name'],
+            skipTenantScope: true,
         });
         const existingNames = new Set(
             existing.map((d) => d.name.trim().toLowerCase())

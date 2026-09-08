@@ -3,6 +3,7 @@
 const { Message, WhatsappConfig } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { getPanelSettings } = require('../services/panelSettingsLoader');
+const { getPanelSettingsKey } = require('./tenantContext');
 const { gatewayPost } = require('./gatewayClient');
 const { toWhatsAppChatId, isGroupJid } = require('./phoneUtils');
 const {
@@ -29,7 +30,7 @@ async function startWaConversationCall(req, conversation, callType) {
     const senderDept = (senderUser && senderUser.department) || conversation.department || null;
     const [panelSettings, waCfg] = await Promise.all([
         getPanelSettings(),
-        WhatsappConfig.findByPk('default'),
+        WhatsappConfig.findByPk(getPanelSettingsKey()),
     ]);
     const introText = buildCallIntroText(
         senderUser,

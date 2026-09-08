@@ -50,6 +50,7 @@ if (isSqlite) {
 
 const convModels = require('./Conversation');
 const models = {
+    Tenant: require('./Tenant')(sequelize),
     Branch: require('./Branch')(sequelize),
     ActivityLog: require('./ActivityLog')(sequelize),
     User: require('./User')(sequelize),
@@ -102,6 +103,9 @@ Object.keys(models).forEach(modelName => {
         models[modelName].associate(models);
     }
 });
+
+const { applyTenantScopeToModels } = require('../lib/tenantScope');
+applyTenantScopeToModels(models);
 
 models.sequelize = sequelize;
 models.Sequelize = Sequelize;

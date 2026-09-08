@@ -8,6 +8,11 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'سازمان خودخدمت؛ خالی تا زمان backfill سکو'
+        },
         username: {
             type: DataTypes.STRING,
             unique: true,
@@ -143,6 +148,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['email'] },
             { fields: ['username'] },
             { fields: ['departmentId'] },
@@ -188,6 +194,9 @@ module.exports = (sequelize) => {
     };
 
     User.associate = (models) => {
+        if (models.Tenant) {
+            User.belongsTo(models.Tenant, { foreignKey: 'tenantId', as: 'tenant' });
+        }
         if (models.Branch) {
             User.belongsTo(models.Branch, { foreignKey: 'branchId', as: 'branch' });
         }

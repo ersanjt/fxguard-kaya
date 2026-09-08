@@ -8,6 +8,14 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     const qi = sequelize.getQueryInterface();
 
     try {
+        const { addTenantIdColumns, ensurePlatformTenant } = require('../../tenantPlatform');
+        await addTenantIdColumns(sequelize, logger);
+        await ensurePlatformTenant(logger);
+    } catch (tenantErr) {
+        if (logger && logger.warn) logger.warn('platform tenant seed skipped', { error: tenantErr.message });
+    }
+
+    try {
         const desc = await qi.describeTable('panel_settings');
         if (desc) {
             const cols = [

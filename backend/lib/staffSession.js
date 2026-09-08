@@ -13,11 +13,9 @@ function tokenVersionOf(user) {
 }
 
 function issueStaffToken(user) {
-    return jwt.sign(
-        { id: user.id, email: user.email, tv: tokenVersionOf(user) },
-        process.env.JWT_SECRET,
-        JWT_OPTIONS
-    );
+    const payload = { id: user.id, email: user.email, tv: tokenVersionOf(user) };
+    if (user.tenantId) payload.tid = user.tenantId;
+    return jwt.sign(payload, process.env.JWT_SECRET, JWT_OPTIONS);
 }
 
 function assertMatchingTokenVersion(decoded, user) {

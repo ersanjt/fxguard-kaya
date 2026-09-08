@@ -1,0 +1,89 @@
+name: Deploy self-serve app
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-app-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-app:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+
+    steps:
+      - name: Enable self-serve on app (never kaya)
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 15m
+          script: |
+            set -euo pipefail
+            KAYA_MARK="kayaCRM-kaya"
+            PM2_NAME="crm-backend-app"
+
+            APP_CWD="$(PM2_NAME="$PM2_NAME" pm2 jlist | node -e "
+            let raw = '';
+            process.stdin.on('data', (c) => { raw += c; });
+            process.stdin.on('end', () => {
+              let list = [];
+              try { list = JSON.parse(raw || '[]'); } catch (e) { process.exit(2); }
+              const name = process.env.PM2_NAME || 'crm-backend-app';
+              const p = (list || []).find((x) => x && x.name === name);
+              const cwd = p && p.pm2_env && p.pm2_env.pm_cwd;
+              if (!cwd) process.exit(3);
+              process.stdout.write(String(cwd));
+            });
+            ")" || { echo "crm-backend-app در pm2 نیست — skip"; exit 0; }
+
+            case "$APP_CWD" in
+              *"$KAYA_MARK"*) echo "❌ cwd کایاست؛ abort"; exit 1 ;;
+            esac
+
+            ROOT="$APP_CWD"
+            if [ -d "$APP_CWD/backend" ]; then
+              ROOT="$APP_CWD"
+            elif [ -f "$APP_CWD/package.json" ] && [ -d "$APP_CWD/../backend" ]; then
+              ROOT="$(cd "$APP_CWD/.." && pwd)"
+            fi
+            case "$ROOT" in
+              *"$KAYA_MARK"*) echo "❌ root کایاست؛ abort"; exit 1 ;;
+            esac
+
+            if [ -d "$ROOT/.git" ]; then
+              echo "📥 git pull در $ROOT"
+              git -C "$ROOT" fetch origin
+              git -C "$ROOT" reset --hard origin/main
+            else
+              echo "⚠️ $ROOT گیت نیست؛ فقط env را به‌روز می‌کنیم"
+            fi
+
+            ENABLE="$ROOT/scripts/enable-self-serve-app.sh"
+            if [ ! -f "$ENABLE" ]; then
+              echo "❌ اسکریپت enable-self-serve-app.sh در $ROOT نیست"
+              exit 1
+            fi
+            chmod +x "$ENABLE"
+            bash "$ENABLE"
+
+            if [ -f "$ROOT/backend/package.json" ]; then
+              (cd "$ROOT/backend" && npm ci --omit=dev)
+            fi
+            pm2 restart "$PM2_NAME" --update-env
+            echo "✅ app self-serve deploy تمام شد"

@@ -7,9 +7,13 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'سازمان خودخدمت'
+        },
         phone: {
             type: DataTypes.STRING,
-            unique: true,
             allowNull: false
         },
         name: {
@@ -118,6 +122,8 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
+            { unique: true, fields: ['tenantId', 'phone'], name: 'customers_tenant_phone' },
             { fields: ['phone'] },
             { fields: ['email'] },
             { fields: ['status'] },

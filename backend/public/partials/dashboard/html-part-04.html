@@ -541,6 +541,16 @@
                                         <p class="form-hint" id="panelPlanUsage"></p>
                                         <p class="form-hint" id="panelPlanLockHint" style="display:none;" data-i18n="panel_plan_locked">این پلن از سمت میزبان قفل شده و از پنل عوض نمی‌شود.</p>
                                     </section>
+                                    <section class="panel-settings-section" id="panelCustomDomainSection" hidden>
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span data-i18n="panel_custom_domain_title">دامنهٔ اختصاصی</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_custom_domain_hint">دامنهٔ خودتان را به این پنل وصل کنید. ابتدا یک رکورد CNAME به زیردامنهٔ پنل بزنید، بعد اینجا ذخیره کنید. صدور گواهی HTTPS روی سرور کار ops است.</p>
+                                        <div class="form-group">
+                                            <label for="panelCustomDomain" data-i18n="panel_custom_domain_label">دامنه (مثلاً crm.example.com)</label>
+                                            <input type="text" id="panelCustomDomain" autocomplete="off" inputmode="url" placeholder="crm.example.com">
+                                        </div>
+                                        <p class="form-hint" id="panelCustomDomainDns"></p>
+                                        <button type="button" class="btn-primary" id="btnSaveCustomDomain" data-i18n="panel_custom_domain_save">ذخیره دامنه</button>
+                                    </section>
                                 </div>
                             </div>
 

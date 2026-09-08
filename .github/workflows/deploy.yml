@@ -186,6 +186,10 @@ jobs:
               echo "❌ خطا: تنظیمات دمو در backend/.env مجاز نیست (پروژه فقط برند کایا است)"
               exit 1
             fi
+            if grep -Eiq '^SELF_SERVE_SIGNUP=(true|1|yes)\s*$' "$ENV_FILE"; then
+              echo "❌ خطا: SELF_SERVE_SIGNUP روی کایا مجاز نیست (فقط app.fxguard.io)"
+              exit 1
+            fi
             if grep -Eq 'app\.fxguard\.io|app\.fxgaurd\.io' "$ENV_FILE"; then
               echo "❌ خطا: دامنه app.fxguard.io/app.fxgaurd.io در backend/.env مجاز نیست"
               exit 1

@@ -21,6 +21,9 @@ const socketAuth = require('../middleware/socketAuth');
 const errorHandler = require('../middleware/errorHandler');
 const { protectSensitiveUploads } = require('../middleware/protectedUploads');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
+const { tenantContextMiddleware } = require('../middleware/tenantContext');
+const { tenantTrialGate } = require('../middleware/tenantTrialGate');
+const { isSelfServeEnabled, requestHostname } = require('../lib/tenantHost');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
 const {
     apiRateLimitKey,
@@ -149,6 +152,9 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
         next();
     });
 
+    app.use(tenantContextMiddleware);
+    app.use('/api', tenantTrialGate);
+
     const redisClient = createRedisClient(logger);
 
     function buildRedisStore(prefix) {
@@ -224,6 +230,7 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
         // بازیابی نشست بعد از login نباید با rate-limit عمومی قطع شود
         if (p.endsWith('/auth/me') && req.method === 'GET') return next();
         if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
+        if (p.endsWith('/tenants/signup') && req.method === 'POST') return loginLimiter(req, res, next);
         if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) {
             return passwordResetLimiter(req, res, next);
         }
@@ -347,6 +354,18 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
     app.get('/', serveLogin);
     app.get('/login', serveLogin);
     app.get('/login/', (req, res) => res.redirect('/login'));
+
+    function serveSignup(req, res) {
+        if (!isSelfServeEnabled(process.env, requestHostname(req))) {
+            return res.redirect(302, '/login');
+        }
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.sendFile(path.join(__dirname, '..', 'public', 'signup.html'));
+    }
+    app.get('/signup', serveSignup);
+    app.get('/signup/', (req, res) => res.redirect('/signup'));
 
     app.use((req, res, next) => {
         const p = String(req.path || '').toLowerCase();

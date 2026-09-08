@@ -3,22 +3,25 @@
  * اولویت: DB > ENV
  */
 const { WhatsappConnection } = require('../models');
+const { getPanelSettingsKey } = require('./tenantContext');
 
-let _cache = null;
-let _cacheTs = 0;
-const CACHE_TTL_MS = 30000; // 30 ثانیه
+let _cache = new Map();
+const CACHE_TTL_MS = 30000;
 
 async function getWhatsappConnectionConfig() {
+    const key = getPanelSettingsKey();
     const now = Date.now();
-    if (_cache && now - _cacheTs < CACHE_TTL_MS) return _cache;
+    const hit = _cache.get(key);
+    if (hit && now - hit.ts < CACHE_TTL_MS) return hit.value;
 
     let row = null;
     try {
-        row = await WhatsappConnection.findByPk('default');
+        row = await WhatsappConnection.findByPk(key);
     } catch (_) {
         // جدول وجود نداشته باشد
     }
 
+    const useEnv = key === 'default';
     const env = {
         cloudAccessToken: (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim(),
         cloudPhoneNumberId: (process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '').trim(),
@@ -31,31 +34,32 @@ async function getWhatsappConnectionConfig() {
             : ''),
     };
 
-    const mode = row?.connectionMode || 'cloud_first';
+    const mode = row?.connectionMode || (useEnv ? 'cloud_first' : 'cloud');
     const cloudEnabled = row?.cloudEnabled !== false;
-    const gatewayEnabled = row?.gatewayEnabled !== false;
+    const gatewayEnabled = useEnv ? row?.gatewayEnabled !== false : row?.gatewayEnabled === true;
 
     const config = {
         connectionMode: mode,
         cloudEnabled,
-        cloudAccessToken: (row?.cloudAccessToken || '').trim() || env.cloudAccessToken,
-        cloudPhoneNumberId: (row?.cloudPhoneNumberId || '').trim() || env.cloudPhoneNumberId,
-        cloudVerifyToken: (row?.cloudVerifyToken || '').trim() || env.cloudVerifyToken,
-        cloudBulkTemplateName: (row?.cloudBulkTemplateName || '').trim() || env.cloudBulkTemplateName,
-        cloudBulkTemplateLanguage: (row?.cloudBulkTemplateLanguage || '').trim() || env.cloudBulkTemplateLanguage || 'fa',
+        cloudAccessToken: (row?.cloudAccessToken || '').trim() || (useEnv ? env.cloudAccessToken : ''),
+        cloudPhoneNumberId: (row?.cloudPhoneNumberId || '').trim() || (useEnv ? env.cloudPhoneNumberId : ''),
+        cloudVerifyToken: (row?.cloudVerifyToken || '').trim() || (useEnv ? env.cloudVerifyToken : ''),
+        cloudBulkTemplateName: (row?.cloudBulkTemplateName || '').trim() || (useEnv ? env.cloudBulkTemplateName : ''),
+        cloudBulkTemplateLanguage:
+            (row?.cloudBulkTemplateLanguage || '').trim() ||
+            (useEnv ? env.cloudBulkTemplateLanguage : '') ||
+            'fa',
         gatewayEnabled,
-        gatewayUrl: (row?.gatewayUrl || '').trim() || env.gatewayUrl,
-        gatewayApiSecret: (row?.gatewayApiSecret || '').trim() || env.gatewayApiSecret,
+        gatewayUrl: (row?.gatewayUrl || '').trim() || (useEnv ? env.gatewayUrl : ''),
+        gatewayApiSecret: (row?.gatewayApiSecret || '').trim() || (useEnv ? env.gatewayApiSecret : ''),
     };
 
-    _cache = config;
-    _cacheTs = now;
+    _cache.set(key, { ts: now, value: config });
     return config;
 }
 
 function invalidateCache() {
-    _cache = null;
-    _cacheTs = 0;
+    _cache = new Map();
 }
 
 /** آیا Cloud API تنظیم و فعال است؟ */

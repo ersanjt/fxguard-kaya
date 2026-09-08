@@ -5,12 +5,13 @@
 (function () {
     'use strict';
 
-    const config = { getHeaders: null, getLang: null, on401: null };
+    const config = { getHeaders: null, getLang: null, on401: null, on402: null };
 
     function init(cfg) {
         config.getHeaders = cfg && cfg.getHeaders;
         config.getLang = cfg && cfg.getLang;
         config.on401 = cfg && cfg.on401;
+        config.on402 = cfg && cfg.on402;
     }
 
     function apiLang() {
@@ -156,6 +157,25 @@
                 data && data.error
                     ? data.error
                     : apiMsg('api_err_reauth', 'لطفاً دوباره وارد شوید', 'Please sign in again', 'Lütfen tekrar giriş yapın'),
+        };
+    }
+    if (r.status === 402) {
+        if (typeof config.on402 === 'function') config.on402(data);
+        else if (typeof window.showTenantPaywall === 'function') window.showTenantPaywall(data);
+        return {
+            ok: false,
+            needLogin: false,
+            paymentRequired: true,
+            status: 402,
+            data: data,
+            error:
+                (data && data.error) ||
+                apiMsg(
+                    'tenant_paywall_body',
+                    'دورهٔ آزمایش تمام شده است. برای ادامه اشتراک را فعال کنید.',
+                    'The trial has ended. Activate a subscription to continue.',
+                    'Deneme bitti. Devam için aboneliği etkinleştirin.'
+                ),
         };
     }
     if (r.status === 429) {

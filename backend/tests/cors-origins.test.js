@@ -58,5 +58,19 @@ test('dev extras stay in credential list', () => {
     assert.ok(cfg.credentialOrigins.includes('http://localhost:5173'));
 });
 
+test('self-serve tenant origins are credential-capable', () => {
+    const { isAllowedOrigin, isCredentialOrigin } = require('../config/cors');
+    const prev = process.env.TENANT_BASE_HOST;
+    process.env.TENANT_BASE_HOST = 'app.fxguard.io';
+    try {
+        assert.strictEqual(isAllowedOrigin('https://desk.app.fxguard.io'), true);
+        assert.strictEqual(isCredentialOrigin('https://desk.app.fxguard.io'), true);
+        assert.strictEqual(isAllowedOrigin('https://evil.example'), false);
+    } finally {
+        if (prev == null) delete process.env.TENANT_BASE_HOST;
+        else process.env.TENANT_BASE_HOST = prev;
+    }
+});
+
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
+const { getPanelSettingsKey } = require('../lib/tenantContext');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 const { buildWhatsappOverview } = require('../lib/whatsappOverview');
@@ -10,7 +11,7 @@ router.get('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
         });
         res.json({
@@ -52,7 +53,7 @@ router.put('/config', async (req, res, next) => {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage, conversationEndedMessage, callIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
         });
         if (welcomeMessage !== undefined) {
@@ -137,7 +138,7 @@ router.get('/connection', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const [row] = await WhatsappConnection.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
         const payload = {
@@ -187,7 +188,7 @@ router.put('/connection', async (req, res, next) => {
         }
         const body = req.body || {};
         const [row] = await WhatsappConnection.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
         if (body.connectionMode && ['cloud', 'gateway', 'cloud_first'].includes(body.connectionMode)) {

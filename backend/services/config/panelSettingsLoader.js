@@ -7,6 +7,7 @@
  */
 const { PanelSetting } = require('../../models');
 const { applyStaffAppUrlFallbacks } = require('../../lib/staffAppInstall');
+const { getPanelSettingsKey, getCurrentTenant } = require('../../lib/tenantContext');
 
 const DEFAULT = {
     siteName: 'صرافی کایا',
@@ -94,8 +95,19 @@ function parseHiddenSections(val) {
 }
 
 async function getPanelSettings() {
-    const row = await PanelSetting.findByPk('default');
-    if (!row) return applyStaffAppUrlFallbacks({ ...DEFAULT });
+    const key = getPanelSettingsKey();
+    const row = await PanelSetting.findByPk(key);
+    if (!row) {
+        const t = getCurrentTenant();
+        const fallback = { ...DEFAULT };
+        if (t && !t.isPlatform && t.name) {
+            fallback.siteName = t.name;
+            fallback.loginTitle = t.name;
+            fallback.pageTitle = t.name;
+            fallback.footerText = t.name;
+        }
+        return applyStaffAppUrlFallbacks(fallback);
+    }
     return applyStaffAppUrlFallbacks({
         siteName: row.siteName != null ? row.siteName : DEFAULT.siteName,
         logoUrl: row.logoUrl || null,
