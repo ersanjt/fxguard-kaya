@@ -12,6 +12,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
 const { ContactLead } = require('../models');
+const { optionalAuthMiddleware } = require('../middleware/auth');
 const {
     publicBillingConfig,
     sanitizeCustomerEmail,
@@ -99,10 +100,11 @@ function createBillingRouter(logger) {
         res.json(publicBillingConfig(process.env));
     });
 
-    router.post('/billing/checkout', checkoutLimiter, async (req, res) => {
+    router.post('/billing/checkout', checkoutLimiter, optionalAuthMiddleware, async (req, res) => {
         try {
-            const email = sanitizeCustomerEmail(req.body && req.body.email);
-            const extras = { email };
+            const bodyEmail = sanitizeCustomerEmail(req.body && req.body.email);
+            const userEmail = sanitizeCustomerEmail(req.user && req.user.email);
+            const extras = { email: bodyEmail || userEmail };
             if (req.tenant && req.tenant.id && !req.tenant.isPlatform) {
                 extras.tenantId = req.tenant.id;
             }

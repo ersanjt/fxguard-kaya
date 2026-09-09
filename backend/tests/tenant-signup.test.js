@@ -81,6 +81,9 @@ async function main() {
             assert.strictEqual(r.body.slug, 'acme');
             assert.strictEqual(r.body.status, 'trial');
             assert.ok(String(r.body.loginUrl).indexOf('app.fxguard.io/login?panel=acme') >= 0);
+            assert.ok(String(r.body.dashboardUrl).indexOf('/dashboard') >= 0);
+            assert.ok(r.body.session && r.body.session.user && r.body.session.user.email === 'owner@acme.test');
+            assert.ok(r.headers['set-cookie']);
         });
 
         await test('duplicate slug is rejected', async () => {

@@ -1604,7 +1604,11 @@
             if (btn) btn.disabled = true;
             if (dashBtn) dashBtn.disabled = true;
             try {
-                var res = await apiFetch('/api/billing/checkout', { method: 'POST', body: '{}' });
+                var email = (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ? currentUser.email : '';
+                var res = await apiFetch('/api/billing/checkout', {
+                    method: 'POST',
+                    body: JSON.stringify({ email: email })
+                });
                 if (res.ok && res.data && res.data.url) {
                     window.location.href = res.data.url;
                     return;

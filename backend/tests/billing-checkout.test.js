@@ -88,7 +88,9 @@ async function run() {
         assert.strictEqual(form.get('customer_email'), 'buyer@example.com');
         assert.ok(form.get('success_url').indexOf('/billing/success') >= 0);
         assert.ok(form.get('cancel_url').indexOf('/pricing') >= 0);
-        assert.strictEqual(publicSiteUrl({}), 'https://kaya.fxguard.io');
+        assert.strictEqual(publicSiteUrl({}), 'https://app.fxguard.io');
+        assert.strictEqual(publicSiteUrl({ FRONTEND_URL: 'https://kaya.fxguard.io' }), 'https://kaya.fxguard.io');
+        assert.ok(form.get('line_items[0][price_data][product_data][name]').indexOf('Cloud Start') >= 0);
     });
 
     await test('price id replaces inline price_data', () => {

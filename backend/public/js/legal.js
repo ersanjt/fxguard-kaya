@@ -222,17 +222,17 @@
             en: {},
             fa: {
                 h1: 'پرداخت ثبت شد',
-                p1: 'متشکریم. ابر شروع (۴۹ دلار در ماه، ۱ شعبه، تا ۳ نفر) ثبت شد. جزئیات کارت نزد Stripe ماند — ما ذخیره نمی‌کنیم.',
-                p2: 'این پرداخت به‌تنهایی پنل را باز نمی‌کند. معمولاً ظرف یک روز کاری tenant شروع را می‌سازیم و به ایمیل صورتحساب می‌فرستیم. اگر امروز خط می‌خواهید واتساپ <a href="https://wa.me/905010676486">+90 501 067 6486</a>.',
-                p3: 'نرخ ارز، صندلی بیشتر، یا فاکتور برای میز بزرگ‌تر؟ <a href="/contact">استعلام تجاری</a> یا <a href="/procurement">خلاصه تدارکات</a>.',
+                p1: 'متشکریم. FXGuard Cloud Start (۴۹ دلار در ماه، ۱ شعبه، تا ۳ نفر) ثبت شد. جزئیات کارت نزد Stripe ماند — ما ذخیره نمی‌کنیم.',
+                p2: 'اگر از داخل پنل آزمایشی پرداخت کرده‌اید، قفل معمولاً ظرف یک دقیقه بعد از تأیید Stripe برداشته می‌شود. داشبورد را رفرش کنید یا دوباره وارد شوید.',
+                p3: '<a href="https://app.fxguard.io/login">ورود به پنل</a> · پشتیبانی واتساپ <a href="https://wa.me/905010676486">+90 501 067 6486</a>.',
                 home: 'خانه',
                 plans: 'پلن‌ها'
             },
             tr: {
                 h1: 'Ödeme alındı',
-                p1: 'Teşekkürler. Cloud Start (49 USD/ay, 1 şube, en fazla 3 personel) kaydedildi. Kart bilgisi Stripe’da kaldı — biz saklamıyoruz.',
-                p2: 'Bu ödeme paneli kendiliğinden açmaz. Genelde bir iş gününde Start tenant kurup fatura e-postasına yazarız. Hattı bugün istiyorsanız WhatsApp <a href="https://wa.me/905010676486">+90 501 067 6486</a>.',
-                p3: 'FX kurları, daha fazla koltuk veya büyük masa faturası mı? <a href="/contact">Ticari teklif</a> veya <a href="/procurement">satın alma özeti</a>.',
+                p1: 'Teşekkürler. FXGuard Cloud Start (49 USD/ay, 1 şube, en fazla 3 personel) kaydedildi. Kart bilgisi Stripe’da kaldı — biz saklamıyoruz.',
+                p2: 'Deneme panelinden ödediyseniz Stripe onayından sonra kilit genelde bir dakika içinde kalkar. Paneli yenileyin veya tekrar giriş yapın.',
+                p3: '<a href="https://app.fxguard.io/login">Panele gir</a> · Yardım için WhatsApp <a href="https://wa.me/905010676486">+90 501 067 6486</a>.',
                 home: 'Ana sayfa',
                 plans: 'Planlar'
             }

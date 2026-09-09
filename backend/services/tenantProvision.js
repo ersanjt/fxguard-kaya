@@ -107,6 +107,7 @@ async function provisionSelfServeTenant(input, env) {
         isPlatform: false,
     };
 
+    let ownerUser = null;
     await runWithTenant(shaped, async () => {
         await PanelSetting.create({
             id: panelKey,
@@ -152,7 +153,7 @@ async function provisionSelfServeTenant(input, env) {
             if (dept.isDefault) defaultDeptId = row.id;
         }
 
-        await User.create({
+        const owner = await User.create({
             name: ownerName,
             username: null,
             email,
@@ -163,11 +164,14 @@ async function provisionSelfServeTenant(input, env) {
             isActive: true,
             tenantId: tenant.id,
         });
+        ownerUser = owner;
     });
 
     invalidatePlanCache();
 
     const proto = String(src.SELF_SERVE_PUBLIC_PROTO || 'https').toLowerCase() === 'http' ? 'http' : 'https';
+    const loginUrl = tenantLoginUrl(slug, src, proto);
+    const base = String(loginUrl).replace(/\/login(\?.*)?$/, '');
     return {
         tenantId: tenant.id,
         slug,
@@ -175,8 +179,12 @@ async function provisionSelfServeTenant(input, env) {
         status: 'trial',
         trialEndsAt,
         trialDays: days,
-        loginUrl: tenantLoginUrl(slug, src, proto),
+        loginUrl,
+        dashboardUrl: base + '/dashboard',
         panelKey,
+        owner: ownerUser
+            ? { id: ownerUser.id, email: ownerUser.email, name: ownerUser.name, role: ownerUser.role }
+            : { email, name: ownerName, role: 'owner' },
     };
 }
 

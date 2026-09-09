@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
-const { getPanelSettingsKey } = require('../lib/tenantContext');
+const { getPanelSettingsKey, isPlatformTenant } = require('../lib/tenantContext');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 const { buildWhatsappOverview } = require('../lib/whatsappOverview');
@@ -154,7 +154,12 @@ router.get('/connection', async (req, res, next) => {
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
+            selfServeCloudOnly: !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id),
         };
+        if (payload.selfServeCloudOnly) {
+            payload.connectionMode = 'cloud';
+            payload.gatewayEnabled = false;
+        }
         try {
             const { getTrialSnapshot } = require('../lib/whatsappTrial');
             payload.trial = await getTrialSnapshot();
@@ -191,10 +196,15 @@ router.put('/connection', async (req, res, next) => {
             where: { id: getPanelSettingsKey() },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
-        if (body.connectionMode && ['cloud', 'gateway', 'cloud_first'].includes(body.connectionMode)) {
+        const cloudOnlyDesk = !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id);
+        if (cloudOnlyDesk) {
+            row.connectionMode = 'cloud';
+            row.cloudEnabled = true;
+            row.gatewayEnabled = false;
+        } else if (body.connectionMode && ['cloud', 'gateway', 'cloud_first'].includes(body.connectionMode)) {
             row.connectionMode = body.connectionMode;
         }
-        if (typeof body.cloudEnabled === 'boolean') row.cloudEnabled = body.cloudEnabled;
+        if (!cloudOnlyDesk && typeof body.cloudEnabled === 'boolean') row.cloudEnabled = body.cloudEnabled;
         if (body.cloudAccessToken !== undefined) {
             const v = String(body.cloudAccessToken || '').trim();
             row.cloudAccessToken = v || null;
@@ -208,9 +218,9 @@ router.put('/connection', async (req, res, next) => {
             const lang = String(body.cloudBulkTemplateLanguage || '').trim();
             row.cloudBulkTemplateLanguage = lang || 'fa';
         }
-        if (typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
-        if (body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
-        if (body.gatewayApiSecret !== undefined) {
+        if (!cloudOnlyDesk && typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
+        if (!cloudOnlyDesk && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
+        if (!cloudOnlyDesk && body.gatewayApiSecret !== undefined) {
             const v = String(body.gatewayApiSecret || '').trim();
             row.gatewayApiSecret = v || null;
         }

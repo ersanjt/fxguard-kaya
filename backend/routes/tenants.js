@@ -15,10 +15,14 @@ const {
     normalizeSlug,
     slugError,
     tenantBaseHost,
+    tenantLoginUrl,
 } = require('../lib/tenantHost');
 const { provisionSelfServeTenant, setTenantCustomDomain } = require('../services/tenantProvision');
 const { publicTenantPayload } = require('../lib/tenantTrial');
-const { Tenant } = require('../models');
+const { Tenant, User } = require('../models');
+const { setAuthCookie } = require('../lib/authCookie');
+const { issueStaffToken } = require('../lib/staffSession');
+const { getPermissions } = require('../lib/permissions');
 
 function createTenantsRouter(logger) {
     const router = express.Router();
@@ -32,11 +36,13 @@ function createTenantsRouter(logger) {
         if (invalid) return res.json({ ok: false, available: false, error: invalid });
         const taken = await Tenant.findOne({ where: { slug }, attributes: ['id'] });
         if (taken) return res.json({ ok: false, available: false, error: 'این شناسه قبلاً گرفته شده است' });
+        const base = tenantBaseHost();
         return res.json({
             ok: true,
             available: true,
             slug,
-            host: slug + '.' + tenantBaseHost(),
+            host: slug + '.' + base,
+            loginUrl: tenantLoginUrl(slug, process.env, 'https'),
         });
     });
 
@@ -47,7 +53,42 @@ function createTenantsRouter(logger) {
         try {
             const body = req.body || {};
             const result = await provisionSelfServeTenant(body, process.env);
-            return res.status(201).json({ ok: true, ...result });
+            let session = null;
+            try {
+                const ownerId = result.owner && result.owner.id;
+                const owner =
+                    (ownerId && (await User.findByPk(ownerId, { skipTenantScope: true }))) ||
+                    (await User.findOne({
+                        where: { email: String((result.owner && result.owner.email) || body.email || '')
+                            .trim()
+                            .toLowerCase() },
+                        skipTenantScope: true,
+                    }));
+                if (owner && owner.isActive) {
+                    const token = issueStaffToken(owner);
+                    setAuthCookie(res, token);
+                    session = {
+                        user: {
+                            id: owner.id,
+                            email: owner.email,
+                            name: owner.name,
+                            role: owner.role,
+                            permissions: getPermissions(owner),
+                        },
+                    };
+                }
+            } catch (sessErr) {
+                if (logger && logger.warn) {
+                    logger.warn('Tenant signup session skipped', { error: sessErr.message });
+                }
+            }
+            const { owner, ...publicResult } = result;
+            return res.status(201).json({
+                ok: true,
+                ...publicResult,
+                owner: owner ? { email: owner.email, name: owner.name } : undefined,
+                session,
+            });
         } catch (err) {
             const status = err && err.status ? err.status : 500;
             if (status >= 500 && logger && logger.warn) {

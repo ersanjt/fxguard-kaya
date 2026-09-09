@@ -866,6 +866,11 @@
         }
 
         lpShowApexPanelField();
+        try {
+            var emailQ = new URLSearchParams(window.location.search).get('email');
+            var emailEl = document.getElementById('lpEmail');
+            if (emailEl && emailQ && !emailEl.value) emailEl.value = String(emailQ).trim();
+        } catch (_) {}
 
         /* Config + panel branding */
         loadPublicConfigAndBranding();

@@ -247,7 +247,47 @@
                 if (btnDisconnect) btnDisconnect.disabled = false;
             }
         }
+        function isSelfServeTenantDesk() {
+            try {
+                return !!(typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug && !currentUser.tenant.isPlatform);
+            } catch (_) {
+                return false;
+            }
+        }
+        function applySelfServeWhatsappCloudLock() {
+            if (!isSelfServeTenantDesk()) return;
+            var mode = document.getElementById('whatsappConnectionMode');
+            if (mode) {
+                mode.value = 'cloud';
+                mode.disabled = true;
+                Array.prototype.forEach.call(mode.options || [], function (opt) {
+                    if (opt.value !== 'cloud') opt.disabled = true;
+                });
+            }
+            var gwEn = document.getElementById('whatsappGatewayEnabled');
+            if (gwEn) {
+                gwEn.checked = false;
+                gwEn.disabled = true;
+            }
+            var gwCard = document.getElementById('whatsappGatewayChannelCard');
+            if (gwCard) gwCard.style.display = 'none';
+            var gwSettings = document.getElementById('whatsappGatewaySettings');
+            if (gwSettings) gwSettings.style.display = 'none';
+            document.querySelectorAll('.whatsapp-conn-tab[data-tab="gateway"]').forEach(function (b) {
+                b.style.display = 'none';
+            });
+            var hint = document.querySelector('[data-i18n="whatsapp_connection_settings_hint"]');
+            if (hint) {
+                hint.textContent = LANG === 'tr'
+                    ? 'Self-serve paneller yalnızca Meta Cloud API kullanır. QR/Gateway bu planda yok.'
+                    : (LANG === 'fa'
+                        ? 'پنل‌های خودخدمت فقط Meta Cloud API دارند. QR/Gateway در این پلن فعال نیست.'
+                        : 'Self-serve desks use Meta Cloud API only. QR/Gateway is not available on this plan.');
+            }
+            if (typeof switchWhatsappConnectionTab === 'function') switchWhatsappConnectionTab('cloud');
+        }
         function switchWhatsappConnectionTab(tab) {
+            if (isSelfServeTenantDesk() && tab === 'gateway') tab = 'cloud';
             document.querySelectorAll('.whatsapp-conn-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
             var cloud = document.getElementById('whatsappCloudSettings');
             var gw = document.getElementById('whatsappGatewaySettings');
@@ -270,9 +310,10 @@
             var gwEn = document.getElementById('whatsappGatewayEnabled');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
-            if (mode) mode.value = d.connectionMode || 'cloud_first';
+            var forcedCloud = isSelfServeTenantDesk();
+            if (mode) mode.value = forcedCloud ? 'cloud' : (d.connectionMode || 'cloud_first');
             if (typeof switchWhatsappConnectionTab === 'function') {
-                switchWhatsappConnectionTab((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud');
+                switchWhatsappConnectionTab((forcedCloud ? 'cloud' : ((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud')));
             }
             if (mode && !mode._crmWaModeBound) {
                 mode._crmWaModeBound = true;
@@ -286,13 +327,14 @@
             if (cloudVerify) cloudVerify.value = d.cloudVerifyToken || '';
             if (cloudTplName) cloudTplName.value = d.cloudBulkTemplateName || '';
             if (cloudTplLang) cloudTplLang.value = d.cloudBulkTemplateLanguage || 'fa';
-            if (gwEn) gwEn.checked = d.gatewayEnabled !== false;
+            if (gwEn) gwEn.checked = forcedCloud ? false : (d.gatewayEnabled !== false);
             if (gwUrl) gwUrl.value = d.gatewayUrl || '';
             if (gwSecret) { gwSecret.value = ''; gwSecret.placeholder = d.gatewayApiSecretSet ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری' : 'Optional'); }
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
             if (fo) fo.checked = d.numberFailoverEnabled !== false;
             if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
             renderWhatsappTrialBanner(d.trial);
+            applySelfServeWhatsappCloudLock();
         }
         function renderWhatsappTrialBanner(trial) {
             var box = document.getElementById('whatsappTrialBanner');
@@ -345,18 +387,18 @@
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
             var body = {
-                connectionMode: (document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first',
+                connectionMode: isSelfServeTenantDesk() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
                 cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
                 cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
                 cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
                 cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
-                gatewayEnabled: (document.getElementById('whatsappGatewayEnabled') || {}).checked !== false,
-                gatewayUrl: (gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined,
+                gatewayEnabled: isSelfServeTenantDesk() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
+                gatewayUrl: isSelfServeTenantDesk() ? undefined : ((gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined),
                 numberFailoverEnabled: fo ? !!fo.checked : true
             };
             if (cloudToken && cloudToken.value.trim()) body.cloudAccessToken = cloudToken.value.trim();
-            if (gwSecret && gwSecret.value.trim()) body.gatewayApiSecret = gwSecret.value.trim();
+            if (!isSelfServeTenantDesk() && gwSecret && gwSecret.value.trim()) body.gatewayApiSecret = gwSecret.value.trim();
             try {
                 var res = await apiFetch('/api/whatsapp/connection', { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;

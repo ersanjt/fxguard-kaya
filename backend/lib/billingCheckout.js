@@ -11,16 +11,27 @@
 const crypto = require('crypto');
 
 const START_AMOUNT_CENTS = 4900;
-const START_PRODUCT_NAME = 'Kaya CRM Cloud Start';
-const DEFAULT_SITE_URL = 'https://kaya.fxguard.io';
+const START_PRODUCT_NAME = 'FXGuard Cloud Start';
+const START_PRODUCT_NAME_LEGACY = 'Kaya CRM Cloud Start';
+const DEFAULT_SITE_URL = 'https://app.fxguard.io';
 const STRIPE_API = 'https://api.stripe.com/v1/checkout/sessions';
 
 function publicSiteUrl(env) {
-    const raw = String((env && (env.BACKEND_PUBLIC_URL || env.PUBLIC_SITE_URL)) || '')
+    const src = env || {};
+    const raw = String(src.FRONTEND_URL || src.BACKEND_PUBLIC_URL || src.PUBLIC_SITE_URL || '')
         .trim()
         .replace(/\/$/, '');
     if (raw.indexOf('https://') === 0 || raw.indexOf('http://') === 0) return raw;
     return DEFAULT_SITE_URL;
+}
+
+function startProductName(env) {
+    const host = String((env && env.TENANT_BASE_HOST) || '').toLowerCase();
+    if (host.indexOf('app.fxguard.io') >= 0) return START_PRODUCT_NAME;
+    if (String((env && env.SELF_SERVE_SIGNUP) || '').toLowerCase() === 'true' || (env && env.SELF_SERVE_SIGNUP) === '1') {
+        return START_PRODUCT_NAME;
+    }
+    return START_PRODUCT_NAME_LEGACY;
 }
 
 function isAllowedPaymentLink(url) {
@@ -73,11 +84,17 @@ function sanitizeCustomerEmail(raw) {
 function buildCheckoutForm(env, extras) {
     const params = new URLSearchParams();
     const site = publicSiteUrl(env);
+    const tenantCheckout = !!(extras && extras.tenantId);
     params.set('mode', 'subscription');
-    params.set('success_url', site + '/billing/success?session_id={CHECKOUT_SESSION_ID}');
-    params.set('cancel_url', site + '/pricing');
+    params.set(
+        'success_url',
+        site +
+            '/billing/success?session_id={CHECKOUT_SESSION_ID}' +
+            (tenantCheckout ? '&self=1' : '')
+    );
+    params.set('cancel_url', tenantCheckout ? site + '/dashboard' : site + '/pricing');
     params.set('metadata[plan]', 'start');
-    params.set('metadata[product]', 'kaya-crm');
+    params.set('metadata[product]', tenantCheckout ? 'fxguard-cloud' : 'kaya-crm');
     params.set('allow_promotion_codes', 'true');
     params.set('billing_address_collection', 'required');
     params.set('tax_id_collection[enabled]', 'true');
@@ -98,7 +115,7 @@ function buildCheckoutForm(env, extras) {
         params.set('line_items[0][price_data][currency]', 'usd');
         params.set('line_items[0][price_data][unit_amount]', String(START_AMOUNT_CENTS));
         params.set('line_items[0][price_data][recurring][interval]', 'month');
-        params.set('line_items[0][price_data][product_data][name]', START_PRODUCT_NAME);
+        params.set('line_items[0][price_data][product_data][name]', startProductName(env));
         params.set(
             'line_items[0][price_data][product_data][description]',
             '1 branch, up to 3 staff. Inbox, tickets, tasks. Hosted cloud.'
@@ -207,8 +224,10 @@ async function createStartCheckoutSession(env, extras, postForm) {
 module.exports = {
     START_AMOUNT_CENTS,
     START_PRODUCT_NAME,
+    START_PRODUCT_NAME_LEGACY,
     STRIPE_API,
     publicSiteUrl,
+    startProductName,
     isAllowedPaymentLink,
     hasStripeSecret,
     resolveBillingMode,
