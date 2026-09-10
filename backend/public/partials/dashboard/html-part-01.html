@@ -232,8 +232,24 @@
             <div class="tenant-paywall-card">
                 <h2 id="tenantPaywallTitle" data-i18n="tenant_paywall_title">دورهٔ آزمایش تمام شده</h2>
                 <p id="tenantPaywallBody" data-i18n="tenant_paywall_body">برای ادامه باید اشتراک را فعال کنید. دادهٔ شما محفوظ است.</p>
+                <div id="tenantPaywallCrypto" class="tenant-paywall-crypto" hidden>
+                    <p class="tenant-paywall-crypto-lead" data-i18n="tenant_paywall_crypto_lead">۴۹ USDT بفرستید، TXID را ثبت کنید — پنل باز می‌شود.</p>
+                    <div class="tenant-paywall-networks" id="tenantPaywallNetworks" role="listbox" aria-label="شبکه پرداخت"></div>
+                    <div class="tenant-paywall-wallet" id="tenantPaywallWalletBox" hidden>
+                        <img id="tenantPaywallQr" class="tenant-paywall-qr" alt="" width="160" height="160" hidden>
+                        <code id="tenantPaywallAddress" class="tenant-paywall-address" dir="ltr"></code>
+                        <button type="button" class="btn-secondary btn-sm" id="btnTenantPaywallCopy" data-i18n="tenant_paywall_copy">کپی آدرس</button>
+                        <p id="tenantPaywallAmount" class="tenant-paywall-amount"></p>
+                    </div>
+                    <label class="tenant-paywall-txid-label" for="tenantPaywallTxId">
+                        <span data-i18n="tenant_paywall_txid">TXID / هش تراکنش</span>
+                        <input type="text" id="tenantPaywallTxId" class="tenant-paywall-txid" dir="ltr" autocomplete="off" spellcheck="false" maxlength="128" placeholder="txid…">
+                    </label>
+                    <p id="tenantPaywallCryptoMsg" class="tenant-paywall-crypto-msg" hidden role="status"></p>
+                </div>
                 <div class="tenant-paywall-actions">
                     <button type="button" class="btn-primary" id="btnTenantPaywallCheckout" data-i18n="tenant_paywall_pay">فعال‌سازی اشتراک</button>
+                    <button type="button" class="btn-secondary" id="btnTenantPaywallClaim" hidden data-i18n="tenant_paywall_claim">ثبت TXID و فعال‌سازی</button>
                     <button type="button" class="btn-secondary" id="btnTenantPaywallWa" data-i18n="tenant_paywall_wa">گفتگو در واتساپ</button>
                 </div>
             </div>

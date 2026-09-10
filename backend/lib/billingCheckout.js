@@ -1,5 +1,5 @@
 /**
- * Kaya CRM — چک‌اوت خودخدمت Cloud Start (Stripe، اختیاری)
+ * FXGuard / Kaya — چک‌اوت خودخدمت Cloud Start (کریپتو اول، Stripe اختیاری)
  * @file    backend/lib/billingCheckout.js
  * @layer   backend
  * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
@@ -9,6 +9,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { publicCryptoBillingConfig, isCryptoPayEnabled } = require('./cryptoBilling');
 
 const START_AMOUNT_CENTS = 4900;
 const START_PRODUCT_NAME = 'FXGuard Cloud Start';
@@ -57,20 +58,44 @@ function resolveBillingMode(env) {
 }
 
 function publicBillingConfig(env) {
-    const mode = resolveBillingMode(env);
+    const src = env || {};
     const amountUsd = Math.round(START_AMOUNT_CENTS / 100);
-    if (mode === 'off') {
-        return { enabled: false, mode: 'off', amountUsd, checkoutUrl: null };
+    const cryptoCfg = publicCryptoBillingConfig(src);
+    const stripeMode = resolveBillingMode(src);
+
+    // کریپتو مسیر اصلی فروش است؛ Stripe فقط اگر عمداً و بدون کریپتو بماند
+    if (isCryptoPayEnabled(src)) {
+        return {
+            enabled: true,
+            mode: 'crypto',
+            amountUsd,
+            checkoutUrl: null,
+            crypto: cryptoCfg,
+            stripeAvailable: stripeMode !== 'off',
+        };
     }
-    if (mode === 'link') {
+
+    if (stripeMode === 'off') {
+        return { enabled: false, mode: 'off', amountUsd, checkoutUrl: null, crypto: cryptoCfg };
+    }
+    if (stripeMode === 'link') {
         return {
             enabled: true,
             mode: 'link',
             amountUsd,
-            checkoutUrl: String(env.STRIPE_PAYMENT_LINK_START).trim(),
+            checkoutUrl: String(src.STRIPE_PAYMENT_LINK_START).trim(),
+            crypto: cryptoCfg,
+            stripeAvailable: true,
         };
     }
-    return { enabled: true, mode: 'checkout', amountUsd, checkoutUrl: null };
+    return {
+        enabled: true,
+        mode: 'checkout',
+        amountUsd,
+        checkoutUrl: null,
+        crypto: cryptoCfg,
+        stripeAvailable: true,
+    };
 }
 
 function sanitizeCustomerEmail(raw) {

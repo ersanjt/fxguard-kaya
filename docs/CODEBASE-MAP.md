@@ -52,7 +52,7 @@
 | تدارکات / خلاصه امنیت | `backend/public/procurement.html` (+ کپی `cpanel-landing/`) | `/procurement` | چاپ PDF برای فاکتور |
 | لندینگ **kaya.fxguard.io** | `cpanel-landing/` سپس همگام `backend/public/` | `/` `/pricing` `/whatsapp-crm` `/contact` | `LANDING-SYNC.md` — پنل کارکنان |
 | ویترین **fxguard.io** | `fxguard-io-landing/` | cPanel جدا (`public_html`) | آپلود روی fxguard.io؛ `.well-known/` سرور را نگه دارید. `cpanel-landing/` را اینجا نریزید |
-| چک‌اوت Cloud Start | `backend/lib/billingCheckout.js` · `routes/billing.js` | `/api/billing/*` · `/api/webhook/stripe` | بدون کلید Stripe دکمه واتساپ می‌ماند |
+| چک‌اوت Cloud Start | `backend/lib/cryptoBilling.js` · `billingCheckout.js` · `routes/billing.js` | `/api/billing/*` | **کریپتو اول** (USDT/BNB/BTC + ثبت TXID)؛ Stripe اختیاری |
 | ترجمه فارسی/انگلیسی/ترکی | `backend/public/js/i18n-fa.js` و … | — | bump `?v=` در html-part-06 |
 | ماژول‌های مشترک JS | `backend/public/js/modules/*.js` | — | bump `?v=` |
 
@@ -131,12 +131,13 @@ backend/
 | `/api/panel-settings/*` | `routes/panelSettings.js` | `services/config/panelSettingsLoader.js` · سقف پلن `lib/planLimits.js` |
 | `/api/rates/*` | `routes/rates.js` | `lib/ratesSnapshot.js` · نوسان + الان‌چند (`lib/alanChandApi.js`) · قفل پلن شروع |
 | `/api/analytics/*` | `routes/analytics.js` | KPI داشبورد + `product-fit` + قیف فرم تماس |
-| `/api/billing/*` | `routes/billing.js` | چک‌اوت Stripe Cloud Start (اختیاری) · `lib/billingCheckout.js` |
+| `/api/billing/*` | `routes/billing.js` | کریپتو Cloud Start (`lib/cryptoBilling.js`) + Stripe اختیاری (`lib/billingCheckout.js`) |
 | `/api/tenants/*` | `routes/tenants.js` | ثبت‌نام خودخدمت، ساب‌دامین، دامنهٔ اختصاصی · `services/tenantProvision.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |
 | `/api/supervision/*` | `routes/supervision.js` | آنلاین زنده: `lib/staffPresence.js` |
 | Webhook واتساپ Cloud | `routes/api.js` | `services/incomingMessage.js` |
-| Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — سرنخ paid + فعال‌سازی tenant خودخدمت اگر `metadata.tenantId` باشد |
+| Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — سرنخ paid + فعال‌سازی tenant اگر `metadata.tenantId` باشد |
+| کریپتو claim/confirm | `routes/billing.js` | `POST /api/billing/crypto/claim` (مالک پنل) · `GET/POST .../confirm` (ادمین اصلی / لینک توکن) |
 
 ### ۴.۲ مدل‌های دادهٔ مهم
 
@@ -220,7 +221,7 @@ gateway/
 |-----|------|
 | تشخیص Host / slug | `lib/tenantHost.js` · `middleware/tenantContext.js` |
 | جداسازی داده | `lib/tenantScope.js` (User/Customer/Conversation/Message/Ticket/Task/Branch/Department) |
-| آزمایش ۷روزه | `lib/tenantTrial.js` · `middleware/tenantTrialGate.js` — بعد از انقضا API به‌جز auth/billing قفل `402` |
+| آزمایش ۷روزه | `lib/tenantTrial.js` · `middleware/tenantTrialGate.js` — بعد از انقضا API به‌جز auth/billing قفل `402`؛ خرید با کریپتو در paywall داشبورد |
 | ساخت پنل | `POST /api/tenants/signup` · صفحه `/signup` |
 | دامنهٔ اختصاصی | `POST /api/tenants/custom-domain` · `GET /api/tenants/me` · UI تب پلن ظاهر پنل — DNS/HTTPS: nginx `*.app.fxguard.io` |
 | پرداخت / قفل آزمایش | Stripe webhook با `metadata.tenantId`؛ داشبورد بنر + overlay روی HTTP `402`. هرگز `SELF_SERVE_SIGNUP` روی کایا |

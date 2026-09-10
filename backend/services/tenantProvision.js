@@ -208,9 +208,19 @@ async function activateTenantFromPaid(paid, logger) {
     if (!row) return { activated: false };
     const updates = { status: 'active' };
     if (paid && paid.sessionId) updates.stripeSubscriptionId = String(paid.sessionId).slice(0, 64);
+    if (paid && paid.cryptoTxId) {
+        updates.cryptoTxId = String(paid.cryptoTxId).slice(0, 128);
+        updates.cryptoNetwork = paid.cryptoNetwork ? String(paid.cryptoNetwork).slice(0, 32) : null;
+        updates.cryptoPaymentStatus = 'confirmed';
+        updates.cryptoPaidAt = paid.cryptoPaidAt || new Date();
+    }
     await row.update(updates);
     if (logger && logger.info) {
-        logger.info('Self-serve tenant activated', { slug: row.slug, tenantId: row.id });
+        logger.info('Self-serve tenant activated', {
+            slug: row.slug,
+            tenantId: row.id,
+            via: paid && paid.cryptoTxId ? 'crypto' : 'stripe',
+        });
     }
     return { activated: true, tenantId: row.id, slug: row.slug };
 }

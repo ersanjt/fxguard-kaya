@@ -1586,6 +1586,7 @@
             el.hidden = false;
             el.setAttribute('aria-hidden', 'false');
             document.body.classList.add('tenant-paywall-open');
+            ensureTenantCryptoPaywall();
         }
         window.showTenantPaywall = showTenantPaywall;
 
@@ -1598,17 +1599,175 @@
             document.body.classList.remove('tenant-paywall-open');
         }
 
+        var _tenantCryptoCfg = null;
+        var _tenantCryptoNetwork = null;
+
+        function setTenantCryptoMsg(text, isError) {
+            var msg = document.getElementById('tenantPaywallCryptoMsg');
+            if (!msg) return;
+            if (!text) {
+                msg.hidden = true;
+                msg.textContent = '';
+                msg.classList.remove('is-error');
+                return;
+            }
+            msg.hidden = false;
+            msg.textContent = text;
+            msg.classList.toggle('is-error', !!isError);
+        }
+
+        function selectTenantCryptoNetwork(networkId) {
+            if (!_tenantCryptoCfg || !_tenantCryptoCfg.wallets) return;
+            var wallet = null;
+            for (var i = 0; i < _tenantCryptoCfg.wallets.length; i++) {
+                if (_tenantCryptoCfg.wallets[i].id === networkId) {
+                    wallet = _tenantCryptoCfg.wallets[i];
+                    break;
+                }
+            }
+            if (!wallet && _tenantCryptoCfg.wallets.length) wallet = _tenantCryptoCfg.wallets[0];
+            if (!wallet) return;
+            _tenantCryptoNetwork = wallet.id;
+            var nets = document.getElementById('tenantPaywallNetworks');
+            if (nets) {
+                var buttons = nets.querySelectorAll('.tenant-paywall-net-btn');
+                for (var b = 0; b < buttons.length; b++) {
+                    buttons[b].classList.toggle('is-active', buttons[b].getAttribute('data-network') === wallet.id);
+                }
+            }
+            var box = document.getElementById('tenantPaywallWalletBox');
+            var addr = document.getElementById('tenantPaywallAddress');
+            var qr = document.getElementById('tenantPaywallQr');
+            var amount = document.getElementById('tenantPaywallAmount');
+            if (box) box.hidden = false;
+            if (addr) addr.textContent = wallet.address || '';
+            if (qr) {
+                if (wallet.qrUrl) {
+                    qr.src = wallet.qrUrl;
+                    qr.alt = wallet.asset + ' ' + wallet.network;
+                    qr.hidden = false;
+                } else {
+                    qr.hidden = true;
+                }
+            }
+            if (amount) {
+                amount.textContent = wallet.amountLabel
+                    ? (t('tenant_paywall_send') + ' ' + wallet.amountLabel + ' · ' + wallet.network)
+                    : '';
+            }
+        }
+
+        function renderTenantCryptoPaywall(cfg) {
+            var wrap = document.getElementById('tenantPaywallCrypto');
+            var claimBtn = document.getElementById('btnTenantPaywallClaim');
+            var checkoutBtn = document.getElementById('btnTenantPaywallCheckout');
+            if (!wrap) return;
+            _tenantCryptoCfg = cfg && cfg.enabled ? cfg : null;
+            if (!_tenantCryptoCfg || !_tenantCryptoCfg.wallets || !_tenantCryptoCfg.wallets.length) {
+                wrap.hidden = true;
+                if (claimBtn) claimBtn.hidden = true;
+                if (checkoutBtn) checkoutBtn.hidden = false;
+                return;
+            }
+            wrap.hidden = false;
+            if (claimBtn) claimBtn.hidden = false;
+            if (checkoutBtn) {
+                checkoutBtn.hidden = true;
+            }
+            var nets = document.getElementById('tenantPaywallNetworks');
+            if (nets) {
+                nets.innerHTML = _tenantCryptoCfg.wallets.map(function (w) {
+                    return '<button type="button" class="tenant-paywall-net-btn" role="option" data-network="' +
+                        escapeHtml(w.id) + '">' + escapeHtml(w.asset + ' · ' + w.network) + '</button>';
+                }).join('');
+            }
+            var preferred = _tenantCryptoCfg.preferredNetwork || 'usdt_trc20';
+            selectTenantCryptoNetwork(preferred);
+            setTenantCryptoMsg('', false);
+        }
+
+        async function ensureTenantCryptoPaywall() {
+            try {
+                var res = await apiFetch('/api/billing/config');
+                var data = (res && res.data) ? res.data : null;
+                if (data && data.crypto && data.crypto.enabled) {
+                    renderTenantCryptoPaywall(data.crypto);
+                    return;
+                }
+                if (data && data.mode === 'crypto') {
+                    renderTenantCryptoPaywall(data.crypto || data);
+                    return;
+                }
+                renderTenantCryptoPaywall(null);
+            } catch (_) {
+                renderTenantCryptoPaywall(null);
+            }
+        }
+
+        async function claimTenantCryptoPayment() {
+            var claimBtn = document.getElementById('btnTenantPaywallClaim');
+            var txInput = document.getElementById('tenantPaywallTxId');
+            var txId = txInput ? String(txInput.value || '').trim() : '';
+            if (!_tenantCryptoNetwork) {
+                setTenantCryptoMsg(t('tenant_paywall_pick_network'), true);
+                return;
+            }
+            if (!txId) {
+                setTenantCryptoMsg(t('tenant_paywall_txid_required'), true);
+                return;
+            }
+            if (claimBtn) claimBtn.disabled = true;
+            setTenantCryptoMsg(t('tenant_paywall_claiming'), false);
+            try {
+                var res = await apiFetch('/api/billing/crypto/claim', {
+                    method: 'POST',
+                    body: JSON.stringify({ network: _tenantCryptoNetwork, txId: txId })
+                });
+                if (res && res.ok && res.data && res.data.ok) {
+                    setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_ok'), false);
+                    if (res.data.activated || res.data.alreadyActive) {
+                        if (typeof toast === 'function') toast(t('tenant_paywall_claim_ok'));
+                        setTimeout(function () {
+                            hideTenantPaywall();
+                            window.location.reload();
+                        }, 900);
+                        return;
+                    }
+                    if (res.data.whatsappUrl) {
+                        window.open(res.data.whatsappUrl, '_blank', 'noopener');
+                    }
+                    return;
+                }
+                setTenantCryptoMsg((res && res.error) || t('tenant_paywall_claim_fail'), true);
+            } catch (err) {
+                setTenantCryptoMsg((err && err.message) || t('tenant_paywall_claim_fail'), true);
+            } finally {
+                if (claimBtn) claimBtn.disabled = false;
+            }
+        }
+
         async function startTenantCheckout() {
             var btn = document.getElementById('btnTenantPaywallCheckout');
             var dashBtn = document.getElementById('btnDashTenantPay');
             if (btn) btn.disabled = true;
             if (dashBtn) dashBtn.disabled = true;
             try {
+                await ensureTenantCryptoPaywall();
+                if (_tenantCryptoCfg && _tenantCryptoCfg.enabled) {
+                    showTenantPaywall({ code: 'TRIAL_EXPIRED' });
+                    if (typeof toast === 'function') toast(t('tenant_paywall_crypto_lead'));
+                    return;
+                }
                 var email = (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ? currentUser.email : '';
                 var res = await apiFetch('/api/billing/checkout', {
                     method: 'POST',
                     body: JSON.stringify({ email: email })
                 });
+                if (res.ok && res.data && res.data.mode === 'crypto' && res.data.crypto) {
+                    renderTenantCryptoPaywall(res.data.crypto);
+                    showTenantPaywall({ code: 'TRIAL_EXPIRED' });
+                    return;
+                }
                 if (res.ok && res.data && res.data.url) {
                     window.location.href = res.data.url;
                     return;
@@ -2495,6 +2654,31 @@
                     e.preventDefault();
                     e.stopPropagation();
                     startTenantCheckout();
+                    return;
+                }
+                if (target.closest('#btnTenantPaywallClaim')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    claimTenantCryptoPayment();
+                    return;
+                }
+                if (target.closest('#btnTenantPaywallCopy')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var addrEl = document.getElementById('tenantPaywallAddress');
+                    var text = addrEl ? String(addrEl.textContent || '').trim() : '';
+                    if (text && navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(text).then(function () {
+                            if (typeof toast === 'function') toast(t('tenant_paywall_copied'));
+                        }).catch(function () {});
+                    }
+                    return;
+                }
+                var netBtn = target.closest('.tenant-paywall-net-btn');
+                if (netBtn && netBtn.getAttribute('data-network')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    selectTenantCryptoNetwork(netBtn.getAttribute('data-network'));
                     return;
                 }
                 if (target.closest('#btnTenantPaywallWa')) {

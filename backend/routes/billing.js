@@ -1,5 +1,5 @@
 /**
- * Kaya CRM — خرید خودخدمت Cloud Start (Stripe)
+ * FXGuard — خرید خودخدمت Cloud Start (کریپتو اول، Stripe اختیاری)
  * @file    backend/routes/billing.js
  * @layer   backend
  * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
@@ -11,8 +11,10 @@
 const express = require('express');
 const rateLimit = require('express-rate-limit');
 const axios = require('axios');
-const { ContactLead } = require('../models');
-const { optionalAuthMiddleware } = require('../middleware/auth');
+const { Op } = require('sequelize');
+const { ContactLead, Tenant } = require('../models');
+const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
+const { isMainAdmin } = require('../lib/permissions');
 const {
     publicBillingConfig,
     sanitizeCustomerEmail,
@@ -22,11 +24,30 @@ const {
     paidLeadMarker,
     paidLeadFields,
 } = require('../lib/billingCheckout');
+const {
+    isCryptoPayEnabled,
+    cryptoAutoActivate,
+    assertValidNetwork,
+    validateTxId,
+    publicCryptoBillingConfig,
+    confirmTokenForTenant,
+    parseConfirmToken,
+    salesWhatsApp,
+    AMOUNT_USDT,
+} = require('../lib/cryptoBilling');
 
 const checkoutLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 8,
     message: { error: 'تعداد درخواست پرداخت زیاد است. کمی صبر کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const cryptoClaimLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 12,
+    message: { error: 'تعداد ثبت TXID زیاد است. کمی صبر کنید.' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -92,6 +113,89 @@ async function notifyPaidLead(paid, logger) {
     }
 }
 
+async function persistCryptoLead(claim, logger) {
+    const marker = 'crypto:' + String(claim.txId || '').slice(0, 128);
+    try {
+        const existing = await ContactLead.findOne({
+            where: { source: 'crypto', message: marker },
+        });
+        if (existing) return { created: false };
+        await ContactLead.create({
+            purpose: 'purchase',
+            name: claim.name || claim.slug || 'Crypto Cloud Start',
+            email: claim.email || 'crypto@fxguard.io',
+            phone: null,
+            message: marker,
+            source: 'crypto',
+        });
+        return { created: true };
+    } catch (err) {
+        logger.warn('Crypto paid lead persist failed', { error: err.message });
+        return { created: false, error: err.message };
+    }
+}
+
+async function notifyCryptoClaim(claim, logger) {
+    const lines = [
+        'FXGuard crypto payment claim',
+        'Tenant: ' + (claim.slug || claim.tenantId),
+        'Network: ' + (claim.network || ''),
+        'TXID: ' + (claim.txId || ''),
+        'Amount: ' + AMOUNT_USDT + ' USDT (or ≈$49)',
+        'Status: ' + (claim.activated ? 'auto-activated' : 'pending manual confirm'),
+        claim.confirmHint ? 'Confirm: ' + claim.confirmHint : '',
+    ].filter(Boolean);
+
+    try {
+        const emailService = require('../services/emailService');
+        const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+        const panelSettings = await getPanelSettings();
+        const panelEmailConfig = getPanelEmailConfig(panelSettings);
+        if (panelEmailConfig || emailService.isEnabled()) {
+            await emailService.sendContactForm({
+                purpose: 'purchase',
+                name: claim.name || claim.slug || 'Crypto claim',
+                email: claim.email || 'crypto@fxguard.io',
+                phone: '',
+                message: lines.join('\n'),
+                emailConfig: panelEmailConfig,
+            });
+        }
+    } catch (err) {
+        logger.warn('Crypto claim email failed', { error: err.message });
+    }
+
+    try {
+        const telegramService = require('../services/telegramService');
+        if (telegramService.isEnabled()) {
+            await telegramService.sendMessage(lines.join('\n'), null, { parse_mode: false });
+        }
+    } catch (err) {
+        logger.warn('Crypto claim telegram failed', { error: err.message });
+    }
+}
+
+function requireTenantOwnerOrAdmin(req, res) {
+    if (!req.user) {
+        res.status(401).json({ error: 'ورود لازم است' });
+        return false;
+    }
+    if (!req.tenant || req.tenant.isPlatform || !req.tenant.id) {
+        res.status(400).json({ error: 'این درخواست فقط از داخل پنل مشتری است' });
+        return false;
+    }
+    if (String(req.user.tenantId || '') !== String(req.tenant.id)) {
+        res.status(403).json({ error: 'دسترسی به این پنل ندارید' });
+        return false;
+    }
+    const role = String(req.user.role || '');
+    if (role !== 'owner' && role !== 'admin' && !isMainAdmin(req.user)) {
+        res.status(403).json({ error: 'فقط مالک یا ادمین پنل می‌تواند پرداخت را ثبت کند' });
+        return false;
+    }
+    return true;
+}
+
 function createBillingRouter(logger) {
     const router = express.Router();
 
@@ -102,6 +206,15 @@ function createBillingRouter(logger) {
 
     router.post('/billing/checkout', checkoutLimiter, optionalAuthMiddleware, async (req, res) => {
         try {
+            if (isCryptoPayEnabled(process.env)) {
+                const crypto = publicCryptoBillingConfig(process.env);
+                return res.json({
+                    ok: true,
+                    mode: 'crypto',
+                    crypto,
+                    message: 'پرداخت با کریپتو انجام می‌شود؛ TXID را در پنل ثبت کنید.',
+                });
+            }
             const bodyEmail = sanitizeCustomerEmail(req.body && req.body.email);
             const userEmail = sanitizeCustomerEmail(req.user && req.user.email);
             const extras = { email: bodyEmail || userEmail };
@@ -113,11 +226,11 @@ function createBillingRouter(logger) {
                 extras,
                 stripePostForm
             );
-            res.json({ ok: true, url: session.url, id: session.id });
+            res.json({ ok: true, url: session.url, id: session.id, mode: 'checkout' });
         } catch (err) {
             if (err && err.code === 'BILLING_DISABLED') {
                 return res.status(503).json({
-                    error: 'پرداخت کارت هنوز فعال نیست. از واتساپ استفاده کنید.',
+                    error: 'پرداخت کارت هنوز فعال نیست. از کریپتو یا واتساپ استفاده کنید.',
                 });
             }
             logger.warn('Stripe checkout session failed', {
@@ -125,8 +238,217 @@ function createBillingRouter(logger) {
                 status: err && err.status,
             });
             res.status(502).json({
-                error: 'ساخت جلسه پرداخت ناموفق بود. واتساپ را امتحان کنید.',
+                error: 'ساخت جلسه پرداخت ناموفق بود. کریپتو یا واتساپ را امتحان کنید.',
             });
+        }
+    });
+
+    router.post(
+        '/billing/crypto/claim',
+        cryptoClaimLimiter,
+        authMiddleware,
+        async (req, res) => {
+            try {
+                if (!isCryptoPayEnabled(process.env)) {
+                    return res.status(503).json({ error: 'پرداخت کریپتو فعال نیست' });
+                }
+                if (!requireTenantOwnerOrAdmin(req, res)) return;
+
+                const network = String((req.body && req.body.network) || '').trim();
+                if (!assertValidNetwork(network)) {
+                    return res.status(400).json({ error: 'شبکهٔ پرداخت نامعتبر است' });
+                }
+                const checked = validateTxId(network, req.body && req.body.txId);
+                if (!checked.ok) {
+                    return res.status(400).json({ error: checked.error });
+                }
+
+                const tenant = await Tenant.findByPk(req.tenant.id);
+                if (!tenant) {
+                    return res.status(404).json({ error: 'سازمان یافت نشد' });
+                }
+                if (tenant.status === 'active' && tenant.cryptoPaymentStatus === 'confirmed') {
+                    return res.json({
+                        ok: true,
+                        alreadyActive: true,
+                        status: 'active',
+                        cryptoPaymentStatus: 'confirmed',
+                    });
+                }
+
+                const dup = await Tenant.findOne({
+                    where: {
+                        cryptoTxId: checked.txId,
+                        id: { [Op.ne]: tenant.id },
+                    },
+                });
+                if (dup) {
+                    return res.status(409).json({ error: 'این TXID قبلاً برای پنل دیگری ثبت شده است' });
+                }
+
+                const auto = cryptoAutoActivate(process.env);
+                const now = new Date();
+                await tenant.update({
+                    cryptoTxId: checked.txId,
+                    cryptoNetwork: network,
+                    cryptoPaymentStatus: auto ? 'confirmed' : 'pending',
+                    cryptoPaidAt: auto ? now : null,
+                });
+
+                let activated = false;
+                if (auto) {
+                    const { activateTenantFromPaid } = require('../services/tenantProvision');
+                    const result = await activateTenantFromPaid(
+                        {
+                            tenantId: tenant.id,
+                            email: req.user.email,
+                            cryptoTxId: checked.txId,
+                            cryptoNetwork: network,
+                            cryptoPaidAt: now,
+                        },
+                        logger
+                    );
+                    activated = !!(result && result.activated);
+                }
+
+                const token = confirmTokenForTenant(tenant.id, process.env.JWT_SECRET);
+                const site = String(
+                    process.env.FRONTEND_URL ||
+                        process.env.BACKEND_PUBLIC_URL ||
+                        'https://app.fxguard.io'
+                ).replace(/\/$/, '');
+                const confirmHint = auto
+                    ? ''
+                    : site + '/api/billing/crypto/confirm?token=' + encodeURIComponent(token);
+
+                const claim = {
+                    tenantId: tenant.id,
+                    slug: tenant.slug,
+                    network,
+                    txId: checked.txId,
+                    email: req.user.email,
+                    name: req.user.name,
+                    activated,
+                    confirmHint,
+                };
+                await persistCryptoLead(claim, logger);
+                await notifyCryptoClaim(claim, logger);
+
+                const wa = salesWhatsApp(process.env);
+                const waText =
+                    'FXGuard Cloud crypto payment\nPanel: ' +
+                    tenant.slug +
+                    '\nNetwork: ' +
+                    network +
+                    '\nTXID: ' +
+                    checked.txId;
+                res.json({
+                    ok: true,
+                    activated,
+                    status: activated ? 'active' : tenant.status,
+                    cryptoPaymentStatus: auto ? 'confirmed' : 'pending',
+                    autoActivate: auto,
+                    whatsappUrl: 'https://wa.me/' + wa + '?text=' + encodeURIComponent(waText),
+                    message: activated
+                        ? 'پرداخت ثبت و پنل فعال شد.'
+                        : 'TXID ثبت شد. پس از تأیید دستی پنل باز می‌شود.',
+                });
+            } catch (err) {
+                logger.warn('Crypto claim failed', { error: err && err.message });
+                res.status(500).json({ error: 'ثبت پرداخت ناموفق بود' });
+            }
+        }
+    );
+
+    router.get('/billing/crypto/pending', authMiddleware, async (req, res) => {
+        if (!isMainAdmin(req.user)) {
+            return res.status(403).json({ error: 'فقط ادمین اصلی پلتفرم' });
+        }
+        const rows = await Tenant.findAll({
+            where: { cryptoPaymentStatus: 'pending' },
+            order: [['updatedAt', 'DESC']],
+            limit: 50,
+            attributes: [
+                'id',
+                'slug',
+                'name',
+                'status',
+                'cryptoTxId',
+                'cryptoNetwork',
+                'cryptoPaymentStatus',
+                'updatedAt',
+            ],
+        });
+        res.json({ ok: true, items: rows });
+    });
+
+    async function confirmCryptoTenant(tenantId, logger) {
+        const row = await Tenant.findByPk(tenantId);
+        if (!row) return { ok: false, status: 404, error: 'سازمان یافت نشد' };
+        if (!row.cryptoTxId) {
+            return { ok: false, status: 400, error: 'TXID ثبت نشده است' };
+        }
+        const { activateTenantFromPaid } = require('../services/tenantProvision');
+        const result = await activateTenantFromPaid(
+            {
+                tenantId: row.id,
+                cryptoTxId: row.cryptoTxId,
+                cryptoNetwork: row.cryptoNetwork,
+                cryptoPaidAt: new Date(),
+            },
+            logger
+        );
+        return {
+            ok: true,
+            activated: !!(result && result.activated),
+            tenantId: row.id,
+            slug: row.slug,
+        };
+    }
+
+    router.post('/billing/crypto/confirm', authMiddleware, async (req, res) => {
+        try {
+            if (!isMainAdmin(req.user)) {
+                return res.status(403).json({ error: 'فقط ادمین اصلی پلتفرم' });
+            }
+            const tenantId = String((req.body && req.body.tenantId) || '').trim();
+            if (!tenantId) {
+                return res.status(400).json({ error: 'tenantId لازم است' });
+            }
+            const result = await confirmCryptoTenant(tenantId, logger);
+            if (!result.ok) {
+                return res.status(result.status || 400).json({ error: result.error });
+            }
+            res.json(result);
+        } catch (err) {
+            logger.warn('Crypto confirm failed', { error: err && err.message });
+            res.status(500).json({ error: 'تأیید پرداخت ناموفق بود' });
+        }
+    });
+
+    router.get('/billing/crypto/confirm', async (req, res) => {
+        try {
+            const tenantId = parseConfirmToken(req.query && req.query.token, process.env.JWT_SECRET);
+            if (!tenantId) {
+                return res.status(400).type('html').send('<p>لینک تأیید نامعتبر است.</p>');
+            }
+            const result = await confirmCryptoTenant(tenantId, logger);
+            if (!result.ok) {
+                return res
+                    .status(result.status || 400)
+                    .type('html')
+                    .send('<p>' + String(result.error || 'خطا') + '</p>');
+            }
+            res
+                .type('html')
+                .send(
+                    '<p>پنل <strong>' +
+                        String(result.slug || '') +
+                        '</strong> با کریپتو فعال شد.</p>'
+                );
+        } catch (err) {
+            logger.warn('Crypto confirm token failed', { error: err && err.message });
+            res.status(500).type('html').send('<p>تأیید ناموفق بود.</p>');
         }
     });
 

@@ -16,6 +16,36 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     }
 
     try {
+        const tenantDesc = await qi.describeTable('tenants').catch(() => null);
+        if (tenantDesc) {
+            const tenantCols = [
+                ['stripeCustomerId', { type: DataTypes.STRING(64), allowNull: true }],
+                ['stripeSubscriptionId', { type: DataTypes.STRING(64), allowNull: true }],
+                ['cryptoTxId', { type: DataTypes.STRING(128), allowNull: true }],
+                ['cryptoNetwork', { type: DataTypes.STRING(32), allowNull: true }],
+                ['cryptoPaymentStatus', { type: DataTypes.STRING(32), allowNull: true }],
+                ['cryptoPaidAt', { type: DataTypes.DATE, allowNull: true }],
+            ];
+            for (const [name, def] of tenantCols) {
+                if (tenantDesc[name] !== undefined) continue;
+                try {
+                    await qi.addColumn('tenants', name, def);
+                    logger.info('✅ tenants.' + name + ' column added (auto-migration)');
+                } catch (e) {
+                    if (
+                        !String(e.message || '').includes('already exists') &&
+                        !String(e.message || '').includes('duplicate')
+                    ) {
+                        logger.warn('tenants.' + name, e.message);
+                    }
+                }
+            }
+        }
+    } catch (tenantColErr) {
+        if (logger && logger.warn) logger.warn('tenants crypto columns migration:', tenantColErr.message);
+    }
+
+    try {
         const desc = await qi.describeTable('panel_settings');
         if (desc) {
             const cols = [

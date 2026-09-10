@@ -59,7 +59,7 @@
             faq1_q: 'Is this a generic WhatsApp CRM?', faq1_a: 'The inbox is included. The product is ownership of the FX customer book: quoted rates, roles, branches and audit. Compare us there — not feature-for-feature with Wati or Chatwoot.',
             faq2_q: 'Is WhatsApp official Meta API?', faq2_a: 'Two paths: unofficial WhatsApp Web (QR) without Business verification — faster, ban risk on bulk — and official Meta Cloud API. We will not hide which one you are on. Cloud API is required for serious broadcast.',
             faq3_q: 'Why not $49 unlimited for everyone?', faq3_a: 'Cloud Start is $49/month for one branch and up to three staff. Business is from $249, Multi-branch from $499. License from $4,000 one-time. Managed from $800/month. Final commercial numbers can be negotiated; the floor is published so procurement is not guessing.',
-            faq4_q: 'Can we get an invoice / PO instead of WhatsApp checkout?', faq4_a: 'Yes. Use Request invoice or Get a written quote. Read the <a href="/procurement">security and procurement summary</a> (print to PDF). Cloud Start can be paid by card when Stripe is enabled; otherwise WhatsApp. Commercial and license deals go through invoice.',
+            faq4_q: 'Can we get an invoice / PO instead of WhatsApp checkout?', faq4_a: 'Yes. Use Request invoice or Get a written quote. Read the <a href="/procurement">security and procurement summary</a> (print to PDF). Cloud Start is paid with crypto (USDT/BNB/BTC) inside your panel after signup; invoice/PO for commercial deals.',
             faq5_q: 'How do we try it with our own number?', faq5_a: 'The public panel is for browsing screens. For a live line, ask for a guided session (about 10 minutes) or a time-limited trial where you connect your number and can disconnect it afterwards.',
             contact_demo: 'Guided demo', contact_buy: 'Cloud Start', contact_quote: 'Invoice / quote', contact_support: 'Support',
             channel_wa: 'WhatsApp', channel_sales: 'Sales', channel_support: 'Support',
@@ -152,7 +152,7 @@
             faq1_q: 'این یک CRM عمومی واتساپ است؟', faq1_a: 'صندوق ورودی شامل است. محصول مالکیت دفتر مشتری صرافی است: نرخ اعلام‌شده، نقش، شعبه و حسابرسی. آنجا مقایسه کنید — نه ویژگی‌به‌ویژگی با Wati یا Chatwoot.',
             faq2_q: 'واتساپ رسمی Meta است؟', faq2_a: 'دو مسیر: واتساپ وب غیررسمی (QR) بدون تأیید بیزنس — سریع‌تر، ریسک بن روی انبوه — و Cloud API رسمی. پنهان نمی‌کنیم روی کدام هستید. برای broadcast جدی Cloud API لازم است.',
             faq3_q: 'چرا برای همه ۴۹ دلار نامحدود نیست؟', faq3_a: 'شروع ابری ۴۹ دلار در ماه برای یک شعبه و تا سه کارمند است. تجاری از ۲۴۹، چندشعبه از ۴۹۹. لایسنس از ۴۰۰۰ دلار یک‌باره. مدیریت‌شده از ۸۰۰ دلار در ماه. عدد نهایی تجاری قابل مذاکره است؛ کف منتشر شده تا تدارکات حدس نزند.',
-            faq4_q: 'فاکتور یا سفارش خرید به‌جای چک‌اوت واتساپ؟', faq4_a: 'بله. درخواست فاکتور یا پیش‌فاکتور کتبی. <a href="/procurement">خلاصه امنیت و تدارکات</a> را بخوانید (چاپ PDF). ابر شروع وقتی Stripe روشن باشد با کارت؛ وگرنه واتساپ. معامله تجاری و لایسنس با فاکتور است.',
+            faq4_q: 'فاکتور یا سفارش خرید به‌جای چک‌اوت واتساپ؟', faq4_a: 'بله. درخواست فاکتور یا پیش‌فاکتور کتبی. <a href="/procurement">خلاصه امنیت و تدارکات</a> را بخوانید (چاپ PDF). ابر شروع با کریپتو (USDT/BNB/BTC) داخل پنل بعد از ثبت‌نام؛ معامله تجاری با فاکتور.',
             faq5_q: 'چطور با شماره خودمان امتحان کنیم؟', faq5_a: 'پنل عمومی برای دیدن صفحه‌هاست. برای خط زنده، جلسه هدایت‌شده (حدود ۱۰ دقیقه) بخواهید یا آزمایش زمان‌محدود که شماره را وصل کنید و بعد قطع کنید.',
             contact_demo: 'دمو هدایت‌شده', contact_buy: 'ابر شروع', contact_quote: 'فاکتور / استعلام', contact_support: 'پشتیبانی',
             channel_wa: 'واتساپ', channel_sales: 'فروش', channel_support: 'پشتیبانی',
@@ -245,7 +245,7 @@
             faq1_q: 'Bu genel bir WhatsApp CRM mi?', faq1_a: 'Gelen kutu dahildir. Ürün döviz müşteri defterinin sahipliğidir: verilen kur, rol, şube ve denetim. Bizi orada karşılaştırın — Wati veya Chatwoot ile özellik özelliğe değil.',
             faq2_q: 'WhatsApp resmi Meta API mi?', faq2_a: 'İki yol: doğrulamasız resmi olmayan WhatsApp Web (QR) — daha hızlı, topluda yasak riski — ve resmi Cloud API. Hangisinde olduğunuzu gizlemeyiz. Ciddi yayın için Cloud API gerekir.',
             faq3_q: 'Neden herkes için sınırsız 49$?', faq3_a: 'Bulut Başlangıç 49$/ay, 1 şube ve 3 personele kadar. Ticari 249$’dan, çok şube 499$’dan. Lisans 4000$’dan tek seferlik. Yönetilen 800$/ay’dan. Nihai ticari rakam müzakere edilebilir; taban yayımlanır ki satınalma tahmin etmesin.',
-            faq4_q: 'WhatsApp ödemesi yerine fatura / sipariş?', faq4_a: 'Evet. Fatura isteyin veya yazılı teklif alın. <a href="/procurement">Güvenlik ve satın alma özetini</a> okuyun (PDF yazdırın). Cloud Start, Stripe açıksa kartla; değilse WhatsApp. Ticari ve lisans faturalıdır.',
+            faq4_q: 'WhatsApp ödemesi yerine fatura / sipariş?', faq4_a: 'Evet. Fatura isteyin veya yazılı teklif alın. <a href="/procurement">Güvenlik ve satın alma özetini</a> okuyun (PDF yazdırın). Cloud Start, kayıt sonrası panelde kripto (USDT/BNB/BTC) ile; ticari işler faturalıdır.',
             faq5_q: 'Kendi numaramızla nasıl deneriz?', faq5_a: 'Herkese açık panel ekranları görmek içindir. Canlı hat için yönlendirilmiş oturum (yaklaşık 10 dakika) veya numarayı bağlayıp sonra kesebileceğiniz süreli deneme isteyin.',
             contact_demo: 'Yönlendirilmiş demo', contact_buy: 'Bulut Başlangıç', contact_quote: 'Fatura / teklif', contact_support: 'Destek',
             channel_wa: 'WhatsApp', channel_sales: 'Satış', channel_support: 'Destek',
@@ -531,6 +531,25 @@
             if (!buttons.length) return;
             var dict = TRANSLATIONS[LANG] || TRANSLATIONS.en;
             var waFallback = 'https://wa.me/905010676486?text=' + encodeURIComponent('I want Cloud Start $49/mo');
+            if (cfg.mode === 'crypto') {
+                var payUrl = (cfg.crypto && cfg.crypto.payPageUrl) || 'https://fxguard.io/pay';
+                var signupUrl = origin.indexOf('app.fxguard') >= 0 ? (origin + '/signup') : 'https://app.fxguard.io/signup';
+                buttons.forEach(function (btn) {
+                    btn.removeAttribute('target');
+                    btn.removeAttribute('rel');
+                    if (dict.plan_btn_card && (btn.getAttribute('data-i18n') === 'plan_btn' || btn.getAttribute('data-i18n') === 'contact_buy_btn')) {
+                        btn.textContent = dict.plan_btn_card;
+                    }
+                    btn.setAttribute('href', signupUrl);
+                    btn.setAttribute('title', payUrl);
+                    btn.addEventListener('click', function (ev) {
+                        if (ev.metaKey || ev.ctrlKey) return;
+                        ev.preventDefault();
+                        window.location.href = signupUrl + '?from=pricing';
+                    });
+                });
+                return;
+            }
             buttons.forEach(function (btn) {
                 btn.removeAttribute('target');
                 btn.removeAttribute('rel');

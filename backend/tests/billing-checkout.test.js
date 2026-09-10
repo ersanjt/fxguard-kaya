@@ -47,12 +47,19 @@ function test(name, fn) {
 console.log('billingCheckout unit tests\n');
 
 async function run() {
-    await test('billing is off without keys or payment link', () => {
-        assert.strictEqual(resolveBillingMode({}), 'off');
-        const cfg = publicBillingConfig({});
+    await test('billing defaults to crypto wallets without Stripe', () => {
+        const cfg = publicBillingConfig({ CRYPTO_PAY_DISABLED: '1' });
         assert.strictEqual(cfg.enabled, false);
+        assert.strictEqual(cfg.mode, 'off');
         assert.strictEqual(cfg.amountUsd, 49);
         assert.strictEqual(START_AMOUNT_CENTS, 4900);
+        const cryptoOn = publicBillingConfig({});
+        assert.strictEqual(cryptoOn.mode, 'crypto');
+        assert.strictEqual(cryptoOn.enabled, true);
+    });
+
+    await test('billing is off without keys or payment link when crypto disabled', () => {
+        assert.strictEqual(resolveBillingMode({}), 'off');
     });
 
     await test('payment link must be Stripe HTTPS host', () => {
@@ -60,7 +67,10 @@ async function run() {
         assert.strictEqual(isAllowedPaymentLink('http://buy.stripe.com/x'), false);
         assert.strictEqual(isAllowedPaymentLink('https://buy.stripe.com/test_abc'), true);
         assert.strictEqual(resolveBillingMode({ STRIPE_PAYMENT_LINK_START: 'https://buy.stripe.com/test_abc' }), 'link');
-        const cfg = publicBillingConfig({ STRIPE_PAYMENT_LINK_START: 'https://buy.stripe.com/test_abc' });
+        const cfg = publicBillingConfig({
+            CRYPTO_PAY_DISABLED: '1',
+            STRIPE_PAYMENT_LINK_START: 'https://buy.stripe.com/test_abc',
+        });
         assert.strictEqual(cfg.enabled, true);
         assert.strictEqual(cfg.mode, 'link');
         assert.strictEqual(cfg.checkoutUrl, 'https://buy.stripe.com/test_abc');

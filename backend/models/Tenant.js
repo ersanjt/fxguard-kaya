@@ -64,6 +64,23 @@ module.exports = (sequelize) => {
                 type: DataTypes.STRING(64),
                 allowNull: true,
             },
+            cryptoTxId: {
+                type: DataTypes.STRING(128),
+                allowNull: true,
+            },
+            cryptoNetwork: {
+                type: DataTypes.STRING(32),
+                allowNull: true,
+            },
+            cryptoPaymentStatus: {
+                type: DataTypes.STRING(32),
+                allowNull: true,
+                comment: 'pending | confirmed | rejected',
+            },
+            cryptoPaidAt: {
+                type: DataTypes.DATE,
+                allowNull: true,
+            },
         },
         {
             timestamps: true,

@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="b837e1dbc455">
+    <meta name="crm-build" content="efe220389b7f">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=b837e1dbc455">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=b837e1dbc455" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=efe220389b7f">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=efe220389b7f" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -232,8 +232,24 @@
             <div class="tenant-paywall-card">
                 <h2 id="tenantPaywallTitle" data-i18n="tenant_paywall_title">دورهٔ آزمایش تمام شده</h2>
                 <p id="tenantPaywallBody" data-i18n="tenant_paywall_body">برای ادامه باید اشتراک را فعال کنید. دادهٔ شما محفوظ است.</p>
+                <div id="tenantPaywallCrypto" class="tenant-paywall-crypto" hidden>
+                    <p class="tenant-paywall-crypto-lead" data-i18n="tenant_paywall_crypto_lead">۴۹ USDT بفرستید، TXID را ثبت کنید — پنل باز می‌شود.</p>
+                    <div class="tenant-paywall-networks" id="tenantPaywallNetworks" role="listbox" aria-label="شبکه پرداخت"></div>
+                    <div class="tenant-paywall-wallet" id="tenantPaywallWalletBox" hidden>
+                        <img id="tenantPaywallQr" class="tenant-paywall-qr" alt="" width="160" height="160" hidden>
+                        <code id="tenantPaywallAddress" class="tenant-paywall-address" dir="ltr"></code>
+                        <button type="button" class="btn-secondary btn-sm" id="btnTenantPaywallCopy" data-i18n="tenant_paywall_copy">کپی آدرس</button>
+                        <p id="tenantPaywallAmount" class="tenant-paywall-amount"></p>
+                    </div>
+                    <label class="tenant-paywall-txid-label" for="tenantPaywallTxId">
+                        <span data-i18n="tenant_paywall_txid">TXID / هش تراکنش</span>
+                        <input type="text" id="tenantPaywallTxId" class="tenant-paywall-txid" dir="ltr" autocomplete="off" spellcheck="false" maxlength="128" placeholder="txid…">
+                    </label>
+                    <p id="tenantPaywallCryptoMsg" class="tenant-paywall-crypto-msg" hidden role="status"></p>
+                </div>
                 <div class="tenant-paywall-actions">
                     <button type="button" class="btn-primary" id="btnTenantPaywallCheckout" data-i18n="tenant_paywall_pay">فعال‌سازی اشتراک</button>
+                    <button type="button" class="btn-secondary" id="btnTenantPaywallClaim" hidden data-i18n="tenant_paywall_claim">ثبت TXID و فعال‌سازی</button>
                     <button type="button" class="btn-secondary" id="btnTenantPaywallWa" data-i18n="tenant_paywall_wa">گفتگو در واتساپ</button>
                 </div>
             </div>
@@ -4203,10 +4219,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=b837e1dbc455" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=efe220389b7f" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4233,10 +4249,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=b837e1dbc455" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=b837e1dbc455" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=efe220389b7f" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=efe220389b7f" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

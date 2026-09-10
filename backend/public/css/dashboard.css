@@ -449,7 +449,9 @@
         }
         .tenant-paywall[hidden] { display: none !important; }
         .tenant-paywall-card {
-            width: min(440px, 100%);
+            width: min(520px, 100%);
+            max-height: min(92vh, 760px);
+            overflow: auto;
             padding: 28px 24px;
             border-radius: var(--radius);
             border: 1px solid var(--border);
@@ -458,8 +460,51 @@
             box-shadow: 0 16px 48px rgba(0,0,0,0.28);
         }
         .tenant-paywall-card h2 { margin: 0 0 10px; font-size: 1.15rem; }
-        .tenant-paywall-card p { margin: 0 0 18px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+        .tenant-paywall-card > p { margin: 0 0 18px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
         .tenant-paywall-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .tenant-paywall-crypto { text-align: start; margin: 0 0 16px; }
+        .tenant-paywall-crypto-lead { margin: 0 0 12px; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.55; }
+        .tenant-paywall-networks { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+        .tenant-paywall-net-btn {
+            border: 1px solid var(--border);
+            background: var(--bg-elevated, var(--bg-card));
+            color: var(--text-primary);
+            border-radius: var(--radius-sm);
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+        .tenant-paywall-net-btn.is-active {
+            border-color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .tenant-paywall-wallet { display: grid; gap: 8px; justify-items: center; margin: 0 0 12px; }
+        .tenant-paywall-qr { border-radius: 8px; background: #fff; padding: 6px; }
+        .tenant-paywall-address {
+            display: block;
+            width: 100%;
+            word-break: break-all;
+            font-size: 0.78rem;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--border);
+            background: var(--bg-elevated, transparent);
+            text-align: center;
+        }
+        .tenant-paywall-amount { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+        .tenant-paywall-txid-label { display: grid; gap: 6px; font-size: 0.85rem; text-align: start; }
+        .tenant-paywall-txid {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--bg-input, var(--bg-card));
+            color: var(--text-primary);
+            font-family: ui-monospace, monospace;
+            font-size: 0.85rem;
+        }
+        .tenant-paywall-crypto-msg { margin: 10px 0 0; font-size: 0.88rem; color: var(--accent); }
+        .tenant-paywall-crypto-msg.is-error { color: var(--danger, #dc2626); }
         body.tenant-paywall-open { overflow: hidden; }
         .commercial-home-card h3 { margin: 0 0 8px; font-size: 0.98rem; }
         .commercial-home-card p { margin: 0 0 12px; font-size: 0.9rem; color: var(--text-secondary); }
