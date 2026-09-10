@@ -1601,6 +1601,15 @@
 
         var _tenantCryptoCfg = null;
         var _tenantCryptoNetwork = null;
+        var _tenantCryptoWa = '';
+
+        function tenantSalesWhatsAppUrl(text) {
+            var phone = '';
+            if (_tenantCryptoCfg && _tenantCryptoCfg.whatsapp) phone = String(_tenantCryptoCfg.whatsapp).replace(/\D/g, '');
+            if (!phone && _tenantCryptoWa) phone = String(_tenantCryptoWa).replace(/\D/g, '');
+            if (!phone) phone = '905010676486';
+            return 'https://wa.me/' + phone + '?text=' + encodeURIComponent(text || '');
+        }
 
         function setTenantCryptoMsg(text, isError) {
             var msg = document.getElementById('tenantPaywallCryptoMsg');
@@ -1663,6 +1672,9 @@
             var checkoutBtn = document.getElementById('btnTenantPaywallCheckout');
             if (!wrap) return;
             _tenantCryptoCfg = cfg && cfg.enabled ? cfg : null;
+            if (_tenantCryptoCfg && _tenantCryptoCfg.whatsapp) {
+                _tenantCryptoWa = String(_tenantCryptoCfg.whatsapp);
+            }
             if (!_tenantCryptoCfg || !_tenantCryptoCfg.wallets || !_tenantCryptoCfg.wallets.length) {
                 wrap.hidden = true;
                 if (claimBtn) claimBtn.hidden = true;
@@ -1733,8 +1745,11 @@
                         }, 900);
                         return;
                     }
-                    if (res.data.whatsappUrl) {
-                        window.open(res.data.whatsappUrl, '_blank', 'noopener');
+                    setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_pending'), false);
+                    if (txInput) txInput.disabled = true;
+                    if (claimBtn) {
+                        claimBtn.disabled = true;
+                        claimBtn.textContent = t('tenant_paywall_claim_pending_btn');
                     }
                     return;
                 }
@@ -1775,7 +1790,7 @@
                 var msg = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug)
                     ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + currentUser.tenant.slug)
                     : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
-                window.open('https://wa.me/905010676486?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+                window.open(tenantSalesWhatsAppUrl(msg), '_blank', 'noopener');
                 if (typeof toast === 'function') {
                     toast((res && res.error) || t('tenant_paywall_billing_off'), true);
                 }
@@ -2685,10 +2700,12 @@
                     e.preventDefault();
                     e.stopPropagation();
                     var slug = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug) ? currentUser.tenant.slug : '';
+                    var txEl = document.getElementById('tenantPaywallTxId');
+                    var txHint = txEl && txEl.value ? ('\nTXID: ' + String(txEl.value).trim()) : '';
                     var waMsg = slug
-                        ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + slug)
-                        : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
-                    window.open('https://wa.me/905010676486?text=' + encodeURIComponent(waMsg), '_blank', 'noopener');
+                        ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + slug + txHint)
+                        : ('Hi, I want to activate FXGuard Cloud after the 7-day trial.' + txHint);
+                    window.open(tenantSalesWhatsAppUrl(waMsg), '_blank', 'noopener');
                     return;
                 }
                 if (target.closest('#btnSaveCustomDomain') && typeof saveTenantCustomDomain === 'function') {

@@ -1211,6 +1211,7 @@
             clearPanelSettingsChanged();
             if (typeof window.applyTranslations === 'function') window.applyTranslations();
         }
+        var _tenantWildcardDns = null;
         function fillTenantDomainUi(tenant) {
             var wrap = document.getElementById('panelCustomDomainSection');
             if (!wrap) return;
@@ -1225,12 +1226,26 @@
             }
             var hint = document.getElementById('panelCustomDomainDns');
             if (hint) {
-                var target = tenant.slug + '.app.fxguard.io';
-                hint.textContent = t('panel_custom_domain_dns').replace('{target}', target);
+                if (_tenantWildcardDns === false) {
+                    var login = 'https://app.fxguard.io/login?panel=' + encodeURIComponent(tenant.slug);
+                    hint.textContent = t('panel_custom_domain_dns_apex').replace('{login}', login);
+                } else {
+                    var target = tenant.slug + '.app.fxguard.io';
+                    hint.textContent = t('panel_custom_domain_dns').replace('{target}', target);
+                }
             }
         }
         async function loadTenantDomainFromApi() {
             try {
+                if (_tenantWildcardDns === null) {
+                    try {
+                        var cfgRes = await apiFetch('/api/config');
+                        var cfg = cfgRes && cfgRes.data ? cfgRes.data : null;
+                        _tenantWildcardDns = !!(cfg && cfg.selfServe && cfg.selfServe.wildcardDns);
+                    } catch (_cfgErr) {
+                        _tenantWildcardDns = false;
+                    }
+                }
                 var res = await apiFetch('/api/tenants/me');
                 if (res.ok && res.data && res.data.tenant) {
                     fillTenantDomainUi(res.data.tenant);

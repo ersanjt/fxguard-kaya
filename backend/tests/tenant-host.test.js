@@ -14,6 +14,7 @@ const {
     isSelfServeStaffOrigin,
     panelKeyForSlug,
     tenantLoginUrl,
+    tenantDashboardUrl,
     publicSelfServeConfig,
     tenantBaseHost,
 } = require('../lib/tenantHost');
@@ -81,9 +82,14 @@ test('CORS helper allows tenant subdomains of app host', () => {
 test('login URL and public config', () => {
     const env = { TENANT_BASE_HOST: 'app.fxguard.io', SELF_SERVE_SIGNUP: '1', TENANT_TRIAL_DAYS: '7' };
     assert.strictEqual(tenantLoginUrl('acme', env, 'https'), 'https://app.fxguard.io/login?panel=acme');
+    assert.strictEqual(tenantDashboardUrl('acme', env, 'https'), 'https://app.fxguard.io/dashboard?panel=acme');
     assert.strictEqual(
         tenantLoginUrl('acme', Object.assign({}, env, { TENANT_WILDCARD_DNS: 'true' }), 'https'),
         'https://acme.app.fxguard.io/login'
+    );
+    assert.strictEqual(
+        tenantDashboardUrl('acme', Object.assign({}, env, { TENANT_WILDCARD_DNS: 'true' }), 'https'),
+        'https://acme.app.fxguard.io/dashboard'
     );
     assert.strictEqual(tenantBaseHost(env), 'app.fxguard.io');
     const cfg = publicSelfServeConfig(env, 'app.fxguard.io');

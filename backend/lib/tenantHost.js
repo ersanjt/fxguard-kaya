@@ -185,6 +185,18 @@ function tenantLoginUrl(slug, env, proto) {
     return scheme + '://' + base + '/login?panel=' + encodeURIComponent(s);
 }
 
+function tenantDashboardUrl(slug, env, proto) {
+    const s = normalizeSlug(slug);
+    const src = env || process.env;
+    const base = tenantBaseHost(src);
+    const scheme = proto === 'http' ? 'http' : 'https';
+    if (!s) return scheme + '://' + base + '/dashboard';
+    if (tenantWildcardDnsReady(src)) {
+        return scheme + '://' + s + '.' + base + '/dashboard';
+    }
+    return scheme + '://' + base + '/dashboard?panel=' + encodeURIComponent(s);
+}
+
 function readApexPanelSlug(req) {
     if (!req) return '';
     const q = req.query || {};
@@ -236,6 +248,7 @@ module.exports = {
     panelKeyForSlug,
     parseTenantSlugFromHost,
     tenantLoginUrl,
+    tenantDashboardUrl,
     tenantWildcardDnsReady,
     readApexPanelSlug,
     isSelfServeSignupPath,

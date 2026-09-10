@@ -15,6 +15,7 @@ const {
     slugError,
     panelKeyForSlug,
     tenantLoginUrl,
+    tenantDashboardUrl,
     trialDays,
 } = require('../lib/tenantHost');
 const { trialEndsAtFromNow } = require('../lib/tenantTrial');
@@ -171,7 +172,7 @@ async function provisionSelfServeTenant(input, env) {
 
     const proto = String(src.SELF_SERVE_PUBLIC_PROTO || 'https').toLowerCase() === 'http' ? 'http' : 'https';
     const loginUrl = tenantLoginUrl(slug, src, proto);
-    const base = String(loginUrl).replace(/\/login(\?.*)?$/, '');
+    const dashboardUrl = tenantDashboardUrl(slug, src, proto);
     return {
         tenantId: tenant.id,
         slug,
@@ -180,7 +181,7 @@ async function provisionSelfServeTenant(input, env) {
         trialEndsAt,
         trialDays: days,
         loginUrl,
-        dashboardUrl: base + '/dashboard',
+        dashboardUrl,
         panelKey,
         owner: ownerUser
             ? { id: ownerUser.id, email: ownerUser.email, name: ownerUser.name, role: ownerUser.role }

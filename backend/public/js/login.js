@@ -206,22 +206,42 @@
     if (SUPPORTED.indexOf(lang) < 0) lang = 'fa';
     function loginIsPublicRestricted() { return false; }
 
+    var PANEL_SLUG_KEY = 'fxguard_panel_slug';
     function lpIsAppApex() {
         return (location.hostname || '').toLowerCase() === 'app.fxguard.io';
+    }
+    function lpNormalizePanel(raw) {
+        return String(raw || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '').slice(0, 24);
+    }
+    function lpRememberPanel(slug) {
+        var s = lpNormalizePanel(slug);
+        if (!s) return;
+        try { localStorage.setItem(PANEL_SLUG_KEY, s); } catch (_) {}
+    }
+    function lpSavedPanel() {
+        try { return lpNormalizePanel(localStorage.getItem(PANEL_SLUG_KEY) || ''); } catch (_) { return ''; }
     }
     function lpPanelSlug() {
         var el = document.getElementById('lpPanelSlug');
         try {
             var q = new URLSearchParams(window.location.search).get('panel');
-            if (q) return String(q).trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+            if (q) return lpNormalizePanel(q);
         } catch (_) {}
-        if (el && el.value) return String(el.value).trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-        return '';
+        if (el && el.value) return lpNormalizePanel(el.value);
+        return lpSavedPanel();
     }
     function lpWithPanel(url) {
         var s = lpPanelSlug();
-        if (!s) return url;
-        return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'panel=' + encodeURIComponent(s);
+        if (!s || !url) return url;
+        var hash = '';
+        var path = String(url);
+        var hashIdx = path.indexOf('#');
+        if (hashIdx >= 0) {
+            hash = path.slice(hashIdx);
+            path = path.slice(0, hashIdx);
+        }
+        if (/[?&]panel=/.test(path)) return path + hash;
+        return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'panel=' + encodeURIComponent(s) + hash;
     }
     function lpShowApexPanelField() {
         if (!lpIsAppApex()) return;
@@ -229,9 +249,9 @@
         if (row) row.hidden = false;
         var el = document.getElementById('lpPanelSlug');
         if (el && !el.value) {
-            try {
-                el.value = new URLSearchParams(window.location.search).get('panel') || '';
-            } catch (_) {}
+            var fromQuery = '';
+            try { fromQuery = new URLSearchParams(window.location.search).get('panel') || ''; } catch (_) {}
+            el.value = lpNormalizePanel(fromQuery) || lpSavedPanel();
         }
     }
 
@@ -331,6 +351,7 @@
     }
     function postLoginRedirect(data) {
         saveSessionToken(data);
+        lpRememberPanel(lpPanelSlug());
         var returnTo = '';
         try {
             returnTo = new URLSearchParams(window.location.search).get('return') || '';
@@ -342,9 +363,9 @@
                 u.searchParams.delete('reauth');
                 returnTo = u.pathname + (u.search || '') + (u.hash || '');
             } catch (_) {}
-            window.location.replace(returnTo);
+            window.location.replace(lpWithPanel(returnTo));
         } else {
-            window.location.replace('/dashboard');
+            window.location.replace(lpWithPanel('/dashboard'));
         }
     }
 
@@ -782,9 +803,9 @@
                     returnTo = new URLSearchParams(window.location.search).get('return') || '';
                 } catch (_) {}
                 if (returnTo && returnTo.charAt(0) === '/' && returnTo.indexOf('//') !== 0) {
-                    window.location.href = returnTo;
+                    window.location.href = lpWithPanel(returnTo);
                 } else {
-                    window.location.href = '/dashboard';
+                    window.location.href = lpWithPanel('/dashboard');
                 }
             }
         }).catch(function() {});

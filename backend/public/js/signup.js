@@ -158,6 +158,9 @@
                         return;
                     }
                     setMsg('پنل ساخته شد. در حال ورود…', true);
+                    try {
+                        if (res.d.slug) localStorage.setItem('fxguard_panel_slug', String(res.d.slug).toLowerCase());
+                    } catch (_) {}
                     var dash = res.d.dashboardUrl;
                     if (res.d.session && dash) {
                         window.location.href = dash;
