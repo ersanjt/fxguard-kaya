@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>برنامه ورود Kaya CRM به تکنوپark آنکارا</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #1c1917;
+        --muted: #57534e;
+        --line: #e7e5e4;
+        --paper: #faf8f5;
+        --card: #ffffff;
+        --accent: #1d4ed8;
+        --accent-soft: #eff6ff;
+        --good: #166534;
+        --good-soft: #f0fdf4;
+        --warn: #9a3412;
+        --warn-soft: #fff7ed;
+        --max: 920px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: Vazirmatn, Tahoma, sans-serif;
+        line-height: 1.75;
+        font-size: 16px;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .bar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: flex;
+        gap: 12px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 20px;
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .bar nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+      }
+
+      .bar a {
+        text-decoration: none;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      .bar a:hover,
+      .bar a:focus {
+        color: var(--accent);
+      }
+
+      .print-btn {
+        border: 1px solid var(--ink);
+        background: var(--ink);
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .print-btn:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+
+      main {
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 40px 20px 80px;
+      }
+
+      header.cover {
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      p.kicker {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 32px;
+        line-height: 1.35;
+        font-weight: 700;
+      }
+
+      .lead {
+        margin: 0;
+        font-size: 18px;
+        color: var(--muted);
+        max-width: 40rem;
+      }
+
+      section {
+        scroll-margin-top: 72px;
+      }
+
+      h2 {
+        margin: 48px 0 12px;
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      h3 {
+        margin: 28px 0 10px;
+        font-size: 17px;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0 0 12px;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 28px 0 8px;
+      }
+
+      .stat {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 16px 16px 14px;
+      }
+
+      .stat b {
+        display: block;
+        font-size: 26px;
+        line-height: 1.2;
+        font-weight: 700;
+      }
+
+      .stat span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .stat.good {
+        background: var(--good-soft);
+        border-color: #bbf7d0;
+      }
+
+      .stat.good b {
+        color: var(--good);
+      }
+
+      .stat.warn {
+        background: var(--warn-soft);
+        border-color: #fed7aa;
+      }
+
+      .note {
+        background: var(--accent-soft);
+        border: 1px solid #bfdbfe;
+        border-radius: 12px;
+        padding: 14px 16px;
+        margin: 16px 0 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--card);
+        font-size: 14px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: right;
+        vertical-align: top;
+      }
+
+      th {
+        background: #f5f5f4;
+        font-weight: 600;
+      }
+
+      .num {
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
+      }
+
+      ol.steps {
+        margin: 0;
+        padding: 0 22px 0 0;
+      }
+
+      ol.steps li {
+        margin-bottom: 8px;
+      }
+
+      footer {
+        margin-top: 48px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 720px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 26px;
+        }
+
+        .bar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+
+      @media print {
+        body {
+          background: #fff;
+          font-size: 12px;
+        }
+
+        .bar {
+          display: none;
+        }
+
+        main {
+          max-width: none;
+          padding: 0;
+        }
+
+        header.cover,
+        section {
+          break-inside: avoid;
+        }
+
+        h2 {
+          margin-top: 28px;
+        }
+
+        .stat b {
+          font-size: 20px;
+        }
+
+        a {
+          color: inherit;
+          text-decoration: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar">
+      <nav>
+        <a href="#company">شرکت فعلی</a>
+        <a href="#capital">سرمایه</a>
+        <a href="#benefit">فایده</a>
+        <a href="#payroll">حقوق ۵ نفر</a>
+        <a href="#cost">جزئیات هزینه</a>
+        <a href="#path">مسیر</a>
+        <a href="#sales">فروش</a>
+        <a href="#review">بررسی متخصص</a>
+        <a href="#ask">تصمیم</a>
+      </nav>
+      <button class="print-btn" type="button" onclick="window.print()">
+        ذخیره PDF / چاپ
+      </button>
+    </div>
+
+    <main>
+      <header class="cover">
+        <p class="kicker">ارائه برای آقای رسول‌زاده · سپتامبر ۲۰۲۶</p>
+        <h1>ورود Kaya CRM به تکنوپark آنکارا</h1>
+        <p class="lead">
+          شرکت Ltd جدید در کولوچکای Nar. محصول یک CRM واتساپ برای هر سازمان است —
+          شرکت، کارخانه، بیمارستان، کلینیک، فروشگاه و خدمات مالی. ماژول صرافی فقط
+          اولین بستهٔ صنعتی است.
+        </p>
+        <p class="lead">تهیه‌کننده: ارسان جاهد تبریزی، مدیر پروژه</p>
+      </header>
+
+      <section id="company">
+        <h2>شرکت فعلی — از روی اسناد رسمی</h2>
+        <p>
+          منبع: لوح مالیاتی، اظهارنامهٔ ۲۰۲۵، روزنامهٔ ثبت ۱۶ دسامبر ۲۰۲۰، و
+          دفتر معین فروش ۲۰۲۵. این‌ها فرض نیستند.
+        </p>
+        <div class="stats">
+          <div class="stat warn">
+            <b>۸ سال و نیم</b>
+            <span>شروع ۱۹ مارس ۲۰۱۸ — کولوچکا با این شرکت ممکن نیست</span>
+          </div>
+          <div class="stat">
+            <b>۲۵٫۲ میلیون لیر</b>
+            <span>فروش ۲۰۲۵؛ همه صادرات کالا، نه اشتراک نرم‌افزار</span>
+          </div>
+          <div class="stat">
+            <b>۲۵۸ هزار لیر</b>
+            <span>مالیات شرکت ۲۰۲۵ روی سود ۱٫۰۳ میلیون — معافیت تکنوکنت روی این رقم نمی‌نشیند</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>موضوع</th>
+              <th>واقعیت سند</th>
+              <th>اثر روی مسیر تکنوکنت</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>عنوان</td>
+              <td>
+                امروز ERST IT Solutions Bilişim Teknolojileri San. ve Tic.
+                Ltd. Şti. قبلاً ERST Kuyumculuk؛ تغییر عنوان در روزنامهٔ ۱۶
+                دسامبر ۲۰۲۰
+              </td>
+              <td>اسم IT کافی نیست. کمیسیون دفتر و NACE را می‌بیند</td>
+            </tr>
+            <tr>
+              <td>فعالیت ثبت‌شده</td>
+              <td>کد ۶۲۲۰۰۰ مشاوره و مدیریت سیستم رایانه</td>
+              <td>کد با عنوان می‌خواند؛ با صورتحساب ۲۰۲۵ نمی‌خواند</td>
+            </tr>
+            <tr>
+              <td>ماهیت فروش</td>
+              <td>
+                ۵ فاکتور صادرات کالا در ۲۰ نوامبر ۲۰۲۵ جمع ۲۵٫۱۵ میلیون لیر.
+                بهای تمام‌شده کالای تجاری ۲۰٫۲ میلیون. حاشیه حدود ۲۰٪
+              </td>
+              <td>
+                این درآمد کالایی است. داخل شرکت تکنوکنت برود، معافیت نرم‌افزار
+                را آلوده می‌کند
+              </td>
+            </tr>
+            <tr>
+              <td>تراز</td>
+              <td>
+                موجودی کالا و پیش‌پرداخت سفارش، ناوگان، ۴ پرسنل متوسط، سرمایهٔ
+                پرداخت‌شده ۱ میلیون لیر
+              </td>
+              <td>تراز شرکت بازرگانی است، نه SaaS</td>
+            </tr>
+            <tr>
+              <td>حمایت Ar-Ge</td>
+              <td>در اظهارنامه صفر؛ مؤدی بیش از سه دوره</td>
+              <td>هنوز از ۴۶۹۱ یا ۵۷۴۶ استفاده نشده</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="note">
+          نتیجهٔ قطعی: شرکت فعلی را وارد تکنوکنت نکنید. Ltd جدید برای Kaya،
+          شرکت فعلی سهامدار و در صورت لزوم مشتری اول. کولوچکا فقط با شرکت زیر ۳
+          سال ممکن است.
+        </p>
+      </section>
+
+      <section id="capital">
+        <h2>چقدر سرمایه لازم است؟</h2>
+        <p>
+          حق‌الزحمهٔ فعلی مدیر پروژه ماهانه ۲۰۰۰ دلار است و تمام هزینه‌های جاری
+          پروژه از قبل با کارفرماست. این ردیف هزینهٔ جدید ورود به تکنوکنت نیست.
+        </p>
+        <div class="stats">
+          <div class="stat warn">
+            <b>۱٫۲ میلیون لیر</b>
+            <span>سرمایهٔ افزایشی سال اول — رقم تصمیم</span>
+          </div>
+          <div class="stat">
+            <b>۲٫۲ میلیون لیر</b>
+            <span>جمع کل با ۲۰۰۰ دلار فعلی × ۱۲ ماه</span>
+          </div>
+          <div class="stat good">
+            <b>≈ ۴۰ هزار لیر</b>
+            <span>هزینهٔ ماهانهٔ جدید بعد از ورود (اجاره و دفتر)</span>
+          </div>
+        </div>
+        <p class="note">
+          پیشنهاد عملی: مسیر پایه را تصویب کنید. اگر سقف نقدینگی کمتر است، مسیر
+          حداقلی بدون آووک و با تعویق پتنت حدود ۰٫۳ میلیون افزایشی است.
+        </p>
+
+        <h3>سه بسته</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>بسته</th>
+              <th>سرمایهٔ افزایشی</th>
+              <th>جمع با حق‌الزحمهٔ فعلی</th>
+              <th>چه چیزی داخل است</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>حداقلی</td>
+              <td class="num">≈ ۳۰۰ هزار لیر</td>
+              <td class="num">≈ ۱٫۳ میلیون</td>
+              <td>ثبت شرکت، کولوچکا مشترک، بدون آووک، پتنت بعد از فروش</td>
+            </tr>
+            <tr>
+              <td>پایه — پیشنهادی</td>
+              <td class="num">≈ ۱٫۲ میلیون لیر</td>
+              <td class="num">≈ ۲٫۲ میلیون</td>
+              <td>اتاق کولوچکا، پتنت ترکیه، آووک بعد از تأیید، YMM، فروش</td>
+            </tr>
+            <tr>
+              <td>کامل</td>
+              <td class="num">≈ ۱٫۸ میلیون لیر</td>
+              <td class="num">≈ ۲٫۸ میلیون</td>
+              <td>پایه + نیروی فنی از ماه ۶ + ذخیرهٔ احتمالی PCT</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="benefit">
+        <h2>فایده برای شرکت چیست؟</h2>
+        <p>
+          معافیت‌ها تا ۳۱ دسامبر ۲۰۲۸ برقرار است؛ از امروز حدود ۲۷ ماه فرصت
+          دارید. فایده روی درآمد نرم‌افزار تولیدشده در منطقه است، نه روی صنعت
+          مشتری. خریدار می‌تواند بیمارستان، کارخانه یا صرافی باشد.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>فایده</th>
+              <th>اثر روی شرکت</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>صفر مالیات شرکت روی سود نرم‌افزار و Ar-Ge</td>
+              <td>حدود ۲۵٪ سود واجد شرایط در شرکت می‌ماند</td>
+            </tr>
+            <tr>
+              <td>صفر مالیات حقوق نیروی فنی پروژه</td>
+              <td>هزینهٔ خالص همان ۲۰۰۰ دلار کمتر از بیرون منطقه است</td>
+            </tr>
+            <tr>
+              <td>نیمی از سهم کارفرمای SGK از خزانه</td>
+              <td>حدود ۱۰٪ از حقوق ناخالص صرفه‌جویی</td>
+            </tr>
+            <tr>
+              <td>KDV روی انواع مشخص نرم‌افزار عملیاتی و موبایل</td>
+              <td>فاکتور به مشتری ترک بدون ۲۰٪؛ قیمت رقابتی‌تر</td>
+            </tr>
+            <tr>
+              <td>اعتبار B2B و مسیر KOSGEB / Teknokatalog</td>
+              <td>بیمارستان و کارخانهٔ ترک شرکت تکنوکنت را جدی‌تر می‌بیند</td>
+            </tr>
+            <tr>
+              <td>پتنت به نام شرکت</td>
+              <td>دفاع از روش محصول در برابر کپی</td>
+            </tr>
+            <tr>
+              <td>دورکاری نیروی IT تا پایان ۲۰۲۶ تا سقف قانونی</td>
+              <td>حضور هرروزه در آنکارا لازم نیست؛ آدرس بیمه باید منطقه باشد</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>برآورد فایدهٔ نقدی</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>دوره</th>
+              <th>هزینهٔ مسیر پایه</th>
+              <th>فایدهٔ مالیاتی برآوردی</th>
+              <th>نتیجه</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>سال ۱</td>
+              <td class="num">۲٫۲ م (۱٫۲ م جدید)</td>
+              <td class="num">≈ ۴۰۰ هزار</td>
+              <td>سال ساخت شرکت و فروش اولیه</td>
+            </tr>
+            <tr>
+              <td>سال ۲</td>
+              <td class="num">≈ ۱٫۹ م</td>
+              <td class="num">≈ ۹۰۰ هزار</td>
+              <td>معمولاً اینجا سربه‌سر مالیاتی می‌شود</td>
+            </tr>
+            <tr>
+              <td>تا پایان ۲۰۲۸</td>
+              <td class="num">≈ ۴٫۱ م</td>
+              <td class="num">≈ ۱٫۶ م</td>
+              <td>ارزش اصلی: حاشیهٔ فروش تکرارشونده</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          اگر سال اول فروش کم باشد، معافیت شرکت کوچک است. ارزش وقتی کامل می‌شود
+          که فاکتور نرم‌افزار تکرارشونده از سال ۲ بالا برود. تکنوکنت فروش را
+          ارزان نمی‌کند؛ حاشیه را زیاد می‌کند و فاکتور را برای مشتری ترک تمیز
+          می‌کند.
+        </p>
+      </section>
+
+      <section id="payroll">
+        <h2>فقط صرفه‌جویی حقوق — ۵ نیروی فنی</h2>
+        <p>
+          این بخش مالیات شرکت، KDV و فروش را حساب نمی‌کند. فقط فیش حقوقی است، با
+          نرخ ۲۰۲۶، برای نیروی نرم‌افزار روی پروژهٔ تأییدشده. بیکاری کارفرما
+          (۲٪) همچنان پرداخت می‌شود.
+        </p>
+        <p class="note">
+          رقم کارفرما وقتی کامل است که خالص کارمند ثابت بماند و ناخالص پایین
+          بیاید. اگر همان ناخالص فعلی بماند، کارمند خالص بیشتری می‌گیرد و شرکت
+          فقط نصف سهم کارفرمای SGK را نگه می‌دارد.
+        </p>
+
+        <h3>سناریوی کارفرما: خالص ۵ نفر ثابت می‌ماند</h3>
+        <div class="stats">
+          <div class="stat good">
+            <b>۱٫۲ میلیون لیر</b>
+            <span>سالانه · ۵ نفر خالص ۵۵ هزار — رقم میانی پیشنهادی</span>
+          </div>
+          <div class="stat">
+            <b>۱۰۳ هزار لیر</b>
+            <span>ماهانه برای همان ۵ نفر</span>
+          </div>
+          <div class="stat">
+            <b>≈ ۲۹ هزار دلار</b>
+            <span>سالانه با نرخ حدود ۴۲ لیر — فقط از حقوق</span>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>خالص هر نفر / ماه</th>
+              <th>صرفه‌جویی ۱ نفر / سال</th>
+              <th>صرفه‌جویی ۵ نفر / ماه</th>
+              <th>صرفه‌جویی ۵ نفر / سال</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>۴۵٬۰۰۰ لیر</td>
+              <td class="num">۱۶۶ هزار</td>
+              <td class="num">۶۹ هزار</td>
+              <td class="num">۸۳۲ هزار</td>
+            </tr>
+            <tr>
+              <td>۵۵٬۰۰۰ لیر — میانی</td>
+              <td class="num">۲۴۷ هزار</td>
+              <td class="num">۱۰۳ هزار</td>
+              <td class="num">۱٫۲۳ میلیون</td>
+            </tr>
+            <tr>
+              <td>۷۰٬۰۰۰ لیر</td>
+              <td class="num">۳۶۸ هزار</td>
+              <td class="num">۱۵۳ هزار</td>
+              <td class="num">۱٫۸۴ میلیون</td>
+            </tr>
+            <tr>
+              <td>۱۰۰٬۰۰۰ لیر</td>
+              <td class="num">۶۱۴ هزار</td>
+              <td class="num">۲۵۶ هزار</td>
+              <td class="num">۳٫۰۷ میلیون</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>اگر ناخالص را دست نزنید — فقط جیب کارفرما</h3>
+        <p>
+          در این حالت مالیات حقوق به کارمند می‌رسد. شرکت تقریباً ۹٫۹٪ ناخالص را
+          از محل حمایت SGK نگه می‌دارد.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>ناخالص هر نفر / ماه</th>
+              <th>صرفه‌جویی کارفرما ۱ نفر / ماه</th>
+              <th>۵ نفر / ماه</th>
+              <th>۵ نفر / سال</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>۵۵٬۰۰۰ لیر</td>
+              <td class="num">۵٬۴۰۰</td>
+              <td class="num">۲۷ هزار</td>
+              <td class="num">۳۲۶ هزار</td>
+            </tr>
+            <tr>
+              <td>۷۰٬۰۰۰ لیر</td>
+              <td class="num">۶٬۹۰۰</td>
+              <td class="num">۳۵ هزار</td>
+              <td class="num">۴۱۵ هزار</td>
+            </tr>
+            <tr>
+              <td>۱۰۰٬۰۰۰ لیر</td>
+              <td class="num">۹٬۹۰۰</td>
+              <td class="num">۴۹ هزار</td>
+              <td class="num">۵۹۳ هزار</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          شرط پوشش: هر پنج نفر باید نیروی Ar-Ge / نرم‌افزار همان پروژه باشند.
+          نیروی اداری حداکثر حدود ۱۰٪ سهمیه دارد؛ اگر شرکت کوچک باشد تا ۲۰٪. اگر
+          این افراد الان روی فیش عادی ترکیه هستند، رقم بالا صرفه‌جویی واقعی است.
+          اگر الان خارج از فیش ترکیه پرداخت می‌شوند، آوردن‌شان روی بیمه ممکن است
+          هزینه را زیاد کند نه کم.
+        </p>
+      </section>
+
+      <section id="cost">
+        <h2>جزئیات سرمایهٔ افزایشی</h2>
+        <h3>یک‌بار در سال اول</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>قلم</th>
+              <th>مبلغ</th>
+              <th>توضیح</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ثبت Ltd</td>
+              <td class="num">۴۰٬۰۰۰</td>
+              <td>هزینهٔ رسمی، بدون سرمایه</td>
+            </tr>
+            <tr>
+              <td>سرمایهٔ تعهدشده</td>
+              <td class="num">۵۰٬۰۰۰</td>
+              <td>حداقل قانونی؛ تا ۲۴ ماه قابل واریز</td>
+            </tr>
+            <tr>
+              <td>وکیل شرکت و قرارداد</td>
+              <td class="num">۲۵٬۰۰۰</td>
+              <td>اساسنامه و مالکیت محصول</td>
+            </tr>
+            <tr>
+              <td>ارزیابی کولوچکا</td>
+              <td class="num">۳٬۰۰۰</td>
+              <td>تعرفهٔ رسمی؛ پس گرفته نمی‌شود</td>
+            </tr>
+            <tr>
+              <td>آووک</td>
+              <td class="num">۲۰۰٬۰۰۰</td>
+              <td>فقط بعد از تأیید ورود و با فاکتور</td>
+            </tr>
+            <tr>
+              <td>پتنت ترکیه سال ۱</td>
+              <td class="num">۱۰۱٬۵۸۰</td>
+              <td>پیشنهاد Parla، سپتامبر ۲۰۲۶</td>
+            </tr>
+            <tr>
+              <td>علامت تجاری</td>
+              <td class="num">۱۵٬۰۰۰</td>
+              <td>برند محصول</td>
+            </tr>
+            <tr>
+              <td>گزارش YMM</td>
+              <td class="num">۳۰٬۰۰۰</td>
+              <td>بدون این، معافیت پایدار نمی‌ماند</td>
+            </tr>
+            <tr>
+              <td>سفر آنکارا و راه‌اندازی دفتر</td>
+              <td class="num">۳۵٬۰۰۰</td>
+              <td>ارائه + تجهیز حداقلی</td>
+            </tr>
+            <tr>
+              <td>جمع یک‌باره</td>
+              <td class="num">≈ ۵۳۰٬۰۰۰</td>
+              <td>قلب سرمایهٔ افزایشی</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>هر ماه بعد از ورود</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>قلم</th>
+              <th>مبلغ</th>
+              <th>جدید است؟</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>حق‌الزحمهٔ مدیر پروژه ۲۰۰۰ دلار</td>
+              <td class="num">≈ ۸۴٬۰۰۰</td>
+              <td>خیر — همین حالا پرداخت می‌شود</td>
+            </tr>
+            <tr>
+              <td>سرور و ابزار پروژه</td>
+              <td class="num">≈ ۱۲٬۰۰۰</td>
+              <td>خیر — طبق روال فعلی</td>
+            </tr>
+            <tr>
+              <td>اجارهٔ کولوچکا حدود ۱۶ م²</td>
+              <td class="num">≈ ۱۱٬۰۰۰</td>
+              <td>بله</td>
+            </tr>
+            <tr>
+              <td>حسابدار Ltd</td>
+              <td class="num">≈ ۸٬۸۰۰</td>
+              <td>بله</td>
+            </tr>
+            <tr>
+              <td>فروش و اداری</td>
+              <td class="num">≈ ۲۰٬۰۰۰</td>
+              <td>بله اگر فروش فعال شود</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          تعرفهٔ رسمی تکنوپark آنکارا ۲۰۲۶: کرایه ۶۴۵ لیر/م² و بهره‌برداری ۲۵۵
+          لیر/م²، هر دو به‌علاوهٔ KDV. کولوچکا ۵۰٪ تخفیف کرایه، بدون ضمانت سه‌ماهه
+          و بدون کفیل شخصی دارد. ارزیابی شرکت عادی ۱۲٬۰۰۰ لیر است؛ کولوچکا ۳٬۰۰۰.
+        </p>
+      </section>
+
+      <section id="path">
+        <h2>مسیر کار — ۱۲ ماه</h2>
+        <ol class="steps">
+          <li>ماه ۰–۱: ثبت Ltd و انتقال مرکز بعدی به تکنوپark</li>
+          <li>ماه ۱: پیش‌تحقیق پتنت (۳۰٬۰۰۰ لیر) و پیش‌درخواست منطقه</li>
+          <li>ماه ۱–۲: پروندهٔ Ar-Ge به‌صورت پلتفرم ماژولار واتساپ، نه فقط صرافی</li>
+          <li>ماه ۲–۳: کمیسیون، تأیید، قرارداد اجاره؛ بعد از تأیید پرداخت آووک</li>
+          <li>ماه ۳–۴: بیمه و مالیات روی آدرس منطقه؛ ثبت پتنت به نام شرکت</li>
+          <li>ماه ۴–۱۲: فروش هسته به هر سازمان واتساپ‌محور + یک بستهٔ صنعتی جدید</li>
+        </ol>
+        <p>
+          پرونده را «نرم‌افزار تمام‌شده» ننویسید. کمیسیون کار باقی‌مانده می‌خواهد:
+          معماری ماژول برای هر صنعت، موتور فرایند، زمان پاسخ، و هوش مصنوعی جدا
+          برای درمان یا تولید. صرافی فقط نشان می‌دهد این روش یک‌بار پیاده شده است.
+        </p>
+      </section>
+
+      <section id="sales">
+        <h2>فروش محصول بعد از ورود</h2>
+        <p>
+          هسته برای همه آماده است: صندوق واتساپ، مشتری، تیکت، نقش، شعبه، هوش
+          مصنوعی، برند سفید و موبایل. بستهٔ صنعتی جدا قیمت می‌خورد.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>پلن</th>
+              <th>قیمت</th>
+              <th>مناسب برای</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Start</td>
+              <td class="num">۴۹ دلار ≈ ۲٬۰۵۰ لیر / ماه</td>
+              <td>تیم کوچک، کلینیک، دفتر فروش</td>
+            </tr>
+            <tr>
+              <td>Business</td>
+              <td class="num">۲۴۹ دلار ≈ ۱۰٬۴۶۰ لیر / ماه</td>
+              <td>شرکت متوسط، بیمارستان خصوصی، تولید</td>
+            </tr>
+            <tr>
+              <td>سازمانی + ماژول</td>
+              <td class="num">۲۵–۴۰ هزار لیر / ماه</td>
+              <td>چندشعبه + ماژول صرافی، درمان یا کارخانه</td>
+            </tr>
+          </tbody>
+        </table>
+        <table>
+          <thead>
+            <tr>
+              <th>سناریو سال ۱</th>
+              <th>مشتری در ماه ۱۲</th>
+              <th>درآمد</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>حداقلی</td>
+              <td>۸</td>
+              <td class="num">≈ ۵۰۰ هزار لیر</td>
+            </tr>
+            <tr>
+              <td>پایه</td>
+              <td>۱۶</td>
+              <td class="num">≈ ۱٫۳ میلیون لیر</td>
+            </tr>
+            <tr>
+              <td>خوش‌بین</td>
+              <td>۲۸</td>
+              <td class="num">≈ ۳ میلیون لیر</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          سربه‌سر عملیاتی هزینه‌های جدید: حدود یک مشتری سازمانی به‌علاوهٔ چند
+          اشتراک Business، از هر صنعتی که واتساپ کانال اوست.
+        </p>
+      </section>
+
+      <section id="review">
+        <h2>بررسی متخصص — چیزهایی که در بریف اول نبود</h2>
+        <p>
+          این بخش را به‌عنوان بیزنس‌پلن‌نویس و برنامه‌نویس همین مخزن نوشتم. منبع:
+          کد واقعی، قیمت‌های Cloud Start / Business، و شکاف‌های محصول — نه شعار
+          بازاریابی.
+        </p>
+        <div class="stats">
+          <div class="stat good">
+            <b>بله، با شرط</b>
+            <span>ورود تکنوکنت + توسعهٔ Kaya درست است اگر شرکت جدید جدا باشد</span>
+          </div>
+          <div class="stat warn">
+            <b>سال ۱: نه ۵ نفر</b>
+            <span>انتقال فوری ۵ نفر تراز شرکت جدید را می‌شکند</span>
+          </div>
+          <div class="stat">
+            <b>فروش سال ۱: ۰٫۹ م</b>
+            <span>رقم پایهٔ صادقانه؛ ۱٫۳ م قبلی خوش‌بین است</span>
+          </div>
+        </div>
+        <p class="note">
+          حکم یک خطی: محصول امروز یک پنل عملیات واتساپ برای میز مالی و چندشعبه
+          است، نه CRM آمادهٔ بیمارستان و کارخانه. پروندهٔ Ar-Ge را ماژولار بنویسید؛
+          فروش ۱۲ ماه اول را صرافی، حواله و خدمات واتساپ‌محور نگه دارید.
+        </p>
+
+        <h3>۱. واقعیت محصول در برابر ادعا</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>ادعا</th>
+              <th>وضعیت در کد</th>
+              <th>اثر روی بیزنس‌پلن</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>CRM واتساپ برای هر صنعت</td>
+              <td>
+                هستهٔ اینباکس، تیکت، نقش، شعبه، برند سفید و موبایل هست. ماژول
+                صنعتی فقط صرافی است و همان هم ناقص است: تراکنش واقعی، صندوق شعبه
+                و سود/زیان هنوز نیست.
+              </td>
+              <td>
+                گفتن «بیمارستان از ماه ۴» فروش را ضعیف می‌کند. کمیسیون تکنوکنت
+                کار باقی‌مانده می‌خواهد؛ مشتری پول ماژول ساخته‌شده می‌دهد.
+              </td>
+            </tr>
+            <tr>
+              <td>SaaS آمادهٔ خودخدمت</td>
+              <td>
+                tenant، پلن Start/Business، آزمایش ۷روزه و پرداخت کریپتو هست.
+                Stripe به‌تنهایی tenant نمی‌سازد. واتساپ QR برای tenant جدید
+                خاموش است؛ مسیر درست Cloud API است.
+              </td>
+              <td>
+                درآمد ۴۹ دلاری خودکار و بزرگ نمی‌شود مگر onboarding دستی یا
+                تکمیل پرداخت. فروش سال اول بیشتر فاکتوری است تا سلف‌سرویس.
+              </td>
+            </tr>
+            <tr>
+              <td>مزیت رقابتی عمومی</td>
+              <td>
+                تیکر نرخ، شعبه، on-prem، فارسی/ترکی و میز صرافی چیزهایی است که
+                respond.io و WATI ندارند. داشبورد هنوز Vanilla JS یکپارچه است.
+              </td>
+              <td>
+                در بازار «اینباکس واتساپ» شلوغ می‌بازید. در بازار «عملیات چندشعبه
+                مالی» می‌برید. همان را بفروشید.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>۲. اقتصاد واحد — هر مشتری چقدر می‌ارزد</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>پلن</th>
+              <th>درآمد ماهانه</th>
+              <th>هزینهٔ تحویل تقریبی</th>
+              <th>حاشیه</th>
+              <th>ارزش عمر اگر ریزش سالانه ۲۰٪</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Start — ۴۹ دلار</td>
+              <td class="num">≈ ۲٬۰۵۰ لیر</td>
+              <td>هاست + Cloud API + پشتیبانی دستی</td>
+              <td class="num">۵۵–۶۵٪</td>
+              <td class="num">≈ ۱۲۳ هزار لیر</td>
+            </tr>
+            <tr>
+              <td>Business — ۲۴۹ دلار</td>
+              <td class="num">≈ ۱۰٬۵۰۰ لیر</td>
+              <td>همان + نصب نرخ و آموزش</td>
+              <td class="num">۷۰–۸۰٪</td>
+              <td class="num">≈ ۶۳۰ هزار لیر</td>
+            </tr>
+            <tr>
+              <td>سازمانی / خواهر</td>
+              <td class="num">۲۵–۴۰ هزار لیر</td>
+              <td>سفارشی + SLA</td>
+              <td class="num">۶۰–۷۵٪</td>
+              <td class="num">۱٫۵–۲٫۴ میلیون</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          سربه‌سر هزینه‌های جدید تکنوکنت (حدود ۴۰ هزار لیر در ماه بعد از ورود):
+          <strong>یک مشتری سازمانی</strong> یا <strong>چهار Business</strong>.
+          سربه‌سر کل سال اول با حق‌الزحمهٔ فعلی مدیر پروژه: حدود
+          <strong>دو سازمانی + چند Business</strong>، نه هشت Start.
+        </p>
+
+        <h3>۳. سود و زیان سه ساله — فقط شرکت نرم‌افزار جدید</h3>
+        <p>
+          نرخ ۴۲ لیر. حق‌الزحمهٔ فعلی ۲۰۰۰ دلار در هزینه هست چون از جیب گروه
+          می‌رود. پنج کارمند عملیاتی در سال ۱ نیستند. شرکت فعلی به‌عنوان مشتری
+          اول، فاکتور نرم‌افزار می‌دهد — این هم درآمد شرکت جدید است هم هزینهٔ
+          شرکت فعلی؛ در گروه خنثی است مگر قیمت هم‌تراز بازار باشد.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>سال ۱ محتاط</th>
+              <th>سال ۱ پایه</th>
+              <th>سال ۲ پایه</th>
+              <th>سال ۳ پایه</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>مشتری خارجی پایان سال</td>
+              <td class="num">۷</td>
+              <td class="num">۱۵</td>
+              <td class="num">۳۲</td>
+              <td class="num">۵۵</td>
+            </tr>
+            <tr>
+              <td>فاکتور به شرکت فعلی</td>
+              <td class="num">۲۴۰ هزار</td>
+              <td class="num">۳۰۰ هزار</td>
+              <td class="num">۳۶۰ هزار</td>
+              <td class="num">۳۶۰ هزار</td>
+            </tr>
+            <tr>
+              <td>درآمد خارجی</td>
+              <td class="num">۱۹۰ هزار</td>
+              <td class="num">۵۸۰ هزار</td>
+              <td class="num">۲٫۰ میلیون</td>
+              <td class="num">۴٫۴ میلیون</td>
+            </tr>
+            <tr>
+              <td>جمع درآمد</td>
+              <td class="num">۴۳۰ هزار</td>
+              <td class="num">۸۸۰ هزار</td>
+              <td class="num">۲٫۴ میلیون</td>
+              <td class="num">۴٫۸ میلیون</td>
+            </tr>
+            <tr>
+              <td>هزینهٔ ورود و دفتر</td>
+              <td class="num">۱٫۶ میلیون</td>
+              <td class="num">۱٫۶ میلیون</td>
+              <td class="num">۰٫۵ میلیون</td>
+              <td class="num">۰٫۶ میلیون</td>
+            </tr>
+            <tr>
+              <td>مدیر پروژه ۲۰۰۰ دلار</td>
+              <td class="num">۱٫۰ میلیون</td>
+              <td class="num">۱٫۰ میلیون</td>
+              <td class="num">۱٫۰ میلیون</td>
+              <td class="num">۱٫۱ میلیون</td>
+            </tr>
+            <tr>
+              <td>هاست، Meta، هوش مصنوعی</td>
+              <td class="num">۸۰ هزار</td>
+              <td class="num">۱۲۰ هزار</td>
+              <td class="num">۲۵۰ هزار</td>
+              <td class="num">۴۰۰ هزار</td>
+            </tr>
+            <tr>
+              <td>نتیجهٔ شرکت جدید</td>
+              <td class="num">−۲٫۲ میلیون</td>
+              <td class="num">−۱٫۸ میلیون</td>
+              <td class="num">≈ ۰ تا +۰٫۶</td>
+              <td class="num">+۲٫۵ تا +۳٫۰</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          سال اول شرکت جدید عمداً زیان‌ده است. فایدهٔ نقدی گروه از سه جا می‌آید:
+          فاکتور تمیز نرم‌افزار، معافیت همان سود از سال ۲، و اگر بعداً نیروی فنی
+          واقعی منتقل شود حدود ۱٫۲ میلیون صرفه‌جویی حقوق در سال. رقم ۱٫۳ میلیون
+          فروش سال اول در بریف قبلی فقط وقتی درست است که ترکیب مشتری سنگین‌تر از
+          Business و سازمانی باشد.
+        </p>
+
+        <h3>۴. رابطهٔ دو شرکت — این را باید امضا کنید</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>موضوع</th>
+              <th>شکل درست</th>
+              <th>شکل خطرناک</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>مالکیت</td>
+              <td>شرکت فعلی سهامدار Ltd جدید؛ پروژه مال شرکت جدید</td>
+              <td>همان شرکت عملیاتی با همهٔ درآمدها وارد منطقه شود</td>
+            </tr>
+            <tr>
+              <td>پول بین دو شرکت</td>
+              <td>
+                قرارداد لایسنس یا SaaS با قیمت نزدیک بازار؛ فاکتور ماهانه
+              </td>
+              <td>انتقال سود صوری بدون خدمت واقعی — ممیزی رد می‌کند</td>
+            </tr>
+            <tr>
+              <td>نیرو</td>
+              <td>
+                سال ۱: مدیر پروژه + حداکثر یک نیروی Node / واتساپ. سال ۲: تا ۵
+                نفر فنی روی پروژهٔ مصوب
+              </td>
+              <td>پنج کارمند عملیاتی برای ارزان شدن SGK</td>
+            </tr>
+            <tr>
+              <td>کولوچکا</td>
+              <td>Ltd جدید زیر ۳ سال</td>
+              <td>شرکت فعلی اگر مسن‌تر از ۳ سال باشد؛ اجاره و ضمانت دفتر عادی</td>
+            </tr>
+            <tr>
+              <td>اگر ورود رد شد</td>
+              <td>
+                توقف قبل از آووک و پتنت کامل؛ ادامهٔ SaaS روی سرور فعلی؛ هزینهٔ
+                سوخته حدود مسیر حداقلی ۳۰۰ هزار
+              </td>
+              <td>خرج ۱٫۲ میلیون پیش از تأیید کمیسیون</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>۵. تیم — چه کسی برای این کد لازم است</h3>
+        <p>
+          استک واقعی: Node/Express، Gateway واتساپ، پنل Vanilla، tenant ابری،
+          اندروید Kotlin، iOS Swift. پنج نقش تزئینی لازم نیست.
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>نفر</th>
+              <th>نقش</th>
+              <th>سال</th>
+              <th>چرا</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>۱</td>
+              <td>ارسان — معمار و مدیر محصول فنی</td>
+              <td>الان</td>
+              <td>بدون او دانش سیستم تک‌نفره است؛ ریسک اتوبوس بالاست</td>
+            </tr>
+            <tr>
+              <td>۲</td>
+              <td>Backend / WhatsApp Cloud API</td>
+              <td>سال ۱</td>
+              <td>گلوگاه فروش: نصب پایدار شمارهٔ رسمی برای هر مشتری</td>
+            </tr>
+            <tr>
+              <td>۳</td>
+              <td>Frontend — اتمام ماژول و مهاجرت تدریجی Vite</td>
+              <td>سال ۲</td>
+              <td>داشبورد یک فایل بزرگ است؛ استخدام و بستهٔ صنعتی سخت می‌شود</td>
+            </tr>
+            <tr>
+              <td>۴</td>
+              <td>ماژول صنعتی دوم یا تکمیل تراکنش/صندوق صرافی</td>
+              <td>سال ۲</td>
+              <td>اول ICP فعلی را کامل کنید؛ بعد صنعت جدید</td>
+            </tr>
+            <tr>
+              <td>۵</td>
+              <td>DevOps / کیفیت / استقرار چندtenant</td>
+              <td>سال ۲</td>
+              <td>بدون این، هر مشتری جدید یک کار دستی شکننده است</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>۶. رقبا و سهم واقع‌بینانه</h3>
+        <p>
+          رقیب اینباکس: respond.io، WATI، Kommo، Zendesk، در ترکیه Netgsm و
+          Mutlucell. آن‌ها بودجه و وضعیت رسمی Meta دارند. شما در اینباکس عمومی
+          سهم معنادار نمی‌گیرید. سهم واقعی سال ۳ اگر اجرا خوب باشد: ده‌ها میز
+          مالی چندشعبه در ترکیه و منطقه، نه درصد بازار جهانی CRM. برای تکنوکنت
+          همین کافی است؛ برای سرمایه‌گذار بعدی باید همان نیچ را عدد کنید نه
+          «همهٔ بیمارستان‌ها».
+        </p>
+
+        <h3>۷. ریسک‌ها به ترتیب ضرر</h3>
+        <ol class="steps">
+          <li>
+            <strong>اتوبوس تک‌نفره.</strong> دانش محصول پیش ارسان است. سهام و
+            قرارداد باید این را قفل کند؛ وگرنه شرکت جدید پوسته است.
+          </li>
+          <li>
+            <strong>واتساپ غیررسمی.</strong> QR برای تولید انبوه مناسب نیست.
+            فروش را روی Cloud API ببندید.
+          </li>
+          <li>
+            <strong>قیمت بین دو شرکت.</strong> اگر لایسنس خیلی گران یا خیلی ارزان
+            باشد، معافیت را از دست می‌دهید.
+          </li>
+          <li>
+            <strong>پنج نیروی غیر فنی.</strong> حمایت حقوق را می‌سوزاند و کمیسیون
+            را بدبین می‌کند.
+          </li>
+          <li>
+            <strong>معافیت تا پایان ۲۰۲۸.</strong> حدود ۲۷ ماه وقت دارید. سال ۱
+            زیان است؛ اصل فایده سال ۲ و ۳ است. تأخیر یعنی پنجره بسته می‌شود.
+          </li>
+          <li>
+            <strong>ماژول صرافی هنوز ناقص است.</strong> اولین بستهٔ صنعتی را قبل
+            از وعدهٔ صنعت سوم تمام کنید.
+          </li>
+        </ol>
+        <p class="note">
+          این سند بعد از این بخش برای تصویب سرمایه کافی است. هنوز بیزنس‌پلن بانک
+          یا KOSGEB نیست: نام و حقوق همان ۵ نفر، سن شرکت فعلی، و ۱۰ سرنخ واقعی
+          فروش لازم است تا رقم‌ها از فرض به برنامه تبدیل شوند.
+        </p>
+      </section>
+
+      <section id="ask">
+        <h2>تصمیم درخواستی</h2>
+        <ol class="steps">
+          <li>
+            تصویب سرمایهٔ افزایشی مسیر پایه: حدود ۱٫۲ میلیون لیر برای سال اول
+          </li>
+          <li>ادامهٔ روال فعلی: ۲۰۰۰ دلار ماهانه + پوشش هزینه‌های پروژه</li>
+          <li>
+            ورود از کولوچکا؛ آووک فقط بعد از تأیید ورود و با فاکتور (قابل مذاکره
+            تا ۱۶۰ هزار)
+          </li>
+          <li>
+            پتنت بعد از پیش‌تحقیق و به نام شرکت؛ مخترع ارسان جاهد تبریزی
+          </li>
+        </ol>
+        <p class="note">
+          درآمد غیرفنی — حواله، تجارت یا کار دیگر — داخل این شرکت نیاید. معافیت
+          فقط روی فاکتور نرم‌افزار پروژهٔ تأییدشده است.
+        </p>
+      </section>
+
+      <footer>
+        <p>
+          منابع: تعرفهٔ Teknopark Ankara ۲۰۲۶، یönerge ۴ فوریه ۲۰۲۶، قانون ۴۶۹۱
+          تا ۳۱ دسامبر ۲۰۲۸، پیشنهاد Parla Patent ۴ سپتامبر ۲۰۲۶، ایمیل İlayda
+          Kanatlı. نرخ برنامه‌ریزی ۴۲ لیر برای هر دلار. ارقام برنامه‌ریزی‌اند، نه
+          پیش‌فاکتور؛ قبل از واریز تعرفهٔ همان روز گرفته شود.
+        </p>
+        <p>
+          <a href="https://www.teknoparkankara.com.tr/hizmetler/kira-ucretleri/"
+            >تعرفهٔ رسمی کرایه</a
+          >
+          ·
+          <a
+            href="https://www.teknoparkankara.com.tr/pdf/teknopark-ankara-bolge-isletme-yonergesi-2026.pdf"
+            >یönerge ۲۰۲۶</a
+          >
+          ·
+          <a href="https://www.turkpatent.gov.tr/patent-islem-ucretleri"
+            >عوارض پتنت</a
+          >
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
