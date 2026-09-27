@@ -245,6 +245,7 @@ async function sendMedia(to, media, caption = '', cfgOverride) {
 
     const cap = caption && String(caption).trim();
     if (cap && type !== 'audio') mediaPayload.caption = cap;
+    if (type === 'audio' && media?.sendAsVoice) mediaPayload.voice = true;
 
     const body = {
         messaging_product: 'whatsapp',

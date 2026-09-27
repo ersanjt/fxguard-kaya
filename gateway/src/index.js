@@ -369,17 +369,8 @@ async function buildOutboundMessageMedia(media, _message) {
         if (!buf.length || buf.length < 64) {
             throw new Error('Voice payload empty or too small');
         }
-        const tmpDir = path.join(UPLOADS_DIR, 'tmp');
-        await ensureDir(tmpDir);
-        const tmpPath = path.join(
-            tmpDir,
-            `ptt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ogg`
-        );
-        await fs.writeFile(tmpPath, buf);
-        const mediaObj = MessageMedia.fromFilePath(tmpPath);
-        mediaObj.mimetype = WHATSAPP_VOICE_MIME;
-        mediaObj.filename = WHATSAPP_VOICE_FILENAME;
-        return { mediaObj, asVoice: true, tmpPath, mime: WHATSAPP_VOICE_MIME };
+        const mediaObj = new MessageMedia(WHATSAPP_VOICE_MIME, buf.toString('base64'), 'voice.ogg');
+        return { mediaObj, asVoice: true, tmpPath: null, mime: WHATSAPP_VOICE_MIME };
     }
     const mediaObj = new MessageMedia(mime, media.data, waSafeFilename(media.filename || 'file'));
     return { mediaObj, asVoice: false, tmpPath: null, mime };

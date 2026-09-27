@@ -416,11 +416,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     }
 
     try {
-        if (voiceIntroLine) {
-            try {
-                await sendWhatsAppMessage({ to: toPhone, message: voiceIntroLine }, { timeout: 10000 });
-            } catch (_) {}
-        }
+        // خط «نام: 🎤» را به واتساپ نفرست. اگر خود ویس خطا بدهد فقط همین ایموجی برای مشتری می‌ماند.
         // فقط وقتی مسیر ارسال واقعاً Gateway است، ready را از قبل چک کن
         const toStr = String(toPhone || '');
         const { isLikelyWhatsAppLid, isGroupJid } = require('../lib/phoneUtils');
