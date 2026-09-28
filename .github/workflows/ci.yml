@@ -84,6 +84,9 @@ jobs:
           distribution: temurin
           java-version: '17'
       - uses: android-actions/setup-android@v3
+        with:
+          # The obsolete SDK package named "tools" was removed upstream.
+          packages: platform-tools
       - name: Ensure Gradle wrapper
         working-directory: android-app
         run: |
