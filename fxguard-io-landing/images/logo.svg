@@ -1,30 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title desc">
   <title id="title">FXGuard</title>
-  <desc id="desc">FX monogram protected by a shield</desc>
+  <desc id="desc">A protected business conversation with two-way currency exchange</desc>
   <defs>
-    <linearGradient id="surface" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+    <linearGradient id="surface" x1="52" y1="30" x2="462" y2="482" gradientUnits="userSpaceOnUse">
       <stop stop-color="#102319"/>
       <stop offset="1" stop-color="#040806"/>
     </linearGradient>
-    <linearGradient id="guard" x1="128" y1="96" x2="386" y2="422" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#9AF7BA"/>
-      <stop offset=".45" stop-color="#34D873"/>
-      <stop offset="1" stop-color="#10A84D"/>
+    <linearGradient id="guard" x1="146" y1="76" x2="380" y2="430" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A8F7C0"/>
+      <stop offset=".46" stop-color="#39DE7B"/>
+      <stop offset="1" stop-color="#0EA34A"/>
     </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="15" result="blur"/>
-      <feFlood flood-color="#22C55E" flood-opacity=".34"/>
-      <feComposite in2="blur" operator="in"/>
-      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="15" stdDeviation="18" flood-color="#020603" flood-opacity=".52"/>
     </filter>
   </defs>
   <rect x="10" y="10" width="492" height="492" rx="126" fill="url(#surface)"/>
-  <rect x="11" y="11" width="490" height="490" rx="125" fill="none" stroke="#8CF5B2" stroke-opacity=".2" stroke-width="2"/>
-  <path d="M256 65 408 124v118c0 94-58 169-152 211C162 411 104 336 104 242V124L256 65Z" fill="#22C55E" opacity=".16" filter="url(#glow)"/>
-  <path d="M256 73 398 128v112c0 88-54 158-142 199-88-41-142-111-142-199V128L256 73Z" fill="url(#guard)"/>
-  <path d="M256 104 367 147v90c0 70-41 126-111 162-70-36-111-92-111-162v-90l111-43Z" fill="#07110B"/>
-  <path fill="#F5FFF8" d="M172 169h105v37h-64v38h56v36h-56v70h-41V169Z"/>
-  <path fill="url(#guard)" d="m276 207 30 42 30-42h47l-53 70 57 76h-48l-33-47-34 47h-47l57-76-53-70h47Z"/>
-  <circle cx="410" cy="103" r="18" fill="#B5FFCC"/>
-  <circle cx="410" cy="103" r="8" fill="#16A34A"/>
+  <rect x="11" y="11" width="490" height="490" rx="125" fill="none" stroke="#A8F7C0" stroke-opacity=".18" stroke-width="2"/>
+  <path d="M256 58 404 116v122c0 96-59 173-148 216-89-43-148-120-148-216V116L256 58Z" fill="url(#guard)" filter="url(#shadow)"/>
+  <path d="M256 88 374 134v99c0 75-43 136-118 175-75-39-118-100-118-175v-99L256 88Z" fill="#07110B"/>
+  <path d="M179 166h154c20 0 36 16 36 36v89c0 20-16 36-36 36h-72l-52 40 10-40h-40c-20 0-36-16-36-36v-89c0-20 16-36 36-36Z" fill="#F5FFF8"/>
+  <path d="M190 215h111" fill="none" stroke="#0B5E31" stroke-width="22" stroke-linecap="round"/>
+  <path d="m288 194 27 21-27 21" fill="none" stroke="#0B5E31" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M322 277H211" fill="none" stroke="#19B85A" stroke-width="22" stroke-linecap="round"/>
+  <path d="m224 256-27 21 27 21" fill="none" stroke="#19B85A" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

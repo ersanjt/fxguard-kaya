@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 192" role="img" aria-labelledby="title desc">
   <title id="title">FXGuard</title>
-  <desc id="desc">FXGuard shield and wordmark</desc>
+  <desc id="desc">FXGuard protected exchange conversation symbol and wordmark</desc>
   <defs>
     <linearGradient id="g" x1="28" y1="18" x2="166" y2="174" gradientUnits="userSpaceOnUse">
       <stop stop-color="#9AF7BA"/>
@@ -9,12 +9,11 @@
     </linearGradient>
   </defs>
   <rect x="4" y="4" width="184" height="184" rx="47" fill="#06100A"/>
-  <path d="m96 22 57 22v44c0 35-21 63-57 79-36-16-57-44-57-79V44l57-22Z" fill="url(#g)"/>
-  <path d="m96 34 45 17v36c0 28-17 50-45 65-28-15-45-37-45-65V51l45-17Z" fill="#07110B"/>
-  <path fill="#F5FFF8" d="M61 57h43v15H78v15h23v14H78v29H61V57Z"/>
-  <path fill="url(#g)" d="m103 73 12 16 11-16h19l-21 27 23 30h-19l-13-18-13 18H83l23-30-21-27h18Z"/>
-  <circle cx="154" cy="37" r="9" fill="#B5FFCC"/>
+  <path d="m96 20 58 23v47c0 37-23 66-58 83-35-17-58-46-58-83V43l58-23Z" fill="url(#g)"/>
+  <path d="m96 32 46 18v39c0 29-17 53-46 68-29-15-46-39-46-68V50l46-18Z" fill="#07110B"/>
+  <path d="M68 59h57c7 0 13 6 13 13v31c0 7-6 13-13 13H99l-19 14 4-14H68c-7 0-13-6-13-13V72c0-7 6-13 13-13Z" fill="#F5FFF8"/>
+  <path d="M72 77h37m-9-8 12 8-12 8M121 99H84m9 8-12-8 12-8" fill="none" stroke="#0B7139" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   <text x="224" y="121" fill="#F5FFF8" font-family="Outfit,Inter,Arial,sans-serif" font-size="78" font-weight="750" letter-spacing="-3">FX</text>
   <text x="323" y="121" fill="#66E998" font-family="Outfit,Inter,Arial,sans-serif" font-size="78" font-weight="750" letter-spacing="-3">Guard</text>
-  <text x="228" y="154" fill="#8FA59A" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="4">SECURE BUSINESS MESSAGING</text>
+  <text x="228" y="154" fill="#8FA59A" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="3">PROTECTED FX CONVERSATIONS</text>
 </svg>
