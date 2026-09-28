@@ -1,0 +1,107 @@
+name: Deploy fxguard.io storefront
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'fxguard-io-landing/**'
+      - '.github/workflows/deploy-storefront.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-fxguard-storefront
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    env:
+      CPANEL_HOST: ${{ secrets.CPANEL_HOST }}
+      CPANEL_PORT: ${{ secrets.CPANEL_PORT }}
+      CPANEL_USER: ${{ secrets.CPANEL_USER }}
+      CPANEL_SSH_PRIVATE_KEY: ${{ secrets.CPANEL_SSH_PRIVATE_KEY }}
+      CPANEL_KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate cPanel deployment secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in CPANEL_HOST CPANEL_PORT CPANEL_USER CPANEL_SSH_PRIVATE_KEY CPANEL_KNOWN_HOSTS; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is not configured"
+              exit 1
+            fi
+          done
+
+      - name: Install pinned SSH identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$CPANEL_SSH_PRIVATE_KEY" > "$HOME/.ssh/fxguard_cpanel"
+          printf '%s\n' "$CPANEL_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/fxguard_cpanel" "$HOME/.ssh/known_hosts"
+
+      - name: Deploy storefront to cPanel
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -i "$HOME/.ssh/fxguard_cpanel" \
+            -p "$CPANEL_PORT" \
+            "$CPANEL_USER@$CPANEL_HOST" \
+            "DEPLOY_SHA='$GITHUB_SHA' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          DEPLOY_DIR="$HOME/fxguard-kaya-deploy"
+          DOCROOT="$HOME/public_html"
+
+          if [ ! -d "$DEPLOY_DIR/.git" ]; then
+            git clone --depth 1 --branch main https://github.com/ersanjt/fxguard-kaya.git "$DEPLOY_DIR"
+          else
+            git -C "$DEPLOY_DIR" fetch --depth 1 origin main
+            git -C "$DEPLOY_DIR" reset --hard origin/main
+          fi
+
+          test -d "$DOCROOT"
+          test -f "$DEPLOY_DIR/fxguard-io-landing/index.html"
+
+          rsync -a --delete \
+            --exclude '.well-known/' \
+            --exclude 'app.fxguard.io/' \
+            "$DEPLOY_DIR/fxguard-io-landing/" "$DOCROOT/"
+
+          printf '{"gitCommit":"%s","deployedAt":"%s"}\n' \
+            "$DEPLOY_SHA" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            > "$DOCROOT/deploy-version.json"
+
+          test -f "$DOCROOT/index.html"
+          test -f "$DOCROOT/llms.txt"
+          grep -Fq "$DEPLOY_SHA" "$DOCROOT/deploy-version.json"
+          REMOTE
+
+      - name: Verify public deployment
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5; do
+            body="$(curl -fsS --max-time 20 \
+              "https://fxguard.io/deploy-version.json?sha=$GITHUB_SHA" || true)"
+            if printf '%s' "$body" | grep -Fq "$GITHUB_SHA"; then
+              echo "fxguard.io is serving commit $GITHUB_SHA"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::fxguard.io did not expose the deployed commit"
+          exit 1

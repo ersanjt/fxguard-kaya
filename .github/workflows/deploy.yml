@@ -218,9 +218,8 @@ jobs:
             echo "📌 کامیت روی دیسک: $(git log -1 --oneline)"
             echo "📌 HEAD: $(git rev-parse HEAD)"
 
-            echo "🌐 همگام‌سازی ویترین fxguard.io به public_html ..."
-            rsync -a --delete --exclude '.well-known' fxguard-io-landing/ /home/fxguard/public_html/
-            echo "  ✅ fxguard.io public_html به‌روز شد"
+            # ویترین fxguard.io روی cPanel جداگانه است و توسط
+            # deploy-storefront.yml منتشر می‌شود؛ این سرور فقط kaya/app را میزبانی می‌کند.
 
             # پوشه‌های موبایل عمداً دیپلوی نمی‌شوند — باقی‌ماندهٔ قدیمی روی سرور را پاک کن
             echo "🧹 حذف android-app و ios-app از سرور (دیپلوی نمی‌شوند) ..."
