@@ -9208,3 +9208,16 @@
             .onboarding-tour-nav .btn-secondary { flex: 1 1 0 !important; min-width: 0 !important; height: 40px !important; }
         }
 
+/* Self-serve tenants use isolated Meta Cloud API credentials. The shared QR
+   gateway controls must never appear as an available connection path. */
+body.self-serve-cloud-only #whatsappTrialBanner,
+body.self-serve-cloud-only #btnStartGateway,
+body.self-serve-cloud-only #btnStartWhatsApp,
+body.self-serve-cloud-only #btnDisconnectWhatsApp,
+body.self-serve-cloud-only #qrBox,
+body.self-serve-cloud-only #whatsappQrUnavailable,
+body.self-serve-cloud-only #whatsappGroupsNeedGatewayHint,
+body.self-serve-cloud-only .whatsapp-actions a[href='https://web.whatsapp.com'] {
+    display: none !important;
+}
+

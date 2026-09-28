@@ -14979,7 +14979,11 @@
             }
         }
         function applySelfServeWhatsappCloudLock() {
-            if (!isSelfServeTenantDesk()) return;
+            var cloudOnly = isSelfServeTenantDesk();
+            if (document.body) document.body.classList.toggle('self-serve-cloud-only', cloudOnly);
+            if (!cloudOnly) return;
+            var trialBanner = document.getElementById('whatsappTrialBanner');
+            if (trialBanner) trialBanner.hidden = true;
             var mode = document.getElementById('whatsappConnectionMode');
             if (mode) {
                 mode.value = 'cloud';

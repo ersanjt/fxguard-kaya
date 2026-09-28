@@ -355,11 +355,8 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
         const whatsappCloud = require('../lib/whatsappCloudApi');
         const { getOutboundTemplateName } = require('../lib/whatsappOutboundPolicy');
         const cfg = await getWhatsappConnectionConfig();
-        const env = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
-        const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
-        const host = req.get('x-forwarded-host') || req.get('host') || '';
-        const publicUrl = env || (host ? `${proto}://${host}` : '');
-        const webhookUrl = publicUrl ? `${publicUrl}/api/webhook/whatsapp-cloud` : '';
+        const { getCloudWebhookUrl } = require('../lib/whatsappOverview');
+        const webhookUrl = getCloudWebhookUrl(req);
         const verifyTokenSet = !!String(cfg.cloudVerifyToken || '').trim();
         const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
         const meta = await whatsappCloud.verifyCredentials();
@@ -371,7 +368,7 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
                 phoneNumberId: !!String(cfg.cloudPhoneNumberId || '').trim(),
                 verifyToken: verifyTokenSet,
                 appSecret: appSecretSet,
-                publicUrl: !!publicUrl,
+                publicUrl: !!webhookUrl,
                 bulkTemplate: !!getOutboundTemplateName(cfg),
                 metaApi: meta.ok === true,
             },
@@ -381,7 +378,7 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
                 verifyTokenConfigured: verifyTokenSet,
                 appSecretConfigured: appSecretSet,
                 verifyHint: webhookUrl
-                    ? `${webhookUrl}?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
+                    ? `${webhookUrl}${webhookUrl.includes('?') ? '&' : '?'}hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
                     : null,
             },
             sessionWindowHours: parseInt(process.env.WHATSAPP_CLOUD_SESSION_HOURS || '24', 10) || 24,
@@ -457,6 +454,12 @@ function requireOwnerOrAdmin(req, res, next) {
 router.post('/trial/start', requireOwnerOrAdmin, async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.tenant && req.tenant.id && !isPlatformTenant(req.tenant)) {
+            return res.status(400).json({
+                error: 'پنل‌های خودخدمت برای تست واتساپ از Meta Cloud API استفاده می‌کنند؛ اتصال QR مشترک نیست.',
+                code: 'SELF_SERVE_CLOUD_ONLY',
+            });
+        }
         const { startWhatsappTrial } = require('../lib/whatsappTrial');
         const trial = await startWhatsappTrial();
         res.json({ ok: true, trial });
