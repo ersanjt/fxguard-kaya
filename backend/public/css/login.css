@@ -442,6 +442,48 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     font-weight: 600;
 }
 .lp-signup-row a:hover { text-decoration: underline; }
+.lp-industry { border: none; }
+.lp-industry legend {
+    font-size: 0.8rem; font-weight: 500;
+    color: var(--lp-text2); margin-bottom: 4px;
+}
+.lp-industry-hint {
+    font-size: 0.78rem; color: var(--lp-text3);
+    line-height: 1.6; margin-bottom: 10px;
+}
+.lp-industry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.lp-industry-opt {
+    display: flex; align-items: center; gap: 8px;
+    min-height: 48px; padding: 10px 12px;
+    background: var(--lp-input-bg);
+    border: 1px solid var(--lp-input-bdr);
+    border-radius: var(--lp-radius-sm);
+    font-size: 0.82rem; line-height: 1.4; color: var(--lp-text);
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+.lp-industry-opt:hover { border-color: rgba(255,255,255,0.2); }
+.lp-industry-opt input { accent-color: var(--lp-accent); flex-shrink: 0; }
+.lp-industry-opt:has(input:checked) {
+    border-color: var(--lp-accent);
+    background: var(--lp-accent-s);
+}
+.lp-industry-opt:has(input:focus-visible) {
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 2px;
+}
+.lp-industry-modules {
+    font-size: 0.78rem; color: var(--lp-text2);
+    line-height: 1.7; margin-top: 10px;
+}
+.lp-industry-modules:empty { display: none; }
+@media (max-width: 420px) {
+    .lp-industry-grid { grid-template-columns: 1fr; }
+}
 .lp-host-hint {
     direction: ltr;
     text-align: left;

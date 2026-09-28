@@ -586,10 +586,26 @@
             <button type="button" class="btn-primary" id="btnImportSubmit" onclick="submitImportCustomers()" disabled data-i18n="import_submit">ورود مخاطبین</button>
         </div>
     </div>
+    <div id="clinicModal" class="modal-overlay clinic-modal" style="display:none;">
+        <div class="modal-box clinic-modal-box">
+            <form id="clinicModalForm">
+                <div class="modal-header"><h3 id="clinicModalTitle"></h3><button type="button" class="modal-close" data-clinic-close data-i18n-aria-label="btn_close" aria-label="بستن">&times;</button></div>
+                <div class="modal-body">
+                    <div id="clinicModalFields" class="clinic-form-grid"></div>
+                    <p id="clinicModalError" class="clinic-form-error" role="alert" hidden></p>
+                </div>
+                <div class="clinic-modal-actions">
+                    <button type="submit" class="btn-primary" id="clinicModalSave" data-i18n="clinic_btn_save">ذخیره</button>
+                    <button type="button" class="btn-secondary" data-clinic-close data-i18n="clinic_btn_cancel">انصراف</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/modules/constants.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/modules/utils.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/modules/api-client.js?v=__CRM_BUILD__" charset="utf-8"></script>
+    <script src="/js/modules/clinic-ui.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/i18n-fa.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">

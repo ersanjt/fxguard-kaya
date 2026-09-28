@@ -358,6 +358,14 @@
         .rates-adjustments-content .sup-table select { width: 100%; min-width: 100px; padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.85rem; }
         .rates-adjustments-content .sup-table input[type="number"] { width: 100%; min-width: 80px; max-width: 120px; padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.85rem; }
         .rates-adjustments-actions { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .rates-readonly-note { display: none; margin: 12px 0 0; padding: 10px 14px; border-radius: 12px; background: var(--bg-hover); border: 1px solid var(--border); color: var(--text-secondary); font-size: 0.9rem; line-height: 1.6; }
+        .rates-page--readonly .rates-readonly-note { display: block; }
+        .rates-page--readonly .rates-api-keys-box,
+        .rates-page--readonly #ratesCurrenciesBox,
+        .rates-page--readonly #ratesTickerConfigBox,
+        .rates-page--readonly .rates-adjustments-actions { display: none !important; }
+        .rates-page--readonly #ratesAdjustmentsTable select,
+        .rates-page--readonly #ratesAdjustmentsTable input { pointer-events: none; opacity: 0.6; }
         .rates-cards { display: none; grid-template-columns: 1fr; gap: 12px; }
         .rates-cards-wrap { display: none; }
         .rate-card { background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: center; transition: border-color 0.2s; }
@@ -2741,6 +2749,65 @@
         .panel-visibility-item:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); background: var(--accent-soft); }
         .panel-visibility-item label { margin: 0; cursor: pointer; flex: 1; font-size: 0.9rem; color: var(--text-primary); }
         .panel-visibility-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+        .panel-skills-list { display: flex; flex-direction: column; gap: 14px; margin: 16px 0; }
+        .panel-skills-group { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+        .panel-skills-group legend { padding: 0 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+        .panel-skills-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; min-height: 44px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; font-size: 0.88rem; color: var(--text-primary); cursor: pointer; }
+        .panel-skills-item:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+        .panel-skills-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
+        .panel-skills-item input[type="checkbox"]:disabled { cursor: not-allowed; }
+        .panel-skills-item span:first-of-type { flex: 1; }
+        .panel-skills-badge { font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+        .panel-skills-group-hint { grid-column: 1 / -1; margin: 0; font-size: 0.8rem; color: var(--text-muted); line-height: 1.6; }
+        .panel-skills-others { border: 1px dashed var(--border); border-radius: 12px; padding: 10px 14px; }
+        .panel-skills-others > summary { cursor: pointer; font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); padding: 4px 0; }
+        .panel-skills-others[open] > summary { margin-bottom: 12px; }
+        .panel-skills-others .panel-skills-group + .panel-skills-group { margin-top: 12px; }
+        .panel-skills-badge.is-soon { background: color-mix(in srgb, var(--text-muted) 18%, transparent); color: var(--text-muted); }
+        /* ماژول کلینیک — public/js/modules/clinic-ui.js */
+        .clinic-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+        .clinic-page-header h2 { margin: 0 0 6px; }
+        .clinic-intro { margin: 0; color: var(--text-secondary); font-size: 0.9rem; max-width: 720px; }
+        .clinic-hint-banner { margin: 0 0 12px; padding: 10px 14px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--text-primary); font-size: 0.88rem; }
+        .clinic-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 14px; }
+        .clinic-search { flex: 1 1 260px; min-width: 200px; height: var(--control-height-sm); }
+        .clinic-filter { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--text-secondary); }
+        .clinic-filter select, .clinic-filter input { height: var(--control-height-sm); min-width: 150px; }
+        .clinic-check { display: inline-flex; align-items: center; gap: 6px; font-size: 0.86rem; color: var(--text-secondary); cursor: pointer; }
+        .clinic-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-card); }
+        .clinic-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        .clinic-table th { text-align: start; font-weight: 600; color: var(--text-secondary); background: var(--bg-secondary); padding: 10px 12px; white-space: nowrap; }
+        .clinic-table td { padding: 10px 12px; border-top: 1px solid var(--border); vertical-align: middle; }
+        .clinic-table tbody tr:hover { background: var(--bg-hover); }
+        .clinic-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+        .clinic-mono { font-family: var(--font-ltr); font-variant-numeric: tabular-nums; }
+        .clinic-muted { color: var(--text-muted); font-size: 0.8rem; }
+        .clinic-empty { padding: 28px 16px; text-align: center; color: var(--text-muted); border: 1px dashed var(--border); border-radius: var(--radius-sm); }
+        .clinic-empty.is-error { color: var(--danger); border-color: var(--danger); }
+        .clinic-badge, .clinic-chip, .clinic-status { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 600; white-space: nowrap; background: color-mix(in srgb, var(--text-muted) 16%, transparent); color: var(--text-secondary); }
+        .clinic-badge.is-accent { background: var(--accent-soft); color: var(--accent); }
+        .clinic-badge.is-muted { opacity: 0.8; }
+        .clinic-chip { font-weight: 500; margin: 2px 0; }
+        .clinic-status.is-confirmed, .clinic-status.is-checked_in { background: var(--accent-soft); color: var(--accent); }
+        .clinic-status.is-completed { background: color-mix(in srgb, var(--accent) 28%, transparent); color: var(--text-primary); }
+        .clinic-status.is-cancelled, .clinic-status.is-no_show { background: var(--danger-soft); color: var(--danger); }
+        .clinic-status-btn.is-cancelled, .clinic-status-btn.is-no_show { color: var(--danger); }
+        .clinic-pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; color: var(--text-muted); font-size: 0.85rem; }
+        .clinic-modal-box { max-width: 720px; width: 100%; }
+        .clinic-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+        .clinic-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+        .clinic-field.is-wide { grid-column: 1 / -1; }
+        .clinic-field label, .clinic-label { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); }
+        .clinic-field textarea { resize: vertical; min-height: 72px; }
+        .clinic-req { color: var(--danger); }
+        .clinic-hint { color: var(--text-muted); font-size: 0.76rem; }
+        .clinic-checks { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+        .clinic-form-error { margin: 12px 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger); font-size: 0.86rem; }
+        .clinic-modal-actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 20px 20px; }
+        @media (max-width: 640px) {
+            .clinic-form-grid { grid-template-columns: 1fr; }
+            .clinic-page-header .btn-primary { width: 100%; }
+        }
         .panel-settings-section .form-group { margin-bottom: 18px; }
         .panel-settings-section .form-group:last-child { margin-bottom: 0; }
         .panel-settings-section .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }

@@ -1342,6 +1342,10 @@
                 { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user' },
                 { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2' },
                 { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand' },
+                { page: 'clinic-appointments', section: 'clinic', title: t('nav_clinic_appointments'), icon: 'icon-calendar' },
+                { page: 'clinic-patients', section: 'clinic', title: t('nav_clinic_patients'), icon: 'icon-users' },
+                { page: 'clinic-doctors', section: 'clinic', title: t('nav_clinic_doctors'), icon: 'icon-user' },
+                { page: 'clinic-packages', section: 'clinic', title: t('nav_clinic_packages'), icon: 'icon-file-plus' },
                 { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone' },
                 { page: 'message-templates', section: 'conversations', title: t('nav_message_templates'), icon: 'icon-file-plus' },
                 { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart' },
@@ -1356,6 +1360,7 @@
             ];
             const CARD_GROUPS = [
                 { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
+                { key: 'clinic', titleKey: 'nav_clinic', pages: ['clinic-appointments', 'clinic-patients', 'clinic-doctors', 'clinic-packages'] },
                 { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
                 { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
                 { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity', 'announcements'] },
@@ -1379,7 +1384,11 @@
                 stats = stats || {};
                 const defByPage = {};
                 CARD_DEFS.forEach(function(c) { defByPage[c.page] = c; });
-                const fxLocked = stats.planLimits && stats.planLimits.fxEnabled === false;
+                const tenantSkills = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && Array.isArray(currentUser.tenant.enabledSkills))
+                    ? currentUser.tenant.enabledSkills
+                    : null;
+                const fxLocked = stats.planLimits && stats.planLimits.fxEnabled === false
+                    && (!tenantSkills || tenantSkills.indexOf('fx_rates') >= 0);
                 const hidden = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
                 let html = '';
                 CARD_GROUPS.forEach(function(grp) {
@@ -2712,6 +2721,18 @@
                     e.preventDefault();
                     e.stopPropagation();
                     saveTenantCustomDomain();
+                    return;
+                }
+                if (target.closest('#btnSaveSkills') && typeof saveTenantSkills === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveTenantSkills();
+                    return;
+                }
+                if (target.closest('#btnSkillsResetDefaults') && typeof resetTenantSkillsToDefaults === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetTenantSkillsToDefaults();
                     return;
                 }
                 if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }

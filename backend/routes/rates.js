@@ -4,6 +4,7 @@ const axios = require('axios');
 const { RateAdjustment, RateCurrency, TickerConfig, PanelSetting } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
+const { isPlatformTenant } = require('../lib/tenantContext');
 const { getNavasanApiKey, navasanLatestUrl, normalizeNavasanApiKey, navasanUsageUrl, navasanApiErrorMessage } = require('../lib/navasanApiKey');
 const {
     getRatesApiCredentials,
@@ -58,12 +59,26 @@ function ratesTestCooldownCheck(map, userId, ms) {
     return null;
 }
 
+/**
+ * کلید API، ارزها، حاشیه و تیکر هنوز بین همهٔ سازمان‌های یک سرور مشترک‌اند؛
+ * تا جداسازی آن‌ها، فقط پنل سکو تغییرشان می‌دهد و بقیه نرخ را فقط می‌خوانند.
+ */
+function requirePlatformPanel(req, res, next) {
+    if (req.tenant && !isPlatformTenant(req.tenant)) {
+        return res.status(403).json({
+            error: 'تنظیمات نرخ در این پنل فقط‌خواندنی است',
+            code: 'RATES_SETTINGS_READ_ONLY',
+        });
+    }
+    next();
+}
+
 const ratesTestNavasanCooldown = new Map();
 const ratesTestAlanChandCooldown = new Map();
 const RATES_TEST_COOLDOWN_MS = 30000;
 
 // PUT /api/rates/api-keys — ذخیره توکن نوسان / الان چند و منبع فعال
-router.put('/api-keys', async (req, res, next) => {
+router.put('/api-keys', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const [row] = await PanelSetting.findOrCreate({
@@ -80,7 +95,7 @@ router.put('/api-keys', async (req, res, next) => {
     }
 });
 
-router.post('/test-navasan', async (req, res, next) => {
+router.post('/test-navasan', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const userId = req.user && req.user.id;
@@ -115,7 +130,7 @@ router.post('/test-navasan', async (req, res, next) => {
     }
 });
 
-router.post('/test-alanchand', async (req, res, next) => {
+router.post('/test-alanchand', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const userId = req.user && req.user.id;
@@ -435,7 +450,7 @@ router.get('/adjustments', async (req, res, next) => {
 });
 
 // PUT /api/rates/adjustments — ذخیره تعدیلات
-router.put('/adjustments', async (req, res, next) => {
+router.put('/adjustments', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -477,7 +492,7 @@ router.get('/ticker-config', async (req, res, next) => {
 });
 
 // PUT /api/rates/ticker-config — ذخیره ارزهای قابل نمایش (فقط با دسترسی rates)
-router.put('/ticker-config', async (req, res, next) => {
+router.put('/ticker-config', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -510,7 +525,7 @@ router.get('/currencies', async (req, res, next) => {
 });
 
 // POST /api/rates/currencies — افزودن ارز
-router.post('/currencies', async (req, res, next) => {
+router.post('/currencies', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.body.key || '').trim().toLowerCase();
@@ -531,7 +546,7 @@ router.post('/currencies', async (req, res, next) => {
 });
 
 // PUT /api/rates/currencies/:key — ویرایش ارز
-router.put('/currencies/:key', async (req, res, next) => {
+router.put('/currencies/:key', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();
@@ -555,7 +570,7 @@ router.put('/currencies/:key', async (req, res, next) => {
 });
 
 // DELETE /api/rates/currencies/:key — حذف ارز
-router.delete('/currencies/:key', async (req, res, next) => {
+router.delete('/currencies/:key', requirePlatformPanel, async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();

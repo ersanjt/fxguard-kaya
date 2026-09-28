@@ -8,9 +8,155 @@
 (function () {
     'use strict';
 
+    const I18N = {
+        fa: {
+            doc_title: 'ساخت پنل | FXGuard',
+            skip_link: 'رفتن به فرم ثبت‌نام',
+            sub: '۷ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است',
+            lang_label: 'انتخاب زبان',
+            title: 'ساخت پنل شما',
+            company: 'نام مجموعه',
+            industry: 'زمینهٔ فعالیت',
+            industry_hint: 'منوی پنل بر اساس کسب‌وکار شما چیده می‌شود؛ بعداً از تنظیمات پنل ماژول اضافه یا حذف کنید.',
+            ind_travel: 'آژانس مسافرتی و گردشگری',
+            ind_health: 'بیمارستان، کلینیک و توریسم سلامت',
+            ind_exchange: 'صرافی',
+            ind_manufacturing: 'کارخانه و تولید',
+            ind_food_distribution: 'توزیع مواد غذایی',
+            ind_real_estate: 'املاک و ساخت‌وساز',
+            ind_general: 'سایر کسب‌وکارها',
+            modules_with: 'ماژول‌های عمومی همهٔ پنل‌ها + ماژول‌های اختصاصی: ',
+            modules_general: 'ماژول‌های عمومی همهٔ پنل‌ها؛ ماژول‌های اضافی را بعداً از تنظیمات پنل اضافه کنید.',
+            list_sep: '، ',
+            owner: 'نام مالک',
+            email: 'ایمیل مالک',
+            slug: 'شناسه پنل',
+            slug_help: 'فقط حروف انگلیسی کوچک، عدد و خط تیره — از نام مجموعه یا ایمیل پیشنهاد می‌شود.',
+            password: 'رمز عبور',
+            password_ph: 'حداقل ۸ کاراکتر، شامل حرف و عدد',
+            submit: 'شروع آزمایش ۷روزه',
+            have_panel: 'قبلاً پنل دارید؟ ورود',
+            slug_checking: 'در حال بررسی شناسه…',
+            slug_free: 'این شناسه آزاد است.',
+            slug_unavailable: 'این شناسه در دسترس نیست.',
+            err_industry: 'زمینهٔ فعالیت مجموعه را انتخاب کنید.',
+            err_required: 'همهٔ فیلدهای لازم را پر کنید.',
+            err_slug_taken: 'شناسه پنل در دسترس نیست. یک شناسه دیگر انتخاب کنید.',
+            err_email_taken: 'این ایمیل قبلاً ثبت شده است — از صفحه ورود وارد شوید.',
+            err_email_invalid: 'ایمیل معتبر وارد کنید.',
+            err_password_invalid: 'رمز عبور باید حداقل ۸ کاراکتر و شامل حرف و عدد باشد.',
+            err_slug_invalid: 'شناسه پنل معتبر نیست (۳ تا ۲۴ حرف انگلیسی کوچک، عدد یا خط تیره).',
+            err_failed: 'ثبت‌نام ناموفق بود.',
+            err_network: 'اتصال به سرور برقرار نشد.',
+            ok_created: 'پنل ساخته شد. در حال ورود…',
+        },
+        en: {
+            doc_title: 'Create your panel | FXGuard',
+            skip_link: 'Skip to signup form',
+            sub: '7-day free trial — a subscription is required afterwards',
+            lang_label: 'Language',
+            title: 'Create your panel',
+            company: 'Company name',
+            industry: 'Industry',
+            industry_hint: 'Your panel menu is arranged for your business; add or remove modules later in panel settings.',
+            ind_travel: 'Travel & tourism agency',
+            ind_health: 'Hospital, clinic & health tourism',
+            ind_exchange: 'Currency exchange',
+            ind_manufacturing: 'Factory & manufacturing',
+            ind_food_distribution: 'Food distribution',
+            ind_real_estate: 'Real estate & construction',
+            ind_general: 'Other businesses',
+            modules_with: 'Common modules for every panel + industry modules: ',
+            modules_general: 'Common modules for every panel; add extra modules later in panel settings.',
+            list_sep: ', ',
+            owner: 'Owner name',
+            email: 'Owner email',
+            slug: 'Panel ID',
+            slug_help: 'Lowercase letters, digits and hyphens only — suggested from the company name or email.',
+            password: 'Password',
+            password_ph: 'At least 8 characters, with a letter and a digit',
+            submit: 'Start 7-day trial',
+            have_panel: 'Already have a panel? Sign in',
+            slug_checking: 'Checking panel ID…',
+            slug_free: 'This panel ID is available.',
+            slug_unavailable: 'This panel ID is not available.',
+            err_industry: 'Select your industry.',
+            err_required: 'Please fill in all required fields.',
+            err_slug_taken: 'This panel ID is not available. Choose another one.',
+            err_email_taken: 'This email is already registered — sign in from the login page.',
+            err_email_invalid: 'Enter a valid email address.',
+            err_password_invalid: 'Password must be at least 8 characters and include a letter and a digit.',
+            err_slug_invalid: 'Invalid panel ID (3–24 lowercase letters, digits or hyphens).',
+            err_failed: 'Signup failed.',
+            err_network: 'Could not reach the server.',
+            ok_created: 'Panel created. Signing you in…',
+        },
+        tr: {
+            doc_title: 'Panelinizi oluşturun | FXGuard',
+            skip_link: 'Kayıt formuna geç',
+            sub: '7 gün ücretsiz deneme — sonrasında abonelik gerekir',
+            lang_label: 'Dil seçimi',
+            title: 'Panelinizi oluşturun',
+            company: 'Şirket adı',
+            industry: 'Sektör',
+            industry_hint: 'Panel menüsü işletmenize göre düzenlenir; modülleri daha sonra panel ayarlarından ekleyip kaldırabilirsiniz.',
+            ind_travel: 'Seyahat ve turizm acentesi',
+            ind_health: 'Hastane, klinik ve sağlık turizmi',
+            ind_exchange: 'Döviz bürosu',
+            ind_manufacturing: 'Fabrika ve üretim',
+            ind_food_distribution: 'Gıda dağıtımı',
+            ind_real_estate: 'Emlak ve inşaat',
+            ind_general: 'Diğer işletmeler',
+            modules_with: 'Tüm panellerin ortak modülleri + sektör modülleri: ',
+            modules_general: 'Tüm panellerin ortak modülleri; ek modülleri daha sonra panel ayarlarından ekleyin.',
+            list_sep: ', ',
+            owner: 'Sahip adı',
+            email: 'Sahip e-postası',
+            slug: 'Panel kimliği',
+            slug_help: 'Yalnızca küçük harf, rakam ve tire — şirket adından veya e-postadan önerilir.',
+            password: 'Şifre',
+            password_ph: 'En az 8 karakter, harf ve rakam içermeli',
+            submit: '7 günlük denemeyi başlat',
+            have_panel: 'Zaten paneliniz var mı? Giriş yapın',
+            slug_checking: 'Panel kimliği kontrol ediliyor…',
+            slug_free: 'Bu panel kimliği kullanılabilir.',
+            slug_unavailable: 'Bu panel kimliği kullanılamıyor.',
+            err_industry: 'Sektörünüzü seçin.',
+            err_required: 'Lütfen tüm zorunlu alanları doldurun.',
+            err_slug_taken: 'Bu panel kimliği kullanılamıyor. Başka bir tane seçin.',
+            err_email_taken: 'Bu e-posta zaten kayıtlı — giriş sayfasından oturum açın.',
+            err_email_invalid: 'Geçerli bir e-posta adresi girin.',
+            err_password_invalid: 'Şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.',
+            err_slug_invalid: 'Geçersiz panel kimliği (3–24 küçük harf, rakam veya tire).',
+            err_failed: 'Kayıt başarısız oldu.',
+            err_network: 'Sunucuya ulaşılamadı.',
+            ok_created: 'Panel oluşturuldu. Giriş yapılıyor…',
+        },
+    };
+    const SUPPORTED = ['fa', 'en', 'tr'];
+    const ERROR_KEYS = {
+        SLUG_TAKEN: 'err_slug_taken',
+        SLUG_INVALID: 'err_slug_invalid',
+        EMAIL_TAKEN: 'err_email_taken',
+        EMAIL_INVALID: 'err_email_invalid',
+        PASSWORD_INVALID: 'err_password_invalid',
+    };
+
+    let lang = 'fa';
+    try {
+        const stored = localStorage.getItem('crm_lang');
+        if (SUPPORTED.indexOf(stored) >= 0) lang = stored;
+    } catch (_) {}
+
+    function t(k) {
+        return (I18N[lang] && I18N[lang][k]) || I18N.fa[k] || k;
+    }
+
     let parentHost = 'app.fxguard.io';
     let wildcardDns = false;
     const form = document.getElementById('suForm');
+    const companyEl = document.getElementById('suCompany');
+    const emailEl = document.getElementById('suEmail');
     const slugEl = document.getElementById('suSlug');
     const hintEl = document.getElementById('suHostHint');
     const slugStatusEl = document.getElementById('suSlugStatus');
@@ -18,13 +164,25 @@
     const btn = document.getElementById('suBtn');
     let slugCheckTimer = null;
     let lastSlugOk = null;
+    let slugEdited = false;
+    let slugStatusKey = '';
+    let slugStatusOk = null;
+    let msgKey = '';
+    let msgOk = false;
 
-    function setMsg(text, ok) {
+    function paintMsg() {
         if (!msgEl) return;
-        msgEl.textContent = text || '';
-        msgEl.classList.toggle('success', !!ok);
-        msgEl.classList.toggle('error', !ok);
+        const text = msgKey ? t(msgKey) : '';
+        msgEl.textContent = text;
+        msgEl.classList.toggle('success', !!msgOk);
+        msgEl.classList.toggle('error', !msgOk);
         msgEl.classList.toggle('has-text', !!text);
+    }
+
+    function setMsg(key, ok) {
+        msgKey = key || '';
+        msgOk = !!ok;
+        paintMsg();
     }
 
     function normalizeSlug(raw) {
@@ -35,6 +193,32 @@
             .replace(/-+/g, '-')
             .replace(/^-|-$/g, '')
             .slice(0, 24);
+    }
+
+    function slugFromText(raw) {
+        return normalizeSlug(String(raw || '').replace(/[\s_.]+/g, '-')).replace(/-$/, '');
+    }
+
+    function suggestedSlug() {
+        const fromCompany = slugFromText(companyEl && companyEl.value);
+        if (fromCompany.length >= 3) return fromCompany;
+        const email = String((emailEl && emailEl.value) || '').trim().toLowerCase();
+        const at = email.indexOf('@');
+        if (at < 1) return '';
+        const domain = email.slice(at + 1).split('.')[0] || '';
+        const publicMail = /^(gmail|yahoo|hotmail|outlook|live|icloud|aol|mail|protonmail|proton|yandex|gmx|zoho)$/;
+        const fromDomain = publicMail.test(domain) ? '' : slugFromText(domain);
+        if (fromDomain.length >= 3) return fromDomain;
+        const fromLocal = slugFromText(email.slice(0, at));
+        return fromLocal.length >= 3 ? fromLocal : '';
+    }
+
+    function autofillSlug() {
+        if (slugEdited || !slugEl) return;
+        const next = suggestedSlug();
+        if (next === slugEl.value) return;
+        slugEl.value = next;
+        onSlugChanged();
     }
 
     function updateHint() {
@@ -50,10 +234,16 @@
         }
     }
 
-    function setSlugStatus(text, ok) {
+    function paintSlugStatus() {
         if (!slugStatusEl) return;
-        slugStatusEl.textContent = text || '';
-        slugStatusEl.style.color = ok === true ? '#34d399' : ok === false ? '#f87171' : '';
+        slugStatusEl.textContent = slugStatusKey ? t(slugStatusKey) : '';
+        slugStatusEl.style.color = slugStatusOk === true ? '#34d399' : slugStatusOk === false ? '#f87171' : '';
+    }
+
+    function setSlugStatus(key, ok) {
+        slugStatusKey = key || '';
+        slugStatusOk = ok === undefined ? null : ok;
+        paintSlugStatus();
     }
 
     function checkSlugAvailability() {
@@ -63,20 +253,20 @@
             setSlugStatus('');
             return;
         }
-        setSlugStatus('در حال بررسی شناسه…');
+        setSlugStatus('slug_checking');
         fetch('/api/tenants/check-slug?slug=' + encodeURIComponent(slug), {
             credentials: 'same-origin',
-            headers: { Accept: 'application/json' }
+            headers: { Accept: 'application/json' },
         })
             .then(function (r) { return r.json().catch(function () { return {}; }); })
             .then(function (d) {
                 if (normalizeSlug(slugEl && slugEl.value) !== slug) return;
                 if (d && d.available) {
                     lastSlugOk = true;
-                    setSlugStatus('این شناسه آزاد است.', true);
+                    setSlugStatus('slug_free', true);
                 } else {
                     lastSlugOk = false;
-                    setSlugStatus((d && d.error) || 'این شناسه در دسترس نیست.', false);
+                    setSlugStatus('slug_unavailable', false);
                 }
             })
             .catch(function () {
@@ -84,6 +274,65 @@
                 setSlugStatus('');
             });
     }
+
+    function onSlugChanged() {
+        updateHint();
+        if (slugCheckTimer) clearTimeout(slugCheckTimer);
+        slugCheckTimer = setTimeout(checkSlugAvailability, 350);
+    }
+
+    let catalog = null;
+    const industryModulesEl = document.getElementById('suIndustryModules');
+
+    function renderIndustryModules() {
+        if (!industryModulesEl || !catalog || !form) return;
+        const picked = form.querySelector('input[name="industry"]:checked');
+        if (!picked) {
+            industryModulesEl.textContent = '';
+            return;
+        }
+        const ind = (catalog.industries || []).find(function (i) { return i.id === picked.value; });
+        const labelOf = function (id) {
+            const s = (catalog.skills || []).find(function (x) { return x.id === id; });
+            return s && s.label ? s.label[lang] || s.label.fa || id : id;
+        };
+        const own = ind && ind.modules ? ind.modules.map(labelOf) : [];
+        industryModulesEl.textContent = own.length
+            ? t('modules_with') + own.join(t('list_sep'))
+            : t('modules_general');
+    }
+
+    function applyLang(l) {
+        lang = SUPPORTED.indexOf(l) >= 0 ? l : 'fa';
+        try { localStorage.setItem('crm_lang', lang); } catch (_) {}
+        const rtl = lang === 'fa';
+        document.documentElement.lang = lang;
+        document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+        document.body.classList.toggle('ltr', !rtl);
+        document.title = t('doc_title');
+        document.querySelectorAll('[data-su-i18n]').forEach(function (el) {
+            el.textContent = t(el.getAttribute('data-su-i18n'));
+        });
+        document.querySelectorAll('[data-su-i18n-ph]').forEach(function (el) {
+            el.setAttribute('placeholder', t(el.getAttribute('data-su-i18n-ph')));
+        });
+        document.querySelectorAll('[data-su-i18n-aria]').forEach(function (el) {
+            el.setAttribute('aria-label', t(el.getAttribute('data-su-i18n-aria')));
+        });
+        document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function (b) {
+            const active = b.getAttribute('data-lang') === lang;
+            b.classList.toggle('active', active);
+            b.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        paintSlugStatus();
+        paintMsg();
+        renderIndustryModules();
+    }
+
+    document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function (b) {
+        b.addEventListener('click', function () { applyLang(b.getAttribute('data-lang')); });
+    });
+    applyLang(lang);
 
     fetch('/api/config', { credentials: 'same-origin' })
         .then(function (r) { return r.json().catch(function () { return {}; }); })
@@ -101,13 +350,32 @@
             updateHint();
         });
 
+    fetch('/api/tenants/catalog', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+        .then(function (r) { return r.json().catch(function () { return null; }); })
+        .then(function (d) {
+            if (d && d.ok) {
+                catalog = d;
+                renderIndustryModules();
+            }
+        })
+        .catch(function () {});
+
+    if (form) {
+        form.querySelectorAll('input[name="industry"]').forEach(function (el) {
+            el.addEventListener('change', renderIndustryModules);
+        });
+    }
+
+    if (companyEl) companyEl.addEventListener('input', autofillSlug);
+    if (emailEl) emailEl.addEventListener('input', autofillSlug);
+
     if (slugEl) {
         slugEl.addEventListener('input', function () {
             const cleaned = normalizeSlug(slugEl.value);
             if (slugEl.value !== cleaned) slugEl.value = cleaned;
-            updateHint();
-            if (slugCheckTimer) clearTimeout(slugCheckTimer);
-            slugCheckTimer = setTimeout(checkSlugAvailability, 350);
+            slugEdited = cleaned.length > 0;
+            if (!slugEdited) autofillSlug();
+            onSlugChanged();
         });
         slugEl.addEventListener('blur', checkSlugAvailability);
     }
@@ -116,17 +384,23 @@
         form.addEventListener('submit', function (ev) {
             ev.preventDefault();
             setMsg('');
-            const company = (document.getElementById('suCompany').value || '').trim();
+            const company = (companyEl.value || '').trim();
             const ownerName = (document.getElementById('suOwner') && document.getElementById('suOwner').value || '').trim();
             const slug = normalizeSlug(slugEl && slugEl.value);
-            const email = (document.getElementById('suEmail').value || '').trim();
+            const email = (emailEl.value || '').trim();
             const password = document.getElementById('suPass').value || '';
+            const industryEl = form.querySelector('input[name="industry"]:checked');
+            const industry = industryEl ? industryEl.value : '';
+            if (!industry) {
+                setMsg('err_industry');
+                return;
+            }
             if (!company || !slug || !email || !password) {
-                setMsg('همهٔ فیلدهای لازم را پر کنید.');
+                setMsg('err_required');
                 return;
             }
             if (lastSlugOk === false) {
-                setMsg('شناسه پنل در دسترس نیست. یک شناسه دیگر انتخاب کنید.');
+                setMsg('err_slug_taken');
                 return;
             }
             btn.classList.add('loading');
@@ -140,8 +414,9 @@
                     slug: slug,
                     email: email,
                     password: password,
-                    ownerName: ownerName || company
-                })
+                    ownerName: ownerName || company,
+                    industry: industry,
+                }),
             })
                 .then(function (r) {
                     return r.json().then(function (d) { return { ok: r.ok, status: r.status, d: d || {} }; });
@@ -150,14 +425,10 @@
                     if (!res.ok) {
                         btn.classList.remove('loading');
                         btn.disabled = false;
-                        if (res.d.code === 'EMAIL_TAKEN') {
-                            setMsg((res.d.error || 'این ایمیل قبلاً ثبت شده') + ' — از صفحه ورود وارد شوید.');
-                            return;
-                        }
-                        setMsg(res.d.error || 'ثبت‌نام ناموفق بود.');
+                        setMsg(ERROR_KEYS[res.d.code] || 'err_failed');
                         return;
                     }
-                    setMsg('پنل ساخته شد. در حال ورود…', true);
+                    setMsg('ok_created', true);
                     try {
                         if (res.d.slug) localStorage.setItem('fxguard_panel_slug', String(res.d.slug).toLowerCase());
                     } catch (_) {}
@@ -178,7 +449,7 @@
                 .catch(function () {
                     btn.classList.remove('loading');
                     btn.disabled = false;
-                    setMsg('اتصال به سرور برقرار نشد.');
+                    setMsg('err_network');
                 });
         });
     }

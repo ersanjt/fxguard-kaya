@@ -32,6 +32,7 @@ const branchRoutes = require('./branches');
 const supervisionRoutes = require('./supervision');
 const taskRoutes = require('./tasks');
 const processRoutes = require('./processes');
+const clinicRoutes = require('./clinic');
 const tagsRoutes = require('./tags');
 const templatesRoutes = require('./templates');
 const fileTemplatesRoutes = require('./fileTemplates');
@@ -239,6 +240,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
     apiRouter.use('/tasks', authMiddleware, requireSection('tasks'), taskRoutes);
     apiRouter.use('/processes', authMiddleware, processRoutes);
+    apiRouter.use('/clinic', authMiddleware, requireSection('clinic'), clinicRoutes);
     apiRouter.use('/upload', authMiddleware, uploadRoutes);
     apiRouter.use('/rates', authMiddleware, ratesRoutes);
     apiRouter.use('/services', authMiddleware, servicesRoutes);

@@ -95,6 +95,10 @@ const models = {
     DevicePushToken: require('./DevicePushToken')(sequelize),
     ProductFitSurvey: require('./ProductFitSurvey')(sequelize),
     ContactLead: require('./ContactLead')(sequelize),
+    ClinicDoctor: require('./ClinicDoctor')(sequelize),
+    ClinicPatient: require('./ClinicPatient')(sequelize),
+    ClinicTreatmentPackage: require('./ClinicTreatmentPackage')(sequelize),
+    ClinicAppointment: require('./ClinicAppointment')(sequelize),
 };
 
 // تعریف روابط

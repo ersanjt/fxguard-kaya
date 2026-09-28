@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const TaskUpdate = sequelize.define('TaskUpdate', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -29,6 +33,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         updatedAt: false,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['taskId'] },
             { fields: ['userId'] }
         ]

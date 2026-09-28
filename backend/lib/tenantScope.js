@@ -10,9 +10,42 @@
 const { Op } = require('sequelize');
 const { getCurrentTenantId, getCachedPlatformTenant } = require('./tenantContext');
 
+function platformTenantId() {
+    const platform = getCachedPlatformTenant();
+    return (platform && platform.id) || null;
+}
+
 function stampTenantId(instance) {
     if (!instance || instance.tenantId) return;
-    const tid = getCurrentTenantId() || (getCachedPlatformTenant() && getCachedPlatformTenant().id);
+    const tid = getCurrentTenantId() || platformTenantId();
+    if (tid) instance.tenantId = tid;
+}
+
+/**
+ * سازمانِ ردیف را از ردیف والد پیدا می‌کند (برای نوشتن بدون context درخواست، مثل وب‌هوک).
+ * owner.on = [ستون والد, ستون همین ردیف]
+ */
+async function resolveOwnerTenantId(model, owners, instance, options) {
+    for (const owner of owners) {
+        const [parentCol, childCol] = owner.on;
+        const value = instance.get ? instance.get(childCol) : instance[childCol];
+        const Parent = model.sequelize.models[owner.model];
+        if (!value || !Parent) continue;
+        const parent = await Parent.findOne({
+            where: { [parentCol]: value },
+            attributes: ['tenantId'],
+            transaction: options && options.transaction,
+            skipTenantScope: true,
+        });
+        if (parent && parent.tenantId) return parent.tenantId;
+    }
+    return null;
+}
+
+/** سازمان سکو (kaya) هم یک مشتری است؛ ردیفِ بی‌صاحب به آن داده نمی‌شود و بی‌صاحب (نامرئی) می‌ماند. */
+async function stampTenantIdFromOwners(model, owners, instance, options) {
+    if (!instance || instance.tenantId) return;
+    const tid = getCurrentTenantId() || (await resolveOwnerTenantId(model, owners, instance, options));
     if (tid) instance.tenantId = tid;
 }
 
@@ -35,7 +68,8 @@ function mergeTenantWhere(options) {
     return options;
 }
 
-function applyTenantScope(model) {
+/** owners فقط برای جدول‌های وابسته (TENANT_OWNED_MODELS) داده می‌شود، حتی اگر خالی باشد. */
+function applyTenantScope(model, owners) {
     if (!model || typeof model.addHook !== 'function') return model;
 
     const constrain = (options) => {
@@ -47,18 +81,35 @@ function applyTenantScope(model) {
     model.addHook('beforeBulkUpdate', constrain);
     model.addHook('beforeBulkDestroy', constrain);
 
-    model.addHook('beforeCreate', (instance) => {
-        stampTenantId(instance);
-    });
+    // sum/min/max از aggregate می‌گذرند و Sequelize برایشان هوکی ندارد
+    const aggregate = model.aggregate;
+    model.aggregate = function scopedAggregate(field, fn, options) {
+        return aggregate.call(this, field, fn, mergeTenantWhere({ ...(options || {}) }));
+    };
 
-    model.addHook('beforeBulkCreate', (instances) => {
+    if (!Array.isArray(owners)) {
+        model.addHook('beforeCreate', (instance) => {
+            stampTenantId(instance);
+        });
+        model.addHook('beforeBulkCreate', (instances) => {
+            if (!Array.isArray(instances)) return;
+            instances.forEach(stampTenantId);
+        });
+        return model;
+    }
+
+    model.addHook('beforeCreate', (instance, options) =>
+        stampTenantIdFromOwners(model, owners, instance, options));
+    model.addHook('beforeBulkCreate', async (instances, options) => {
         if (!Array.isArray(instances)) return;
-        instances.forEach(stampTenantId);
+        for (const instance of instances) {
+            await stampTenantIdFromOwners(model, owners, instance, options);
+        }
     });
-
     return model;
 }
 
+/** جدول‌های ریشه که tenantId از ابتدا در آن‌ها بود. */
 const TENANT_SCOPED_MODELS = [
     'User',
     'Customer',
@@ -68,11 +119,65 @@ const TENANT_SCOPED_MODELS = [
     'Task',
     'Branch',
     'Department',
+    'ClinicDoctor',
+    'ClinicPatient',
+    'ClinicTreatmentPackage',
+    'ClinicAppointment',
+];
+
+const byUser = (column) => ({ model: 'User', on: ['id', column] });
+const byParent = (model, column) => ({ model, on: ['id', column] });
+
+/**
+ * جدول‌های وابسته: مالک هر ردیف از روی والد مشخص می‌شود.
+ * ترتیب مهم است: والد قبل از فرزند (backfill به همین ترتیب اجرا می‌شود).
+ */
+const TENANT_OWNED_MODELS = [
+    { model: 'Announcement', owners: [byUser('fromUserId')] },
+    { model: 'AnnouncementRead', owners: [byParent('Announcement', 'announcementId'), byUser('userId')] },
+    { model: 'InternalThreadParticipant', owners: [byUser('userId')] },
+    {
+        model: 'InternalThread',
+        owners: [byUser('createdById'), { model: 'InternalThreadParticipant', on: ['threadId', 'id'] }],
+    },
+    { model: 'InternalMessage', owners: [byParent('InternalThread', 'threadId'), byUser('fromUserId')] },
+    { model: 'ProcessInstance', owners: [byUser('createdBy')] },
+    { model: 'ProcessInstanceStep', owners: [byParent('ProcessInstance', 'instanceId')] },
+    { model: 'ProcessTemplate', owners: [{ model: 'ProcessInstance', on: ['templateId', 'id'] }] },
+    { model: 'Template', owners: [] },
+    { model: 'Tag', owners: [] },
+    { model: 'ExchangeService', owners: [] },
+    { model: 'FileTemplate', owners: [byUser('uploadedBy')] },
+    { model: 'CompanyEmail', owners: [byUser('assignedUserId')] },
+    { model: 'StaffResourceGrant', owners: [byUser('userId'), byUser('grantedBy')] },
+    { model: 'Attendance', owners: [byUser('userId')] },
+    { model: 'ActivityLog', owners: [byUser('userId'), byParent('Customer', 'customerId')] },
+    { model: 'TicketReply', owners: [byParent('Ticket', 'ticketId'), byUser('userId')] },
+    { model: 'TaskUpdate', owners: [byParent('Task', 'taskId'), byUser('userId')] },
+    { model: 'CustomerNote', owners: [byParent('Customer', 'customerId'), byUser('userId')] },
+    { model: 'CustomerDocument', owners: [byParent('Customer', 'customerId'), byUser('uploadedBy')] },
+    { model: 'CashBox', owners: [byParent('Branch', 'branchId')] },
+    { model: 'BankAccount', owners: [byParent('Branch', 'branchId')] },
+    {
+        model: 'Transaction',
+        owners: [
+            byUser('userId'),
+            byParent('Customer', 'customerId'),
+            byParent('Branch', 'branchId'),
+            byParent('CashBox', 'fromCashBoxId'),
+            byParent('CashBox', 'toCashBoxId'),
+            byParent('BankAccount', 'fromBankAccountId'),
+            byParent('BankAccount', 'toBankAccountId'),
+        ],
+    },
 ];
 
 function applyTenantScopeToModels(models) {
     TENANT_SCOPED_MODELS.forEach((name) => {
         if (models[name]) applyTenantScope(models[name]);
+    });
+    TENANT_OWNED_MODELS.forEach(({ model, owners }) => {
+        if (models[model]) applyTenantScope(models[model], owners);
     });
 }
 
@@ -82,4 +187,5 @@ module.exports = {
     applyTenantScope,
     applyTenantScopeToModels,
     TENANT_SCOPED_MODELS,
+    TENANT_OWNED_MODELS,
 };

@@ -50,6 +50,7 @@ function isTrialGateExemptPath(method, path) {
     if (p.indexOf('/api/webhook/') === 0) return true;
     if (p.indexOf('/api/tenants/signup') === 0) return true;
     if (p.indexOf('/api/tenants/check-slug') === 0) return true;
+    if (p.indexOf('/api/tenants/catalog') === 0) return true;
     if (m === 'GET' && (p === '/api/tenants/me' || p.indexOf('/api/tenants/me?') === 0)) return true;
     if (p.indexOf('/api/auth/') === 0) return true;
     if (m === 'OPTIONS') return true;
@@ -92,6 +93,8 @@ function publicTenantPayload(tenant, now) {
         locked: !state.ok,
         lockCode: state.code,
         panelHost: tenant.host || null,
+        industry: tenant.industry || null,
+        enabledSkills: Array.isArray(tenant.enabledSkills) ? tenant.enabledSkills : null,
     };
 }
 

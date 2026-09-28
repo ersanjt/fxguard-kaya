@@ -7,6 +7,7 @@ Modular JavaScript for the CRM SPA. Load order: constants → api-client → (i1
 | `constants.js` | VALID_PAGES, PAGE_TO_SECTION, PAGE_IDS, PAGE_TITLES — config for routing. |
 | `utils.js` | escapeHtml, formatPrice, formatChange — formatting helpers. |
 | `api-client.js` | API fetch wrapper, error handling. Init from dashboard after `headers()` exists. |
+| `clinic-ui.js` | Clinic skill pages (`clinic-*`): patients, doctors, appointments, packages. Entry: `CRM.Clinic.show(page, { canManage })` from `showPage`. |
 
 **معماری و تفکیک ماژول‌ها:** برای نقشهٔ بلندمدت و نحوهٔ استخراج بخش‌ها به فایل‌های جدا، مستند [FRONTEND-ARCHITECTURE.md](../../docs/FRONTEND-ARCHITECTURE.md) را ببینید.
 

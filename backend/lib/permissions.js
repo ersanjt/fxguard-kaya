@@ -22,6 +22,7 @@ const SECTION_KEYS = [
     'rates',          // تنظیم نرخ ارزها (نوار زیر پنل)
     'services',       // خدمات صرافی (سرویس‌های قابل ارائه)
     'processes',      // فرایندهای کسب‌وکار (BPM)
+    'clinic',         // کلینیک: بیماران، پزشکان، نوبت‌ها، پکیج‌های درمانی (اسکیل صنعت سلامت)
     'panel_settings', // ظاهر پنل (لوگو، فاویکون، نام سایت)
 ];
 
@@ -44,31 +45,31 @@ const DEFAULT_BY_ROLE = {
     owner: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true, system_status: true,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: true,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: false,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false, system_status: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false, system_status: false,
-        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
 };

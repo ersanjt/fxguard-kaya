@@ -5,6 +5,10 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const CashBox = sequelize.define('CashBox', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -48,6 +52,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'CashBoxes',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['branchId'] },
             { fields: ['isActive'] }
         ]

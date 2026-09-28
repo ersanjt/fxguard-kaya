@@ -81,6 +81,16 @@ module.exports = (sequelize) => {
                 type: DataTypes.DATE,
                 allowNull: true,
             },
+            industry: {
+                type: DataTypes.STRING(32),
+                allowNull: true,
+                comment: 'حوزهٔ فعالیت — lib/tenantSkills.js',
+            },
+            enabledSkills: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+                comment: 'اسکیل‌های روشن (JSON array)؛ null یعنی همه روشن',
+            },
         },
         {
             timestamps: true,

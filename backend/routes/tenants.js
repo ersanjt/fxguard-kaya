@@ -17,7 +17,18 @@ const {
     tenantBaseHost,
     tenantLoginUrl,
 } = require('../lib/tenantHost');
-const { provisionSelfServeTenant, setTenantCustomDomain } = require('../services/tenantProvision');
+const {
+    provisionSelfServeTenant,
+    setTenantCustomDomain,
+    updateTenantSkills,
+} = require('../services/tenantProvision');
+const {
+    normalizeIndustry,
+    parseSkillsColumn,
+    LEGACY_SKILLS,
+    publicCatalog,
+} = require('../lib/tenantSkills');
+const { invalidatePlanCache } = require('../lib/planLimits');
 const { publicTenantPayload } = require('../lib/tenantTrial');
 const { Tenant, User } = require('../models');
 const { setAuthCookie } = require('../lib/authCookie');
@@ -106,7 +117,18 @@ function createTenantsRouter(logger) {
                 return res.json({ ok: true, tenant: null, platform: true });
             }
             const row = await Tenant.findByPk(tenant.id, {
-                attributes: ['id', 'slug', 'name', 'status', 'planTier', 'trialEndsAt', 'customDomain', 'panelKey'],
+                attributes: [
+                    'id',
+                    'slug',
+                    'name',
+                    'status',
+                    'planTier',
+                    'trialEndsAt',
+                    'customDomain',
+                    'panelKey',
+                    'industry',
+                    'enabledSkills',
+                ],
             });
             const shaped = row
                 ? {
@@ -118,6 +140,8 @@ function createTenantsRouter(logger) {
                     trialEndsAt: row.trialEndsAt,
                     customDomain: row.customDomain,
                     panelKey: row.panelKey,
+                    industry: normalizeIndustry(row.industry),
+                    enabledSkills: parseSkillsColumn(row.enabledSkills),
                     isPlatform: false,
                 }
                 : tenant;
@@ -130,6 +154,55 @@ function createTenantsRouter(logger) {
         } catch (err) {
             const status = err && err.status ? err.status : 500;
             return res.status(status).json({ error: err.message || 'خواندن پنل ناموفق بود' });
+        }
+    });
+
+    router.get('/tenants/catalog', (req, res) => {
+        res.set('Cache-Control', 'public, max-age=300');
+        return res.json({ ok: true, ...publicCatalog() });
+    });
+
+    router.get('/tenants/skills', authMiddleware, async (req, res) => {
+        try {
+            const tenant = req.tenant;
+            if (!tenant || tenant.isPlatform || !tenant.id) {
+                return res.json({ ok: true, platform: true, ...publicCatalog() });
+            }
+            const row = await Tenant.findByPk(tenant.id, { attributes: ['id', 'industry', 'enabledSkills'] });
+            const industry = row ? normalizeIndustry(row.industry) : null;
+            const stored = row ? parseSkillsColumn(row.enabledSkills) : null;
+            return res.json({
+                ok: true,
+                platform: false,
+                industry,
+                enabledSkills: stored || LEGACY_SKILLS.slice(),
+                ...publicCatalog(),
+            });
+        } catch (err) {
+            const status = err && err.status ? err.status : 500;
+            return res.status(status).json({ error: err.message || 'خواندن اسکیل‌ها ناموفق بود' });
+        }
+    });
+
+    router.put('/tenants/skills', authMiddleware, async (req, res) => {
+        try {
+            const tenant = req.tenant;
+            if (!tenant || tenant.isPlatform || !tenant.id) {
+                return res.status(400).json({ error: 'مدیریت اسکیل‌ها فقط برای پنل خودخدمت است' });
+            }
+            if (!req.user || (req.user.role !== 'owner' && req.user.role !== 'admin')) {
+                return res.status(403).json({ error: 'فقط مالک پنل می‌تواند اسکیل‌ها را تغییر دهد' });
+            }
+            const body = req.body || {};
+            const result = await updateTenantSkills(tenant.id, {
+                industry: body.industry,
+                enabledSkills: body.enabledSkills,
+            });
+            invalidatePlanCache();
+            return res.json({ ok: true, ...result });
+        } catch (err) {
+            const status = err && err.status ? err.status : 500;
+            return res.status(status).json({ error: err.message || 'ذخیره اسکیل‌ها ناموفق بود' });
         }
     });
 

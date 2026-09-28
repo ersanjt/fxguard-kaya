@@ -6,6 +6,10 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const StaffResourceGrant = sequelize.define('StaffResourceGrant', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -34,6 +38,7 @@ module.exports = (sequelize) => {
         updatedAt: false,
         tableName: 'StaffResourceGrants',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['userId'] },
             { fields: ['resourceType', 'resourceId'] },
             { unique: true, fields: ['userId', 'resourceType', 'resourceId'] },

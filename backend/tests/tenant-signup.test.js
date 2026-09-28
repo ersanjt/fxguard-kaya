@@ -154,6 +154,79 @@ async function main() {
             assert.strictEqual(r.status, 401);
         });
 
+        await test('clinic signup gets health sidebar and locked FX API', async () => {
+            const signup = await req.post('/api/tenants/signup').set('Host', 'app.fxguard.io').send({
+                slug: 'clinica',
+                email: 'owner@clinica.test',
+                password: 'Secret123',
+                companyName: 'Clinica',
+                industry: 'health',
+            });
+            assert.strictEqual(signup.status, 201, JSON.stringify(signup.body));
+            assert.strictEqual(signup.body.industry, 'health');
+            assert.ok(signup.body.enabledSkills.indexOf('appointments') >= 0);
+            assert.ok(signup.body.enabledSkills.indexOf('fx_rates') < 0);
+
+            const login = await req
+                .post('/api/auth/login')
+                .set('Host', 'clinica.app.fxguard.io')
+                .send({ email: 'owner@clinica.test', password: 'Secret123' });
+            assert.strictEqual(login.status, 200);
+            const auth = (r) =>
+                r
+                    .set('Host', 'clinica.app.fxguard.io')
+                    .set('Cookie', login.headers['set-cookie'] || '')
+                    .set('Authorization', login.body.token ? 'Bearer ' + login.body.token : '');
+
+            const vis = await auth(req.get('/api/panel-settings/public/visibility'));
+            assert.strictEqual(vis.status, 200);
+            assert.ok(vis.body.hiddenSections.indexOf('services') >= 0);
+            assert.ok(vis.body.hiddenSections.indexOf('tickets') < 0);
+            assert.strictEqual(vis.body.industry, 'health');
+            assert.strictEqual(vis.body.terminology.nav_customers.en, 'Contacts');
+
+            const services = await auth(req.get('/api/services'));
+            assert.strictEqual(services.status, 403);
+            assert.strictEqual(services.body.code, 'SKILL_DISABLED');
+
+            const bad = await auth(req.put('/api/tenants/skills')).send({ industry: 'casino' });
+            assert.strictEqual(bad.status, 400);
+
+            const upd = await auth(req.put('/api/tenants/skills')).send({
+                industry: 'health',
+                enabledSkills: ['tickets', 'appointments', 'exchange_services', 'customers'],
+            });
+            assert.strictEqual(upd.status, 200, JSON.stringify(upd.body));
+            const expected = ['exchange_services', 'patients', 'doctors', 'appointments'];
+            assert.deepStrictEqual(upd.body.enabledSkills, expected);
+
+            const skills = await auth(req.get('/api/tenants/skills'));
+            assert.strictEqual(skills.status, 200);
+            assert.strictEqual(skills.body.platform, false);
+            assert.deepStrictEqual(skills.body.enabledSkills, expected);
+
+            const visAfter = await auth(req.get('/api/panel-settings/public/visibility'));
+            assert.ok(visAfter.body.hiddenSections.indexOf('tickets') < 0);
+            assert.ok(visAfter.body.hiddenSections.indexOf('processes') >= 0);
+
+            const servicesAfter = await auth(req.get('/api/services'));
+            assert.notStrictEqual(servicesAfter.body && servicesAfter.body.code, 'SKILL_DISABLED');
+
+            const me = await auth(req.get('/api/tenants/me'));
+            assert.strictEqual(me.body.tenant.industry, 'health');
+        });
+
+        await test('signup without industry falls back to general preset', async () => {
+            const r = await req.post('/api/tenants/signup').set('Host', 'app.fxguard.io').send({
+                slug: 'plainco',
+                email: 'owner@plainco.test',
+                password: 'Secret123',
+                companyName: 'Plain Co',
+            });
+            assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+            assert.strictEqual(r.body.industry, 'general');
+        });
+
         await test('expired trial returns 402 on CRM APIs', async () => {
             const { Tenant } = require('../models');
             const row = await Tenant.findOne({ where: { slug: 'acme' } });

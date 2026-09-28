@@ -21,6 +21,14 @@ const {
 const { trialEndsAtFromNow } = require('../lib/tenantTrial');
 const { DEFAULT_DEPARTMENTS } = require('./config/defaultDepartments');
 const { invalidatePlanCache } = require('../lib/planLimits');
+const {
+    normalizeIndustry,
+    normalizeSkills,
+    defaultSkillsFor,
+    parseSkillsColumn,
+    DEFAULT_INDUSTRY,
+    LEGACY_SKILLS,
+} = require('../lib/tenantSkills');
 
 async function provisionSelfServeTenant(input, env) {
     const src = env || process.env;
@@ -82,6 +90,9 @@ async function provisionSelfServeTenant(input, env) {
         throw e;
     }
 
+    const industry = normalizeIndustry(input && input.industry) || DEFAULT_INDUSTRY;
+    const enabledSkills = defaultSkillsFor(industry);
+
     const panelKey = panelKeyForSlug(slug);
     const days = trialDays(src);
     const trialEndsAt = trialEndsAtFromNow(days);
@@ -94,6 +105,8 @@ async function provisionSelfServeTenant(input, env) {
         trialEndsAt,
         panelKey,
         customDomain: null,
+        industry,
+        enabledSkills: JSON.stringify(enabledSkills),
     });
 
     const shaped = {
@@ -106,6 +119,8 @@ async function provisionSelfServeTenant(input, env) {
         panelKey: tenant.panelKey,
         customDomain: null,
         isPlatform: false,
+        industry,
+        enabledSkills,
     };
 
     let ownerUser = null;
@@ -180,6 +195,8 @@ async function provisionSelfServeTenant(input, env) {
         status: 'trial',
         trialEndsAt,
         trialDays: days,
+        industry,
+        enabledSkills,
         loginUrl,
         dashboardUrl,
         panelKey,
@@ -262,8 +279,47 @@ async function setTenantCustomDomain(tenantId, domainRaw) {
     return { customDomain: host };
 }
 
+/**
+ * input.industry عوض شود و enabledSkills نیاید → اسکیل‌های پیش‌فرض همان حوزه.
+ */
+async function updateTenantSkills(tenantId, input) {
+    const { Tenant } = models;
+    const row = await Tenant.findByPk(tenantId);
+    if (!row) {
+        const e = new Error('سازمان یافت نشد');
+        e.status = 404;
+        throw e;
+    }
+    const body = input || {};
+    let industry = normalizeIndustry(row.industry);
+    if (body.industry !== undefined) {
+        industry = normalizeIndustry(body.industry);
+        if (!industry) {
+            const e = new Error('حوزهٔ فعالیت نامعتبر است');
+            e.status = 400;
+            throw e;
+        }
+    }
+    let enabledSkills;
+    if (body.enabledSkills !== undefined) {
+        if (!Array.isArray(body.enabledSkills)) {
+            const e = new Error('فهرست اسکیل‌ها نامعتبر است');
+            e.status = 400;
+            throw e;
+        }
+        enabledSkills = normalizeSkills(body.enabledSkills);
+    } else if (body.industry !== undefined) {
+        enabledSkills = defaultSkillsFor(industry);
+    } else {
+        enabledSkills = parseSkillsColumn(row.enabledSkills) || LEGACY_SKILLS.slice();
+    }
+    await row.update({ industry: industry || null, enabledSkills: JSON.stringify(enabledSkills) });
+    return { industry: industry || null, enabledSkills };
+}
+
 module.exports = {
     provisionSelfServeTenant,
     activateTenantFromPaid,
     setTenantCustomDomain,
+    updateTenantSkills,
 };

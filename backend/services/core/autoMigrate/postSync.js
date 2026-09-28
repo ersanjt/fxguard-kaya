@@ -25,6 +25,8 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                 ['cryptoNetwork', { type: DataTypes.STRING(32), allowNull: true }],
                 ['cryptoPaymentStatus', { type: DataTypes.STRING(32), allowNull: true }],
                 ['cryptoPaidAt', { type: DataTypes.DATE, allowNull: true }],
+                ['industry', { type: DataTypes.STRING(32), allowNull: true }],
+                ['enabledSkills', { type: DataTypes.TEXT, allowNull: true }],
             ];
             for (const [name, def] of tenantCols) {
                 if (tenantDesc[name] !== undefined) continue;

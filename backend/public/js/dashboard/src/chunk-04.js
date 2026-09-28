@@ -943,7 +943,14 @@
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
-            const sections = order.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
+            // بخش‌های جدیدتر از ترتیب ذخیره‌شده، جای پیش‌فرض خود (بعد از بخش قبلی) را می‌گیرند
+            const full = order.slice();
+            SIDEBAR_SECTIONS.forEach(function(s, i) {
+                if (full.indexOf(s.section) >= 0) return;
+                const prev = i > 0 ? full.indexOf(SIDEBAR_SECTIONS[i - 1].section) : -1;
+                full.splice(prev + 1, 0, s.section);
+            });
+            const sections = full.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
             if (sections.length === 0) return;
             sections.forEach(function(el) { inner.appendChild(el); });
         }
@@ -951,7 +958,7 @@
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
             const can = canAccessSection;
-            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'system-status': 'system_status', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'system-status': 'system_status', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations', 'clinic-patients': 'clinic', 'clinic-doctors': 'clinic', 'clinic-appointments': 'clinic', 'clinic-packages': 'clinic' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
                 const section = link.getAttribute('data-section') || pageToSection[page];
@@ -990,11 +997,39 @@
             });
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
+        var INDUSTRY_TERM_ORIGINALS = {};
+        function applyIndustryTerminology(terms) {
+            var packs = { fa: window.__I18N_FA, en: window.__I18N_EN, tr: window.__I18N_TR };
+            var merged = typeof I18N !== 'undefined' ? I18N : {};
+            var langs = ['fa', 'en', 'tr'];
+            Object.keys(INDUSTRY_TERM_ORIGINALS).forEach(function(key) {
+                langs.forEach(function(l) {
+                    var orig = INDUSTRY_TERM_ORIGINALS[key][l];
+                    if (orig === undefined) return;
+                    if (packs[l]) packs[l][key] = orig;
+                    if (merged[l]) merged[l][key] = orig;
+                });
+            });
+            INDUSTRY_TERM_ORIGINALS = {};
+            var map = terms && typeof terms === 'object' ? terms : {};
+            Object.keys(map).forEach(function(key) {
+                var byLang = map[key] || {};
+                INDUSTRY_TERM_ORIGINALS[key] = {};
+                langs.forEach(function(l) {
+                    if (!byLang[l]) return;
+                    INDUSTRY_TERM_ORIGINALS[key][l] = packs[l] && packs[l][key] !== undefined ? packs[l][key] : (merged[l] && merged[l][key]);
+                    if (packs[l]) packs[l][key] = byLang[l];
+                    if (merged[l]) merged[l][key] = byLang[l];
+                });
+            });
+            if (typeof window.applyTranslations === 'function') window.applyTranslations();
+        }
         async function loadPanelSettingsAndApply() {
             const res = await apiFetch('/api/panel-settings', { timeoutMs: 10000 });
             if (res.ok && res.data) {
                 applyBranding(res.data, { full: true });
                 window.__kayaPlanLimits = res.data.planLimits || null;
+                applyIndustryTerminology(res.data.terminology);
                 if (res.data.navHiddenSections || res.data.hiddenSections) {
                     applyHiddenSections(res.data.navHiddenSections || res.data.hiddenSections);
                 }
@@ -1012,6 +1047,7 @@
                     safeJson(fetch(API + '/api/panel-settings/public/languages'))
                 ]);
                 if (brandingRes) applyBranding(brandingRes, { full: true });
+                if (visRes) applyIndustryTerminology(visRes.terminology);
                 if (visRes && visRes.hiddenSections) applyHiddenSections(visRes.hiddenSections);
                 if (langRes && langRes.supportedLanguages && window.applySupportedLanguages) {
                     window.applySupportedLanguages(langRes.supportedLanguages, langRes.defaultLanguage);
@@ -1025,6 +1061,10 @@
             { page: 'tickets', labelKey: 'nav_tickets' },
             { page: 'tasks', labelKey: 'nav_tasks' },
             { page: 'processes', labelKey: 'nav_processes' },
+            { page: 'clinic-appointments', labelKey: 'nav_clinic_appointments' },
+            { page: 'clinic-patients', labelKey: 'nav_clinic_patients' },
+            { page: 'clinic-doctors', labelKey: 'nav_clinic_doctors' },
+            { page: 'clinic-packages', labelKey: 'nav_clinic_packages' },
             { page: 'departments', labelKey: 'nav_departments' },
             { page: 'users', labelKey: 'nav_users' },
             { page: 'branches', labelKey: 'nav_branches' },
@@ -1172,6 +1212,7 @@
             }
             fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null);
             loadTenantDomainFromApi();
+            loadTenantSkillsUi();
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -1277,9 +1318,177 @@
             fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || { slug: (res.data && res.data.slug) || '', customDomain: next });
             if (typeof toast === 'function') toast(t('panel_custom_domain_saved'));
         }
+        var tenantSkillsState = null;
+        function skillText(labels) {
+            if (!labels) return '';
+            return labels[LANG] || labels.en || labels.fa || '';
+        }
+        function industryDefaultSkills(industryId) {
+            if (!tenantSkillsState) return [];
+            var ind = tenantSkillsState.industries.find(function(i) { return i.id === industryId; });
+            return ind && Array.isArray(ind.skills) ? ind.skills.slice() : [];
+        }
+        async function loadTenantSkillsUi() {
+            var wrap = document.getElementById('panelSkillsSection');
+            if (!wrap) return;
+            var res = await apiFetch('/api/tenants/skills');
+            if (!res.ok || !res.data || res.data.platform) {
+                wrap.hidden = true;
+                return;
+            }
+            tenantSkillsState = {
+                industries: res.data.industries || [],
+                skills: res.data.skills || [],
+                industry: res.data.industry || 'general',
+                enabled: Array.isArray(res.data.enabledSkills) ? res.data.enabledSkills.slice() : [],
+            };
+            wrap.hidden = false;
+            renderTenantSkillsUi();
+        }
+        function renderTenantSkillsUi() {
+            var st = tenantSkillsState;
+            if (!st) return;
+            var sel = document.getElementById('panelSkillsIndustry');
+            if (sel) {
+                sel.innerHTML = '';
+                st.industries.forEach(function(ind) {
+                    var opt = document.createElement('option');
+                    opt.value = ind.id;
+                    opt.textContent = skillText(ind.label);
+                    sel.appendChild(opt);
+                });
+                sel.value = st.industry;
+                sel.onchange = function() {
+                    st.industry = sel.value;
+                    st.enabled = industryDefaultSkills(st.industry);
+                    renderTenantSkillsUi();
+                };
+            }
+            var list = document.getElementById('panelSkillsList');
+            if (!list) return;
+            list.innerHTML = '';
+            var currentInd = st.industries.find(function(i) { return i.id === st.industry; });
+            var industryTitle = t('panel_skills_group_industry').replace('{industry}', currentInd ? skillText(currentInd.label) : '');
+            var general = st.skills.filter(function(s) { return s.tier === 'general'; });
+            var own = st.skills.filter(function(s) { return s.tier === 'industry' && s.industries.indexOf(st.industry) >= 0; });
+            var addons = st.skills.filter(function(s) { return s.tier === 'addon'; });
+            list.appendChild(buildSkillsGroup(t('panel_skills_group_general'), general, t('panel_skills_general_hint')));
+            list.appendChild(buildSkillsGroup(industryTitle, own, own.length ? '' : t('panel_skills_industry_empty')));
+            list.appendChild(buildSkillsGroup(t('panel_skills_group_addon'), addons, ''));
+            var shown = {};
+            own.forEach(function(s) { shown[s.id] = true; });
+            var others = document.createElement('details');
+            others.className = 'panel-skills-others';
+            var summary = document.createElement('summary');
+            summary.textContent = t('panel_skills_group_other');
+            others.appendChild(summary);
+            var extraCount = 0;
+            st.industries.forEach(function(ind) {
+                if (ind.id === st.industry) return;
+                var items = st.skills.filter(function(s) {
+                    return s.tier === 'industry' && !shown[s.id] && s.industries.indexOf(ind.id) >= 0;
+                });
+                if (!items.length) return;
+                items.forEach(function(s) {
+                    shown[s.id] = true;
+                    if (st.enabled.indexOf(s.id) >= 0) extraCount++;
+                });
+                others.appendChild(buildSkillsGroup(skillText(ind.label), items, ''));
+            });
+            if (extraCount > 0) others.open = true;
+            list.appendChild(others);
+        }
+        function buildSkillsGroup(title, items, hint) {
+            var st = tenantSkillsState;
+            var box = document.createElement('fieldset');
+            box.className = 'panel-skills-group';
+            var legend = document.createElement('legend');
+            legend.textContent = title;
+            box.appendChild(legend);
+            if (hint) {
+                var p = document.createElement('p');
+                p.className = 'panel-skills-group-hint';
+                p.textContent = hint;
+                box.appendChild(p);
+            }
+            items.forEach(function(s) {
+                var locked = s.tier === 'general';
+                var label = document.createElement('label');
+                label.className = 'panel-skills-item';
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = locked || st.enabled.indexOf(s.id) >= 0;
+                cb.disabled = locked;
+                cb.onchange = function() {
+                    toggleSkillWithDependencies(s.id, cb.checked);
+                    renderTenantSkillsUi();
+                };
+                var text = document.createElement('span');
+                text.textContent = skillText(s.label);
+                label.appendChild(cb);
+                label.appendChild(text);
+                if (locked || s.comingSoon) {
+                    var badge = document.createElement('span');
+                    badge.className = 'panel-skills-badge' + (s.comingSoon ? ' is-soon' : '');
+                    badge.textContent = t(locked ? 'panel_skills_core' : 'panel_skills_soon');
+                    label.appendChild(badge);
+                }
+                box.appendChild(label);
+            });
+            return box;
+        }
+        /** روشن‌کردن یک ماژول پیش‌نیازهایش را هم روشن می‌کند؛ خاموش‌کردن، وابسته‌ها را خاموش می‌کند (هم‌راستا با normalizeSkills سرور). */
+        function toggleSkillWithDependencies(id, on) {
+            var st = tenantSkillsState;
+            var byId = {};
+            st.skills.forEach(function(s) { byId[s.id] = s; });
+            if (on) {
+                (function add(skillId) {
+                    if (st.enabled.indexOf(skillId) >= 0) return;
+                    st.enabled.push(skillId);
+                    ((byId[skillId] && byId[skillId].requires) || []).forEach(add);
+                })(id);
+                return;
+            }
+            (function remove(skillId) {
+                var idx = st.enabled.indexOf(skillId);
+                if (idx < 0) return;
+                st.enabled.splice(idx, 1);
+                st.skills.forEach(function(s) {
+                    if ((s.requires || []).indexOf(skillId) >= 0) remove(s.id);
+                });
+            })(id);
+        }
+        function resetTenantSkillsToDefaults() {
+            if (!tenantSkillsState) return;
+            tenantSkillsState.enabled = industryDefaultSkills(tenantSkillsState.industry);
+            renderTenantSkillsUi();
+        }
+        async function saveTenantSkills() {
+            var st = tenantSkillsState;
+            if (!st) return;
+            var res = await apiFetch('/api/tenants/skills', {
+                method: 'PUT',
+                body: JSON.stringify({ industry: st.industry, enabledSkills: st.enabled }),
+            });
+            if (!res.ok) {
+                if (typeof toast === 'function') toast(getApiError(res) || t('panel_skills_fail'), true);
+                return;
+            }
+            st.industry = (res.data && res.data.industry) || st.industry;
+            st.enabled = (res.data && res.data.enabledSkills) || st.enabled;
+            if (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) {
+                currentUser.tenant.industry = st.industry;
+                currentUser.tenant.enabledSkills = st.enabled.slice();
+            }
+            renderTenantSkillsUi();
+            await loadPanelSettingsAndApply();
+            if (typeof toast === 'function') toast(t('panel_skills_saved'));
+        }
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
             { section: 'communications', labelKey: 'nav_communications' },
+            { section: 'clinic', labelKey: 'nav_clinic' },
             { section: 'organization', labelKey: 'nav_organization' },
             { section: 'settings', labelKey: 'nav_settings' }
         ];
@@ -2017,7 +2226,7 @@
             }
             if (btn) btn.disabled = false;
         }
-        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
         function applyHashRoute() {
             try {
                 initSidebarCollapsedState();
@@ -2130,6 +2339,11 @@
             if (page === 'tickets') runPageInit('tickets', function() { loadTicketFiltersInit(); loadTickets(); });
             if (page === 'tasks') runPageInit('tasks', function() { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } });
             if (page === 'processes') runPageInit('processes', function() { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); });
+            if (page.indexOf('clinic-') === 0) runPageInit(page, function() {
+                var role = (currentUser && currentUser.role) || '';
+                var canManage = !!(currentUser && currentUser.isMainAdmin) || ['owner', 'admin', 'manager'].indexOf(role) >= 0;
+                if (window.CRM && window.CRM.Clinic) window.CRM.Clinic.show(page, { canManage: canManage });
+            });
             if (page === 'whatsapp') runPageInit('whatsapp', function() {
                 initWhatsappProTabs();
                 switchWhatsappMainTab(_whatsappActiveTab || 'channels', true);
@@ -2142,7 +2356,14 @@
                 if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
             });
             if (page === 'message-templates') runPageInit('message-templates', function() { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); });
-            if (page === 'rates') runPageInit('rates', function() { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); });
+            if (page === 'rates') runPageInit('rates', function() {
+                const readOnly = typeof isSelfServeTenantDesk === 'function' && isSelfServeTenantDesk();
+                const ratesPage = document.getElementById('pageRates');
+                if (ratesPage) ratesPage.classList.toggle('rates-page--readonly', readOnly);
+                loadRatesAdjustments();
+                if (readOnly) return;
+                loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus();
+            });
             if (page === 'rates-charts') runPageInit('rates-charts', function() { initRatesChartsPage(); });
             if (page === 'services') runPageInit('services', function() { initServicesTabs(); loadServicesPage(); });
             if (page === 'branches') runPageInit('branches', function() { loadBranches(); });

@@ -6,6 +6,10 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const CustomerNote = sequelize.define('CustomerNote', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -31,6 +35,7 @@ module.exports = (sequelize) => {
         updatedAt: false,
         tableName: 'CustomerNotes',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['customerId'] },
             { fields: ['userId'] },
             { fields: ['createdAt'] }

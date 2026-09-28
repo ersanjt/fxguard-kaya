@@ -8,7 +8,8 @@
         'dashboard', 'conversations', 'customers', 'departments', 'users',
         'tickets', 'tasks', 'processes', 'whatsapp', 'message-templates',
         'branches', 'supervision', 'system-status', 'staff-activity', 'profile', 'announcements',
-        'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings'
+        'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings',
+        'clinic-patients', 'clinic-doctors', 'clinic-appointments', 'clinic-packages'
     ];
 
     const PAGE_TO_SECTION = {
@@ -30,7 +31,11 @@
         customers: 'customers',
         processes: 'processes',
         announcements: 'announcements',
-        'message-templates': 'conversations'
+        'message-templates': 'conversations',
+        'clinic-patients': 'clinic',
+        'clinic-doctors': 'clinic',
+        'clinic-appointments': 'clinic',
+        'clinic-packages': 'clinic'
     };
 
     const PAGE_IDS = {
@@ -54,7 +59,11 @@
         rates: 'pageRates',
         'rates-charts': 'pageRatesCharts',
         services: 'pageServices',
-        'panel-settings': 'pagePanelSettings'
+        'panel-settings': 'pagePanelSettings',
+        'clinic-patients': 'pageClinicPatients',
+        'clinic-doctors': 'pageClinicDoctors',
+        'clinic-appointments': 'pageClinicAppointments',
+        'clinic-packages': 'pageClinicPackages'
     };
 
     const PAGE_TITLES = {
@@ -78,7 +87,11 @@
         rates: 'nav_rates',
         'rates-charts': 'nav_rates_charts',
         services: 'nav_services',
-        'panel-settings': 'nav_panel_settings'
+        'panel-settings': 'nav_panel_settings',
+        'clinic-patients': 'nav_clinic_patients',
+        'clinic-doctors': 'nav_clinic_doctors',
+        'clinic-appointments': 'nav_clinic_appointments',
+        'clinic-packages': 'nav_clinic_packages'
     };
 
     window.CRM = window.CRM || {};

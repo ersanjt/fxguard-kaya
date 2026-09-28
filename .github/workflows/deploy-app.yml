@@ -66,6 +66,12 @@ jobs:
               *"$KAYA_MARK"*) echo "❌ root کایاست؛ abort"; exit 1 ;;
             esac
 
+            # مایگریشن‌های استارتاپ روی دادهٔ مشتری‌ها می‌نویسند؛ قبل از به‌روزرسانی بکاپ بگیر
+            if [ -f "$ROOT/backend/scripts/backup-database.js" ]; then
+              echo "💾 بکاپ دیتابیس app ..."
+              (cd "$ROOT/backend" && node scripts/backup-database.js) || echo "⚠️ بکاپ app ناموفق بود — ادامه"
+            fi
+
             if [ -d "$ROOT/.git" ]; then
               echo "📥 به‌روزرسانی کد در $ROOT"
               KAYA_REMOTE=""

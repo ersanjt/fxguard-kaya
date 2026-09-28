@@ -20,6 +20,7 @@ const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 const { requestHostname } = require('../lib/tenantHost');
 const { overlaySelfServePlatformBranding } = require('../lib/selfServeBranding');
+const { attachTenantSkillsToSettings } = require('../lib/tenantSkills');
 
 /** مسیرهای آپلود و URLها: بک‌اسلش، کاراکترهای نامرئی bidi، فاصلهٔ اضافه */
 function normalizePanelMediaUrl(v) {
@@ -85,8 +86,14 @@ router.get('/public/visibility', optionalAuthMiddleware, async (req, res, next) 
         }
         const s = await getPanelSettings();
         const snap = await getPlanSnapshot({ counts: false });
+        const skills = attachTenantSkillsToSettings(
+            { navHiddenSections: mergeFxHidden(s.hiddenSections, snap) },
+            req.tenant
+        );
         res.json({
-            hiddenSections: mergeFxHidden(s.hiddenSections, snap),
+            hiddenSections: skills.navHiddenSections,
+            industry: skills.industry,
+            terminology: skills.terminology,
             fxEnabled: snap.fxEnabled !== false,
             planTier: snap.tier,
         });

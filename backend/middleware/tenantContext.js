@@ -21,6 +21,7 @@ const {
 } = require('../lib/tenantHost');
 const { runWithTenant, setPlatformTenantCache, getCachedPlatformTenant } = require('../lib/tenantContext');
 const { COOKIE_NAME } = require('../lib/authCookie');
+const { normalizeIndustry, parseSkillsColumn } = require('../lib/tenantSkills');
 
 function platformShape(row) {
     if (row) {
@@ -62,6 +63,8 @@ function tenantShape(row, extra) {
         isPlatform: row.slug === PLATFORM_SLUG,
         stripeCustomerId: row.stripeCustomerId || null,
         stripeSubscriptionId: row.stripeSubscriptionId || null,
+        industry: normalizeIndustry(row.industry),
+        enabledSkills: parseSkillsColumn(row.enabledSkills),
     };
     return extra ? Object.assign(base, extra) : base;
 }

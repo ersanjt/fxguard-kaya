@@ -23,6 +23,7 @@ const { protectSensitiveUploads } = require('../middleware/protectedUploads');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
 const { tenantContextMiddleware } = require('../middleware/tenantContext');
 const { tenantTrialGate } = require('../middleware/tenantTrialGate');
+const { tenantSkillGate } = require('../middleware/tenantSkillGate');
 const { isSelfServeEnabled, requestHostname } = require('../lib/tenantHost');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
 const {
@@ -154,6 +155,7 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
 
     app.use(tenantContextMiddleware);
     app.use('/api', tenantTrialGate);
+    app.use('/api', tenantSkillGate);
 
     const redisClient = createRedisClient(logger);
 
