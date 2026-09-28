@@ -21,7 +21,7 @@ const slugs = [
 function hreflangBlock(slug) {
   const base = `https://fxguard.io/blog/${slug}`;
   return [
-    `    <xhtml:link rel="alternate" hreflang="en" href="${base}?lang=en"/>`,
+    `    <xhtml:link rel="alternate" hreflang="en" href="${base}"/>`,
     `    <xhtml:link rel="alternate" hreflang="fa" href="${base}?lang=fa"/>`,
     `    <xhtml:link rel="alternate" hreflang="tr" href="${base}?lang=tr"/>`,
     `    <xhtml:link rel="alternate" hreflang="ar" href="${base}?lang=ar"/>`,
@@ -34,7 +34,7 @@ for (const slug of slugs) {
   const loc = `    <loc>https://fxguard.io/blog/${slug}</loc>`;
   if (!xml.includes(loc)) continue;
   const re = new RegExp(
-    `(  <url>\\r?\\n    <loc>https://fxguard.io/blog/${slug}</loc>)\\r?\\n    <lastmod>`,
+    `(  <url>\\r?\\n    <loc>https://fxguard.io/blog/${slug}</loc>)(?:\\r?\\n    <xhtml:link rel="alternate" hreflang="(?:en|fa|tr|ar|ru|x-default)" href="[^"]+"\\/?>)*\\r?\\n    <lastmod>`,
     'm'
   );
   if (re.test(xml)) {

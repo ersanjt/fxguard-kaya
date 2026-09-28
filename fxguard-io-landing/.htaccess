@@ -53,6 +53,7 @@ Options -Indexes -MultiViews
   RewriteRule ^privacy/?$ privacy.html [L,QSA]
   RewriteRule ^terms/?$ terms.html [L,QSA]
   RewriteRule ^account-deletion/?$ account-deletion.html [L,QSA]
+  RewriteRule ^thanks/?$ thanks.html [L,QSA]
   RewriteRule ^blog/?$ blog.html [L,QSA]
   RewriteRule ^blog/([a-z0-9-]+)/?$ blog/$1.html [L,QSA]
 </IfModule>
