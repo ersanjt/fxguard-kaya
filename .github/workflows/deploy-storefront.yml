@@ -105,3 +105,24 @@ jobs:
           done
           echo "::error::fxguard.io did not expose the deployed commit"
           exit 1
+
+      - name: Notify IndexNow
+        shell: bash
+        run: |
+          set -euo pipefail
+          key='4f8c2a91d3e64b7fa1c95e2806d4ab73'
+          key_location="https://fxguard.io/${key}.txt"
+          mapfile -t urls < <(grep -oE '<loc>[^<]+' fxguard-io-landing/sitemap.xml | cut -d '>' -f 2)
+          payload="$(
+            printf '%s\n' "${urls[@]}" |
+              jq -Rsc --arg key "$key" --arg keyLocation "$key_location" \
+                'split("\n") | map(select(length > 0)) |
+                 {host:"fxguard.io", key:$key, keyLocation:$keyLocation, urlList:.}'
+          )"
+          if ! curl --fail-with-body --silent --show-error \
+            --retry 2 --max-time 30 \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            --data "$payload" \
+            https://api.indexnow.org/indexnow; then
+            echo "::warning::IndexNow notification failed; deployment is still healthy"
+          fi

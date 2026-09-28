@@ -1268,6 +1268,84 @@
         applyLang(detectPreferredLang());
     }
 
+    function offerRegionalHomepage() {
+        if (!isHomepagePath()) return;
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('lang')) return;
+        try {
+            if (localStorage.getItem('landing_lang') || sessionStorage.getItem('fxg_region_prompt')) return;
+        } catch (e) {}
+
+        var suggested = null;
+        var locales = navigator.languages && navigator.languages.length
+            ? navigator.languages
+            : [navigator.language || navigator.userLanguage];
+        for (var i = 0; i < locales.length; i += 1) {
+            var localeGuess = guessLangFromLocale(locales[i]);
+            if (localeGuess && localeGuess !== 'en') {
+                suggested = localeGuess;
+                break;
+            }
+            if (!suggested && localeGuess === 'en') suggested = 'en';
+        }
+        if (!suggested || suggested === 'en') suggested = guessLangFromTimezone();
+        if (!suggested || suggested === 'en' || !LANG_HOME[suggested]) return;
+
+        var copy = {
+            fa: ['نسخه فارسی FXGuard در دسترس است', 'مشاهده فارسی', 'بستن'],
+            tr: ['FXGuard Türkçe olarak kullanılabilir', 'Türkçe görüntüle', 'Kapat'],
+            ar: ['يتوفر FXGuard باللغة العربية', 'عرض العربية', 'إغلاق'],
+            ru: ['FXGuard доступен на русском языке', 'Открыть на русском', 'Закрыть']
+        }[suggested];
+        if (!copy) return;
+
+        var style = document.createElement('style');
+        style.textContent = [
+            '.region-prompt{position:fixed;inset:auto 1rem 1rem 1rem;z-index:1200;display:flex;align-items:center;justify-content:center;gap:.75rem;max-width:560px;margin:auto;padding:.75rem 1rem;border:1px solid rgba(74,222,128,.34);border-radius:14px;background:rgba(5,14,9,.96);color:#effff4;box-shadow:0 18px 54px rgba(0,0,0,.4);font:600 14px/1.4 inherit;backdrop-filter:blur(16px)}',
+            '.region-prompt__link{display:inline-flex;align-items:center;min-height:38px;padding:0 .9rem;border-radius:9px;background:#49e181;color:#041109;text-decoration:none;white-space:nowrap}',
+            '.region-prompt__close{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:9px;background:rgba(255,255,255,.08);color:#fff;font:700 20px/1 inherit;cursor:pointer}',
+            '@media(min-width:700px){.region-prompt{inset:auto auto 1.25rem 1.25rem;margin:0}}',
+            '@media(prefers-reduced-motion:no-preference){.region-prompt{animation:fxg-region-in .28s ease-out both}@keyframes fxg-region-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}}'
+        ].join('');
+        document.head.appendChild(style);
+
+        var prompt = document.createElement('aside');
+        prompt.className = 'region-prompt';
+        prompt.dir = suggested === 'fa' || suggested === 'ar' ? 'rtl' : 'ltr';
+        prompt.setAttribute('aria-live', 'polite');
+        prompt.setAttribute('aria-label', copy[0]);
+
+        var message = document.createElement('span');
+        message.textContent = copy[0];
+        var link = document.createElement('a');
+        link.className = 'region-prompt__link';
+        link.href = LANG_HOME[suggested];
+        link.hreflang = suggested;
+        link.textContent = copy[1];
+        var close = document.createElement('button');
+        close.className = 'region-prompt__close';
+        close.type = 'button';
+        close.setAttribute('aria-label', copy[2]);
+        close.textContent = '×';
+
+        function rememberPrompt() {
+            try { sessionStorage.setItem('fxg_region_prompt', '1'); } catch (e) {}
+        }
+        link.addEventListener('click', function () {
+            try { localStorage.setItem('landing_lang', suggested); } catch (e) {}
+            rememberPrompt();
+        });
+        close.addEventListener('click', function () {
+            rememberPrompt();
+            prompt.remove();
+            style.remove();
+        });
+        prompt.appendChild(message);
+        prompt.appendChild(link);
+        prompt.appendChild(close);
+        document.body.appendChild(prompt);
+    }
+
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var lang = this.getAttribute('data-lang');
@@ -1317,6 +1395,7 @@
         });
     })();
 
+    offerRegionalHomepage();
     detectAndSetLang();
 
     /* Mobile sticky buy bar after leaving hero */
