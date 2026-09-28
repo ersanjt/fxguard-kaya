@@ -40,10 +40,6 @@ Options -Indexes -MultiViews
   RewriteCond %{THE_REQUEST} \s/+(.+?)\.html[\s?] [NC]
   RewriteRule ^ /%1 [R=301,L]
 
-  # Icons (avoid soft-404 HTML for crawlers)
-  RewriteRule ^favicon\.ico$ /images/logo.svg [L,R=301]
-  RewriteRule ^apple-touch-icon\.png$ /images/logo.svg [L,R=301]
-
   # SEO-friendly clean URLs (preserve query string / lang)
   RewriteRule ^contact/?$ contact.html [L,QSA]
   RewriteRule ^whatsapp-crm/?$ whatsapp-crm.html [L,QSA]
