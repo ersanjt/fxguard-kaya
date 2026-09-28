@@ -127,7 +127,6 @@ const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const upload = multer({ dest: path.join(UPLOADS_DIR, 'tmp') });
 
 const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
-const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
 /** message IDs we sent via API — skip message_create echo to backend (avoids duplicate CRM rows) */
 const recentGatewaySentIds = new Map();
 /** during API sendMessage, message_create fires before we have the id — skip echo processing */

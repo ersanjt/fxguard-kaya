@@ -14,6 +14,8 @@ process.env.MAIN_ADMIN_PASSWORD = 'Admin@Test123!';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3099';
 process.env.DISABLE_RATE_LIMIT = 'true';
+// .env محلی WEBHOOK_SECRET دارد؛ dotenv مقدار موجود را عوض نمی‌کند
+process.env.WEBHOOK_SECRET = '';
 delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 delete process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -1616,6 +1618,14 @@ async function runTests() {
         assert.strictEqual(r.page, 1);
         assert(r.limit > 0);
         assert.strictEqual(r.offset, 0);
+    });
+
+    await test('geoip rejects ambiguous and invalid IP addresses', async () => {
+        const { getCountryFromIp } = require('../lib/geoip');
+        assert.strictEqual(getCountryFromIp('127.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('::ffff:127.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('0177.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('not-an-ip'), null);
     });
 
     // ── Password Validation ──────────────────────────────────────────────────

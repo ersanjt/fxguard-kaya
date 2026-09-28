@@ -114,8 +114,10 @@ function normalizeHostname(raw) {
 
 function requestHostname(req) {
     if (!req) return '';
-    const xf = req.headers && (req.headers['x-forwarded-host'] || req.headers['x-forwarded-hostname']);
-    const host = xf || (req.headers && req.headers.host) || '';
+    const headers = req.headers || {};
+    // Nginx این پروژه Host را با $host می‌گذارد. X-Forwarded-Host را مشتری می‌تواند جعل کند
+    // و اگر جلوتر از Host خوانده شود، درخواست را به پنل شرکت دیگری می‌چسباند.
+    const host = headers.host || headers['x-forwarded-host'] || headers['x-forwarded-hostname'] || '';
     return normalizeHostname(host);
 }
 

@@ -75,7 +75,7 @@ async function getCustomerAvatar(req, res) {
         await customer.reload();
     } catch (_) {}
 
-    let pic = String(customer.profilePic || '').trim();
+    const pic = String(customer.profilePic || '').trim();
 
     if (isAlreadyLocalPath(pic)) {
         const filePath = resolveUploadPath(pic);

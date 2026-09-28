@@ -290,7 +290,12 @@ const DepartmentModel = (sequelize) => {
             defaultValue: {}
         }
     }, {
-        timestamps: true
+        timestamps: true,
+        indexes: [
+            { fields: ['tenantId'] },
+            { fields: ['branchId'] },
+            { fields: ['isActive'] }
+        ]
     });
 
     Department.associate = (models) => {

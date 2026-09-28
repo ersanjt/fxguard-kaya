@@ -148,11 +148,15 @@ install_databases() {
 # ایجاد دیتابیس PostgreSQL
 setup_postgres() {
     print_info "تنظیم PostgreSQL..."
-    
-    sudo -u postgres psql -c "CREATE DATABASE whatsapp_crm;" 2>/dev/null || true
-    sudo -u postgres psql -c "CREATE USER crm_user WITH ENCRYPTED PASSWORD 'StrongPassword123!';" 2>/dev/null || true
+
+    DB_PASSWORD="$(node -e "process.stdout.write(require('crypto').randomBytes(24).toString('hex'))")"
+    sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='crm_user'" | grep -q 1 ||
+        sudo -u postgres createuser crm_user
+    sudo -u postgres psql -c "ALTER USER crm_user WITH ENCRYPTED PASSWORD '$DB_PASSWORD';"
+    sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='whatsapp_crm'" | grep -q 1 ||
+        sudo -u postgres createdb -O crm_user whatsapp_crm
     sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE whatsapp_crm TO crm_user;" 2>/dev/null || true
-    
+
     print_success "دیتابیس PostgreSQL آماده است"
 }
 
@@ -178,23 +182,24 @@ install_dependencies() {
     # Gateway
     print_info "نصب وابستگی‌های Gateway..."
     cd gateway
-    npm install
+    npm ci
     cd ..
     print_success "Gateway dependencies نصب شد"
     
     # Backend
     print_info "نصب وابستگی‌های Backend..."
     cd backend
-    npm install
+    npm ci
     cd ..
     print_success "Backend dependencies نصب شد"
     
     # Frontend
-    print_info "نصب وابستگی‌های Frontend..."
+    print_info "نصب و ساخت Frontend..."
     cd frontend
-    npm install
+    npm ci
+    npm run build
     cd ..
-    print_success "Frontend dependencies نصب شد"
+    print_success "Frontend ساخته شد و داخل Backend قرار گرفت"
 }
 
 # تنظیم فایل‌های .env
@@ -204,39 +209,84 @@ setup_env_files() {
     print_info "تنظیم فایل‌های محیطی"
     print_info "═══════════════════════════════════════════════════════════"
     
-    if [ ! -f .env ]; then
-        cp .env.example .env
-        print_success "فایل .env ایجاد شد"
-        
-        # تولید کلیدهای تصادفی
-        JWT_SECRET=$(openssl rand -base64 32)
-        SESSION_SECRET=$(openssl rand -base64 32)
-        
-        # جایگزینی در فایل
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-            sed -i '' "s/ChangeThisToAVeryLongAndRandomSecretKey123456789!/$JWT_SECRET/g" .env
-            sed -i '' "s/ChangeThisSessionSecretKey123456789!/$SESSION_SECRET/g" .env
-        else
-            sed -i "s/ChangeThisToAVeryLongAndRandomSecretKey123456789!/$JWT_SECRET/g" .env
-            sed -i "s/ChangeThisSessionSecretKey123456789!/$SESSION_SECRET/g" .env
-        fi
-        
-        print_success "کلیدهای امنیتی تولید شدند"
+    if [ ! -f backend/.env ]; then
+        cp backend/.env.example backend/.env
+        GENERATED_PASSWORD="LocalAdmin-$(node -e "process.stdout.write(require('crypto').randomBytes(10).toString('hex'))")!"
+        JWT_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+        ENCRYPT_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+        WEBHOOK_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+        GATEWAY_API_SECRET="$(node -e "process.stdout.write(require('crypto').randomBytes(32).toString('hex'))")"
+        GENERATED_PASSWORD="$GENERATED_PASSWORD" JWT_SECRET="$JWT_SECRET" ENCRYPT_SECRET="$ENCRYPT_SECRET" \
+            DB_PASSWORD="${DB_PASSWORD:-}" \
+            WEBHOOK_SECRET="$WEBHOOK_SECRET" GATEWAY_API_SECRET="$GATEWAY_API_SECRET" node <<'NODE'
+const fs = require('fs');
+const path = 'backend/.env';
+let text = fs.readFileSync(path, 'utf8');
+const values = {
+    JWT_SECRET: process.env.JWT_SECRET,
+    ENCRYPT_SECRET: process.env.ENCRYPT_SECRET,
+    WEBHOOK_SECRET: process.env.WEBHOOK_SECRET,
+    MAIN_ADMIN_EMAIL: 'admin@localhost',
+    MAIN_ADMIN_PASSWORD: process.env.GENERATED_PASSWORD,
+    GATEWAY_API_SECRET: process.env.GATEWAY_API_SECRET,
+};
+if (process.env.DB_PASSWORD) {
+    Object.assign(values, {
+        USE_SQLITE: 'false',
+        DB_HOST: 'localhost',
+        DB_PORT: '5432',
+        DB_NAME: 'whatsapp_crm',
+        DB_USER: 'crm_user',
+        DB_PASSWORD: process.env.DB_PASSWORD,
+    });
+}
+for (const [key, value] of Object.entries(values)) {
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^#?\\s*${key}=.*$`, 'm');
+    text = pattern.test(text) ? text.replace(pattern, line) : `${text}\n${line}\n`;
+}
+fs.writeFileSync(path, text);
+NODE
+        print_success "backend/.env با کلیدها و رمز تصادفی ساخته شد"
+        print_warning "رمز محلی ایجادشده را ذخیره کنید: $GENERATED_PASSWORD"
     else
-        print_warning "فایل .env از قبل وجود دارد"
+        print_warning "backend/.env از قبل وجود دارد و تغییر نکرد"
+    fi
+
+    if [ ! -f gateway/.env ]; then
+        cp gateway/.env.example gateway/.env
+        WEBHOOK_SECRET="$(awk -F= '/^WEBHOOK_SECRET=/{print substr($0, index($0, "=") + 1); exit}' backend/.env)"
+        GATEWAY_API_SECRET="$(awk -F= '/^GATEWAY_API_SECRET=/{print substr($0, index($0, "=") + 1); exit}' backend/.env)"
+        WEBHOOK_SECRET="$WEBHOOK_SECRET" GATEWAY_API_SECRET="$GATEWAY_API_SECRET" node <<'NODE'
+const fs = require('fs');
+const path = 'gateway/.env';
+let text = fs.readFileSync(path, 'utf8');
+for (const key of ['WEBHOOK_SECRET', 'GATEWAY_API_SECRET']) {
+    const value = process.env[key];
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^#?\\s*${key}=.*$`, 'm');
+    text = pattern.test(text) ? text.replace(pattern, line) : `${text}\n${line}\n`;
+}
+fs.writeFileSync(path, text);
+NODE
+        print_success "gateway/.env با کلیدهای مشترک ساخته شد"
+    else
+        print_warning "gateway/.env از قبل وجود دارد و تغییر نکرد"
     fi
 }
 
 # اجرای Migration
 run_migrations() {
     print_info "اجرای Migration..."
-    
-    cd backend
-    npm run migrate 2>/dev/null || true
-    npm run seed 2>/dev/null || true
-    cd ..
-    
-    print_success "Migration اجرا شد"
+
+    if (cd backend && npm run migrate && npm run seed); then
+        cd ..
+        print_success "Migration و Seed اجرا شدند"
+    else
+        cd .. 2>/dev/null || true
+        print_error "اجرای Migration یا Seed شکست خورد؛ لاگ بالا را بررسی کنید"
+        return 1
+    fi
 }
 
 # ایجاد فولدرها
@@ -273,14 +323,6 @@ start_services() {
     cd ..
     print_success "Backend راه‌اندازی شد"
     
-    # Frontend
-    print_info "راه‌اندازی Frontend..."
-    cd frontend
-    pm2 delete crm-frontend 2>/dev/null || true
-    pm2 start npm --name "crm-frontend" -- start
-    cd ..
-    print_success "Frontend راه‌اندازی شد"
-    
     # ذخیره تنظیمات PM2
     pm2 save
     pm2 startup
@@ -300,19 +342,15 @@ show_final_info() {
     
     print_success "دسترسی به سیستم:"
     echo ""
-    echo "  📱 Frontend Dashboard:    http://localhost:3000"
+    echo "  📱 Dashboard + Backend:   http://localhost:3002"
     echo "  🔧 Backend API:           http://localhost:3002"
     echo "  📡 WhatsApp Gateway:      http://localhost:3001"
     echo "  🐰 RabbitMQ Management:   http://localhost:15672"
     echo ""
     
-    print_success "اطلاعات ورود پیش‌فرض:"
+    print_success "اطلاعات ورود:"
     echo ""
-    echo "  ایمیل:     admin@kaya.fxguard.io"
-    echo "  رمز عبور:  Admin@123"
-    echo ""
-    
-    print_warning "⚠️  حتماً رمزهای پیش‌فرض را تغییر دهید!"
+    echo "  از MAIN_ADMIN_EMAIL و MAIN_ADMIN_PASSWORD در backend/.env استفاده کنید."
     echo ""
     
     print_info "مدیریت سرویس‌ها:"

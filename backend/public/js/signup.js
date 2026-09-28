@@ -8,16 +8,16 @@
 (function () {
     'use strict';
 
-    var parentHost = 'app.fxguard.io';
-    var wildcardDns = false;
-    var form = document.getElementById('suForm');
-    var slugEl = document.getElementById('suSlug');
-    var hintEl = document.getElementById('suHostHint');
-    var slugStatusEl = document.getElementById('suSlugStatus');
-    var msgEl = document.getElementById('suMsg');
-    var btn = document.getElementById('suBtn');
-    var slugCheckTimer = null;
-    var lastSlugOk = null;
+    let parentHost = 'app.fxguard.io';
+    let wildcardDns = false;
+    const form = document.getElementById('suForm');
+    const slugEl = document.getElementById('suSlug');
+    const hintEl = document.getElementById('suHostHint');
+    const slugStatusEl = document.getElementById('suSlugStatus');
+    const msgEl = document.getElementById('suMsg');
+    const btn = document.getElementById('suBtn');
+    let slugCheckTimer = null;
+    let lastSlugOk = null;
 
     function setMsg(text, ok) {
         if (!msgEl) return;
@@ -38,7 +38,7 @@
     }
 
     function updateHint() {
-        var slug = normalizeSlug(slugEl && slugEl.value);
+        const slug = normalizeSlug(slugEl && slugEl.value);
         if (hintEl) {
             if (wildcardDns) {
                 hintEl.textContent = slug ? slug + '.' + parentHost : 'your-desk.' + parentHost;
@@ -57,7 +57,7 @@
     }
 
     function checkSlugAvailability() {
-        var slug = normalizeSlug(slugEl && slugEl.value);
+        const slug = normalizeSlug(slugEl && slugEl.value);
         lastSlugOk = null;
         if (!slug || slug.length < 3) {
             setSlugStatus('');
@@ -103,7 +103,7 @@
 
     if (slugEl) {
         slugEl.addEventListener('input', function () {
-            var cleaned = normalizeSlug(slugEl.value);
+            const cleaned = normalizeSlug(slugEl.value);
             if (slugEl.value !== cleaned) slugEl.value = cleaned;
             updateHint();
             if (slugCheckTimer) clearTimeout(slugCheckTimer);
@@ -116,11 +116,11 @@
         form.addEventListener('submit', function (ev) {
             ev.preventDefault();
             setMsg('');
-            var company = (document.getElementById('suCompany').value || '').trim();
-            var ownerName = (document.getElementById('suOwner') && document.getElementById('suOwner').value || '').trim();
-            var slug = normalizeSlug(slugEl && slugEl.value);
-            var email = (document.getElementById('suEmail').value || '').trim();
-            var password = document.getElementById('suPass').value || '';
+            const company = (document.getElementById('suCompany').value || '').trim();
+            const ownerName = (document.getElementById('suOwner') && document.getElementById('suOwner').value || '').trim();
+            const slug = normalizeSlug(slugEl && slugEl.value);
+            const email = (document.getElementById('suEmail').value || '').trim();
+            const password = document.getElementById('suPass').value || '';
             if (!company || !slug || !email || !password) {
                 setMsg('همهٔ فیلدهای لازم را پر کنید.');
                 return;
@@ -161,14 +161,14 @@
                     try {
                         if (res.d.slug) localStorage.setItem('fxguard_panel_slug', String(res.d.slug).toLowerCase());
                     } catch (_) {}
-                    var dash = res.d.dashboardUrl;
+                    const dash = res.d.dashboardUrl;
                     if (res.d.session && dash) {
                         window.location.href = dash;
                         return;
                     }
-                    var url = res.d.loginUrl;
+                    const url = res.d.loginUrl;
                     if (url) {
-                        var join = url.indexOf('?') >= 0 ? '&' : '?';
+                        const join = url.indexOf('?') >= 0 ? '&' : '?';
                         window.location.href = url + join + 'email=' + encodeURIComponent(email);
                         return;
                     }

@@ -38,7 +38,11 @@ module.exports = (sequelize) => {
         }
     }, {
         timestamps: true,
-        tableName: 'Branches'
+        tableName: 'Branches',
+        indexes: [
+            { fields: ['tenantId'] },
+            { fields: ['isActive'] }
+        ]
     });
 
     Branch.associate = (models) => {

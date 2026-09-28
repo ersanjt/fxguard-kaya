@@ -20,11 +20,11 @@
 از ریشهٔ مخزن:
 
 ```bash
-cd frontend && npm install && npm run dev
+cd frontend && npm ci && npm run dev
 ```
 
 - مرورگر: `http://127.0.0.1:5173` — صفحهٔ توسعهٔ سبک (نه کل داشبورد).
-- بک‌اند API روی `3000` باید بالا باشد (پروکسی در `vite.config.js`).
+- بک‌اند API به‌صورت پیش‌فرض روی `3002` باید بالا باشد (قابل تغییر با `BACKEND_PORT`).
 
 بیلد استاتیک (خروجی در `backend/public/js/app/`):
 

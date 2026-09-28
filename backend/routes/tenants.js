@@ -64,7 +64,8 @@ function createTenantsRouter(logger) {
                             .toLowerCase() },
                         skipTenantScope: true,
                     }));
-                if (owner && owner.isActive) {
+                const sameTenant = owner && String(owner.tenantId || '') === String(result.tenantId || '');
+                if (owner && owner.isActive && sameTenant) {
                     const token = issueStaffToken(owner);
                     setAuthCookie(res, token);
                     session = {

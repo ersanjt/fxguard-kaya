@@ -188,10 +188,24 @@ async function resolveTenantFromRequest(req) {
     return platform;
 }
 
+function requestPath(req) {
+    return String((req && (req.originalUrl || req.url)) || '').split('?')[0];
+}
+
+function missingTenantBlocksApi(req) {
+    const path = requestPath(req);
+    if (path !== '/api' && path.indexOf('/api/') !== 0) return false;
+    if (path === '/api/ping' || path.indexOf('/api/ping/') === 0) return false;
+    return true;
+}
+
 function tenantContextMiddleware(req, res, next) {
     resolveTenantFromRequest(req)
         .then((tenant) => {
             req.tenant = tenant;
+            if (tenant && tenant.missing && missingTenantBlocksApi(req)) {
+                return res.status(404).json({ error: 'پنلی با این آدرس ثبت نشده است.' });
+            }
             runWithTenant(tenant, () => next());
         })
         .catch(() => {

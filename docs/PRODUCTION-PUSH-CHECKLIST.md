@@ -1,6 +1,6 @@
-# چک‌لیست قبل از push به `master` (دیپلوی خودکار)
+# چک‌لیست قبل از push به `main` (دیپلوی خودکار)
 
-هر push به **`master`** روی سرور **git pull + npm install + PM2 reload** اجرا می‌کند. کاربران آنلاین هستند — تغییرات را **کوچک و قابل برگشت** نگه دارید.
+هر push به **`main`** workflow استقرار production را اجرا می‌کند. کاربران آنلاین هستند — تغییرات را **کوچک و قابل برگشت** نگه دارید.
 
 ## قبل از commit
 
@@ -30,4 +30,4 @@
 
 ## اگر چیزی خراب شد
 
-روی سرور: `pm2 logs crm-backend` (یا نام اپ در `ecosystem.config.js`) — در صورت نیاز `git reset --hard ORIG_HEAD` و `npm install` و reload (با احتیاط).
+روی سرور: `pm2 logs crm-backend-kaya` — در صورت نیاز طبق رویهٔ rollback در `DEPLOY-KAYA-SERVER.md` عمل کنید.

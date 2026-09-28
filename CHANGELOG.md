@@ -60,10 +60,9 @@
 
 ## نحوه استفاده
 
-1. **Backend:** `cd backend` و `node server.js`
-2. **Gateway:** `cd gateway` و `node src/index.js` و اسکن QR با واتساپ
-3. **داشبورد:** در مرورگر باز کنید: **http://localhost:3002/dashboard.html**
-4. ورود با `admin@kaya.fxguard.io` / `Admin@123`
-5. از تب مکالمات، یک مکالمه را باز کنید و پیام بفرستید.
+1. از ریشهٔ پروژه `./start-all.sh` یا در ویندوز `.\start-all.ps1` را اجرا کنید.
+2. **داشبورد:** در مرورگر باز کنید: **http://localhost:3002/**
+3. با اطلاعات تصادفی نمایش‌داده‌شده در اجرای اول (مقادیر `MAIN_ADMIN_*` در `backend/.env`) وارد شوید.
+4. اتصال واتساپ را در پنل راه‌اندازی کنید و سپس از تب مکالمات پیام بفرستید.
 
 بدون نیاز به RabbitMQ، Redis یا PostgreSQL (با USE_SQLITE=true) سیستم قابل استفاده است.

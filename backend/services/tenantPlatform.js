@@ -66,6 +66,33 @@ async function ensurePlatformTenant(logger) {
     return shaped;
 }
 
+function indexHasTenantId(idx) {
+    const fields = (idx && (idx.fields || idx.columns)) || [];
+    return fields.some((field) => {
+        if (!field) return false;
+        if (typeof field === 'string') return field === 'tenantId';
+        return field.attribute === 'tenantId' || field.name === 'tenantId';
+    });
+}
+
+async function ensureTenantIdIndex(qi, table, logger) {
+    let indexes = [];
+    try {
+        indexes = await qi.showIndex(table);
+    } catch (_) {
+        return;
+    }
+    if ((indexes || []).some(indexHasTenantId)) return;
+    try {
+        await qi.addIndex(table, ['tenantId'], { name: 'idx_' + table + '_tenantId' });
+        if (logger && logger.info) logger.info('✅ ' + table + ': tenantId index added');
+    } catch (err) {
+        const msg = String((err && err.message) || '');
+        if (msg.includes('already exists') || msg.includes('duplicate')) return;
+        if (logger && logger.warn) logger.warn(table + ' tenantId index', { error: msg });
+    }
+}
+
 async function addTenantIdColumns(sequelize, logger) {
     const qi = sequelize.getQueryInterface();
     const { DataTypes } = require('sequelize');
@@ -86,6 +113,7 @@ async function addTenantIdColumns(sequelize, logger) {
                 await qi.addColumn(table, 'tenantId', { type: DataTypes.UUID, allowNull: true });
                 if (logger && logger.info) logger.info('✅ ' + table + ': tenantId column added');
             }
+            if (desc) await ensureTenantIdIndex(qi, table, logger);
         } catch (_) {
             /* table may not exist yet */
         }

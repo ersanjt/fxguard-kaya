@@ -30,9 +30,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test:all
-      # اگر chunkها عوض شده باشند و dashboard.js / dashboard.html دوباره باندل نشده باشد، CI قرمز می‌شود.
+      # همهٔ artifactهای legacy را بدون بازنویسی working tree بررسی می‌کند.
       - name: Verify dashboard bundle matches chunks
-        run: npm run build:dashboard && git diff --exit-code public/js/dashboard.js public/dashboard.html
+        run: npm run verify:dashboard
 
   gateway:
     runs-on: ubuntu-latest
@@ -52,6 +52,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format
+      - run: npm test
 
   dashboard:
     runs-on: ubuntu-latest
@@ -69,7 +70,7 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
-      - run: npm run build
+      - run: npm run build:check
 
   android:
     runs-on: ubuntu-latest

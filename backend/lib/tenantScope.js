@@ -7,6 +7,7 @@
  */
 'use strict';
 
+const { Op } = require('sequelize');
 const { getCurrentTenantId, getCachedPlatformTenant } = require('./tenantContext');
 
 function stampTenantId(instance) {
@@ -15,18 +16,36 @@ function stampTenantId(instance) {
     if (tid) instance.tenantId = tid;
 }
 
+function mergeTenantWhere(options) {
+    if (!options || options.skipTenantScope) return options;
+    const tid = getCurrentTenantId();
+    if (!tid) return options;
+    const where = options.where;
+    if (!where) {
+        options.where = { tenantId: tid };
+        return options;
+    }
+    if (Array.isArray(where)) {
+        options.where = where.concat([{ tenantId: tid }]);
+        return options;
+    }
+    if (typeof where !== 'object') return options;
+    if (where.tenantId !== undefined) return options;
+    options.where = { [Op.and]: [where, { tenantId: tid }] };
+    return options;
+}
+
 function applyTenantScope(model) {
     if (!model || typeof model.addHook !== 'function') return model;
 
-    model.addHook('beforeFind', (options) => {
-        if (!options || options.skipTenantScope) return;
-        const tid = getCurrentTenantId();
-        if (!tid) return;
-        options.where = options.where || {};
-        if (options.where.tenantId === undefined) {
-            options.where.tenantId = tid;
-        }
-    });
+    const constrain = (options) => {
+        mergeTenantWhere(options);
+    };
+
+    model.addHook('beforeFind', constrain);
+    model.addHook('beforeCount', constrain);
+    model.addHook('beforeBulkUpdate', constrain);
+    model.addHook('beforeBulkDestroy', constrain);
 
     model.addHook('beforeCreate', (instance) => {
         stampTenantId(instance);
@@ -59,6 +78,7 @@ function applyTenantScopeToModels(models) {
 
 module.exports = {
     stampTenantId,
+    mergeTenantWhere,
     applyTenantScope,
     applyTenantScopeToModels,
     TENANT_SCOPED_MODELS,

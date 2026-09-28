@@ -1,4 +1,3 @@
-const { Op } = require('sequelize');
 const { isMainAdmin, canViewHiddenConversations } = require('./permissions');
 const {
     getUserGrantSets,

@@ -647,7 +647,7 @@ router.post('/test-telegram', authMiddleware, async (req, res, next) => {
 const testNavasanCooldown = new Map();
 const TEST_NAVASAN_COOLDOWN_MS = 30000;
 
-router.post('/test-navasan', authMiddleware, async (req, res, next) => {
+router.post('/test-navasan', authMiddleware, async (req, res, _next) => {
     const axios = require('axios');
     const {
         normalizeNavasanApiKey,

@@ -20,6 +20,7 @@ const { wantsBearerToken } = require('../lib/staffAppClient');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { issueStaffToken, revokeStaffSessions, disconnectStaffSockets } = require('../lib/staffSession');
 const { isPlatformTenant } = require('../lib/tenantContext');
+const { authMiddleware, optionalAuthMiddleware, assertUserMatchesRequestTenant } = require('../middleware/auth');
 const { publicTenantPayload } = require('../lib/tenantTrial');
 
 const TOTP_TEMP_EXPIRY = '5m';
@@ -167,7 +168,16 @@ router.post('/login', async (req, res, _next) => {
         }
         // Always run bcrypt to prevent timing-based username enumeration
         const passwordMatch = user ? await user.comparePassword(password) : await User.dummyCompare(password);
-        if (!user || !passwordMatch) {
+        let wrongPanel = false;
+        if (user && passwordMatch) {
+            try {
+                assertUserMatchesRequestTenant(req, user);
+            } catch (panelErr) {
+                if (!panelErr || panelErr.code !== 'WRONG_TENANT') throw panelErr;
+                wrongPanel = true;
+            }
+        }
+        if (!user || !passwordMatch || wrongPanel) {
             const clientIp = getRealIp(req);
             await logActivity({
                 userId: user ? user.id : null,
@@ -275,6 +285,14 @@ router.post('/forgot-password', async (req, res, next) => {
                 },
             });
         }
+        if (user) {
+            try {
+                assertUserMatchesRequestTenant(req, user);
+            } catch (panelErr) {
+                if (!panelErr || panelErr.code !== 'WRONG_TENANT') throw panelErr;
+                user = null;
+            }
+        }
         if (!user) {
             return res.status(200).json({ message: FORGOT_OK_MESSAGE });
         }
@@ -353,9 +371,17 @@ router.post('/totp/verify-login', async (req, res, next) => {
         }
         await setTotpAttempts(redisClient, jti, attempts);
 
-        const user = await User.findByPk(decoded.id);
+        const user = await User.findByPk(decoded.id, { skipTenantScope: true });
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
             return res.status(401).json({ error: 'کاربر نامعتبر است' });
+        }
+        try {
+            assertUserMatchesRequestTenant(req, user);
+        } catch (panelErr) {
+            if (panelErr && panelErr.code === 'WRONG_TENANT') {
+                return res.status(401).json({ error: 'این حساب به این پنل تعلق ندارد' });
+            }
+            throw panelErr;
         }
         const totpVerifier = authenticator.clone();
         totpVerifier.options = { window: 1 };
@@ -413,8 +439,6 @@ router.post('/totp/verify-login', async (req, res, next) => {
         next(err);
     }
 });
-
-const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
 
 router.get('/me', authMiddleware, async (req, res, next) => {
     try {

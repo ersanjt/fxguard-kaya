@@ -13,6 +13,7 @@ const crypto = require('crypto');
 
 const root = path.join(__dirname, '..');
 const BUILD_PLACEHOLDER = '__CRM_BUILD__';
+const checkOnly = process.argv.includes('--check');
 
 function readNormalized(filePath) {
     return fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
@@ -45,14 +46,25 @@ function stampBuildId(content, buildId) {
     return content.split(BUILD_PLACEHOLDER).join(buildId);
 }
 
+function emit(filePath, content, label) {
+    if (checkOnly) {
+        const current = fs.existsSync(filePath) ? readNormalized(filePath) : null;
+        if (current !== content.replace(/\r\n/g, '\n')) {
+            console.error('[bundle-dashboard] Outdated generated file:', filePath);
+            process.exitCode = 1;
+            return;
+        }
+        console.log('[bundle-dashboard] Verified', label);
+        return;
+    }
+    fs.writeFileSync(filePath, content, 'utf8');
+    console.log('[bundle-dashboard] Wrote', label);
+}
+
 function writeBuildManifest(buildId) {
-    const manifest = {
-        id: buildId,
-        builtAt: new Date().toISOString()
-    };
+    const manifest = { id: buildId };
     const outPath = path.join(root, 'public', 'crm-build.json');
-    fs.writeFileSync(outPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
-    console.log('[bundle-dashboard] Wrote', outPath, '(' + buildId + ')');
+    emit(outPath, JSON.stringify(manifest, null, 2) + '\n', 'crm-build.json (' + buildId + ')');
 }
 
 function bundleJs() {
@@ -76,7 +88,6 @@ function bundleJs() {
         out += fs.readFileSync(path.join(srcDir, files[i]), 'utf8');
     }
     const outPath = path.join(root, 'public/js/dashboard.js');
-    fs.writeFileSync(outPath, out, 'utf8');
     try {
         // Same parse the browser uses: a SyntaxError here would leave the live
         // panel stuck on an empty shell (window.showPage never assigned).
@@ -86,7 +97,7 @@ function bundleJs() {
         console.error('[bundle-dashboard] dashboard.js syntax error:', e && e.message);
         process.exit(1);
     }
-    console.log('[bundle-dashboard] Wrote', outPath, '(' + files.length + ' chunks)');
+    emit(outPath, out, 'dashboard.js (' + files.length + ' chunks)');
 }
 
 function bundleHtml(buildId) {
@@ -111,8 +122,7 @@ function bundleHtml(buildId) {
         out += stampBuildId(fs.readFileSync(files[i], 'utf8'), buildId);
     }
     const outPath = path.join(root, 'public/dashboard.html');
-    fs.writeFileSync(outPath, out, 'utf8');
-    console.log('[bundle-dashboard] Wrote', outPath, '(' + files.length + ' partials)');
+    emit(outPath, out, 'dashboard.html (' + files.length + ' partials)');
 }
 
 function stampLoginHtml(buildId) {
@@ -121,8 +131,7 @@ function stampLoginHtml(buildId) {
     let raw = readNormalized(loginPath);
     raw = raw.replace(/\?v=[a-f0-9]+/gi, '?v=' + BUILD_PLACEHOLDER);
     raw = raw.replace(/content="[a-f0-9]+"/, 'content="' + BUILD_PLACEHOLDER + '"');
-    fs.writeFileSync(loginPath, stampBuildId(raw, buildId), 'utf8');
-    console.log('[bundle-dashboard] Stamped login.html');
+    emit(loginPath, stampBuildId(raw, buildId), 'login.html');
 }
 
 const buildId = resolveBuildId();

@@ -24,11 +24,11 @@
     function apiMsg(key, fa, en, tr) {
         try {
             if (typeof window.t === 'function') {
-                var v = window.t(key);
+                const v = window.t(key);
                 if (v != null && String(v) !== '' && v !== key) return v;
             }
         } catch (_e) {}
-        var lang = apiLang();
+        const lang = apiLang();
         if (lang === 'tr') return tr;
         if (lang === 'en') return en;
         return fa;

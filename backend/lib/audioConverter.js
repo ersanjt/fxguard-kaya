@@ -53,7 +53,7 @@ function convertToOggOpus(inputPath, outputPath) {
  * Given a file path and mimetype, if it is an audio file convert it to ogg/opus.
  * Returns { filePath, mimetype, filename } — either converted or original.
  */
-async function ensureVoiceFormat(filePath, mimetype, filename) {
+async function ensureVoiceFormat(filePath, _mimetype, _filename) {
     const baseName = path.basename(filePath);
 
     // Output from a prior ensureVoiceFormat in the same send pipeline — skip re-encode.

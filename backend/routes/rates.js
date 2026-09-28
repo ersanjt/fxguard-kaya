@@ -184,7 +184,7 @@ router.get('/', async (req, res, _next) => {
             };
         });
 
-        let items = visibleKeys
+        const items = visibleKeys
             ? visibleKeys.map(k => allItems.find(i => i.key === k)).filter(Boolean)
             : allItems;
 

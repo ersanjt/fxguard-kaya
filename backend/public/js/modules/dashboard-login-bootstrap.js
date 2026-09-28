@@ -10,8 +10,8 @@
 (function (global) {
     'use strict';
 
-    var BRANDING_KEY = 'crm_panel_branding_v1';
-    var LANGUAGES_KEY = 'crm_panel_languages_v1';
+    const BRANDING_KEY = 'crm_panel_branding_v1';
+    const LANGUAGES_KEY = 'crm_panel_languages_v1';
 
     function isFxguardHost() {
         try {
@@ -31,7 +31,7 @@
 
     function isDashboardPage() {
         try {
-            var p = String(global.location.pathname || '').toLowerCase();
+            const p = String(global.location.pathname || '').toLowerCase();
             return p === '/dashboard' || p === '/dashboard/' || p.endsWith('/dashboard.html');
         } catch (_e) {
             return false;
@@ -39,8 +39,8 @@
     }
 
     function readCache() {
-        var branding = null;
-        var languages = null;
+        let branding = null;
+        let languages = null;
         try {
             branding = JSON.parse(global.localStorage.getItem(BRANDING_KEY) || 'null');
         } catch (_e) {
@@ -64,11 +64,11 @@
     }
 
     function normalizeSupported(languages) {
-        var supported =
+        let supported =
             languages && Array.isArray(languages.supportedLanguages) && languages.supportedLanguages.length
                 ? languages.supportedLanguages.slice()
                 : ['fa', 'en', 'tr'];
-        var defaultLanguage =
+        let defaultLanguage =
             languages && languages.defaultLanguage && supported.indexOf(languages.defaultLanguage) >= 0
                 ? languages.defaultLanguage
                 : supported[0] || (isFxguardHost() ? 'en' : 'fa');
@@ -80,7 +80,7 @@
     }
 
     function pickLang(stored, defaultLanguage, supported) {
-        var lang = stored || defaultLanguage || (isFxguardHost() ? 'en' : 'fa');
+        let lang = stored || defaultLanguage || (isFxguardHost() ? 'en' : 'fa');
         if (isFxguardHost()) {
             if (lang === 'fa' || supported.indexOf(lang) < 0) lang = 'en';
         } else if (supported.indexOf(lang) < 0) {
@@ -90,7 +90,7 @@
     }
 
     function applyLangEarly(l) {
-        var html = document.documentElement;
+        const html = document.documentElement;
         html.lang = l === 'en' ? 'en' : l === 'tr' ? 'tr' : 'fa';
         html.dir = l === 'fa' ? 'rtl' : 'ltr';
         if (document.body) document.body.classList.toggle('ltr', l !== 'fa');
@@ -104,10 +104,10 @@
 
     function applyAccentCss(root, color) {
         if (!root || !color || !/^#[0-9a-fA-F]{6}$/.test(color)) return;
-        var r = parseInt(color.slice(1, 3), 16);
-        var g = parseInt(color.slice(3, 5), 16);
-        var b = parseInt(color.slice(5, 7), 16);
-        var hoverHex =
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        const hoverHex =
             '#' +
             [r, g, b]
                 .map(function (x) {
@@ -122,34 +122,34 @@
     function resolveLoginLogoSrc(b) {
         if (isFxguardHost()) {
             if (!b) return '/brand/fxguard-logo.svg';
-            var loginFx = b.loginLogoUrl && String(b.loginLogoUrl).trim();
+            const loginFx = b.loginLogoUrl && String(b.loginLogoUrl).trim();
             if (loginFx) return loginFx;
-            var logoFx = b.logoUrl && String(b.logoUrl).trim();
+            const logoFx = b.logoUrl && String(b.logoUrl).trim();
             return logoFx || '/brand/fxguard-logo.svg';
         }
         if (!b) return '/brand/kaya-logo.png';
-        var login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
+        const login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
         if (login) return login;
-        var logo = b.logoUrl && String(b.logoUrl).trim();
+        const logo = b.logoUrl && String(b.logoUrl).trim();
         return logo || '/brand/kaya-logo.png';
     }
 
     function applyChromeBrand(b) {
         if (!b || !document.body) return;
-        var site = (b.siteName && String(b.siteName).trim()) || (isFxguardHost() ? 'FXGuard' : '');
-        var footer = (b.footerText && String(b.footerText).trim()) || (isFxguardHost() ? 'FXGuard — Staff Portal' : '');
-        var nameEl = document.getElementById('headerLogoText');
+        const site = (b.siteName && String(b.siteName).trim()) || (isFxguardHost() ? 'FXGuard' : '');
+        const footer = (b.footerText && String(b.footerText).trim()) || (isFxguardHost() ? 'FXGuard — Staff Portal' : '');
+        const nameEl = document.getElementById('headerLogoText');
         if (nameEl && site) {
             nameEl.textContent = site;
             nameEl.setAttribute('data-branded', '1');
         }
-        var footerEl = document.getElementById('appFooterBrand');
+        const footerEl = document.getElementById('appFooterBrand');
         if (footerEl && footer) {
             footerEl.textContent = footer;
             footerEl.setAttribute('data-branded', '1');
         }
-        var icon = document.getElementById('headerLogoIcon');
-        var src = resolveLoginLogoSrc(b);
+        const icon = document.getElementById('headerLogoIcon');
+        const src = resolveLoginLogoSrc(b);
         if (icon && src) {
             icon.classList.add('logo-icon--custom');
             icon.innerHTML = '<img src="' + src.replace(/"/g, '&quot;') + '" alt="" style="width:28px;height:28px;object-fit:contain">';
@@ -160,16 +160,16 @@
 
     function applyBrandingEarly(b) {
         if (!b) return;
-        var root = document.documentElement;
+        const root = document.documentElement;
         if (b.primaryColor) applyAccentCss(root, b.primaryColor);
         if (b.pageTitle) document.title = b.pageTitle;
         else if (b.loginTitle) document.title = b.loginTitle;
-        var fav = document.getElementById('favicon');
-        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png?v=2');
+        const fav = document.getElementById('favicon');
+        const favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png?v=2');
         if (fav) fav.href = favHref;
-        var ath = document.getElementById('appleTouchIcon');
+        const ath = document.getElementById('appleTouchIcon');
         if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-apple-touch.png?v=2'));
-        var amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        const amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         if (amTitle && b.siteName) amTitle.setAttribute('content', b.siteName);
         if (b.uiTheme && b.uiTheme !== 'default' && document.body) {
             document.body.classList.remove('theme-minimal', 'theme-dark', 'theme-light', 'theme-ocean', 'theme-warm');
@@ -181,7 +181,7 @@
         if (!b || !document.body) return;
         applyBrandingEarly(b);
         applyChromeBrand(b);
-        var loginTitleEl = document.getElementById('loginTitle');
+        const loginTitleEl = document.getElementById('loginTitle');
         if (loginTitleEl) {
             loginTitleEl.textContent =
                 b.loginTitle && String(b.loginTitle).trim()
@@ -190,9 +190,9 @@
                       ? 'پورتال کارکنان کایا'
                       : 'Kaya Staff Portal';
         }
-        var src = resolveLoginLogoSrc(b);
+        const src = resolveLoginLogoSrc(b);
         ['loginLogo', 'loginLogoTotp'].forEach(function (id) {
-            var c = document.getElementById(id);
+            const c = document.getElementById(id);
             if (!c) return;
             if (src) {
                 c.innerHTML =
@@ -219,15 +219,15 @@
     }
 
     function initHead() {
-        var cache = readCache();
-        var langPack = normalizeSupported(cache.languages);
-        var stored = null;
+        const cache = readCache();
+        const langPack = normalizeSupported(cache.languages);
+        let stored = null;
         try {
             stored = global.localStorage.getItem('crm_lang');
         } catch (_e) {
             stored = null;
         }
-        var lang = pickLang(stored, langPack.defaultLanguage, langPack.supported);
+        const lang = pickLang(stored, langPack.defaultLanguage, langPack.supported);
         applyLangEarly(lang);
         global.SUPPORTED_LANGUAGES = langPack.supported;
         if (cache.branding) applyBrandingEarly(cache.branding);
@@ -236,11 +236,11 @@
     }
 
     function onDomReady() {
-        var cache = readCache();
-        var lang = global.LANG || 'fa';
+        const cache = readCache();
+        const lang = global.LANG || 'fa';
         if (cache.branding) applyBrandingDom(cache.branding, lang);
         if (cache.languages) {
-            var pack = normalizeSupported(cache.languages);
+            const pack = normalizeSupported(cache.languages);
             global.SUPPORTED_LANGUAGES = pack.supported;
             applyLangSwitchVisibility(pack.supported);
         }
@@ -276,7 +276,7 @@
                     return null;
                 })
         ]).then(function (pair) {
-            var data = { branding: pair[0], languages: pair[1] };
+            const data = { branding: pair[0], languages: pair[1] };
             writeCache(data.branding, data.languages);
             return data;
         });
@@ -286,11 +286,11 @@
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', onDomReady);
     else onDomReady();
 
-    var readyPromise = fetchPublicSettings().then(function (data) {
-        var lang = global.LANG || 'fa';
+    const readyPromise = fetchPublicSettings().then(function (data) {
+        const lang = global.LANG || 'fa';
         if (data.branding) applyBrandingDom(data.branding, lang);
         if (data.languages) {
-            var pack = normalizeSupported(data.languages);
+            const pack = normalizeSupported(data.languages);
             global.SUPPORTED_LANGUAGES = pack.supported;
             applyLangSwitchVisibility(pack.supported);
         }

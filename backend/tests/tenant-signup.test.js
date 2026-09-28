@@ -11,6 +11,7 @@ process.env.MAIN_ADMIN_PASSWORD = 'Admin@Test123!';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3101';
 process.env.DISABLE_RATE_LIMIT = 'true';
+process.env.WEBHOOK_SECRET = '';
 process.env.SELF_SERVE_SIGNUP = 'true';
 process.env.TENANT_BASE_HOST = 'app.fxguard.io';
 process.env.SELF_SERVE_PUBLIC_PROTO = 'http';

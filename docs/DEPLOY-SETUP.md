@@ -54,10 +54,10 @@ pm2 startup
 
 ## جریان کار
 
-1. تغییرات را commit و push کنید به `master`
+1. تغییرات را commit و push کنید به `main`
 2. GitHub Actions به سرور SSH می‌زند
 3. اسکریپت `scripts/deploy.sh` اجرا می‌شود:
-   - `git pull origin master`
+   - `git pull origin main`
    - `npm install` برای backend و gateway
    - `pm2 reload` برای هر دو سرویس
 
