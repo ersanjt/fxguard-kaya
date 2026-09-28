@@ -3,7 +3,7 @@
 Symbol meaning:
 - shield: protected company data
 - conversation bubble: shared business messaging
-- opposing arrows: two-way foreign-exchange quotes
+- connected nodes: teams, branches and departments share customer context
 """
 
 from pathlib import Path
@@ -84,38 +84,37 @@ def draw_mark(size: int) -> Image.Image:
         fill="#F5FFF8",
     )
 
-    width = max(point(22, size), SCALE)
-    arrow = max(point(26, size), SCALE)
-    line_kwargs = {"width": width, "joint": "curve"}
+    center = (point(256, size), point(254, size))
+    nodes = [
+        (point(208, size), point(218, size)),
+        (point(304, size), point(218, size)),
+        (point(256, size), point(302, size)),
+    ]
+    line_width = max(point(18, size), SCALE)
+    for node in nodes:
+        draw.line([center, node], fill="#0B7139", width=line_width)
 
-    draw.line(
-        [(point(193, size), point(216, size)), (point(318, size), point(216, size))],
+    center_radius = point(25, size)
+    draw.ellipse(
+        (
+            center[0] - center_radius,
+            center[1] - center_radius,
+            center[0] + center_radius,
+            center[1] + center_radius,
+        ),
         fill="#0B5E31",
-        **line_kwargs,
     )
-    draw.line(
-        [
-            (point(291, size), point(190, size)),
-            (point(322, size), point(216, size)),
-            (point(291, size), point(242, size)),
-        ],
-        fill="#0B5E31",
-        **line_kwargs,
-    )
-    draw.line(
-        [(point(319, size), point(278, size)), (point(194, size), point(278, size))],
-        fill="#19B85A",
-        **line_kwargs,
-    )
-    draw.line(
-        [
-            (point(221, size), point(252, size)),
-            (point(190, size), point(278, size)),
-            (point(221, size), point(304, size)),
-        ],
-        fill="#19B85A",
-        **line_kwargs,
-    )
+    node_radius = point(20, size)
+    for node in nodes:
+        draw.ellipse(
+            (
+                node[0] - node_radius,
+                node[1] - node_radius,
+                node[0] + node_radius,
+                node[1] + node_radius,
+            ),
+            fill="#19B85A",
+        )
 
     return image.resize((size, size), Image.Resampling.LANCZOS)
 

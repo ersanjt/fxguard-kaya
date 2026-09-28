@@ -1,7 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FXGuard protected exchange conversation">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FXGuard protected team conversation">
   <rect width="64" height="64" rx="16" fill="#06100A"/>
   <path d="M32 6 53 14v17c0 13-8 23-21 29C19 54 11 44 11 31V14L32 6Z" fill="#39DE7B"/>
   <path d="M32 10 49 17v14c0 10-6 18-17 24-11-6-17-14-17-24V17l17-7Z" fill="#07110B"/>
   <path d="M21 20h22c3 0 5 2 5 5v13c0 3-2 5-5 5H33l-8 6 2-6h-6c-3 0-5-2-5-5V25c0-3 2-5 5-5Z" fill="#F5FFF8"/>
-  <path d="M22 27h14m-3-3 4 3-4 3M42 36H28m3 3-4-3 4-3" fill="none" stroke="#0B7139" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m32 32-8-6m8 6 8-6m-8 6v8" fill="none" stroke="#0B7139" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="4" fill="#0B5E31"/>
+  <circle cx="24" cy="26" r="3.2" fill="#19B85A"/>
+  <circle cx="40" cy="26" r="3.2" fill="#19B85A"/>
+  <circle cx="32" cy="40" r="3.2" fill="#19B85A"/>
 </svg>

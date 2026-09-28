@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title desc">
   <title id="title">FXGuard</title>
-  <desc id="desc">A protected business conversation with two-way currency exchange</desc>
+  <desc id="desc">A protected customer conversation shared across connected teams</desc>
   <defs>
     <linearGradient id="surface" x1="52" y1="30" x2="462" y2="482" gradientUnits="userSpaceOnUse">
       <stop stop-color="#102319"/>
@@ -20,8 +20,9 @@
   <path d="M256 58 404 116v122c0 96-59 173-148 216-89-43-148-120-148-216V116L256 58Z" fill="url(#guard)" filter="url(#shadow)"/>
   <path d="M256 88 374 134v99c0 75-43 136-118 175-75-39-118-100-118-175v-99L256 88Z" fill="#07110B"/>
   <path d="M179 166h154c20 0 36 16 36 36v89c0 20-16 36-36 36h-72l-52 40 10-40h-40c-20 0-36-16-36-36v-89c0-20 16-36 36-36Z" fill="#F5FFF8"/>
-  <path d="M190 215h111" fill="none" stroke="#0B5E31" stroke-width="22" stroke-linecap="round"/>
-  <path d="m288 194 27 21-27 21" fill="none" stroke="#0B5E31" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M322 277H211" fill="none" stroke="#19B85A" stroke-width="22" stroke-linecap="round"/>
-  <path d="m224 256-27 21 27 21" fill="none" stroke="#19B85A" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m256 254-48-36m48 36 48-36m-48 36v48" fill="none" stroke="#0B7139" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="256" cy="254" r="25" fill="#0B5E31"/>
+  <circle cx="208" cy="218" r="20" fill="#19B85A"/>
+  <circle cx="304" cy="218" r="20" fill="#19B85A"/>
+  <circle cx="256" cy="302" r="20" fill="#19B85A"/>
 </svg>

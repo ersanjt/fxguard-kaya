@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 192" role="img" aria-labelledby="title desc">
   <title id="title">FXGuard</title>
-  <desc id="desc">FXGuard protected exchange conversation symbol and wordmark</desc>
+  <desc id="desc">FXGuard protected team conversation symbol and wordmark</desc>
   <defs>
     <linearGradient id="g" x1="28" y1="18" x2="166" y2="174" gradientUnits="userSpaceOnUse">
       <stop stop-color="#9AF7BA"/>
@@ -12,8 +12,12 @@
   <path d="m96 20 58 23v47c0 37-23 66-58 83-35-17-58-46-58-83V43l58-23Z" fill="url(#g)"/>
   <path d="m96 32 46 18v39c0 29-17 53-46 68-29-15-46-39-46-68V50l46-18Z" fill="#07110B"/>
   <path d="M68 59h57c7 0 13 6 13 13v31c0 7-6 13-13 13H99l-19 14 4-14H68c-7 0-13-6-13-13V72c0-7 6-13 13-13Z" fill="#F5FFF8"/>
-  <path d="M72 77h37m-9-8 12 8-12 8M121 99H84m9 8-12-8 12-8" fill="none" stroke="#0B7139" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m96 90-20-15m20 15 20-15M96 90v20" fill="none" stroke="#0B7139" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="96" cy="90" r="9" fill="#0B5E31"/>
+  <circle cx="76" cy="75" r="7" fill="#19B85A"/>
+  <circle cx="116" cy="75" r="7" fill="#19B85A"/>
+  <circle cx="96" cy="110" r="7" fill="#19B85A"/>
   <text x="224" y="121" fill="#F5FFF8" font-family="Outfit,Inter,Arial,sans-serif" font-size="78" font-weight="750" letter-spacing="-3">FX</text>
   <text x="323" y="121" fill="#66E998" font-family="Outfit,Inter,Arial,sans-serif" font-size="78" font-weight="750" letter-spacing="-3">Guard</text>
-  <text x="228" y="154" fill="#8FA59A" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="3">PROTECTED FX CONVERSATIONS</text>
+  <text x="228" y="154" fill="#8FA59A" font-family="Inter,Arial,sans-serif" font-size="18" font-weight="600" letter-spacing="3">SECURE CUSTOMER CONVERSATIONS</text>
 </svg>
