@@ -1,4 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="FXGuard">
-  <rect width="512" height="512" rx="112" fill="#10b981"/>
-  <path fill="#0b1220" d="M112 128h131.2v41.6H156.8v49.6h73.6v40H156.8V384H112V128zM275.2 179.2 313.6 227.2 352 179.2h49.6l-56 67.2 59.2 73.6h-51.2l-40-51.2-40 51.2h-51.2l59.2-73.6-56-67.2h49.6z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="title desc">
+  <title id="title">FXGuard</title>
+  <desc id="desc">FX monogram protected by a shield</desc>
+  <defs>
+    <linearGradient id="surface" x1="64" y1="32" x2="448" y2="480" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#102319"/>
+      <stop offset="1" stop-color="#040806"/>
+    </linearGradient>
+    <linearGradient id="guard" x1="128" y1="96" x2="386" y2="422" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9AF7BA"/>
+      <stop offset=".45" stop-color="#34D873"/>
+      <stop offset="1" stop-color="#10A84D"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feFlood flood-color="#22C55E" flood-opacity=".34"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="10" y="10" width="492" height="492" rx="126" fill="url(#surface)"/>
+  <rect x="11" y="11" width="490" height="490" rx="125" fill="none" stroke="#8CF5B2" stroke-opacity=".2" stroke-width="2"/>
+  <path d="M256 65 408 124v118c0 94-58 169-152 211C162 411 104 336 104 242V124L256 65Z" fill="#22C55E" opacity=".16" filter="url(#glow)"/>
+  <path d="M256 73 398 128v112c0 88-54 158-142 199-88-41-142-111-142-199V128L256 73Z" fill="url(#guard)"/>
+  <path d="M256 104 367 147v90c0 70-41 126-111 162-70-36-111-92-111-162v-90l111-43Z" fill="#07110B"/>
+  <path fill="#F5FFF8" d="M172 169h105v37h-64v38h56v36h-56v70h-41V169Z"/>
+  <path fill="url(#guard)" d="m276 207 30 42 30-42h47l-53 70 57 76h-48l-33-47-34 47h-47l57-76-53-70h47Z"/>
+  <circle cx="410" cy="103" r="18" fill="#B5FFCC"/>
+  <circle cx="410" cy="103" r="8" fill="#16A34A"/>
 </svg>
