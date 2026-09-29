@@ -1070,7 +1070,6 @@
 
         /* پنل dropdown */
         .header .header-notify-dropdown { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; width: min(400px, calc(100vw - 24px)); background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04); z-index: 1001; display: none; overflow: hidden; transform-origin: top right; }
-        [dir="ltr"] .header .header-notify-dropdown { transform-origin: top left; }
         .header.notify-dropdown-open .header-notify-dropdown { display: block; animation: notifyDropIn 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes notifyDropIn { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
 
@@ -6297,9 +6296,7 @@
         body.ltr .header .search-wrap input { padding: 10px 36px 10px 14px; }
         body.ltr .header .lang-dropdown-menu { inset-inline-end: auto; inset-inline-start: 0; }
         body.ltr .header .lang-dropdown-menu button { text-align: left; }
-        body.ltr .header .user-dropdown-menu { inset-inline-end: auto; inset-inline-start: 16px; }
         body.ltr .header .user-dropdown-menu .user-dropdown-item { text-align: left; }
-        body.ltr .header .header-notify-dropdown { inset-inline-end: auto; inset-inline-start: 0; }
         html[dir="ltr"] .msg.in, body.ltr .msg.in { margin-inline-end: 0; margin-inline-start: auto; border-end-end-radius: 16px; border-end-start-radius: 4px; }
         html[dir="ltr"] .msg.out, body.ltr .msg.out { margin-inline-start: 0; margin-inline-end: auto; border-end-start-radius: 16px; border-end-end-radius: 4px; }
         .lang-switch { display: flex; gap: 8px; align-items: center; }
