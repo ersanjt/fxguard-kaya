@@ -12,6 +12,7 @@
     const msgEl = document.getElementById('taMsg');
     const refreshBtn = document.getElementById('taRefresh');
 
+    const LOGIN_URL = '/login?panel=platform&return=' + encodeURIComponent('/tenants-admin');
     const STATUS_LABEL = { trial: 'آزمایشی', active: 'فعال', suspended: 'تعلیق', cancelled: 'لغو شده' };
     const GW_LABEL = {
         ready: 'متصل',
@@ -57,7 +58,7 @@
             headers: { 'Content-Type': 'application/json' },
         }, opts || {}));
         if (res.status === 401) {
-            window.location.href = '/login';
+            window.location.href = LOGIN_URL;
             throw new Error('unauthorized');
         }
         let data = {};
@@ -120,10 +121,13 @@
             render(data.tenants || []);
         } catch (e) {
             if (e.message === 'unauthorized') return;
-            const text = e.status === 404
-                ? 'این صفحه فقط برای مدیر پنل اصلی سکو در دسترس است.'
-                : (e.message || 'خطا در دریافت فهرست');
-            body.innerHTML = '<tr><td colspan="8" class="ta-empty">' + esc(text) + '</td></tr>';
+            if (e.status === 404) {
+                body.innerHTML = '<tr><td colspan="8" class="ta-empty">این صفحه فقط برای مدیر پنل اصلی سکو است. ' +
+                    'با شناسه پنل <b class="ta-ltr">platform</b> وارد شوید: ' +
+                    '<a class="ta-btn" href="' + esc(LOGIN_URL) + '">ورود مدیر سکو</a></td></tr>';
+                return;
+            }
+            body.innerHTML = '<tr><td colspan="8" class="ta-empty">' + esc(e.message || 'خطا در دریافت فهرست') + '</td></tr>';
         } finally {
             refreshBtn.disabled = false;
         }
