@@ -101,15 +101,19 @@
             const restart = t.gatewayEnabled
                 ? '<button type="button" class="ta-btn" data-act="restart" data-id="' + esc(t.id) + '">راه‌اندازی مجدد</button>'
                 : '';
+            const reset = '<button type="button" class="ta-btn" data-act="password" data-id="' + esc(t.id) + '">رمز موقت مالک</button>';
+            const login = t.loginUrl
+                ? '<br><a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener">' + esc(t.loginUrl) + '</a>'
+                : '';
             return '<tr>' +
                 '<td>' + esc(t.name || '—') + '</td>' +
-                '<td class="ta-ltr">' + esc(t.slug) + '</td>' +
+                '<td><span class="ta-ltr">' + esc(t.slug) + '</span>' + login + '</td>' +
                 '<td class="ta-ltr">' + esc(t.ownerEmail || '—') + '</td>' +
                 '<td><span class="ta-badge">' + esc(STATUS_LABEL[t.status] || t.status || '—') + '</span></td>' +
                 '<td>' + esc(fmtDate(t.trialEndsAt)) + '</td>' +
                 '<td>' + gatewayCell(t) + '</td>' +
                 '<td>' + whatsappCell(t) + '</td>' +
-                '<td><div class="ta-actions">' + toggle + restart + '</div></td>' +
+                '<td><div class="ta-actions">' + toggle + restart + reset + '</div></td>' +
                 '</tr>';
         }).join('');
     }
@@ -133,11 +137,42 @@
         }
     }
 
+    async function resetOwnerPassword(btn, id) {
+        if (!confirm('برای مالک این سازمان رمز موقت ساخته شود؟ رمز فعلی او از کار می‌افتد و از همهٔ دستگاه‌ها خارج می‌شود.')) return;
+        btn.disabled = true;
+        showMsg('');
+        try {
+            const r = await api('/tenants/admin/' + encodeURIComponent(id) + '/owner-password', { method: 'POST', body: '{}' });
+            msgEl.className = 'ta-msg show';
+            msgEl.innerHTML =
+                '<b>اطلاعات ورود مالک (فقط همین یک بار نمایش داده می‌شود):</b><br>' +
+                'لینک ورود: <span class="ta-ltr">' + esc(r.loginUrl) + '</span><br>' +
+                'ایمیل: <span class="ta-ltr">' + esc(r.email) + '</span><br>' +
+                'رمز موقت: <code class="ta-ltr">' + esc(r.password) + '</code> ' +
+                '<button type="button" class="ta-btn" id="taCopyCred">کپی</button><br>' +
+                '<small>به مالک بگویید بعد از ورود از پروفایل رمز خودش را عوض کند.</small>';
+            const text = 'Login: ' + r.loginUrl + '\nEmail: ' + r.email + '\nPassword: ' + r.password;
+            const copyBtn = document.getElementById('taCopyCred');
+            copyBtn.addEventListener('click', function () {
+                if (!navigator.clipboard) return;
+                navigator.clipboard.writeText(text).then(function () { copyBtn.textContent = 'کپی شد ✓'; });
+            });
+        } catch (e) {
+            if (e.message !== 'unauthorized') showMsg(e.message || 'عملیات ناموفق بود', true);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
     body.addEventListener('click', async function (ev) {
         const btn = ev.target.closest('button[data-act]');
         if (!btn) return;
         const id = btn.getAttribute('data-id');
         const act = btn.getAttribute('data-act');
+        if (act === 'password') {
+            await resetOwnerPassword(btn, id);
+            return;
+        }
         if (act === 'off' && !confirm('Gateway این سازمان متوقف شود؟ نشست واتساپ حفظ می‌شود و با روشن کردن دوباره برمی‌گردد.')) return;
         btn.disabled = true;
         showMsg('');

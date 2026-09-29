@@ -200,6 +200,21 @@ async function main() {
             assert.strictEqual(conn.body.selfServeCloudOnly, true);
         });
 
+        await test('platform admin issues a one-time owner password; company admins cannot', async () => {
+            assert.strictEqual((await a.post('/api/tenants/admin/' + tenantB.id + '/owner-password')).status, 404);
+            const r = await admin.post('/api/tenants/admin/' + tenantB.id + '/owner-password');
+            assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+            assert.strictEqual(r.body.email, 'owner@gw-b.test');
+            assert(/panel=gw-b|gw-b\./.test(r.body.loginUrl), r.body.loginUrl);
+            const host = 'gw-b.app.fxguard.io';
+            const oldLogin = await req.post('/api/auth/login').set('Host', host)
+                .send({ email: 'owner@gw-b.test', password: PASSWORD });
+            assert.strictEqual(oldLogin.status, 401);
+            const newLogin = await req.post('/api/auth/login').set('Host', host)
+                .send({ email: 'owner@gw-b.test', password: r.body.password });
+            assert.strictEqual(newLogin.status, 200, JSON.stringify(newLogin.body));
+        });
+
         await test('SQLite migration drops a global inline UNIQUE so two companies can share a value', async () => {
             const { dropGlobalColumnUnique } = require('../services/tenantPlatform');
             const { sequelize } = models;

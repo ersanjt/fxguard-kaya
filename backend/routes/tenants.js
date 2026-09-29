@@ -278,6 +278,7 @@ function createTenantsRouter(logger) {
                 trialEndsAt: row.trialEndsAt,
                 createdAt: row.createdAt,
                 ownerEmail: ownerEmail.get(String(row.id)) || null,
+                loginUrl: tenantLoginUrl(row.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
                 gatewayEnabled: row.gatewayEnabled === true,
                 gatewayPort: row.gatewayPort || null,
                 gateway: row.gatewayEnabled && row.gatewayPort ? await probeTenantGateway(row, 1500) : null,
@@ -305,6 +306,40 @@ function createTenantsRouter(logger) {
             return res.json({ ok: true, ...result });
         } catch (err) {
             return sendAdminError(res, err, 'تغییر Gateway ناموفق بود');
+        }
+    });
+
+    /** رمز موقت برای مالک سازمان (پشتیبانی)؛ نشست‌های قبلی او باطل می‌شود و رمز فقط همین یک بار نمایش داده می‌شود. */
+    router.post('/tenants/admin/:id/owner-password', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const tenant = await Tenant.findByPk(req.params.id);
+            if (!tenant || tenant.slug === PLATFORM_SLUG) return res.status(404).json({ error: 'سازمان پیدا نشد' });
+            const owner = await User.findOne({
+                where: { tenantId: tenant.id, role: 'owner' },
+                order: [['createdAt', 'ASC']],
+                skipTenantScope: true,
+            });
+            if (!owner) return res.status(404).json({ error: 'مالک این سازمان پیدا نشد' });
+            const password = 'Fx' + require('crypto').randomBytes(9).toString('base64url') + '7';
+            owner.password = password;
+            owner.isActive = true;
+            await owner.save();
+            await require('../lib/staffSession').revokeStaffSessions(owner, null);
+            if (logger && logger.info) {
+                logger.info('Tenant owner password reset by platform admin', {
+                    tenantId: tenant.id,
+                    owner: owner.email,
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.json({
+                ok: true,
+                email: owner.email,
+                password,
+                loginUrl: tenantLoginUrl(tenant.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
+            });
+        } catch (err) {
+            return sendAdminError(res, err, 'بازنشانی رمز مالک ناموفق بود');
         }
     });
 
