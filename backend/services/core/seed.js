@@ -4,9 +4,17 @@
  * Format: admin@example.com or admin1@example.com:Pass1!,admin2@example.com:Pass2!
  */
 const models = require('../../models');
+const { getCachedPlatformTenant, runWithTenant } = require('../../lib/tenantContext');
 const { sequelize, User, Department } = models;
 
+/** ادمین اصلی کاربر پنل سکوست؛ کاربر هم‌ایمیل در یک سازمان مشتری نباید جای او حساب شود. */
 async function ensureAdminUser(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger) {
+    const platform = getCachedPlatformTenant();
+    if (!platform || !platform.id) return ensureAdminUserInScope(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger);
+    return runWithTenant(platform, () => ensureAdminUserInScope(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger));
+}
+
+async function ensureAdminUserInScope(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger) {
     const ADMIN_CONFIGS = MAIN_ADMIN_EMAIL.split(',')
         .map((entry) => {
             const parts = entry.trim().split(':');
