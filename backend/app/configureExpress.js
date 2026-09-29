@@ -369,6 +369,15 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
     app.get('/signup', serveSignup);
     app.get('/signup/', (req, res) => res.redirect('/signup'));
 
+    app.get('/tenants-admin', (req, res) => {
+        if (!isSelfServeEnabled(process.env, requestHostname(req))) {
+            return res.redirect(302, '/login');
+        }
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('X-Robots-Tag', 'noindex, nofollow');
+        res.sendFile(path.join(__dirname, '..', 'public', 'tenants-admin.html'));
+    });
+
     app.use((req, res, next) => {
         const p = String(req.path || '').toLowerCase();
         if ((p === '/dashboard' || p === '/dashboard/') && req.query.reset === '1' && req.query.token) {

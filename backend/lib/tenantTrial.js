@@ -95,6 +95,7 @@ function publicTenantPayload(tenant, now) {
         panelHost: tenant.host || null,
         industry: tenant.industry || null,
         enabledSkills: Array.isArray(tenant.enabledSkills) ? tenant.enabledSkills : null,
+        gatewayEnabled: tenant.gatewayEnabled === true,
     };
 }
 

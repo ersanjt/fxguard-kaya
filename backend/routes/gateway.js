@@ -12,6 +12,7 @@ const axios = require('axios');
 const { gatewayGet, gatewayPost, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
 const { getPhoneNumberId } = require('../lib/whatsappCloudApi');
 const { authMiddleware, requireSection } = require('../middleware/auth');
+const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 
 /** فاصلهٔ مجدد بین spawn دستی Gateway (کمتر = دکمه زودتر جواب می‌دهد) */
 const GATEWAY_START_COOLDOWN_MS = 6000;
@@ -84,7 +85,7 @@ function createGatewayRouter(logger) {
                 logger.warn('Gateway request failed', {
                     code: e.code,
                     status,
-                    url: process.env.GATEWAY_URL || 'http://localhost:3001',
+                    url: cfg.gatewayUrl || null,
                 });
             }
             // اگر Cloud هست ولی Gateway پایین است، حداقل وضعیت Cloud را بگو
@@ -194,6 +195,25 @@ function createGatewayRouter(logger) {
         requireSection('whatsapp'),
         requireAdmin,
         async (req, res) => {
+            if (isSelfServeTenant(req.tenant)) {
+                if (!isTenantGatewayAllowed(req.tenant)) {
+                    return res.status(403).json({
+                        error: 'اتصال QR برای این پنل فعال نشده است؛ با پشتیبانی تماس بگیرید.',
+                        code: 'GATEWAY_NOT_ENABLED',
+                    });
+                }
+                try {
+                    const { startTenantGateway } = require('../services/tenantGatewaySupervisor');
+                    const probe = await startTenantGateway(req.tenant, logger);
+                    return res.json({
+                        message: probe.running
+                            ? 'Gateway از قبل در حال اجراست'
+                            : 'Gateway در حال بالا آمدن است. چند ثانیه صبر کنید و QR را در تنظیمات واتساپ ببینید.',
+                    });
+                } catch (err) {
+                    return res.status(err.status || 500).json({ error: err.message, code: err.code || null });
+                }
+            }
             const now = Date.now();
             if (
                 state.gatewayStarting &&

@@ -228,8 +228,9 @@ gateway/
 | دامنهٔ اختصاصی | `POST /api/tenants/custom-domain` · `GET /api/tenants/me` · UI تب پلن ظاهر پنل — DNS/HTTPS: nginx `*.app.fxguard.io` |
 | پرداخت / قفل آزمایش | Stripe webhook با `metadata.tenantId`؛ داشبورد بنر + overlay روی HTTP `402`. هرگز `SELF_SERVE_SIGNUP` روی کایا |
 | لینک فروش | `fxguard-io-landing/` → `https://app.fxguard.io/signup` — لندینگ کایا (`cpanel-landing`) را برای ثبت‌نام عمومی عوض نکن |
+| Gateway واتساپ اختصاصی (QR) | هر سازمان پروسهٔ Gateway جدا دارد که **فقط مدیر سکو** روشن می‌کند: صفحهٔ `/tenants-admin` (`public/tenants-admin.html` + `js/tenants-admin.js`) ← `GET /api/tenants/admin/list` · `POST /api/tenants/admin/:id/gateway` `{enabled}` · `POST .../gateway/restart` (فقط روی app، پنل سکو، نقش owner/admin؛ بقیه `404`). اجرای پروسه‌ها: `services/tenantGatewaySupervisor.js` (spawn از `gateway/src/index.js` با env محدود، پورت از `TENANT_GATEWAY_PORT_BASE` (۳۴۰۰)، سقف `TENANT_GATEWAY_MAX` (۲۰)، نشست در `TENANT_GATEWAY_DATA_DIR` (پیش‌فرض `~/.fxguard-tenant-gateways/<tenantId>`)، واچ‌داگ ۶۰ ثانیه از `server.js`؛ `TENANT_GATEWAY_SPAWN=false` خاموش). آدرس و secret را سرور می‌سازد (`lib/tenantGateway.js`: HMAC از `TENANT_GATEWAY_SECRET` یا `JWT_SECRET`) و سازمان نمی‌تواند `gatewayUrl` بدهد. وب‌هوک Gateway با هدر `x-gateway-tenant` + secret مشتق‌شده (`middleware/webhookAuth.js`) و سازمان از همان هدر در `middleware/tenantContext.js` تعیین می‌شود. `lib/whatsappConnectionLoader.js` / `lib/gatewayClient.js` برای سازمان هرگز به Gateway پیش‌فرض `.env` برنمی‌گردند. شماره‌های واتساپ (`WhatsappNumber`) هم per-tenant است. سازمانی که QR ندارد فقط Cloud API می‌بیند (`body.self-serve-cloud-only` در `chunk-06.js`). تست: `tests/tenant-gateway.test.js` |
 
-واتساپ QR اشتراکی برای tenantهای جدید خاموش است (`gatewayEnabled: false`)؛ اتصال از Cloud API داخل تنظیمات واتساپ پنل.
+وقتی مدیر سکو QR را برای سازمانی روشن نکرده، آن سازمان فقط Cloud API دارد؛ Gateway اصلی سرور (`crm-gateway-kaya` / `.env`) فقط مال پنل سکوست.
 
 فعال‌سازی روی **app** (نه کایا): `scripts/enable-self-serve-app.sh` و workflow `.github/workflows/deploy-app.yml`. نمونهٔ nginx: `deploy/nginx-app-wildcard.conf.example`.
 

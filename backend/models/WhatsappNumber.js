@@ -11,11 +11,14 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
         slotKey: {
             type: DataTypes.STRING(32),
             allowNull: false,
-            unique: true,
-            comment: 'primary | standby-1 | standby-2 …',
+            comment: 'primary | standby-1 | standby-2 … (یکتا در هر سازمان)',
         },
         label: {
             type: DataTypes.STRING(128),
@@ -106,6 +109,8 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'whatsapp_numbers',
         indexes: [
+            { unique: true, fields: ['tenantId', 'slotKey'] },
+            { fields: ['tenantId'] },
             { fields: ['role'] },
             { fields: ['enabled', 'priority'] },
         ],

@@ -116,6 +116,7 @@ async function startServer() {
             server.listen(PORT, () => {
                 logger.info(`🚀 CRM Backend running on port ${PORT}`);
                 notifySystemEvent('system', 'Backend Started', { port: PORT, pid: process.pid }).catch(() => {});
+                require('./services/tenantGatewaySupervisor').startTenantGatewayWatchdog(logger);
                 resolve();
             });
             server.on('error', (err) => {

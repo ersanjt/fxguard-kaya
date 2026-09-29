@@ -147,6 +147,7 @@ const TENANT_OWNED_MODELS = [
     { model: 'Template', owners: [] },
     { model: 'Tag', owners: [] },
     { model: 'ExchangeService', owners: [] },
+    { model: 'WhatsappNumber', owners: [] },
     { model: 'FileTemplate', owners: [byUser('uploadedBy')] },
     { model: 'CompanyEmail', owners: [byUser('assignedUserId')] },
     { model: 'StaffResourceGrant', owners: [byUser('userId'), byUser('grantedBy')] },

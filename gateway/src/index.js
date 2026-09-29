@@ -28,6 +28,19 @@ const { createSendRateLimiter } = require('./sendRateLimiter');
 const { downloadAndDecryptWhatsAppMedia } = require('./waMediaDecrypt');
 require('dotenv').config();
 
+// Gateway اختصاصی یک سازمان (Backend آن را اجرا می‌کند): هر وب‌هوک شناسهٔ سازمان را می‌فرستد
+const GATEWAY_TENANT_ID = String(process.env.GATEWAY_TENANT_ID || '').trim();
+
+/** هدرهای وب‌هوک Backend — secret و در حالت سازمانی، شناسهٔ سازمان */
+function backendWebhookHeaders(extra) {
+    const webhookSecret = process.env.WEBHOOK_SECRET || '';
+    return {
+        ...(extra || {}),
+        ...(webhookSecret ? { 'x-webhook-secret': webhookSecret } : {}),
+        ...(GATEWAY_TENANT_ID ? { 'x-gateway-tenant': GATEWAY_TENANT_ID } : {}),
+    };
+}
+
 // ==================== Config ====================
 const CONFIG = {
     // امنیت
@@ -779,9 +792,24 @@ io.use((socket, next) => {
 });
 
 // ==================== Redis ====================
-const redisClient = redis.createClient({
+// چند Gateway روی یک Redis: کلیدهای هر Gateway با پیشوند خودش جدا می‌شوند (QR/وضعیت قاطی نشود)
+const REDIS_KEY_PREFIX = String(process.env.GATEWAY_REDIS_PREFIX || '');
+const REDIS_KEYED_COMMANDS = new Set(['get', 'set', 'del', 'expire']);
+const rawRedisClient = redis.createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
 });
+const redisClient = !REDIS_KEY_PREFIX
+    ? rawRedisClient
+    : new Proxy(rawRedisClient, {
+          get(target, prop) {
+              const value = target[prop];
+              if (typeof value !== 'function') return value;
+              if (REDIS_KEYED_COMMANDS.has(prop)) {
+                  return (key, ...args) => value.call(target, REDIS_KEY_PREFIX + key, ...args);
+              }
+              return value.bind(target);
+          },
+      });
 
 redisClient.on('error', () => {});
 redisClient
@@ -795,6 +823,8 @@ const INCOMING_QUEUE = process.env.RABBITMQ_INCOMING_QUEUE || 'whatsapp_messages
 const OUTGOING_QUEUE = process.env.RABBITMQ_OUTGOING_QUEUE || 'outgoing_messages';
 
 async function connectRabbitMQ() {
+    // صف خروجی مال Gateway اصلی سکوست؛ Gateway سازمانی نباید پیام پنل دیگری را بفرستد
+    if (process.env.GATEWAY_DISABLE_RABBITMQ === 'true') return;
     try {
         const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
         rabbitChannel = await connection.createChannel();
@@ -1399,16 +1429,12 @@ function attachClientEvents(c) {
         io.emit('message_status', { messageId: msg?.id?.id, status: statusStr });
         const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
         const secret = process.env.GATEWAY_API_SECRET || '';
-        const webhookSecret = process.env.WEBHOOK_SECRET || '';
         axios
             .post(
                 backendUrl + '/api/webhook/message-status',
                 { messageId: msg?.id?.id, status: statusStr },
                 {
-                    headers: {
-                        ...(secret ? { 'X-Gateway-Secret': secret } : {}),
-                        ...(webhookSecret ? { 'x-webhook-secret': webhookSecret } : {}),
-                    },
+                    headers: backendWebhookHeaders(secret ? { 'X-Gateway-Secret': secret } : {}),
                     timeout: 5000,
                     validateStatus: () => true,
                 }
@@ -1543,7 +1569,6 @@ async function persistInboundMediaFile(media, type) {
 
 async function sendToBackendWithRetry(messageData) {
     const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
-    const webhookSecret = process.env.WEBHOOK_SECRET || '';
     const maxRetries = CONFIG.backendWebhookRetries;
     const baseDelay = CONFIG.backendWebhookRetryDelayMs;
     for (let i = 0; i < maxRetries; i++) {
@@ -1554,7 +1579,7 @@ async function sendToBackendWithRetry(messageData) {
                 {
                     timeout: 30000,
                     validateStatus: () => true,
-                    headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
+                    headers: backendWebhookHeaders(),
                 }
             );
             if (res.status >= 200 && res.status < 300) return;
@@ -1608,7 +1633,6 @@ function sleep(ms) {
 async function notifyBackendStatus(event, reason, extra = {}) {
     try {
         const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
-        const webhookSecret = process.env.WEBHOOK_SECRET || '';
         await axios.post(
             `${backendUrl}/api/webhook/gateway-status`,
             {
@@ -1621,7 +1645,7 @@ async function notifyBackendStatus(event, reason, extra = {}) {
             {
                 timeout: 5000,
                 validateStatus: () => true,
-                headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
+                headers: backendWebhookHeaders(),
             }
         );
     } catch (_) {}

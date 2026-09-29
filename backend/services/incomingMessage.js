@@ -18,6 +18,7 @@ const {
     WhatsappConfig,
 } = models;
 const { Op } = require('sequelize');
+const { getPanelSettingsKey } = require('../lib/tenantContext');
 const {
     normalizePhone,
     getSendTarget,
@@ -101,8 +102,7 @@ const AUTO_RESPONSE_CACHE_TTL = 60;
 const AI_MESSAGE_PREFIX = '🤖 ';
 
 // WhatsappConfig in-memory cache (30 seconds TTL) to avoid N+1 on every AI-enabled message
-let _wcCache = null;
-let _wcCacheAt = 0;
+const _wcCache = new Map();
 const WC_CACHE_TTL_MS = 30 * 1000;
 
 // Cache avatar lookups to avoid hitting gateway on every message.
@@ -153,14 +153,15 @@ async function tryFetchProfilePicFromGateway(phone, logger, extraIds) {
 }
 
 async function getCachedWhatsappConfig() {
+    const key = getPanelSettingsKey();
     const now = Date.now();
-    if (_wcCache && now - _wcCacheAt < WC_CACHE_TTL_MS) return _wcCache;
+    const hit = _wcCache.get(key);
+    if (hit && now - hit.at < WC_CACHE_TTL_MS) return hit.wc;
     const [wc] = await WhatsappConfig.findOrCreate({
-        where: { id: 'default' },
+        where: { id: key },
         defaults: { aiAnswerEnabled: true },
     });
-    _wcCache = wc;
-    _wcCacheAt = now;
+    _wcCache.set(key, { wc, at: now });
     return wc;
 }
 
@@ -510,7 +511,7 @@ async function getActiveAutoResponses(redisClient) {
 async function sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger) {
     try {
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: 'default' },
+            where: { id: getPanelSettingsKey() },
             defaults: { welcomeMessage: null, welcomeEnabled: true },
         });
         if (!cfg.welcomeEnabled || !cfg.welcomeMessage || !String(cfg.welcomeMessage).trim())
@@ -786,7 +787,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         try {
             const { WhatsappConnection } = require('../models');
             const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
-            const row = await WhatsappConnection.findByPk('default');
+            const row = await WhatsappConnection.findByPk(getPanelSettingsKey());
             linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
             lockdownAt = row?.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
         } catch (_) {}

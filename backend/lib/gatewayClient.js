@@ -24,10 +24,18 @@ function getGatewayHeadersFromConfig(cfg) {
     return headers;
 }
 
+/** بدون آدرس یعنی این پنل Gateway ندارد؛ نباید به Gateway پیش‌فرض سرور (مال سکو) برود. */
+function gatewayBaseUrl(cfg) {
+    const url = String((cfg && cfg.gatewayUrl) || '').trim().replace(/\/$/, '');
+    if (url) return url;
+    const err = new Error('Gateway (QR) برای این پنل فعال نیست');
+    err.code = 'GATEWAY_NOT_CONFIGURED';
+    throw err;
+}
+
 async function gatewayGet(path, options = {}) {
     const cfg = options.cfg || (await getWhatsappConnectionConfig());
-    const url = (cfg.gatewayUrl || getDefaultGatewayUrl()).replace(/\/$/, '');
-    return axios.get(url + path, {
+    return axios.get(gatewayBaseUrl(cfg) + path, {
         timeout: options.timeout || 5000,
         headers: getGatewayHeadersFromConfig(cfg),
     });
@@ -35,8 +43,7 @@ async function gatewayGet(path, options = {}) {
 
 async function gatewayPost(path, data, options = {}) {
     const cfg = options.cfg || (await getWhatsappConnectionConfig());
-    const url = (cfg.gatewayUrl || getDefaultGatewayUrl()).replace(/\/$/, '');
-    return axios.post(url + path, data, {
+    return axios.post(gatewayBaseUrl(cfg) + path, data, {
         timeout: options.timeout || 10000,
         headers: getGatewayHeadersFromConfig(cfg),
     });
@@ -85,7 +92,7 @@ async function sendWhatsAppMessageWithConfig(payload, cfg, options = {}) {
     const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
     const mode = cfg.connectionMode || 'cloud_first';
     const wantsTemplate = !!(payload?.templateName);
-    const gwOk = cfg.gatewayEnabled !== false && !!(cfg.gatewayUrl || getDefaultGatewayUrl());
+    const gwOk = cfg.gatewayEnabled !== false && !!cfg.gatewayUrl;
     const isVoice = isVoiceOutboundPayload(payload);
     const toStr = String(payload?.to || '');
     const forceGateway = isGroupJid(toStr) || isLikelyWhatsAppLid(toStr) || /@lid\b/i.test(toStr);

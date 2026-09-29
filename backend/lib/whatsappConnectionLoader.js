@@ -3,7 +3,27 @@
  * اولویت: DB > ENV
  */
 const { WhatsappConnection } = require('../models');
-const { getPanelSettingsKey } = require('./tenantContext');
+const { getPanelSettingsKey, getCurrentTenant } = require('./tenantContext');
+const {
+    isSelfServeTenant,
+    isTenantGatewayAllowed,
+    tenantGatewayApiSecret,
+    tenantGatewayUrl,
+} = require('./tenantGateway');
+
+/** Gateway سازمان همیشه محلی و با secret مشتق‌شده است؛ مقدار ذخیره‌شده در پنل نادیده گرفته می‌شود. */
+function tenantGatewayFields(row) {
+    const tenant = getCurrentTenant();
+    if (!isSelfServeTenant(tenant)) return null;
+    if (!isTenantGatewayAllowed(tenant)) {
+        return { gatewayEnabled: false, gatewayUrl: '', gatewayApiSecret: '' };
+    }
+    return {
+        gatewayEnabled: row?.gatewayEnabled !== false,
+        gatewayUrl: tenantGatewayUrl(tenant.gatewayPort),
+        gatewayApiSecret: tenantGatewayApiSecret(tenant.id),
+    };
+}
 
 let _cache = new Map();
 const CACHE_TTL_MS = 30000;
@@ -53,6 +73,8 @@ async function getWhatsappConnectionConfig() {
         gatewayUrl: (row?.gatewayUrl || '').trim() || (useEnv ? env.gatewayUrl : ''),
         gatewayApiSecret: (row?.gatewayApiSecret || '').trim() || (useEnv ? env.gatewayApiSecret : ''),
     };
+    const tenantGw = tenantGatewayFields(row);
+    if (tenantGw) Object.assign(config, tenantGw);
 
     _cache.set(key, { ts: now, value: config });
     return config;

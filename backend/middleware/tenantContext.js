@@ -65,6 +65,8 @@ function tenantShape(row, extra) {
         stripeSubscriptionId: row.stripeSubscriptionId || null,
         industry: normalizeIndustry(row.industry),
         enabledSkills: parseSkillsColumn(row.enabledSkills),
+        gatewayEnabled: row.gatewayEnabled === true,
+        gatewayPort: row.gatewayPort || null,
     };
     return extra ? Object.assign(base, extra) : base;
 }
@@ -116,9 +118,20 @@ async function tenantFromAuthCookie(req, host) {
     }
 }
 
+/** وب‌هوک Gateway اختصاصی سازمان از localhost می‌آید؛ سازمان از هدر امضاشده خوانده می‌شود، نه Host. */
+async function tenantFromGatewayWebhook(req, host) {
+    if (requestPath(req).indexOf('/api/webhook/') !== 0) return null;
+    const { isValidTenantWebhook, gatewayTenantIdFromHeaders } = require('./webhookAuth');
+    if (!isValidTenantWebhook(req)) return null;
+    return loadTenantById(gatewayTenantIdFromHeaders(req), host);
+}
+
 async function resolveTenantFromRequest(req) {
     const host = requestHostname(req);
     const parsed = parseTenantSlugFromHost(host);
+
+    const fromGateway = await tenantFromGatewayWebhook(req, host);
+    if (fromGateway) return fromGateway;
 
     if (process.env.NODE_ENV === 'test') {
         const headerSlug = req.headers && req.headers['x-tenant-slug'];

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="theme-color" content="#080d1a">
+    <title>مدیریت سازمان‌ها | FXGuard</title>
+    <link rel="icon" type="image/svg+xml" href="/brand/fxguard-logo.svg?v=ssdesk5">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { color-scheme: dark; }
+        body { margin: 0; background: #080d1a; color: #f0f4fc; font-family: Vazirmatn, Tahoma, sans-serif; }
+        .ta-wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
+        .ta-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        .ta-head h1 { font-size: 1.3rem; margin: 0; }
+        .ta-hint { color: #9aa6c0; font-size: .88rem; line-height: 1.8; margin: 8px 0 18px; }
+        .ta-btn { border: 1px solid #2c3a5c; background: #16213a; color: #f0f4fc; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
+        .ta-btn:hover:not(:disabled) { background: #1f2d4d; }
+        .ta-btn:disabled { opacity: .5; cursor: default; }
+        .ta-btn.on { background: #14532d; border-color: #1f7a44; }
+        .ta-btn.off { background: #4c1d1d; border-color: #7a2c2c; }
+        .ta-table-wrap { overflow-x: auto; border: 1px solid #1d2842; border-radius: 12px; }
+        table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #1d2842; text-align: start; vertical-align: middle; white-space: nowrap; }
+        th { background: #0f172b; color: #9aa6c0; font-weight: 600; }
+        tr:last-child td { border-bottom: 0; }
+        .ta-ltr { direction: ltr; unicode-bidi: isolate; }
+        .ta-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .78rem; background: #1d2842; color: #c8d2e8; }
+        .ta-badge.ok { background: #14532d; color: #bbf7d0; }
+        .ta-badge.warn { background: #713f12; color: #fde68a; }
+        .ta-badge.err { background: #4c1d1d; color: #fecaca; }
+        .ta-actions { display: flex; gap: 6px; }
+        .ta-msg { margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: #16213a; display: none; }
+        .ta-msg.show { display: block; }
+        .ta-msg.err { background: #4c1d1d; }
+        .ta-empty { padding: 28px; text-align: center; color: #9aa6c0; }
+    </style>
+</head>
+<body>
+<main class="ta-wrap">
+    <div class="ta-head">
+        <h1>مدیریت سازمان‌ها و Gateway واتساپ</h1>
+        <div class="ta-actions">
+            <button type="button" class="ta-btn" id="taRefresh">به‌روزرسانی</button>
+            <a class="ta-btn" href="/dashboard">بازگشت به پنل</a>
+        </div>
+    </div>
+    <p class="ta-hint">
+        با روشن کردن QR برای یک سازمان، یک پروسهٔ Gateway جدا (نشست واتساپ وب مخصوص همان سازمان) روی سرور اجرا می‌شود.
+        هر نشست حدود ۲۰۰ تا ۴۰۰ مگابایت حافظه مصرف می‌کند. اتصال QR غیررسمی است و ارسال انبوه ممکن است شماره را مسدود کند.
+    </p>
+    <div class="ta-msg" id="taMsg" role="status" aria-live="polite"></div>
+    <div class="ta-table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>سازمان</th>
+                    <th>شناسه</th>
+                    <th>ایمیل مالک</th>
+                    <th>وضعیت</th>
+                    <th>پایان آزمایش</th>
+                    <th>Gateway</th>
+                    <th>واتساپ</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="taBody">
+                <tr><td colspan="8" class="ta-empty">در حال بارگذاری…</td></tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<script src="/js/tenants-admin.js?v=tgw1"></script>
+</body>
+</html>

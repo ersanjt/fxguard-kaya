@@ -3,6 +3,7 @@ const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
 const { getPanelSettingsKey, isPlatformTenant } = require('../lib/tenantContext');
+const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 const { buildWhatsappOverview } = require('../lib/whatsappOverview');
@@ -154,11 +155,16 @@ router.get('/connection', async (req, res, next) => {
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
-            selfServeCloudOnly: !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id),
+            selfServeCloudOnly: isSelfServeTenant(req.tenant) && !isTenantGatewayAllowed(req.tenant),
+            gatewayManaged: isSelfServeTenant(req.tenant),
         };
         if (payload.selfServeCloudOnly) {
             payload.connectionMode = 'cloud';
             payload.gatewayEnabled = false;
+        }
+        if (payload.gatewayManaged) {
+            payload.gatewayUrl = '';
+            payload.gatewayApiSecretSet = false;
         }
         try {
             const { getTrialSnapshot } = require('../lib/whatsappTrial');
@@ -196,7 +202,8 @@ router.put('/connection', async (req, res, next) => {
             where: { id: getPanelSettingsKey() },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
-        const cloudOnlyDesk = !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id);
+        const cloudOnlyDesk = isSelfServeTenant(req.tenant) && !isTenantGatewayAllowed(req.tenant);
+        const gatewayManaged = isSelfServeTenant(req.tenant);
         if (cloudOnlyDesk) {
             row.connectionMode = 'cloud';
             row.cloudEnabled = true;
@@ -219,8 +226,8 @@ router.put('/connection', async (req, res, next) => {
             row.cloudBulkTemplateLanguage = lang || 'fa';
         }
         if (!cloudOnlyDesk && typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
-        if (!cloudOnlyDesk && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
-        if (!cloudOnlyDesk && body.gatewayApiSecret !== undefined) {
+        if (!gatewayManaged && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
+        if (!gatewayManaged && body.gatewayApiSecret !== undefined) {
             const v = String(body.gatewayApiSecret || '').trim();
             row.gatewayApiSecret = v || null;
         }
@@ -242,9 +249,11 @@ router.put('/connection', async (req, res, next) => {
             cloudBulkTemplateName: row.cloudBulkTemplateName || '',
             cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
             gatewayEnabled: row.gatewayEnabled,
-            gatewayUrl: row.gatewayUrl || '',
-            gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+            gatewayUrl: gatewayManaged ? '' : row.gatewayUrl || '',
+            gatewayApiSecretSet: !gatewayManaged && !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
+            selfServeCloudOnly: cloudOnlyDesk,
+            gatewayManaged,
         });
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {

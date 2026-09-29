@@ -142,5 +142,9 @@ jobs:
             if [ -f "$ROOT/backend/package.json" ]; then
               (cd "$ROOT/backend" && npm ci --omit=dev)
             fi
+            # Gateway اختصاصی هر سازمان از همین کد اجرا می‌شود (پروسهٔ فرزند بکند؛ با ری‌استارت بکند دوباره بالا می‌آید)
+            if [ -f "$ROOT/gateway/package.json" ]; then
+              (cd "$ROOT/gateway" && npm ci --omit=dev) || echo "⚠️ نصب وابستگی‌های gateway ناموفق بود — QR سازمان‌ها ممکن است کار نکند"
+            fi
             pm2 restart "$PM2_NAME" --update-env
             echo "✅ app self-serve deploy تمام شد"

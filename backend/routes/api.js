@@ -333,6 +333,12 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.post('/webhook/gateway-status', webhookAuth, express.json({ limit: '32kb' }), async (req, res) => {
         try {
             const { event, reason, number } = req.body || {};
+            const { isSelfServeTenant } = require('../lib/tenantGateway');
+            if (isSelfServeTenant(req.tenant)) {
+                // هشدار تلگرام و قفل دادهٔ قدیمی مال پنل سکوست؛ برای Gateway سازمان فقط لاگ
+                logger.info('Tenant gateway status', { tenant: req.tenant.slug, event, reason: reason || null });
+                return res.json({ ok: true });
+            }
             if (event === 'disconnected') {
                 const msg = reason === 'logged_out'
                     ? '❌ واتساپ Logout شد — سشن منقضی. وارد داشبورد شوید و QR جدید را اسکن کنید.'

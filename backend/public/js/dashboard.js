@@ -15220,12 +15220,23 @@
                 return false;
             }
         }
+        /** پنل خودخدمت بدون Gateway اختصاصی (مدیر سکو روشن نکرده) فقط Cloud API دارد. */
+        function isSelfServeWhatsappCloudOnly() {
+            return isSelfServeTenantDesk() && !(currentUser.tenant && currentUser.tenant.gatewayEnabled === true);
+        }
         function applySelfServeWhatsappCloudLock() {
-            var cloudOnly = isSelfServeTenantDesk();
+            var managed = isSelfServeTenantDesk();
+            var cloudOnly = isSelfServeWhatsappCloudOnly();
             if (document.body) document.body.classList.toggle('self-serve-cloud-only', cloudOnly);
-            if (!cloudOnly) return;
+            if (!managed) return;
             var trialBanner = document.getElementById('whatsappTrialBanner');
             if (trialBanner) trialBanner.hidden = true;
+            ['whatsappGatewayUrl', 'whatsappGatewayApiSecret'].forEach(function (id) {
+                var input = document.getElementById(id);
+                var row = input && input.closest('.whatsapp-form-row');
+                if (row) row.style.display = 'none';
+            });
+            if (!cloudOnly) return;
             var mode = document.getElementById('whatsappConnectionMode');
             if (mode) {
                 mode.value = 'cloud';
@@ -15247,17 +15258,11 @@
                 b.style.display = 'none';
             });
             var hint = document.querySelector('[data-i18n="whatsapp_connection_settings_hint"]');
-            if (hint) {
-                hint.textContent = LANG === 'tr'
-                    ? 'Self-serve paneller yalnızca Meta Cloud API kullanır. QR/Gateway bu planda yok.'
-                    : (LANG === 'fa'
-                        ? 'پنل‌های خودخدمت فقط Meta Cloud API دارند. QR/Gateway در این پلن فعال نیست.'
-                        : 'Self-serve desks use Meta Cloud API only. QR/Gateway is not available on this plan.');
-            }
+            if (hint) hint.textContent = t('whatsapp_self_serve_cloud_only_hint');
             if (typeof switchWhatsappConnectionTab === 'function') switchWhatsappConnectionTab('cloud');
         }
         function switchWhatsappConnectionTab(tab) {
-            if (isSelfServeTenantDesk() && tab === 'gateway') tab = 'cloud';
+            if (isSelfServeWhatsappCloudOnly() && tab === 'gateway') tab = 'cloud';
             document.querySelectorAll('.whatsapp-conn-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
             var cloud = document.getElementById('whatsappCloudSettings');
             var gw = document.getElementById('whatsappGatewaySettings');
@@ -15280,7 +15285,7 @@
             var gwEn = document.getElementById('whatsappGatewayEnabled');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
-            var forcedCloud = isSelfServeTenantDesk();
+            var forcedCloud = isSelfServeWhatsappCloudOnly();
             if (mode) mode.value = forcedCloud ? 'cloud' : (d.connectionMode || 'cloud_first');
             if (typeof switchWhatsappConnectionTab === 'function') {
                 switchWhatsappConnectionTab((forcedCloud ? 'cloud' : ((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud')));
@@ -15357,13 +15362,13 @@
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
             var body = {
-                connectionMode: isSelfServeTenantDesk() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
+                connectionMode: isSelfServeWhatsappCloudOnly() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
                 cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
                 cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
                 cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
                 cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
-                gatewayEnabled: isSelfServeTenantDesk() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
+                gatewayEnabled: isSelfServeWhatsappCloudOnly() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
                 gatewayUrl: isSelfServeTenantDesk() ? undefined : ((gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined),
                 numberFailoverEnabled: fo ? !!fo.checked : true
             };

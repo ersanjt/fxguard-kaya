@@ -8,43 +8,12 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     const qi = sequelize.getQueryInterface();
 
     try {
-        const { addTenantIdColumns, ensurePlatformTenant } = require('../../tenantPlatform');
+        const { addTenantIdColumns, ensurePlatformTenant, ensureTenantTableColumns } = require('../../tenantPlatform');
+        await ensureTenantTableColumns(sequelize, logger);
         await addTenantIdColumns(sequelize, logger);
         await ensurePlatformTenant(logger);
     } catch (tenantErr) {
         if (logger && logger.warn) logger.warn('platform tenant seed skipped', { error: tenantErr.message });
-    }
-
-    try {
-        const tenantDesc = await qi.describeTable('tenants').catch(() => null);
-        if (tenantDesc) {
-            const tenantCols = [
-                ['stripeCustomerId', { type: DataTypes.STRING(64), allowNull: true }],
-                ['stripeSubscriptionId', { type: DataTypes.STRING(64), allowNull: true }],
-                ['cryptoTxId', { type: DataTypes.STRING(128), allowNull: true }],
-                ['cryptoNetwork', { type: DataTypes.STRING(32), allowNull: true }],
-                ['cryptoPaymentStatus', { type: DataTypes.STRING(32), allowNull: true }],
-                ['cryptoPaidAt', { type: DataTypes.DATE, allowNull: true }],
-                ['industry', { type: DataTypes.STRING(32), allowNull: true }],
-                ['enabledSkills', { type: DataTypes.TEXT, allowNull: true }],
-            ];
-            for (const [name, def] of tenantCols) {
-                if (tenantDesc[name] !== undefined) continue;
-                try {
-                    await qi.addColumn('tenants', name, def);
-                    logger.info('✅ tenants.' + name + ' column added (auto-migration)');
-                } catch (e) {
-                    if (
-                        !String(e.message || '').includes('already exists') &&
-                        !String(e.message || '').includes('duplicate')
-                    ) {
-                        logger.warn('tenants.' + name, e.message);
-                    }
-                }
-            }
-        }
-    } catch (tenantColErr) {
-        if (logger && logger.warn) logger.warn('tenants crypto columns migration:', tenantColErr.message);
     }
 
     try {
