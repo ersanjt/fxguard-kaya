@@ -232,6 +232,19 @@ async function main() {
             assert.strictEqual(newLogin.status, 200, JSON.stringify(newLogin.body));
         });
 
+        await test('platform admin reopens an expired trial; company admins cannot', async () => {
+            assert.strictEqual((await a.post('/api/tenants/admin/' + tenantA.id + '/extend-trial', { days: 14 })).status, 404);
+            await tenantA.update({ status: 'trial', trialEndsAt: new Date(Date.now() - 60 * 1000) });
+            assert.strictEqual((await a.get('/api/customers')).status, 402);
+            const r = await admin.post('/api/tenants/admin/' + tenantA.id + '/extend-trial', { days: 14 });
+            assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+            assert.strictEqual(r.body.days, 14);
+            await tenantA.reload();
+            const left = new Date(tenantA.trialEndsAt).getTime() - Date.now();
+            assert(left > 13 * 86400000 && left <= 14 * 86400000, 'trial should end ~14 days from now');
+            assert.notStrictEqual((await a.get('/api/customers')).status, 402);
+        });
+
         await test('SQLite migration drops a global inline UNIQUE so two companies can share a value', async () => {
             const { dropGlobalColumnUnique } = require('../services/tenantPlatform');
             const { sequelize } = models;

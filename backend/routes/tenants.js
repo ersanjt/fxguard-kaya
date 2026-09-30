@@ -19,6 +19,7 @@ const {
     slugError,
     tenantBaseHost,
     tenantLoginUrl,
+    trialDays,
 } = require('../lib/tenantHost');
 const {
     provisionSelfServeTenant,
@@ -32,7 +33,7 @@ const {
     publicCatalog,
 } = require('../lib/tenantSkills');
 const { invalidatePlanCache } = require('../lib/planLimits');
-const { publicTenantPayload, tenantAccessState } = require('../lib/tenantTrial');
+const { publicTenantPayload, tenantAccessState, trialEndsAtFromNow } = require('../lib/tenantTrial');
 const { Tenant, User } = require('../models');
 const { setAuthCookie } = require('../lib/authCookie');
 const { issueStaffToken } = require('../lib/staffSession');
@@ -347,6 +348,33 @@ function createTenantsRouter(logger) {
             });
         } catch (err) {
             return sendAdminError(res, err, 'بازنشانی رمز مالک ناموفق بود');
+        }
+    });
+
+    /** آزمایش رایگان از همین لحظه دوباره شروع می‌شود؛ پنل پرداخت‌شده (active) دست نمی‌خورد. */
+    router.post('/tenants/admin/:id/extend-trial', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const tenant = await Tenant.findByPk(req.params.id);
+            if (!tenant || tenant.slug === PLATFORM_SLUG) return res.status(404).json({ error: 'سازمان پیدا نشد' });
+            if (tenant.status === 'active') {
+                return res.status(400).json({ error: 'این پنل اشتراک فعال دارد و نیازی به تمدید آزمایش ندارد' });
+            }
+            const requested = parseInt(String((req.body && req.body.days) || ''), 10);
+            const days = Number.isFinite(requested) && requested >= 1 && requested <= 90
+                ? requested
+                : trialDays(process.env);
+            const trialEndsAt = trialEndsAtFromNow(days);
+            await tenant.update({ status: 'trial', trialEndsAt });
+            if (logger && logger.info) {
+                logger.info('Tenant trial extended by platform admin', {
+                    tenantId: tenant.id,
+                    days,
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.json({ ok: true, days, trialEndsAt });
+        } catch (err) {
+            return sendAdminError(res, err, 'تمدید آزمایش ناموفق بود');
         }
     });
 

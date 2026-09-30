@@ -55,7 +55,7 @@
 <body>
 <main>
     <h1>حساب شرکت</h1>
-    <p id="hint">۷ روز رایگان است. بعد از آن برای ادامه باید یکی از پنل‌ها را تهیه کنید.</p>
+    <p id="hint">۱۴ روز رایگان است. بعد از آن برای ادامه باید یکی از پنل‌ها را تهیه کنید.</p>
     <form id="form">
         <label for="name">نام شرکت</label>
         <input id="name" required placeholder="نیک استتیک">
@@ -79,11 +79,11 @@
         else if (data.kind === 'platform') environment = 'production';
         else environment = 'local';
         if (environment === 'local') {
-            hint.textContent = '۷ روز رایگان. پنل شما روی آدرسی مثل http://nika.localhost:' + (location.port || '80') + ' باز می‌شود.';
+            hint.textContent = '۱۴ روز رایگان. پنل شما روی آدرسی مثل http://nika.localhost:' + (location.port || '80') + ' باز می‌شود.';
         } else if (environment === 'test') {
-            hint.textContent = '۷ روز رایگان. پنل تست روی چیزی.app.fxguard.io ساخته می‌شود.';
+            hint.textContent = '۱۴ روز رایگان. پنل تست روی چیزی.app.fxguard.io ساخته می‌شود.';
         } else {
-            hint.textContent = '۷ روز رایگان. پنل شما روی چیزی.fxguard.io ساخته می‌شود.';
+            hint.textContent = '۱۴ روز رایگان. پنل شما روی چیزی.fxguard.io ساخته می‌شود.';
         }
     }).catch(function () {});
 
@@ -113,7 +113,7 @@
                 return;
             }
             msg.className = 'msg ok';
-            msg.innerHTML = 'حساب آماده است. تا ۷ روز رایگان وارد شوید: <a href="' + res.data.panelUrl + '/login">' + res.data.panelUrl + '</a>';
+            msg.innerHTML = 'حساب آماده است. تا ۱۴ روز رایگان وارد شوید: <a href="' + res.data.panelUrl + '/login">' + res.data.panelUrl + '</a>';
         }).catch(function () {
             btn.disabled = false;
             msg.className = 'msg err';

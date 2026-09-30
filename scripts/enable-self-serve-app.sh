@@ -73,7 +73,7 @@ echo "🔍 env: $ENV_FILE"
 
 node "$UPSERT" "$ENV_FILE" SELF_SERVE_SIGNUP true
 node "$UPSERT" "$ENV_FILE" TENANT_BASE_HOST app.fxguard.io
-node "$UPSERT" "$ENV_FILE" TENANT_TRIAL_DAYS 7
+node "$UPSERT" "$ENV_FILE" TENANT_TRIAL_DAYS 14
 
 CORS_VAL="$(grep "^CORS_ORIGINS=" "$ENV_FILE" | cut -d= -f2- || true)"
 if [ -n "$CORS_VAL" ] && printf '%s' "$CORS_VAL" | grep -Fvq "app.fxguard.io"; then

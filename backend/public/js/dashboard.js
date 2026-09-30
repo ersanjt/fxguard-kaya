@@ -4174,7 +4174,7 @@
                 }
                 var msg = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug)
                     ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + currentUser.tenant.slug)
-                    : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
+                    : 'Hi, I want to activate FXGuard Cloud after the free trial.';
                 window.open(tenantSalesWhatsAppUrl(msg), '_blank', 'noopener');
                 if (typeof toast === 'function') {
                     toast((res && res.error) || t('tenant_paywall_billing_off'), true);
@@ -5056,6 +5056,12 @@
                     startTenantCheckout();
                     return;
                 }
+                if (target.closest('#btnTenantPaywallLogout') && typeof logout === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    logout();
+                    return;
+                }
                 if (target.closest('#btnTenantPaywallClaim')) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -5089,7 +5095,7 @@
                     var txHint = txEl && txEl.value ? ('\nTXID: ' + String(txEl.value).trim()) : '';
                     var waMsg = slug
                         ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + slug + txHint)
-                        : ('Hi, I want to activate FXGuard Cloud after the 7-day trial.' + txHint);
+                        : ('Hi, I want to activate FXGuard Cloud after the free trial.' + txHint);
                     window.open(tenantSalesWhatsAppUrl(waMsg), '_blank', 'noopener');
                     return;
                 }

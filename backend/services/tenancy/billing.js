@@ -1,7 +1,7 @@
 /**
- * دورهٔ رایگان ۷روزه و پنل‌هایی که بعد از آن باید تهیه شوند.
+ * دورهٔ رایگان ۱۴روزه و پنل‌هایی که بعد از آن باید تهیه شوند.
  */
-const TRIAL_DAYS = 7;
+const TRIAL_DAYS = 14;
 
 const PLANS = [
     {
@@ -47,7 +47,7 @@ function assessTenantBilling(tenant) {
 function expiredBillingPayload() {
     return {
         billingRequired: true,
-        error: '۷ روز استفاده رایگان تمام شد. برای ادامه باید یکی از پنل‌ها را تهیه کنید.',
+        error: '۱۴ روز استفاده رایگان تمام شد. برای ادامه باید یکی از پنل‌ها را تهیه کنید.',
         plans: PLANS
     };
 }

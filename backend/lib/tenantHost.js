@@ -9,7 +9,7 @@
 
 const PLATFORM_SLUG = 'platform';
 const DEFAULT_BASE_HOST = 'app.fxguard.io';
-const DEFAULT_TRIAL_DAYS = 7;
+const DEFAULT_TRIAL_DAYS = 14;
 
 const RESERVED_SLUGS = {
     www: 1,

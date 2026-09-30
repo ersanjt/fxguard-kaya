@@ -1,5 +1,5 @@
 /**
- * Kaya CRM — وضعیت آزمایش ۷روزه و قفل پس از انقضا
+ * Kaya CRM — وضعیت آزمایش رایگان پنل و قفل پس از انقضا
  * @file    backend/lib/tenantTrial.js
  * @layer   backend
  * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
@@ -10,7 +10,7 @@
 const { isPlatformTenant } = require('./tenantContext');
 
 function trialEndsAtFromNow(days, now) {
-    const d = Number(days) || 7;
+    const d = Number(days) || 14;
     const t = now instanceof Date ? now.getTime() : Date.now();
     return new Date(t + d * 24 * 60 * 60 * 1000);
 }
@@ -60,7 +60,7 @@ function isTrialGateExemptPath(method, path) {
 function trialErrorPayload(state) {
     const code = (state && state.code) || 'PAYMENT_REQUIRED';
     const messages = {
-        TRIAL_EXPIRED: 'دورهٔ آزمایش ۷روزه تمام شده است. برای ادامه اشتراک را فعال کنید.',
+        TRIAL_EXPIRED: 'دورهٔ آزمایش رایگان تمام شده است. برای ادامه اشتراک را فعال کنید.',
         PAYMENT_REQUIRED: 'برای ادامه باید اشتراک را پرداخت کنید.',
         TENANT_SUSPENDED: 'این پنل تعلیق شده است. با پشتیبانی تماس بگیرید.',
     };

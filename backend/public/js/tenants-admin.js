@@ -209,6 +209,9 @@
             const confirmPay = isPayPending(t)
                 ? '<button type="button" class="ta-btn primary" data-act="confirm-pay" data-id="' + esc(t.id) + '">تأیید پرداخت</button>'
                 : '';
+            const extend = t.status !== 'active'
+                ? '<button type="button" class="ta-btn" data-act="extend-trial" data-id="' + esc(t.id) + '">تمدید آزمایش ۱۴ روز</button>'
+                : '';
             const login = t.loginUrl
                 ? '<a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener" title="برای ورود به پنل سازمان از پنجرهٔ ناشناس استفاده کنید تا نشست مدیر سکو عوض نشود">' + esc(t.loginUrl.replace(/^https?:\/\//, '')) + '</a>'
                 : '—';
@@ -225,7 +228,7 @@
                 '<td>' + paymentCell(t) + '</td>' +
                 '<td>' + gatewayCell(t) + '</td>' +
                 '<td class="ta-hide-sm">' + whatsappCell(t) + '</td>' +
-                '<td><div class="ta-row-actions">' + confirmPay + toggle + restart + reset + '</div></td>' +
+                '<td><div class="ta-row-actions">' + confirmPay + extend + toggle + restart + reset + '</div></td>' +
                 '</tr>';
         }).join('');
     }
@@ -308,6 +311,21 @@
         }
     }
 
+    async function extendTrial(btn, id) {
+        const t = allTenants.find(function (x) { return x.id === id; }) || {};
+        if (!confirm('آزمایش رایگان پنل «' + (t.slug || '') + '» از همین الان ۱۴ روز دیگر باز شود؟')) return;
+        btn.disabled = true;
+        showMsg('');
+        try {
+            const r = await api('/tenants/admin/' + encodeURIComponent(id) + '/extend-trial', { method: 'POST', body: JSON.stringify({ days: 14 }) });
+            showMsg('آزمایش رایگان ' + r.days + ' روز تمدید شد. مالک پنل با رفرش صفحه دوباره وارد داشبورد می‌شود.');
+            await load();
+        } catch (e) {
+            if (e.message !== 'unauthorized') showMsg(e.message || 'تمدید آزمایش ناموفق بود', true);
+            btn.disabled = false;
+        }
+    }
+
     body.addEventListener('click', async function (ev) {
         const btn = ev.target.closest('button[data-act]');
         if (!btn) return;
@@ -319,6 +337,10 @@
         }
         if (act === 'confirm-pay') {
             await confirmPayment(btn, id);
+            return;
+        }
+        if (act === 'extend-trial') {
+            await extendTrial(btn, id);
             return;
         }
         if (act === 'off' && !confirm('Gateway این سازمان متوقف شود؟ نشست واتساپ حفظ می‌شود و با روشن کردن دوباره برمی‌گردد.')) return;

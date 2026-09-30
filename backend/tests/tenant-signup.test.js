@@ -50,7 +50,7 @@ async function main() {
             const r = await req.get('/api/config').set('Host', 'app.fxguard.io');
             assert.strictEqual(r.status, 200);
             assert.strictEqual(r.body.selfServe.enabled, true);
-            assert.strictEqual(r.body.selfServe.trialDays, 7);
+            assert.strictEqual(r.body.selfServe.trialDays, 14);
             assert.strictEqual(r.body.selfServe.parentHost, 'app.fxguard.io');
         });
 
