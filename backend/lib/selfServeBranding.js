@@ -9,7 +9,8 @@
 
 const { isSelfServeEnabled, isKayaStaffHost, parseTenantSlugFromHost } = require('./tenantHost');
 
-const FXGUARD_LOGO = '/brand/fxguard-logo.svg';
+const FXGUARD_LOGO = '/brand/fxguard-mark.svg';
+const FXGUARD_FAVICON = '/brand/fxguard-favicon.svg';
 const FXGUARD_NAME = 'FXGuard';
 
 function looksLikeKayaBrand(s) {
@@ -39,7 +40,7 @@ function fxguardProductBranding(base) {
         footerText: keepTitle(src.footerText) || 'FXGuard',
         logoUrl: FXGUARD_LOGO,
         loginLogoUrl: FXGUARD_LOGO,
-        faviconUrl: FXGUARD_LOGO,
+        faviconUrl: FXGUARD_FAVICON,
     });
 }
 
@@ -68,5 +69,6 @@ module.exports = {
     fxguardProductBranding,
     looksLikeKayaBrand,
     FXGUARD_LOGO,
+    FXGUARD_FAVICON,
     FXGUARD_NAME,
 };

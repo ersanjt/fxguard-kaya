@@ -817,16 +817,16 @@
                 loginTitle: keep(b.loginTitle) || 'FXGuard',
                 pageTitle: keep(b.pageTitle) || 'FXGuard',
                 footerText: keep(b.footerText) || 'FXGuard',
-                logoUrl: '/brand/fxguard-logo.svg',
-                loginLogoUrl: '/brand/fxguard-logo.svg',
-                faviconUrl: '/brand/fxguard-logo.svg'
+                logoUrl: '/brand/fxguard-mark.svg',
+                loginLogoUrl: '/brand/fxguard-mark.svg',
+                faviconUrl: '/brand/fxguard-favicon.svg'
             });
         }
         function defaultPanelLogoSrc() {
-            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+            return isFxguardAppHost() ? '/brand/fxguard-mark.svg' : '/brand/kaya-logo.png';
         }
         function defaultPanelFaviconSrc() {
-            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png';
+            return isFxguardAppHost() ? '/brand/fxguard-favicon.svg' : '/brand/kaya-favicon-32.png';
         }
         function defaultBrandSiteName() {
             if (isFxguardAppHost()) return 'FXGuard';

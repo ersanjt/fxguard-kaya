@@ -121,11 +121,11 @@
 
     function resolveLoginLogoSrc(b) {
         if (isFxguardHost()) {
-            if (!b) return '/brand/fxguard-logo.svg';
+            if (!b) return '/brand/fxguard-mark.svg';
             const loginFx = b.loginLogoUrl && String(b.loginLogoUrl).trim();
             if (loginFx) return loginFx;
             const logoFx = b.logoUrl && String(b.logoUrl).trim();
-            return logoFx || '/brand/fxguard-logo.svg';
+            return logoFx || '/brand/fxguard-mark.svg';
         }
         if (!b) return '/brand/kaya-logo.png';
         const login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
@@ -153,9 +153,9 @@
             loginTitle: keep(b.loginTitle) || 'FXGuard',
             pageTitle: keep(b.pageTitle) || 'FXGuard',
             footerText: keep(b.footerText) || 'FXGuard',
-            logoUrl: '/brand/fxguard-logo.svg',
-            loginLogoUrl: '/brand/fxguard-logo.svg',
-            faviconUrl: '/brand/fxguard-logo.svg',
+            logoUrl: '/brand/fxguard-mark.svg',
+            loginLogoUrl: '/brand/fxguard-mark.svg',
+            faviconUrl: '/brand/fxguard-favicon.svg',
         });
     }
 
@@ -191,10 +191,10 @@
         if (b.pageTitle) document.title = b.pageTitle;
         else if (b.loginTitle) document.title = b.loginTitle;
         const fav = document.getElementById('favicon');
-        const favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png?v=2');
+        const favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || (isFxguardHost() ? '/brand/fxguard-favicon.svg' : '/brand/kaya-favicon-32.png?v=2');
         if (fav) fav.href = favHref;
         const ath = document.getElementById('appleTouchIcon');
-        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || (isFxguardHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-apple-touch.png?v=2'));
+        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || (isFxguardHost() ? '/brand/fxguard-apple-touch.png' : '/brand/kaya-apple-touch.png?v=2'));
         const amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         if (amTitle && b.siteName) amTitle.setAttribute('content', b.siteName);
         if (b.uiTheme && b.uiTheme !== 'default' && document.body) {

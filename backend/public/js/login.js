@@ -649,10 +649,10 @@
         return h === 'app.fxguard.io' || h.slice(-15) === '.app.fxguard.io';
     }
     var LP_ON_APP = lpIsFxguardAppHost();
-    var LP_DEFAULT_LOGO = LP_ON_APP ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+    var LP_DEFAULT_LOGO = LP_ON_APP ? '/brand/fxguard-mark.svg' : '/brand/kaya-logo.png';
     var LP_DEFAULT_NAME = LP_ON_APP ? 'FXGuard' : 'KAYA';
-    var LP_DEFAULT_FAVICON = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-favicon-32.png?v=2';
-    var LP_DEFAULT_APPLE = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-apple-touch.png?v=2';
+    var LP_DEFAULT_FAVICON = LP_ON_APP ? '/brand/fxguard-favicon.svg' : '/brand/kaya-favicon-32.png?v=2';
+    var LP_DEFAULT_APPLE = LP_ON_APP ? '/brand/fxguard-apple-touch.png' : '/brand/kaya-apple-touch.png?v=2';
 
     function lpSafeHref(raw, fallback) {
         var s = String(raw || '').trim();
