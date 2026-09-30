@@ -77,6 +77,15 @@
         if (el) el.textContent = String(n);
     }
 
+    /** یک کوکی ورود برای کل app.fxguard.io است؛ ورود به پنل یک سازمان در همین مرورگر نشست مدیر سکو را جایگزین می‌کند. */
+    function showSessionSwitched() {
+        msgEl.className = 'ta-msg show err';
+        msgEl.innerHTML =
+            'نشست این مرورگر الان مال پنل یک سازمان است، نه مدیر سکو (احتمالاً با لینک ورود یکی از سازمان‌ها وارد شده‌اید). ' +
+            'برای باز کردن پنل سازمان‌ها از پنجرهٔ ناشناس (Incognito) استفاده کنید. ' +
+            '<a class="ta-btn" href="' + esc(LOGIN_URL) + '">ورود دوباره به‌عنوان مدیر سکو</a>';
+    }
+
     async function api(path, opts) {
         const res = await fetch('/api' + path, Object.assign({
             credentials: 'same-origin',
@@ -88,6 +97,12 @@
         }
         let data = {};
         try { data = await res.json(); } catch (_) {}
+        if (res.status === 402 || (res.status === 404 && data && data.error === 'not_found')) {
+            showSessionSwitched();
+            const err = new Error('unauthorized');
+            err.status = res.status;
+            throw err;
+        }
         if (!res.ok) {
             const err = new Error((data && data.error) || ('HTTP ' + res.status));
             err.status = res.status;
@@ -195,7 +210,7 @@
                 ? '<button type="button" class="ta-btn primary" data-act="confirm-pay" data-id="' + esc(t.id) + '">تأیید پرداخت</button>'
                 : '';
             const login = t.loginUrl
-                ? '<a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener">' + esc(t.loginUrl.replace(/^https?:\/\//, '')) + '</a>'
+                ? '<a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener" title="برای ورود به پنل سازمان از پنجرهٔ ناشناس استفاده کنید تا نشست مدیر سکو عوض نشود">' + esc(t.loginUrl.replace(/^https?:\/\//, '')) + '</a>'
                 : '—';
             const industry = INDUSTRY_LABEL[t.industry] || t.industry || '';
             const plan = PLAN_LABEL[t.planTier] || t.planTier || '';
@@ -231,7 +246,10 @@
             paintStats();
             render();
         } catch (e) {
-            if (e.message === 'unauthorized') return;
+            if (e.message === 'unauthorized') {
+                body.innerHTML = '<tr><td colspan="9" class="ta-empty">برای دیدن فهرست دوباره به‌عنوان مدیر سکو وارد شوید.</td></tr>';
+                return;
+            }
             if (e.name === 'AbortError') {
                 body.innerHTML = '<tr><td colspan="9" class="ta-empty">دریافت فهرست طول کشید. دوباره به‌روزرسانی کنید.</td></tr>';
                 return;
