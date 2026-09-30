@@ -144,6 +144,7 @@ body {
 }
 
 /* ─── Main Container ─────────────────────────────── */
+.lp-shell .lp-main { max-width: none; width: 100%; }
 .lp-main {
     position: relative; z-index: 1;
     width: 100%; max-width: 460px;
@@ -282,7 +283,7 @@ html[dir="rtl"] .lp-step { animation-name: stepInRtl; }
     box-shadow: 0 0 0 3px rgba(16,185,129,0.12);
 }
 .lp-input::placeholder { color: var(--lp-text3); }
-.lp-input-wrap .lp-input[type="password"] { padding-inline-start: 48px; }
+.lp-input-wrap .lp-input { padding-inline-start: 48px; }
 
 .lp-toggle-pass {
     position: absolute; inset-inline-start: 0; top: 0; bottom: 0;
@@ -493,4 +494,206 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     font-size: 0.82rem;
     color: var(--lp-text2);
     margin-top: 6px;
+}
+
+/* ─── Login split layout ─────────────────────────── */
+.lp-shell {
+    position: relative;
+    z-index: 1;
+    width: min(1040px, 100%);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+    gap: 56px;
+    align-items: center;
+}
+.lp-aside-kicker {
+    margin: 0 0 12px;
+    color: var(--lp-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.lp-aside-title {
+    margin: 0 0 12px;
+    font-size: clamp(1.65rem, 2.6vw, 2.2rem);
+    line-height: 1.35;
+    font-weight: 700;
+}
+.lp-aside-lead {
+    margin: 0 0 28px;
+    max-width: 38ch;
+    color: var(--lp-text2);
+    line-height: 1.8;
+    font-size: 0.95rem;
+}
+.lp-aside-list {
+    list-style: none;
+    display: grid;
+    gap: 16px;
+    margin: 0;
+    padding: 0;
+}
+.lp-aside-list li { display: flex; gap: 12px; align-items: flex-start; }
+.lp-aside-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: var(--lp-accent-s);
+    color: var(--lp-accent);
+    flex-shrink: 0;
+}
+.lp-aside-mark svg { width: 18px; height: 18px; }
+.lp-aside-list strong { display: block; font-size: 0.95rem; margin-bottom: 2px; }
+.lp-aside-list li span {
+    display: block;
+    color: var(--lp-text2);
+    font-size: 0.84rem;
+    line-height: 1.65;
+}
+@media (max-width: 860px) {
+    .lp-shell { grid-template-columns: 1fr; justify-items: center; gap: 0; }
+    .lp-aside { display: none; }
+}
+
+/* ─── Signup ─────────────────────────────────────── */
+body:has(.su-shell) {
+    align-items: flex-start;
+    padding-top: 36px;
+    padding-bottom: 56px;
+}
+.su-shell {
+    position: relative;
+    z-index: 1;
+    width: min(1120px, 100%);
+    display: grid;
+    grid-template-columns: minmax(0, 0.92fr) minmax(340px, 540px);
+    gap: 40px;
+    align-items: start;
+}
+.su-aside { padding-top: 12px; }
+@media (min-width: 901px) {
+    .su-aside { position: sticky; top: 28px; }
+}
+.su-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 28px;
+}
+.su-brand img {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    object-fit: cover;
+}
+.su-brand strong { font-size: 1.15rem; letter-spacing: -0.01em; }
+.su-brand span { display: block; color: var(--lp-text2); font-size: 0.8rem; font-weight: 500; margin-top: 2px; }
+.su-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 14px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: var(--lp-accent-s);
+    color: #6ee7b7;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+.su-hero {
+    margin: 0 0 12px;
+    font-size: clamp(1.7rem, 2.8vw, 2.35rem);
+    line-height: 1.35;
+    font-weight: 700;
+}
+.su-lead {
+    margin: 0 0 24px;
+    max-width: 42ch;
+    color: var(--lp-text2);
+    line-height: 1.8;
+}
+.su-points { list-style: none; margin: 0 0 28px; padding: 0; display: grid; gap: 14px; }
+.su-points li { display: flex; gap: 12px; align-items: flex-start; }
+.su-points strong { display: block; font-size: 0.92rem; }
+.su-points span { display: block; color: var(--lp-text2); font-size: 0.82rem; line-height: 1.6; margin-top: 2px; }
+.su-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--lp-border);
+    color: var(--lp-accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+.su-trust {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.su-trust span {
+    font-size: 0.75rem;
+    color: var(--lp-text2);
+    border: 1px solid var(--lp-border);
+    border-radius: 999px;
+    padding: 5px 10px;
+    background: rgba(255,255,255,0.03);
+}
+.su-main { width: 100%; max-width: none; }
+.su-main .lp-card { padding-top: 28px; }
+.su-sec {
+    margin: 18px 0 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--lp-text2);
+}
+.su-sec:first-child { margin-top: 0; }
+.su-url-preview {
+    direction: ltr;
+    text-align: left;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px dashed rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.03);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.78rem;
+    color: #c8d2e8;
+    word-break: break-all;
+}
+.su-slug-ok { color: #34d399 !important; }
+.su-slug-bad { color: #f87171 !important; }
+.su-strength {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-top: 8px;
+}
+.su-strength i {
+    display: block;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+}
+.su-strength.is-1 i:nth-child(-n+1) { background: #f87171; }
+.su-strength.is-2 i:nth-child(-n+2) { background: #fbbf24; }
+.su-strength.is-3 i:nth-child(-n+3) { background: #34d399; }
+.su-strength.is-4 i { background: #10b981; }
+.su-fine {
+    margin: 10px 0 0;
+    text-align: center;
+    color: var(--lp-text3);
+    font-size: 0.75rem;
+    line-height: 1.6;
+}
+@media (max-width: 900px) {
+    .su-shell { grid-template-columns: 1fr; gap: 8px; }
+    .su-aside { padding-top: 0; }
+    .su-hero { font-size: 1.55rem; }
+    .su-points { display: none; }
 }

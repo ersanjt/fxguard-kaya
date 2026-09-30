@@ -134,8 +134,34 @@
         return logo || '/brand/kaya-logo.png';
     }
 
+    function withoutCopiedKayaBrand(b) {
+        if (!b || !isFxguardHost()) return b;
+        try {
+            const panel = String(new URLSearchParams(global.location.search).get('panel') || '').toLowerCase();
+            if (panel && panel !== 'platform') return b;
+        } catch (_e) {
+            /* apex without a customer panel */
+        }
+        const blob = [b.siteName, b.loginTitle, b.pageTitle, b.footerText, b.logoUrl, b.loginLogoUrl, b.faviconUrl].join(' ');
+        if (!/kaya|کایا/i.test(blob)) return b;
+        const keep = function (v) {
+            const t = String(v || '').trim();
+            return !t || /kaya|کایا/i.test(t) ? '' : t;
+        };
+        return Object.assign({}, b, {
+            siteName: 'FXGuard',
+            loginTitle: keep(b.loginTitle) || 'FXGuard',
+            pageTitle: keep(b.pageTitle) || 'FXGuard',
+            footerText: keep(b.footerText) || 'FXGuard',
+            logoUrl: '/brand/fxguard-logo.svg',
+            loginLogoUrl: '/brand/fxguard-logo.svg',
+            faviconUrl: '/brand/fxguard-logo.svg',
+        });
+    }
+
     function applyChromeBrand(b) {
         if (!b || !document.body) return;
+        b = withoutCopiedKayaBrand(b);
         const site = (b.siteName && String(b.siteName).trim()) || (isFxguardHost() ? 'FXGuard' : '');
         const footer = (b.footerText && String(b.footerText).trim()) || (isFxguardHost() ? 'FXGuard — Staff Portal' : '');
         const nameEl = document.getElementById('headerLogoText');
@@ -186,9 +212,11 @@
             loginTitleEl.textContent =
                 b.loginTitle && String(b.loginTitle).trim()
                     ? b.loginTitle
-                    : lang === 'fa'
-                      ? 'پورتال کارکنان کایا'
-                      : 'Kaya Staff Portal';
+                    : isFxguardHost()
+                      ? 'FXGuard'
+                      : lang === 'fa'
+                        ? 'پورتال کارکنان کایا'
+                        : 'Kaya Staff Portal';
         }
         const src = resolveLoginLogoSrc(b);
         ['loginLogo', 'loginLogoTotp'].forEach(function (id) {
@@ -230,7 +258,7 @@
         const lang = pickLang(stored, langPack.defaultLanguage, langPack.supported);
         applyLangEarly(lang);
         global.SUPPORTED_LANGUAGES = langPack.supported;
-        if (cache.branding) applyBrandingEarly(cache.branding);
+        if (cache.branding) applyBrandingEarly(withoutCopiedKayaBrand(cache.branding));
         // Dashboard always verifies session via cookie before showing the app.
         if (isDashboardPage() || hasAuthToken()) document.documentElement.classList.add('auth-verifying');
     }
@@ -238,7 +266,7 @@
     function onDomReady() {
         const cache = readCache();
         const lang = global.LANG || 'fa';
-        if (cache.branding) applyBrandingDom(cache.branding, lang);
+        if (cache.branding) applyBrandingDom(withoutCopiedKayaBrand(cache.branding), lang);
         if (cache.languages) {
             const pack = normalizeSupported(cache.languages);
             global.SUPPORTED_LANGUAGES = pack.supported;
@@ -276,7 +304,7 @@
                     return null;
                 })
         ]).then(function (pair) {
-            const data = { branding: pair[0], languages: pair[1] };
+            const data = { branding: withoutCopiedKayaBrand(pair[0]), languages: pair[1] };
             writeCache(data.branding, data.languages);
             return data;
         });

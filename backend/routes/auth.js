@@ -22,6 +22,7 @@ const { issueStaffToken, revokeStaffSessions, disconnectStaffSockets } = require
 const { isPlatformTenant } = require('../lib/tenantContext');
 const { authMiddleware, optionalAuthMiddleware, assertUserMatchesRequestTenant } = require('../middleware/auth');
 const { publicTenantPayload } = require('../lib/tenantTrial');
+const { isSelfServeEnabled, requestHostname } = require('../lib/tenantHost');
 
 const TOTP_TEMP_EXPIRY = '5m';
 const TOTP_MAX_ATTEMPTS = 5;
@@ -461,6 +462,10 @@ router.get('/me', authMiddleware, async (req, res, next) => {
         u.canManageConversations = canManageConversations(user);
         const tenantPublic = publicTenantPayload(req.tenant);
         if (tenantPublic) u.tenant = tenantPublic;
+        u.canManageTenants =
+            isSelfServeEnabled(process.env, requestHostname(req)) &&
+            isPlatformTenant(req.tenant) &&
+            (user.role === 'owner' || user.role === 'admin');
         const usedBearer = !!(req.headers && req.headers.authorization && String(req.headers.authorization).startsWith('Bearer '));
         if (usedBearer && req.authToken) u.token = req.authToken;
         res.json(u);

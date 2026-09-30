@@ -89,6 +89,7 @@
                         <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
                         <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
                     </a>
+                    <script>(function(){try{var h=(location.hostname||'').toLowerCase();if(h!=='app.fxguard.io'&&h.slice(-15)!=='.app.fxguard.io')return;var t=document.getElementById('headerLogoText');if(t)t.textContent='FXGuard';var a=document.getElementById('headerLogo');if(a)a.setAttribute('aria-label','FXGuard');if(/kaya|کایا/i.test(document.title))document.title='FXGuard';}catch(e){}})();</script>
                     <div class="header-page-info">
                         <span class="header-breadcrumb" id="headerBreadcrumb">داشبورد</span>
                         <span class="header-page-title" id="headerPageTitle" data-i18n="nav_dashboard">داشبورد</span>
@@ -139,6 +140,7 @@
                 </div>
             </div>
             <div class="user-dropdown-menu" id="userDropdownMenu" role="menu" aria-hidden="true">
+                <a href="/tenants-admin" class="user-dropdown-item" id="userDropdownTenantsAdmin" role="menuitem" hidden><svg viewBox="0 0 24 24"><use href="#icon-shield"/></svg><span data-i18n="header_dropdown_tenants_admin">مدیریت سازمان‌ها و فروش</span></a>
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg><span data-i18n="nav_profile">پروفایل</span></a>
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); document.getElementById('profileAvatar')&&document.getElementById('profileAvatar').focus(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-image"/></svg><span data-i18n="header_dropdown_avatar">تغییر عکس پروفایل</span></a>
                 <a href="#staff-activity" class="user-dropdown-item nav-staff-activity" role="menuitem" data-perm="staff_activity" onclick="showPage('staff-activity'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-sa-presence"/></svg><span data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>

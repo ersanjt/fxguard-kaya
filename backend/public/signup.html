@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/login.css?v=ssdesk6">
+    <link rel="stylesheet" href="/css/login.css?v=ssdesk8">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -19,77 +19,141 @@
     }catch(e){}})();</script>
 </head>
 <body>
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+        <symbol id="lp-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </symbol>
+        <symbol id="lp-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+        </symbol>
+    </defs>
+</svg>
 <a class="lp-skip" href="#lpMain" data-su-i18n="skip_link">رفتن به فرم ثبت‌نام</a>
-<main class="lp-main" id="lpMain">
-    <div class="lp-card">
-        <header class="lp-header">
-            <div class="lp-logo-wrap has-img">
-                <img src="/brand/fxguard-logo.svg" alt="FXGuard" width="112" height="112" decoding="async">
-            </div>
-            <h1 class="lp-brand lp-sr-only">FXGuard</h1>
-            <p class="lp-brand-sub" id="suSub" data-su-i18n="sub">۷ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است</p>
-        </header>
-
-        <div class="lp-lang-wrap" id="lpLangWrap">
-            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان" data-su-i18n-aria="lang_label">
-                <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
-                <button type="button" data-lang="en" aria-pressed="false">English</button>
-                <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
+<div class="lp-bg" aria-hidden="true">
+    <div class="lp-blob lp-blob-1"></div>
+    <div class="lp-blob lp-blob-2"></div>
+    <div class="lp-blob lp-blob-3"></div>
+</div>
+<div class="su-shell">
+    <aside class="su-aside">
+        <div class="su-brand">
+            <img src="/brand/fxguard-logo.svg" alt="" width="52" height="52">
+            <div>
+                <strong>FXGuard</strong>
+                <span data-su-i18n="brand_sub">پنل واتساپ کسب‌وکار</span>
             </div>
         </div>
-
-        <section class="lp-step active" aria-label="ساخت پنل" data-su-i18n-aria="title">
-            <h2 class="lp-step-title" id="suTitle" data-su-i18n="title">ساخت پنل شما</h2>
-            <form id="suForm" novalidate>
-                <div class="lp-field">
-                    <label for="suCompany" data-su-i18n="company">نام مجموعه</label>
-                    <input type="text" id="suCompany" class="lp-input" maxlength="120" autocomplete="organization" required>
+        <p class="su-kicker" data-su-i18n="kicker">۷ روز آزمایش رایگان</p>
+        <h1 class="su-hero" data-su-i18n="hero_title">پنل سازمان‌تان را در چند دقیقه بسازید</h1>
+        <p class="su-lead" data-su-i18n="hero_lead">بعد از ساخت، با همین ایمیل و رمز وارد داشبورد می‌شوید. برای ادامه بعد از آزمایش، اشتراک لازم است.</p>
+        <ul class="su-points">
+            <li>
+                <span class="su-dot" aria-hidden="true">1</span>
+                <div>
+                    <strong data-su-i18n="pt1_t">پنل جدا</strong>
+                    <span data-su-i18n="pt1_d">هر سازمان شناسه، ورود و داده‌های خودش را دارد.</span>
                 </div>
-                <fieldset class="lp-field lp-industry" id="suIndustry">
-                    <legend data-su-i18n="industry">زمینهٔ فعالیت</legend>
-                    <p class="lp-industry-hint" data-su-i18n="industry_hint">منوی پنل بر اساس کسب‌وکار شما چیده می‌شود؛ بعداً از تنظیمات پنل ماژول اضافه یا حذف کنید.</p>
-                    <div class="lp-industry-grid">
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="travel" required><span data-su-i18n="ind_travel">آژانس مسافرتی و گردشگری</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="health"><span data-su-i18n="ind_health">بیمارستان، کلینیک و توریسم سلامت</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="exchange"><span data-su-i18n="ind_exchange">صرافی</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="manufacturing"><span data-su-i18n="ind_manufacturing">کارخانه و تولید</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="food_distribution"><span data-su-i18n="ind_food_distribution">توزیع مواد غذایی</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="real_estate"><span data-su-i18n="ind_real_estate">املاک و ساخت‌وساز</span></label>
-                        <label class="lp-industry-opt"><input type="radio" name="industry" value="general"><span data-su-i18n="ind_general">سایر کسب‌وکارها</span></label>
-                    </div>
-                    <p class="lp-industry-modules" id="suIndustryModules" aria-live="polite"></p>
-                </fieldset>
-                <div class="lp-field">
-                    <label for="suOwner" data-su-i18n="owner">نام مالک</label>
-                    <input type="text" id="suOwner" class="lp-input" maxlength="120" autocomplete="name">
+            </li>
+            <li>
+                <span class="su-dot" aria-hidden="true">2</span>
+                <div>
+                    <strong data-su-i18n="pt2_t">منو متناسب با کار شما</strong>
+                    <span data-su-i18n="pt2_d">زمینهٔ فعالیت را انتخاب کنید؛ ماژول‌ها را بعداً هم می‌توانید عوض کنید.</span>
                 </div>
-                <div class="lp-field">
-                    <label for="suEmail" data-su-i18n="email">ایمیل مالک</label>
-                    <input type="email" id="suEmail" class="lp-input" autocomplete="email" dir="ltr" required>
+            </li>
+            <li>
+                <span class="su-dot" aria-hidden="true">3</span>
+                <div>
+                    <strong data-su-i18n="pt3_t">شروع بدون کارت</strong>
+                    <span data-su-i18n="pt3_d">برای ساخت پنل و ورود اول، اطلاعات کارت بانکی لازم نیست.</span>
                 </div>
-                <div class="lp-field">
-                    <label for="suSlug" data-su-i18n="slug">شناسه پنل</label>
-                    <input type="text" id="suSlug" class="lp-input" maxlength="24" autocomplete="off" autocapitalize="none" spellcheck="false" dir="ltr" required>
-                    <p class="lp-host-hint" id="suSlugHelp" data-su-i18n="slug_help">فقط حروف انگلیسی کوچک، عدد و خط تیره — از نام مجموعه یا ایمیل پیشنهاد می‌شود.</p>
-                    <p class="lp-host-hint" id="suHostHint"></p>
-                    <p class="lp-host-hint" id="suSlugStatus" aria-live="polite"></p>
+            </li>
+        </ul>
+        <div class="su-trust">
+            <span data-su-i18n="trust_1">۷ روز آزمایش</span>
+            <span data-su-i18n="trust_2">ورود بلافاصله</span>
+            <span data-su-i18n="trust_3">فارسی، English، Türkçe</span>
+        </div>
+    </aside>
+    <main class="lp-main su-main" id="lpMain">
+        <div class="lp-card">
+            <div class="lp-lang-wrap" id="lpLangWrap">
+                <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان" data-su-i18n-aria="lang_label">
+                    <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
+                    <button type="button" data-lang="en" aria-pressed="false">English</button>
+                    <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
                 </div>
-                <div class="lp-field">
-                    <label for="suPass" data-su-i18n="password">رمز عبور</label>
-                    <input type="password" id="suPass" class="lp-input" autocomplete="new-password" minlength="8" required data-su-i18n-ph="password_ph" placeholder="حداقل ۸ کاراکتر، شامل حرف و عدد">
-                </div>
-                <button type="submit" id="suBtn" class="lp-btn">
-                    <div class="lp-spinner" aria-hidden="true"></div>
-                    <span class="lp-btn-text" data-su-i18n="submit">شروع آزمایش ۷روزه</span>
-                </button>
-                <div class="lp-msg error" id="suMsg" role="alert" aria-live="polite"></div>
-            </form>
-            <div class="lp-forgot-row">
-                <a href="/login" data-su-i18n="have_panel">قبلاً پنل دارید؟ ورود</a>
             </div>
-        </section>
-    </div>
-</main>
-<script src="/js/signup.js?v=ssdesk5"></script>
+            <section class="lp-step active" aria-label="ساخت پنل" data-su-i18n-aria="title">
+                <h2 class="lp-step-title" id="suTitle" data-su-i18n="title">ساخت پنل شما</h2>
+                <p class="lp-step-sub" id="suSub" data-su-i18n="sub">۷ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است</p>
+                <form id="suForm" novalidate>
+                    <p class="su-sec" data-su-i18n="sec_org">سازمان</p>
+                    <div class="lp-field">
+                        <label for="suCompany" data-su-i18n="company">نام مجموعه</label>
+                        <input type="text" id="suCompany" class="lp-input" maxlength="120" autocomplete="organization" required>
+                    </div>
+                    <fieldset class="lp-field lp-industry" id="suIndustry">
+                        <legend data-su-i18n="industry">زمینهٔ فعالیت</legend>
+                        <p class="lp-industry-hint" data-su-i18n="industry_hint">منوی پنل بر اساس کسب‌وکار شما چیده می‌شود؛ بعداً از تنظیمات پنل ماژول اضافه یا حذف کنید.</p>
+                        <div class="lp-industry-grid">
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="travel" required><span data-su-i18n="ind_travel">آژانس مسافرتی و گردشگری</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="health"><span data-su-i18n="ind_health">بیمارستان، کلینیک و توریسم سلامت</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="exchange"><span data-su-i18n="ind_exchange">صرافی</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="manufacturing"><span data-su-i18n="ind_manufacturing">کارخانه و تولید</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="food_distribution"><span data-su-i18n="ind_food_distribution">توزیع مواد غذایی</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="real_estate"><span data-su-i18n="ind_real_estate">املاک و ساخت‌وساز</span></label>
+                            <label class="lp-industry-opt"><input type="radio" name="industry" value="general"><span data-su-i18n="ind_general">سایر کسب‌وکارها</span></label>
+                        </div>
+                        <p class="lp-industry-modules" id="suIndustryModules" aria-live="polite"></p>
+                    </fieldset>
+                    <div class="lp-field">
+                        <label for="suSlug" data-su-i18n="slug">شناسه پنل</label>
+                        <input type="text" id="suSlug" class="lp-input" maxlength="24" autocomplete="off" autocapitalize="none" spellcheck="false" dir="ltr" required>
+                        <p class="lp-host-hint" id="suSlugHelp" data-su-i18n="slug_help">فقط حروف انگلیسی کوچک، عدد و خط تیره — از نام مجموعه یا ایمیل پیشنهاد می‌شود.</p>
+                        <p class="lp-host-hint su-url-preview" id="suHostHint"></p>
+                        <p class="lp-host-hint" id="suSlugStatus" aria-live="polite"></p>
+                    </div>
+
+                    <p class="su-sec" data-su-i18n="sec_account">حساب مالک</p>
+                    <div class="lp-field">
+                        <label for="suOwner" data-su-i18n="owner">نام مالک</label>
+                        <input type="text" id="suOwner" class="lp-input" maxlength="120" autocomplete="name">
+                    </div>
+                    <div class="lp-field">
+                        <label for="suEmail" data-su-i18n="email">ایمیل مالک</label>
+                        <input type="email" id="suEmail" class="lp-input" autocomplete="email" dir="ltr" required>
+                    </div>
+                    <div class="lp-field">
+                        <label for="suPass" data-su-i18n="password">رمز عبور</label>
+                        <div class="lp-input-wrap">
+                            <input type="password" id="suPass" class="lp-input" autocomplete="new-password" minlength="8" required data-su-i18n-ph="password_ph" placeholder="حداقل ۸ کاراکتر، شامل حرف و عدد">
+                            <button type="button" id="suTogglePass" class="lp-toggle-pass" data-su-i18n-aria="toggle_show" aria-label="نمایش رمز عبور" aria-pressed="false">
+                                <svg aria-hidden="true"><use href="#lp-eye" id="suEyeIcon"/></svg>
+                            </button>
+                        </div>
+                        <div class="su-strength" id="suStrength" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                        <p class="lp-host-hint" id="suStrengthLabel" style="direction:inherit;text-align:inherit"></p>
+                    </div>
+                    <div class="lp-field">
+                        <label for="suPass2" data-su-i18n="password2">تکرار رمز عبور</label>
+                        <input type="password" id="suPass2" class="lp-input" autocomplete="new-password" minlength="8" required data-su-i18n-ph="password2_ph" placeholder="همان رمز را دوباره وارد کنید">
+                    </div>
+                    <button type="submit" id="suBtn" class="lp-btn">
+                        <div class="lp-spinner" aria-hidden="true"></div>
+                        <span class="lp-btn-text" data-su-i18n="submit">شروع آزمایش ۷روزه</span>
+                    </button>
+                    <p class="su-fine" data-su-i18n="fine">با ساخت پنل، به‌عنوان مالک همان سازمان وارد داشبورد می‌شوید.</p>
+                    <div class="lp-msg error" id="suMsg" role="alert" aria-live="polite"></div>
+                </form>
+                <div class="lp-forgot-row">
+                    <a href="/login" data-su-i18n="have_panel">قبلاً پنل دارید؟ ورود</a>
+                </div>
+            </section>
+        </div>
+    </main>
+</div>
+<script src="/js/signup.js?v=ssdesk6"></script>
 </body>
 </html>

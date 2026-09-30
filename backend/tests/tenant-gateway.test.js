@@ -96,6 +96,23 @@ async function main() {
             assert.strictEqual((await a.post('/api/tenants/admin/' + tenantB.id + '/gateway', { enabled: true })).status, 404);
         });
 
+        await test('only the platform admin sees the companies console link', async () => {
+            const meAdmin = await admin.get('/api/auth/me');
+            assert.strictEqual(meAdmin.status, 200, JSON.stringify(meAdmin.body));
+            assert.strictEqual(meAdmin.body.canManageTenants, true);
+            const meA = await a.get('/api/auth/me');
+            assert.strictEqual(meA.body.canManageTenants, false);
+        });
+
+        await test('company list carries access state and payment details', async () => {
+            await tenantB.update({ cryptoTxId: 'a'.repeat(64), cryptoNetwork: 'usdt_trc20', cryptoPaymentStatus: 'pending' });
+            const list = await admin.get('/api/tenants/admin/list');
+            const row = list.body.tenants.find((t) => t.slug === 'gw-b');
+            assert.strictEqual(row.access, 'ok');
+            assert.strictEqual(row.payment.status, 'pending');
+            assert.strictEqual(row.payment.network, 'usdt_trc20');
+        });
+
         await test('platform admin lists companies and enables QR with an allocated port', async () => {
             const list = await admin.get('/api/tenants/admin/list');
             assert.strictEqual(list.status, 200, JSON.stringify(list.body));

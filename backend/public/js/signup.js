@@ -12,6 +12,21 @@
         fa: {
             doc_title: 'ساخت پنل | FXGuard',
             skip_link: 'رفتن به فرم ثبت‌نام',
+            brand_sub: 'پنل واتساپ کسب‌وکار',
+            kicker: '۷ روز آزمایش رایگان',
+            hero_title: 'پنل سازمان‌تان را در چند دقیقه بسازید',
+            hero_lead: 'بعد از ساخت، با همین ایمیل و رمز وارد داشبورد می‌شوید. برای ادامه بعد از آزمایش، اشتراک لازم است.',
+            pt1_t: 'پنل جدا',
+            pt1_d: 'هر سازمان شناسه، ورود و داده‌های خودش را دارد.',
+            pt2_t: 'منو متناسب با کار شما',
+            pt2_d: 'زمینهٔ فعالیت را انتخاب کنید؛ ماژول‌ها را بعداً هم می‌توانید عوض کنید.',
+            pt3_t: 'شروع بدون کارت',
+            pt3_d: 'برای ساخت پنل و ورود اول، اطلاعات کارت بانکی لازم نیست.',
+            trust_1: '۷ روز آزمایش',
+            trust_2: 'ورود بلافاصله',
+            trust_3: 'فارسی، English، Türkçe',
+            sec_org: 'سازمان',
+            sec_account: 'حساب مالک',
             sub: '۷ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است',
             lang_label: 'انتخاب زبان',
             title: 'ساخت پنل شما',
@@ -34,6 +49,15 @@
             slug_help: 'فقط حروف انگلیسی کوچک، عدد و خط تیره — از نام مجموعه یا ایمیل پیشنهاد می‌شود.',
             password: 'رمز عبور',
             password_ph: 'حداقل ۸ کاراکتر، شامل حرف و عدد',
+            password2: 'تکرار رمز عبور',
+            password2_ph: 'همان رمز را دوباره وارد کنید',
+            toggle_show: 'نمایش رمز عبور',
+            toggle_hide: 'مخفی کردن رمز عبور',
+            strength_1: 'ضعیف — حرف و عدد اضافه کنید',
+            strength_2: 'قابل قبول',
+            strength_3: 'خوب',
+            strength_4: 'قوی',
+            fine: 'با ساخت پنل، به‌عنوان مالک همان سازمان وارد داشبورد می‌شوید.',
             submit: 'شروع آزمایش ۷روزه',
             have_panel: 'قبلاً پنل دارید؟ ورود',
             slug_checking: 'در حال بررسی شناسه…',
@@ -45,6 +69,7 @@
             err_email_taken: 'این ایمیل قبلاً ثبت شده است — از صفحه ورود وارد شوید.',
             err_email_invalid: 'ایمیل معتبر وارد کنید.',
             err_password_invalid: 'رمز عبور باید حداقل ۸ کاراکتر و شامل حرف و عدد باشد.',
+            err_password_match: 'رمز عبور و تکرار آن یکسان نیستند.',
             err_slug_invalid: 'شناسه پنل معتبر نیست (۳ تا ۲۴ حرف انگلیسی کوچک، عدد یا خط تیره).',
             err_failed: 'ثبت‌نام ناموفق بود.',
             err_network: 'اتصال به سرور برقرار نشد.',
@@ -53,6 +78,21 @@
         en: {
             doc_title: 'Create your panel | FXGuard',
             skip_link: 'Skip to signup form',
+            brand_sub: 'Business WhatsApp panel',
+            kicker: '7-day free trial',
+            hero_title: 'Create your organization’s panel in a few minutes',
+            hero_lead: 'After signup you land in the dashboard with this email and password. A subscription is required to continue after the trial.',
+            pt1_t: 'A separate panel',
+            pt1_d: 'Each organization has its own ID, sign-in, and data.',
+            pt2_t: 'A menu that fits your work',
+            pt2_d: 'Pick an industry now; you can change modules later.',
+            pt3_t: 'No card to start',
+            pt3_d: 'Creating the panel and the first sign-in does not ask for a card.',
+            trust_1: '7-day trial',
+            trust_2: 'Instant sign-in',
+            trust_3: 'فارسی, English, Türkçe',
+            sec_org: 'Organization',
+            sec_account: 'Owner account',
             sub: '7-day free trial — a subscription is required afterwards',
             lang_label: 'Language',
             title: 'Create your panel',
@@ -75,6 +115,15 @@
             slug_help: 'Lowercase letters, digits and hyphens only — suggested from the company name or email.',
             password: 'Password',
             password_ph: 'At least 8 characters, with a letter and a digit',
+            password2: 'Confirm password',
+            password2_ph: 'Enter the same password again',
+            toggle_show: 'Show password',
+            toggle_hide: 'Hide password',
+            strength_1: 'Weak — add a letter and a digit',
+            strength_2: 'Okay',
+            strength_3: 'Good',
+            strength_4: 'Strong',
+            fine: 'Creating the panel signs you in as that organization’s owner.',
             submit: 'Start 7-day trial',
             have_panel: 'Already have a panel? Sign in',
             slug_checking: 'Checking panel ID…',
@@ -86,6 +135,7 @@
             err_email_taken: 'This email is already registered — sign in from the login page.',
             err_email_invalid: 'Enter a valid email address.',
             err_password_invalid: 'Password must be at least 8 characters and include a letter and a digit.',
+            err_password_match: 'Password and confirmation do not match.',
             err_slug_invalid: 'Invalid panel ID (3–24 lowercase letters, digits or hyphens).',
             err_failed: 'Signup failed.',
             err_network: 'Could not reach the server.',
@@ -94,6 +144,21 @@
         tr: {
             doc_title: 'Panelinizi oluşturun | FXGuard',
             skip_link: 'Kayıt formuna geç',
+            brand_sub: 'İşletme WhatsApp paneli',
+            kicker: '7 gün ücretsiz deneme',
+            hero_title: 'Kuruluş panelinizi birkaç dakikada oluşturun',
+            hero_lead: 'Kayıttan sonra aynı e-posta ve şifreyle panele girersiniz. Deneme bitince devam için abonelik gerekir.',
+            pt1_t: 'Ayrı panel',
+            pt1_d: 'Her kuruluşun kendi kimliği, girişi ve verisi vardır.',
+            pt2_t: 'İşinize göre menü',
+            pt2_d: 'Sektörü şimdi seçin; modülleri sonra değiştirebilirsiniz.',
+            pt3_t: 'Başlamak için kart yok',
+            pt3_d: 'Panel oluşturmak ve ilk giriş kart bilgisi istemez.',
+            trust_1: '7 gün deneme',
+            trust_2: 'Anında giriş',
+            trust_3: 'فارسی, English, Türkçe',
+            sec_org: 'Kuruluş',
+            sec_account: 'Sahip hesabı',
             sub: '7 gün ücretsiz deneme — sonrasında abonelik gerekir',
             lang_label: 'Dil seçimi',
             title: 'Panelinizi oluşturun',
@@ -116,6 +181,15 @@
             slug_help: 'Yalnızca küçük harf, rakam ve tire — şirket adından veya e-postadan önerilir.',
             password: 'Şifre',
             password_ph: 'En az 8 karakter, harf ve rakam içermeli',
+            password2: 'Şifre tekrar',
+            password2_ph: 'Aynı şifreyi yeniden girin',
+            toggle_show: 'Şifreyi göster',
+            toggle_hide: 'Şifreyi gizle',
+            strength_1: 'Zayıf — harf ve rakam ekleyin',
+            strength_2: 'Kabul edilebilir',
+            strength_3: 'İyi',
+            strength_4: 'Güçlü',
+            fine: 'Paneli oluşturunca o kuruluşun sahibi olarak giriş yaparsınız.',
             submit: '7 günlük denemeyi başlat',
             have_panel: 'Zaten paneliniz var mı? Giriş yapın',
             slug_checking: 'Panel kimliği kontrol ediliyor…',
@@ -127,6 +201,7 @@
             err_email_taken: 'Bu e-posta zaten kayıtlı — giriş sayfasından oturum açın.',
             err_email_invalid: 'Geçerli bir e-posta adresi girin.',
             err_password_invalid: 'Şifre en az 8 karakter olmalı ve harf ile rakam içermelidir.',
+            err_password_match: 'Şifre ve tekrarı aynı değil.',
             err_slug_invalid: 'Geçersiz panel kimliği (3–24 küçük harf, rakam veya tire).',
             err_failed: 'Kayıt başarısız oldu.',
             err_network: 'Sunucuya ulaşılamadı.',
@@ -237,7 +312,31 @@
     function paintSlugStatus() {
         if (!slugStatusEl) return;
         slugStatusEl.textContent = slugStatusKey ? t(slugStatusKey) : '';
-        slugStatusEl.style.color = slugStatusOk === true ? '#34d399' : slugStatusOk === false ? '#f87171' : '';
+        slugStatusEl.classList.toggle('su-slug-ok', slugStatusOk === true);
+        slugStatusEl.classList.toggle('su-slug-bad', slugStatusOk === false);
+    }
+
+    const passEl = document.getElementById('suPass');
+    const pass2El = document.getElementById('suPass2');
+    const strengthEl = document.getElementById('suStrength');
+    const strengthLabel = document.getElementById('suStrengthLabel');
+
+    function passwordScore(value) {
+        const p = String(value || '');
+        let score = 0;
+        if (p.length >= 8) score += 1;
+        if (/[A-Za-z]/.test(p) && /\d/.test(p)) score += 1;
+        if (p.length >= 12) score += 1;
+        if (/[^A-Za-z0-9]/.test(p)) score += 1;
+        return score;
+    }
+
+    function paintStrength() {
+        if (!strengthEl || !passEl) return;
+        const value = passEl.value || '';
+        const score = value ? passwordScore(value) : 0;
+        strengthEl.className = 'su-strength' + (score ? ' is-' + score : '');
+        if (strengthLabel) strengthLabel.textContent = value ? t('strength_' + score) : '';
     }
 
     function setSlugStatus(key, ok) {
@@ -326,7 +425,13 @@
         });
         paintSlugStatus();
         paintMsg();
+        paintStrength();
         renderIndustryModules();
+        const toggleBtn = document.getElementById('suTogglePass');
+        if (toggleBtn && passEl) {
+            const shown = passEl.type === 'text';
+            toggleBtn.setAttribute('aria-label', t(shown ? 'toggle_hide' : 'toggle_show'));
+        }
     }
 
     document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function (b) {
@@ -366,6 +471,20 @@
         });
     }
 
+    if (passEl) passEl.addEventListener('input', paintStrength);
+    const passToggle = document.getElementById('suTogglePass');
+    if (passToggle && passEl) {
+        passToggle.addEventListener('click', function () {
+            const show = passEl.type === 'password';
+            passEl.type = show ? 'text' : 'password';
+            if (pass2El) pass2El.type = passEl.type;
+            passToggle.setAttribute('aria-label', t(show ? 'toggle_hide' : 'toggle_show'));
+            passToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+            const use = passToggle.querySelector('use');
+            if (use) use.setAttribute('href', show ? '#lp-eye-off' : '#lp-eye');
+        });
+    }
+
     if (companyEl) companyEl.addEventListener('input', autofillSlug);
     if (emailEl) emailEl.addEventListener('input', autofillSlug);
 
@@ -388,7 +507,8 @@
             const ownerName = (document.getElementById('suOwner') && document.getElementById('suOwner').value || '').trim();
             const slug = normalizeSlug(slugEl && slugEl.value);
             const email = (emailEl.value || '').trim();
-            const password = document.getElementById('suPass').value || '';
+            const password = (passEl && passEl.value) || '';
+            const password2 = (pass2El && pass2El.value) || '';
             const industryEl = form.querySelector('input[name="industry"]:checked');
             const industry = industryEl ? industryEl.value : '';
             if (!industry) {
@@ -397,6 +517,10 @@
             }
             if (!company || !slug || !email || !password) {
                 setMsg('err_required');
+                return;
+            }
+            if (password !== password2) {
+                setMsg('err_password_match');
                 return;
             }
             if (lastSlugOk === false) {

@@ -1090,6 +1090,7 @@ window.__I18N_FA = {
     whatsapp_refresh_status: 'بروزرسانی وضعیت',
     whatsapp_cloud_api_info: 'اتصال از طریق WhatsApp Business Cloud API (Meta). مدیریت از Meta for Developers.',
     whatsapp_connection_settings_title: 'تنظیمات اتصال واتساپ',
+    header_dropdown_tenants_admin: 'مدیریت سازمان‌ها و فروش',
     whatsapp_self_serve_cloud_only_hint: 'اتصال QR (Gateway) برای این پنل هنوز فعال نشده است. تا فعال‌سازی توسط پشتیبانی، از Meta Cloud API استفاده کنید.',
     whatsapp_connection_settings_hint: 'Cloud API مسیر رسمی Meta است (بدون QR، مناسب قالب و ارسال انبوه). Gateway اسکن QR روی واتساپ وب است — نشست غیررسمی؛ پیام انبوه می‌تواند شماره را مسدود کند. اگر هر دو فعال باشند Cloud API اولویت دارد.',
     whatsapp_connection_mode: 'حالت اتصال',

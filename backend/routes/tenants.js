@@ -32,7 +32,7 @@ const {
     publicCatalog,
 } = require('../lib/tenantSkills');
 const { invalidatePlanCache } = require('../lib/planLimits');
-const { publicTenantPayload } = require('../lib/tenantTrial');
+const { publicTenantPayload, tenantAccessState } = require('../lib/tenantTrial');
 const { Tenant, User } = require('../models');
 const { setAuthCookie } = require('../lib/authCookie');
 const { issueStaffToken } = require('../lib/staffSession');
@@ -277,6 +277,13 @@ function createTenantsRouter(logger) {
                 planTier: row.planTier,
                 trialEndsAt: row.trialEndsAt,
                 createdAt: row.createdAt,
+                access: tenantAccessState(row).code || 'ok',
+                payment: {
+                    status: row.cryptoPaymentStatus || null,
+                    network: row.cryptoNetwork || null,
+                    txId: row.cryptoTxId || null,
+                    paidAt: row.cryptoPaidAt || null,
+                },
                 ownerEmail: ownerEmail.get(String(row.id)) || null,
                 loginUrl: tenantLoginUrl(row.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
                 gatewayEnabled: row.gatewayEnabled === true,

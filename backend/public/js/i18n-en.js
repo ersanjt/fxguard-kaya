@@ -1058,6 +1058,7 @@ window.__I18N_EN = {
     whatsapp_refresh_status: 'Refresh status',
     whatsapp_cloud_api_info: 'Connected via WhatsApp Business Cloud API (Meta). Manage from Meta for Developers.',
     whatsapp_connection_settings_title: 'WhatsApp connection settings',
+    header_dropdown_tenants_admin: 'Companies & sales',
     whatsapp_self_serve_cloud_only_hint: 'QR (Gateway) connection is not enabled for this desk yet. Use Meta Cloud API until support enables it.',
     whatsapp_connection_settings_hint: 'Cloud API is the official Meta path (no QR; templates and bulk). Gateway is a WhatsApp Web QR session — unofficial; bulk can ban the number. If both are on, Cloud API has priority.',
     whatsapp_connection_mode: 'Connection mode',

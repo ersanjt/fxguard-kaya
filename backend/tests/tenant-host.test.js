@@ -185,6 +185,13 @@ test('self-serve apex hides copied Kaya brand; tenant desks keep theirs', () => 
         { host: 'app.fxguard.io', env }
     );
     assert.strictEqual(customFx.logoUrl, '/uploads/fx.png');
+    const copiedFooter = overlaySelfServePlatformBranding(
+        { siteName: 'KAYA', footerText: 'صرافی کایا — پورتال کارکنان', logoUrl: '/uploads/logo.png' },
+        { host: 'app.fxguard.io', env, tenant: { isPlatform: true, slug: 'platform' } }
+    );
+    assert.strictEqual(copiedFooter.siteName, 'FXGuard');
+    assert.strictEqual(copiedFooter.footerText, 'FXGuard');
+    assert.strictEqual(copiedFooter.logoUrl, FXGUARD_LOGO);
 });
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

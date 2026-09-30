@@ -1,0 +1,271 @@
+/* FXGuard — کنسول مدیر سکو برای سازمان‌های خودخدمت */
+
+:root {
+    color-scheme: dark;
+    --ta-bg: #080d1a;
+    --ta-bg2: #0d1525;
+    --ta-card: rgba(16, 24, 44, 0.9);
+    --ta-border: rgba(255, 255, 255, 0.08);
+    --ta-text: #f0f4fc;
+    --ta-muted: #8b9dc3;
+    --ta-accent: #10b981;
+    --ta-accent-s: rgba(16, 185, 129, 0.14);
+    --ta-danger: #f87171;
+    --ta-warn: #fbbf24;
+    --ta-radius: 16px;
+    --font: Vazirmatn, Tahoma, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { height: 100%; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+        radial-gradient(ellipse at 12% 0%, rgba(16, 185, 129, 0.08), transparent 46%),
+        radial-gradient(ellipse at 90% 10%, rgba(99, 102, 241, 0.07), transparent 42%),
+        linear-gradient(165deg, var(--ta-bg), var(--ta-bg2));
+    color: var(--ta-text);
+    font-family: var(--font);
+}
+
+.ta-wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 64px; }
+
+.ta-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.ta-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.ta-brand img {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    object-fit: cover;
+    background: #0b1222;
+}
+
+.ta-head h1 { font-size: 1.35rem; margin: 0 0 4px; font-weight: 700; }
+
+.ta-kicker {
+    margin: 0;
+    color: var(--ta-accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.ta-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+.ta-hint {
+    color: var(--ta-muted);
+    font-size: 0.88rem;
+    line-height: 1.85;
+    margin: 8px 0 20px;
+    max-width: 78ch;
+}
+
+.ta-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.ta-stat {
+    background: var(--ta-card);
+    border: 1px solid var(--ta-border);
+    border-radius: 14px;
+    padding: 14px 16px;
+}
+
+.ta-stat b {
+    display: block;
+    font-size: 1.45rem;
+    font-variant-numeric: tabular-nums;
+    margin-top: 4px;
+}
+
+.ta-stat span { color: var(--ta-muted); font-size: 0.78rem; }
+
+.ta-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.ta-search, .ta-select {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ta-text);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font: inherit;
+    font-size: 0.88rem;
+}
+
+.ta-search { flex: 1 1 220px; min-width: 180px; }
+.ta-search:focus, .ta-select:focus {
+    outline: 2px solid var(--ta-accent);
+    outline-offset: 1px;
+}
+
+.ta-count { color: var(--ta-muted); font-size: 0.82rem; margin-inline-start: auto; }
+
+.ta-btn {
+    border: 1px solid #2c3a5c;
+    background: #16213a;
+    color: var(--ta-text);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.82rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.ta-btn:hover:not(:disabled) { background: #1f2d4d; }
+.ta-btn:disabled { opacity: 0.5; cursor: default; }
+.ta-btn.on { background: #14532d; border-color: #1f7a44; }
+.ta-btn.off { background: #4c1d1d; border-color: #7a2c2c; }
+.ta-btn.primary { background: #047857; border-color: #10b981; font-weight: 600; }
+
+.ta-table-wrap {
+    overflow-x: auto;
+    border: 1px solid #1d2842;
+    border-radius: var(--ta-radius);
+    background: rgba(8, 13, 26, 0.45);
+}
+
+table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+
+th, td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #1d2842;
+    text-align: start;
+    vertical-align: middle;
+}
+
+th {
+    background: #0f172b;
+    color: var(--ta-muted);
+    font-weight: 600;
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+.ta-org { display: flex; flex-direction: column; gap: 2px; min-width: 140px; }
+.ta-org strong { font-weight: 650; }
+.ta-sub { color: var(--ta-muted); font-size: 0.75rem; }
+
+.ta-ltr { direction: ltr; unicode-bidi: isolate; }
+
+.ta-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: #1d2842;
+    color: #c8d2e8;
+    white-space: nowrap;
+}
+
+.ta-badge.ok { background: #14532d; color: #bbf7d0; }
+.ta-badge.warn { background: #713f12; color: #fde68a; }
+.ta-badge.err { background: #4c1d1d; color: #fecaca; }
+
+.ta-row-actions { display: flex; gap: 6px; flex-wrap: wrap; min-width: 220px; }
+
+.ta-msg {
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #16213a;
+    display: none;
+    line-height: 1.7;
+}
+
+.ta-msg.show { display: block; }
+.ta-msg.err { background: #4c1d1d; }
+
+.ta-link { color: #6ee7b7; font-size: 0.78rem; text-decoration: none; }
+.ta-link:hover { text-decoration: underline; }
+
+.ta-empty { padding: 36px 16px; text-align: center; color: var(--ta-muted); }
+
+.ta-skel {
+    height: 12px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #16213a, #243352, #16213a);
+    background-size: 200% 100%;
+    animation: taShimmer 1.2s ease infinite;
+}
+
+@keyframes taShimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.ta-dialog {
+    width: min(440px, calc(100vw - 32px));
+    border: 1px solid var(--ta-border);
+    border-radius: 16px;
+    background: #10182c;
+    color: var(--ta-text);
+    padding: 22px 20px 18px;
+    font-family: inherit;
+}
+
+.ta-dialog::backdrop { background: rgba(2, 6, 16, 0.72); }
+
+.ta-dialog h2 { margin: 0 0 8px; font-size: 1.05rem; }
+.ta-dialog p { margin: 0 0 12px; color: var(--ta-muted); font-size: 0.84rem; line-height: 1.7; }
+
+.ta-cred {
+    background: #0b1222;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 0.86rem;
+    line-height: 1.9;
+    margin-bottom: 12px;
+}
+
+.ta-cred code {
+    background: #16213a;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+}
+
+.ta-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+@media (max-width: 900px) {
+    .ta-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ta-hide-sm { display: none; }
+}
+
+@media (max-width: 560px) {
+    .ta-wrap { padding-inline: 12px; }
+    .ta-count { margin-inline-start: 0; width: 100%; }
+}

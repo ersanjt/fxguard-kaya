@@ -121,7 +121,13 @@ router.get('/', authMiddleware, async (req, res, next) => {
             out.defaultLanguage = out.supportedLanguages[0] || 'fa';
         }
         await attachPlanToSettings(out);
-        res.json(out);
+        res.json(
+            overlaySelfServePlatformBranding(out, {
+                host: requestHostname(req),
+                env: process.env,
+                tenant: req.tenant,
+            })
+        );
     } catch (err) {
         next(err);
     }
@@ -462,7 +468,13 @@ router.put('/', authMiddleware, async (req, res, next) => {
             require('../lib/ratesSnapshot').clearRatesCaches();
         } catch (_) { /* ignore */ }
         await attachPlanToSettings(s);
-        res.json(s);
+        res.json(
+            overlaySelfServePlatformBranding(s, {
+                host: requestHostname(req),
+                env: process.env,
+                tenant: req.tenant,
+            })
+        );
     } catch (err) {
         next(err);
     }

@@ -1042,6 +1042,7 @@ window.__I18N_TR = {
     whatsapp_refresh_status: 'Durumu yenile',
     whatsapp_cloud_api_info: 'WhatsApp Business Cloud API (Meta) üzerinden bağlı. Meta for Developers\'dan yönetin.',
     whatsapp_connection_settings_title: 'WhatsApp bağlantı ayarları',
+    header_dropdown_tenants_admin: 'Şirketler ve satış',
     whatsapp_self_serve_cloud_only_hint: 'Bu panel için QR (Gateway) bağlantısı henüz açılmadı. Destek açana kadar Meta Cloud API kullanın.',
     whatsapp_connection_settings_hint: 'Cloud API resmi Meta yoludur (QR yok; şablon ve toplu). Gateway WhatsApp Web QR oturumudur — resmi değil; toplu gönderim numarayı yasaklatabilir. İkisi de açıksa Cloud API önceliklidir.',
     whatsapp_connection_mode: 'Bağlantı modu',

@@ -10560,6 +10560,8 @@
             const avatarEl = document.getElementById('userAvatar');
             const avatarMobile = document.getElementById('userAvatarMobile');
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
+            const tenantsAdminLink = document.getElementById('userDropdownTenantsAdmin');
+            if (tenantsAdminLink && typeof u.canManageTenants === 'boolean') tenantsAdminLink.hidden = !u.canManageTenants;
             const setAvatar = function(el) {
                 if (!el) return;
                 el.classList.remove('avatar-img-failed');
@@ -10666,6 +10668,35 @@
                 return false;
             }
         }
+        function isFxguardPlatformApex() {
+            try {
+                if ((location.hostname || '').toLowerCase() !== 'app.fxguard.io') return false;
+                var panel = '';
+                try { panel = new URLSearchParams(location.search).get('panel') || ''; } catch (_) {}
+                panel = String(panel).toLowerCase();
+                return !panel || panel === 'platform';
+            } catch (_) {
+                return false;
+            }
+        }
+        function withoutCopiedKayaBrand(b) {
+            if (!b || !isFxguardPlatformApex()) return b;
+            var blob = [b.siteName, b.loginTitle, b.pageTitle, b.footerText, b.logoUrl, b.loginLogoUrl, b.faviconUrl].join(' ');
+            if (!/kaya|کایا/i.test(blob)) return b;
+            var keep = function (v) {
+                var t = String(v || '').trim();
+                return !t || /kaya|کایا/i.test(t) ? '' : t;
+            };
+            return Object.assign({}, b, {
+                siteName: 'FXGuard',
+                loginTitle: keep(b.loginTitle) || 'FXGuard',
+                pageTitle: keep(b.pageTitle) || 'FXGuard',
+                footerText: keep(b.footerText) || 'FXGuard',
+                logoUrl: '/brand/fxguard-logo.svg',
+                loginLogoUrl: '/brand/fxguard-logo.svg',
+                faviconUrl: '/brand/fxguard-logo.svg'
+            });
+        }
         function defaultPanelLogoSrc() {
             return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
         }
@@ -10717,6 +10748,7 @@
         var PANEL_BRANDING_STATE = {};
         function applyBranding(s, brandingOpts) {
             if (!s) return;
+            s = withoutCopiedKayaBrand(s);
             brandingOpts = brandingOpts || {};
             if (brandingOpts.full) {
                 PANEL_BRANDING_STATE = Object.assign({}, s);
@@ -10768,7 +10800,7 @@
             }
             updateBottomBarVisibility();
             const loginTitleEl = document.getElementById('loginTitle');
-            if (loginTitleEl) loginTitleEl.textContent = (b.loginTitle && String(b.loginTitle).trim()) ? b.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
+            if (loginTitleEl) loginTitleEl.textContent = (b.loginTitle && String(b.loginTitle).trim()) ? b.loginTitle : (isFxguardAppHost() ? 'FXGuard' : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal'));
             const setLoginLogo = function(containerId, size) {
                 const c = document.getElementById(containerId);
                 if (!c) return;
@@ -10967,7 +10999,13 @@
             if (loadingEl) loadingEl.style.display = 'none';
             if (contentEl) contentEl.style.display = 'block';
             if (!res.ok) { toast(res.data && res.data.error ? res.data.error : t('err_generic'), true); return; }
-            const d = res.data || {};
+            const d = withoutCopiedKayaBrand(res.data || {});
+            if (isFxguardPlatformApex()) {
+                [['panelSettingSiteName', 'FXGuard'], ['panelSettingPageTitle', 'FXGuard'], ['panelSettingFooterText', 'FXGuard'], ['panelSettingLoginTitle', 'FXGuard']].forEach(function (pair) {
+                    const ph = document.getElementById(pair[0]);
+                    if (ph) ph.placeholder = pair[1];
+                });
+            }
             const set = function(id, v) { const el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
             set('panelSettingSiteName', d.siteName);
             set('panelSettingLogoUrl', d.logoUrl);

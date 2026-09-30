@@ -8,72 +8,91 @@
     <title>مدیریت سازمان‌ها | FXGuard</title>
     <link rel="icon" type="image/svg+xml" href="/brand/fxguard-logo.svg?v=ssdesk5">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root { color-scheme: dark; }
-        body { margin: 0; background: #080d1a; color: #f0f4fc; font-family: Vazirmatn, Tahoma, sans-serif; }
-        .ta-wrap { max-width: 1180px; margin: 0 auto; padding: 24px 16px 48px; }
-        .ta-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .ta-head h1 { font-size: 1.3rem; margin: 0; }
-        .ta-hint { color: #9aa6c0; font-size: .88rem; line-height: 1.8; margin: 8px 0 18px; }
-        .ta-btn { border: 1px solid #2c3a5c; background: #16213a; color: #f0f4fc; border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: .85rem; }
-        .ta-btn:hover:not(:disabled) { background: #1f2d4d; }
-        .ta-btn:disabled { opacity: .5; cursor: default; }
-        .ta-btn.on { background: #14532d; border-color: #1f7a44; }
-        .ta-btn.off { background: #4c1d1d; border-color: #7a2c2c; }
-        .ta-table-wrap { overflow-x: auto; border: 1px solid #1d2842; border-radius: 12px; }
-        table { width: 100%; border-collapse: collapse; font-size: .88rem; }
-        th, td { padding: 10px 12px; border-bottom: 1px solid #1d2842; text-align: start; vertical-align: middle; white-space: nowrap; }
-        th { background: #0f172b; color: #9aa6c0; font-weight: 600; }
-        tr:last-child td { border-bottom: 0; }
-        .ta-ltr { direction: ltr; unicode-bidi: isolate; }
-        .ta-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .78rem; background: #1d2842; color: #c8d2e8; }
-        .ta-badge.ok { background: #14532d; color: #bbf7d0; }
-        .ta-badge.warn { background: #713f12; color: #fde68a; }
-        .ta-badge.err { background: #4c1d1d; color: #fecaca; }
-        .ta-actions { display: flex; gap: 6px; }
-        .ta-msg { margin: 12px 0; padding: 10px 12px; border-radius: 8px; background: #16213a; display: none; }
-        .ta-msg.show { display: block; }
-        .ta-msg.err { background: #4c1d1d; }
-        .ta-link { color: #6ee7b7; font-size: .78rem; text-decoration: none; }
-        .ta-link:hover { text-decoration: underline; }
-        .ta-msg code { background: #0b1222; padding: 2px 6px; border-radius: 4px; font-size: .95rem; }
-        .ta-empty { padding: 28px; text-align: center; color: #9aa6c0; }
-    </style>
+    <link rel="stylesheet" href="/css/tenants-admin.css?v=tgw5">
 </head>
 <body>
 <main class="ta-wrap">
     <div class="ta-head">
-        <h1>مدیریت سازمان‌ها و Gateway واتساپ</h1>
+        <div class="ta-brand">
+            <img src="/brand/fxguard-logo.svg" alt="" width="48" height="48">
+            <div>
+                <p class="ta-kicker">کنسول مدیر سکو</p>
+                <h1>سازمان‌ها و Gateway واتساپ</h1>
+            </div>
+        </div>
         <div class="ta-actions">
             <button type="button" class="ta-btn" id="taRefresh">به‌روزرسانی</button>
-            <a class="ta-btn" href="/dashboard">بازگشت به پنل</a>
+            <a class="ta-btn" href="/dashboard?panel=platform">بازگشت به پنل</a>
         </div>
     </div>
     <p class="ta-hint">
-        با روشن کردن QR برای یک سازمان، یک پروسهٔ Gateway جدا (نشست واتساپ وب مخصوص همان سازمان) روی سرور اجرا می‌شود.
-        هر نشست حدود ۲۰۰ تا ۴۰۰ مگابایت حافظه مصرف می‌کند. اتصال QR غیررسمی است و ارسال انبوه ممکن است شماره را مسدود کند.
+        هر سازمان پنل و ورود جدا دارد. روشن کردن QR یک پروسهٔ Gateway اختصاصی (نشست واتساپ وب همان سازمان) روی سرور می‌سازد.
+        هر نشست حدود ۲۰۰ تا ۴۰۰ مگابایت حافظه می‌گیرد. اتصال QR غیررسمی است و ارسال انبوه ممکن است شماره را مسدود کند.
     </p>
+
+    <section class="ta-stats" aria-label="خلاصه">
+        <article class="ta-stat"><span>سازمان‌ها</span><b id="taStatTotal">—</b></article>
+        <article class="ta-stat"><span>آزمایشی</span><b id="taStatTrial">—</b></article>
+        <article class="ta-stat"><span>پرداخت‌شده</span><b id="taStatPaid">—</b></article>
+        <article class="ta-stat"><span>منتظر تأیید پرداخت</span><b id="taStatPending">—</b></article>
+        <article class="ta-stat"><span>منقضی / قفل</span><b id="taStatLocked">—</b></article>
+        <article class="ta-stat"><span>Gateway روشن</span><b id="taStatGw">—</b></article>
+        <article class="ta-stat"><span>واتساپ متصل</span><b id="taStatWa">—</b></article>
+    </section>
+
     <div class="ta-msg" id="taMsg" role="status" aria-live="polite"></div>
+
+    <div class="ta-toolbar">
+        <input type="search" class="ta-search" id="taSearch" placeholder="جستجو نام، شناسه یا ایمیل" autocomplete="off">
+        <select class="ta-select" id="taStatus" aria-label="وضعیت">
+            <option value="">همهٔ وضعیت‌ها</option>
+            <option value="trial">آزمایشی</option>
+            <option value="active">فعال</option>
+            <option value="suspended">تعلیق</option>
+            <option value="cancelled">لغو شده</option>
+            <option value="pay_pending">منتظر تأیید پرداخت</option>
+            <option value="locked">منقضی / قفل</option>
+        </select>
+        <select class="ta-select" id="taGateway" aria-label="Gateway">
+            <option value="">همهٔ Gatewayها</option>
+            <option value="on">روشن</option>
+            <option value="off">خاموش</option>
+        </select>
+        <span class="ta-count" id="taCount"></span>
+    </div>
+
     <div class="ta-table-wrap">
         <table>
             <thead>
                 <tr>
                     <th>سازمان</th>
-                    <th>شناسه و لینک ورود</th>
-                    <th>ایمیل مالک</th>
+                    <th>ورود</th>
+                    <th class="ta-hide-sm">ایمیل مالک</th>
                     <th>وضعیت</th>
-                    <th>پایان آزمایش</th>
+                    <th class="ta-hide-sm">آزمایش</th>
+                    <th>پرداخت</th>
                     <th>Gateway</th>
-                    <th>واتساپ</th>
+                    <th class="ta-hide-sm">واتساپ</th>
                     <th>عملیات</th>
                 </tr>
             </thead>
             <tbody id="taBody">
-                <tr><td colspan="8" class="ta-empty">در حال بارگذاری…</td></tr>
+                <tr><td colspan="9" class="ta-empty"><div class="ta-skel" style="width:42%;margin:0 auto"></div></td></tr>
             </tbody>
         </table>
     </div>
 </main>
-<script src="/js/tenants-admin.js?v=tgw3"></script>
+
+<dialog class="ta-dialog" id="taCred">
+    <h2>رمز موقت مالک</h2>
+    <p>این رمز فقط همین یک بار نشان داده می‌شود. نشست‌های قبلی مالک بسته شده است. از او بخواهید بعد از ورود رمز خودش را عوض کند.</p>
+    <div class="ta-cred" id="taCredBody"></div>
+    <div class="ta-dialog-actions">
+        <button type="button" class="ta-btn" id="taCredClose">بستن</button>
+        <button type="button" class="ta-btn primary" id="taCredCopy">کپی اطلاعات ورود</button>
+    </div>
+</dialog>
+
+<script src="/js/tenants-admin.js?v=tgw5"></script>
 </body>
 </html>
