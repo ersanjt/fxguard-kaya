@@ -11,6 +11,7 @@
  */
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -70,6 +71,35 @@ function tenantDir(tenant) {
 
 function pidFile(tenant) {
     return path.join(tenantDir(tenant), 'gateway.pid');
+}
+
+function versionFile(tenant) {
+    return path.join(tenantDir(tenant), 'gateway.version');
+}
+
+let cachedCodeVersion = null;
+
+/** هش کد و وابستگی‌های Gateway؛ اگر با نسخهٔ پروسهٔ در حال اجرا فرق کند، دیپلوی کد Gateway را عوض کرده است. */
+function gatewayCodeVersion() {
+    if (cachedCodeVersion !== null) return cachedCodeVersion;
+    try {
+        const hash = crypto.createHash('sha1');
+        hash.update(fs.readFileSync(GATEWAY_ENTRY));
+        const lock = path.resolve(path.dirname(GATEWAY_ENTRY), '..', 'package-lock.json');
+        if (fs.existsSync(lock)) hash.update(fs.readFileSync(lock));
+        cachedCodeVersion = hash.digest('hex').slice(0, 16);
+    } catch (_) {
+        cachedCodeVersion = '';
+    }
+    return cachedCodeVersion;
+}
+
+function runningVersion(tenant) {
+    try {
+        return fs.readFileSync(versionFile(tenant), 'utf8').trim();
+    } catch (_) {
+        return '';
+    }
 }
 
 function httpError(status, code, message) {
@@ -173,6 +203,7 @@ function spawnTenantGateway(tenant, logger) {
         });
         child.unref();
         fs.writeFileSync(pidFile(tenant), String(child.pid));
+        fs.writeFileSync(versionFile(tenant), gatewayCodeVersion());
         lastSpawnAt.set(tenant.id, Date.now());
         if (logger && logger.info) {
             logger.info('Tenant gateway started', { tenant: tenant.slug, port: tenant.gatewayPort, pid: child.pid });
@@ -313,6 +344,13 @@ async function superviseTenantGateways(logger) {
         const last = lastSpawnAt.get(row.id) || 0;
         if (Date.now() - last < RESPAWN_COOLDOWN_MS) continue;
         try {
+            const current = gatewayCodeVersion();
+            if (current && runningVersion(row) !== current && readPid(row)) {
+                if (logger && logger.info) {
+                    logger.info('Tenant gateway code changed — restarting', { tenant: row.slug });
+                }
+                await stopTenantGateway(row, logger);
+            }
             await startTenantGateway(row, logger);
         } catch (err) {
             if (logger && logger.warn) {

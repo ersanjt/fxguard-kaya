@@ -192,11 +192,21 @@ function serializedJid(val) {
 function extractLinkPreview(msg) {
     const d = (msg && msg._data) || {};
     const firstLink = Array.isArray(msg && msg.links) && msg.links[0] ? msg.links[0].link : '';
-    const url = String(d.canonicalUrl || d.matchedText || firstLink || '').trim();
+    return normalizeLinkPreview({
+        url: d.canonicalUrl || d.matchedText || firstLink,
+        title: d.title,
+        description: d.description,
+        thumbnail: d.thumbnail,
+    });
+}
+
+function normalizeLinkPreview(p) {
+    if (!p) return null;
+    const url = String(p.url || '').trim();
     if (!/^https?:\/\//i.test(url)) return null;
-    const title = typeof d.title === 'string' ? d.title : '';
-    const description = typeof d.description === 'string' ? d.description : '';
-    let thumbnail = typeof d.thumbnail === 'string' ? d.thumbnail.trim() : '';
+    const title = typeof p.title === 'string' ? p.title : '';
+    const description = typeof p.description === 'string' ? p.description : '';
+    let thumbnail = typeof p.thumbnail === 'string' ? p.thumbnail.trim() : '';
     if (thumbnail && !thumbnail.startsWith('data:'))
         thumbnail = 'data:image/jpeg;base64,' + thumbnail;
     if (thumbnail.length > 200000) thumbnail = '';
@@ -2587,6 +2597,7 @@ async function ingestStoreInboundMessage(raw, via) {
         },
         author: raw.author || null,
         authorName: raw.authorName || raw.notifyName || null,
+        linkPreview: normalizeLinkPreview(raw.linkPreview),
     };
 
     if (raw.media && raw.media.data) {
@@ -2695,8 +2706,19 @@ async function hookIncomingMessageObserver() {
                 if (!v) return '';
                 if (typeof v === 'string') return v;
                 if (v._serialized) return String(v._serialized);
+                if (v.$1) return String(v.$1);
                 if (v.user && v.server) return `${v.user}@${v.server}`;
                 return '';
+            }
+            function packLinkPreview(m) {
+                const url = String(m.canonicalUrl || m.matchedText || '');
+                if (!/^https?:\/\//i.test(url)) return null;
+                return {
+                    url,
+                    title: typeof m.title === 'string' ? m.title : '',
+                    description: typeof m.description === 'string' ? m.description : '',
+                    thumbnail: typeof m.thumbnail === 'string' ? m.thumbnail : '',
+                };
             }
             function toB64(input) {
                 if (!input) return '';
@@ -2864,7 +2886,7 @@ async function hookIncomingMessageObserver() {
                 } catch (_) {}
                 return {
                     id: idObj.id || '',
-                    serializedId: idObj._serialized || '',
+                    serializedId: idObj._serialized || idObj.$1 || '',
                     from,
                     to,
                     chatId,
@@ -2876,6 +2898,7 @@ async function hookIncomingMessageObserver() {
                         ['image', 'video', 'ptt', 'audio', 'document', 'sticker'].indexOf(type) >= 0
                     ),
                     notifyName: m.notifyName || m.verifiedName || '',
+                    linkPreview: packLinkPreview(m),
                     chatName: '',
                     contactNumber,
                     contactLid: lid,
@@ -2949,8 +2972,19 @@ async function pollUnreadIncomingMessages() {
                     if (!v) return '';
                     if (typeof v === 'string') return v;
                     if (v._serialized) return String(v._serialized);
+                    if (v.$1) return String(v.$1);
                     if (v.user && v.server) return `${v.user}@${v.server}`;
                     return '';
+                }
+                function packLinkPreview(m) {
+                    const url = String(m.canonicalUrl || m.matchedText || '');
+                    if (!/^https?:\/\//i.test(url)) return null;
+                    return {
+                        url,
+                        title: typeof m.title === 'string' ? m.title : '',
+                        description: typeof m.description === 'string' ? m.description : '',
+                        thumbnail: typeof m.thumbnail === 'string' ? m.thumbnail : '',
+                    };
                 }
                 function packMsg(m) {
                     if (!m) return null;
@@ -3004,7 +3038,7 @@ async function pollUnreadIncomingMessages() {
                         '';
                     return {
                         id: idObj.id || '',
-                        serializedId: idObj._serialized || '',
+                        serializedId: idObj._serialized || idObj.$1 || '',
                         from,
                         to,
                         chatId,
@@ -3018,6 +3052,7 @@ async function pollUnreadIncomingMessages() {
                             ) >= 0
                         ),
                         notifyName: m.notifyName || m.verifiedName || '',
+                        linkPreview: packLinkPreview(m),
                         chatName: '',
                         contactNumber,
                         contactLid: lid,
