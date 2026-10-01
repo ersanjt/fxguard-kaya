@@ -365,8 +365,8 @@ jobs:
               echo ""
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
-              pm2 logs crm-backend-kaya --lines 40 --nostream || true
-              pm2 logs crm-gateway-kaya --lines 20 --nostream || true
+              pm2 logs crm-backend-kaya --lines 40 --nostream 2>&1 | sed -E 's/[0-9]{6,}/<num>/g' | grep -iE 'error|warn|fail|listen|ready' | cut -c1-240 || true
+              pm2 logs crm-gateway-kaya --lines 20 --nostream 2>&1 | sed -E 's/[0-9]{6,}/<num>/g' | grep -iE 'error|warn|fail|listen|ready' | cut -c1-240 || true
               exit 1
             fi
 
@@ -378,7 +378,7 @@ jobs:
               echo "✅ Gateway HTTP پاسخ می‌دهد (پورت ${GW_PORT})"
             else
               echo "⚠️ Gateway روی ${GW_PORT} پاسخ نداد — PORT در gateway/.env و GATEWAY_URL در backend/.env را بررسی کنید"
-              pm2 logs crm-gateway-kaya --lines 15 --nostream || true
+              pm2 logs crm-gateway-kaya --lines 15 --nostream 2>&1 | sed -E 's/[0-9]{6,}/<num>/g' | grep -iE 'error|warn|fail|listen|ready' | cut -c1-240 || true
             fi
 
             echo "🔒 آرشیو شمارهٔ قبلی / فقط شمارهٔ فعلی واتساپ ..."
