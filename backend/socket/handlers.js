@@ -2,7 +2,7 @@
  * هندلرهای Socket.IO — ارسال پیام، تماس تصویری/صوتی، وضعیت کاربر
  */
 const { User, Conversation, Message, Department } = require('../models');
-const { getSendTarget } = require('../lib/phoneUtils');
+const { getCustomerSendTarget } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
@@ -138,7 +138,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     timestamp: new Date()
                 });
 
-                const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
+                const toPhone = getCustomerSendTarget(conversation.customer, conversation) || conversation.customer.phone;
                 const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
                 if (rabbitChannel && !isCloudApiConfigured()) {
                     rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({

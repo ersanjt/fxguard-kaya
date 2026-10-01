@@ -5,7 +5,7 @@ const { Message, Conversation, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
-const { getSendTarget } = require('../lib/phoneUtils');
+const { getCustomerSendTarget } = require('../lib/phoneUtils');
 const { validateOutboundSender, applyStaffSignatureToOutboundText, buildStaffMediaCaption, buildForwardOutboundText, buildStaffVoiceIntroText } = require('./outboundMessagePrefix');
 const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
 const {
@@ -275,7 +275,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         } catch (_) {}
     }
 
-    const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
+    const toPhone = getCustomerSendTarget(conversation.customer, conversation) || conversation.customer.phone;
     if (!toPhone) {
         await msg.update({ status: 'failed' });
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };

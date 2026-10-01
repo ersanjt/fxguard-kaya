@@ -194,6 +194,26 @@ function getSendTarget(phone) {
 }
 
 /**
+ * مقصد ارسال برای مشتری مکالمه. وقتی شمارهٔ ذخیره‌شده همان LID ثبت‌شده از پیام ورودی است،
+ * باید با @lid فرستاده شود؛ بعضی LIDها شکل شمارهٔ واقعی دارند (مثلاً با 33 شروع می‌شوند).
+ */
+function getCustomerSendTarget(customer, conversation) {
+    const phone = customer && customer.phone;
+    if (phone == null || phone === '') return '';
+    const s = String(phone).trim();
+    if (isGroupJid(s)) return s;
+    const digits = canonicalizePhoneDigits(s);
+    const storedLids = [
+        customer.customFields && customer.customFields.whatsappLid,
+        conversation && conversation.metadata && conversation.metadata.whatsappLid,
+    ]
+        .map((v) => extractDigits(v || ''))
+        .filter(Boolean);
+    if (digits && storedLids.includes(digits)) return `${digits}@lid`;
+    return getSendTarget(s) || s;
+}
+
+/**
  * Chat ID کامل برای whatsapp-web.js
  */
 function toWhatsAppChatId(phoneOrJid) {
@@ -206,6 +226,7 @@ function toWhatsAppChatId(phoneOrJid) {
 module.exports = {
     normalizePhone,
     getSendTarget,
+    getCustomerSendTarget,
     toWhatsAppChatId,
     isLikelyWhatsAppLid,
     isGroupJid,

@@ -21,7 +21,7 @@ const { Op } = require('sequelize');
 const { getPanelSettingsKey } = require('../lib/tenantContext');
 const {
     normalizePhone,
-    getSendTarget,
+    getCustomerSendTarget,
     isLikelyWhatsAppLid,
     extractDigits,
     isGroupJid,
@@ -553,7 +553,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
             logger.warn('sendAutoReply: customer not found', { conversationId: conversation.id });
             return null;
         }
-        const toPhone = getSendTarget(customer.phone) || customer.phone;
+        const toPhone = getCustomerSendTarget(customer, conversation) || customer.phone;
         const isAI = !!options.isAI;
         const customerMessage = isAI ? AI_MESSAGE_PREFIX + responseText : responseText;
         const autoMsg = await Message.create({

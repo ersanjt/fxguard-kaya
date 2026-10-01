@@ -5,6 +5,7 @@ const {
     looksLikeTechnicalWhatsAppLabel,
     displayableWhatsAppPhone,
     prettyWhatsAppPhone,
+    getCustomerSendTarget,
 } = require('../lib/phoneUtils');
 
 function test(name, fn) {
@@ -45,4 +46,15 @@ test('formats Iran and Turkey mobiles for staff UI', () => {
     assert.strictEqual(prettyWhatsAppPhone('lid@249331944788048'), '');
 });
 
-console.log('\nResults: 3 passed, 0 failed');
+test('a stored LID that looks like a real number is sent as @lid', () => {
+    const lid = '33182279072894';
+    assert.strictEqual(getCustomerSendTarget({ phone: lid, customFields: { whatsappLid: lid } }), lid + '@lid');
+    assert.strictEqual(getCustomerSendTarget({ phone: lid }, { metadata: { whatsappLid: lid } }), lid + '@lid');
+    assert.strictEqual(
+        getCustomerSendTarget({ phone: '989305880135', customFields: { whatsappLid: lid } }),
+        '989305880135'
+    );
+    assert.strictEqual(getCustomerSendTarget({ phone: '120363000000000000@g.us' }), '120363000000000000@g.us');
+});
+
+console.log('\nResults: 4 passed, 0 failed');

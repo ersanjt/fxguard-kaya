@@ -3,7 +3,7 @@
  * متن‌ها از WhatsappConfig خوانده می‌شوند؛ خالی = پیش‌فرض
  */
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
-const { getSendTarget } = require('../lib/phoneUtils');
+const { getCustomerSendTarget } = require('../lib/phoneUtils');
 const { Message, Customer, Conversation, WhatsappConfig, User, Department } = require('../models');
 const logger = require('../config/logger');
 const { getPanelSettingsKey } = require('../lib/tenantContext');
@@ -35,7 +35,7 @@ async function sendOutgoingAutoMessage(conversation, text) {
             logger.warn('sendOutgoingAutoMessage: customer not found', { conversationId: conversation.id });
             return false;
         }
-        const toPhone = getSendTarget(customer.phone) || customer.phone;
+        const toPhone = getCustomerSendTarget(customer, conversation) || customer.phone;
         if (rabbitChannel && !isCloudApiConfigured()) {
             const sent = rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: text, conversationId: conversation.id
