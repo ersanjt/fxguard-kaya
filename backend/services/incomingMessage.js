@@ -28,6 +28,7 @@ const {
 } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { gatewayGet } = require('../lib/gatewayClient');
+const { sanitizeLinkPreview } = require('../lib/linkPreview');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const {
@@ -1137,6 +1138,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                           null,
                   }
                 : {};
+        const linkPreview = sanitizeLinkPreview(messageData.linkPreview);
+        if (linkPreview) msgMetadata.linkPreview = linkPreview;
 
         if (isFromMe) {
             const bodyStr = String(body || '').trim();

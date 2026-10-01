@@ -180,10 +180,28 @@ function serializedJid(val) {
     if (typeof val === 'string') return val.trim();
     if (typeof val === 'object') {
         if (val._serialized) return String(val._serialized).trim();
+        // WhatsApp Web (July 2026) renamed _serialized to $1
+        if (val.$1) return String(val.$1).trim();
         if (val.user && val.server) return `${val.user}@${val.server}`;
         if (val.id) return serializedJid(val.id);
     }
     return '';
+}
+
+/** کارت پیش‌نمایش لینکی که خود واتساپ برای پیام ساخته (عنوان، توضیح، تصویر کوچک base64). */
+function extractLinkPreview(msg) {
+    const d = (msg && msg._data) || {};
+    const firstLink = Array.isArray(msg && msg.links) && msg.links[0] ? msg.links[0].link : '';
+    const url = String(d.canonicalUrl || d.matchedText || firstLink || '').trim();
+    if (!/^https?:\/\//i.test(url)) return null;
+    const title = typeof d.title === 'string' ? d.title : '';
+    const description = typeof d.description === 'string' ? d.description : '';
+    let thumbnail = typeof d.thumbnail === 'string' ? d.thumbnail.trim() : '';
+    if (thumbnail && !thumbnail.startsWith('data:'))
+        thumbnail = 'data:image/jpeg;base64,' + thumbnail;
+    if (thumbnail.length > 200000) thumbnail = '';
+    if (!title && !description && !thumbnail) return null;
+    return { url, title, description, thumbnail };
 }
 
 function isWhatsAppGroupChat(chat, msg) {
@@ -1365,6 +1383,7 @@ function attachClientEvents(c) {
             },
             author: authorId,
             authorName: authorName,
+            linkPreview: extractLinkPreview(msg),
         };
 
         await attachMediaToMessageData(messageData, msg);

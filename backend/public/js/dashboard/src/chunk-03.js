@@ -2288,6 +2288,23 @@
                 }
             });
         }
+        function buildLinkPreviewCard(m) {
+            var meta = m.metadata;
+            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (_e) { meta = null; } }
+            var lp = meta && meta.linkPreview;
+            if (!lp || !/^https?:\/\//i.test(String(lp.url || ''))) return '';
+            var thumb = /^data:image\/(jpeg|png|webp);base64,/.test(String(lp.thumbnail || '')) ? lp.thumbnail : '';
+            var host = '';
+            try { host = new URL(lp.url).hostname.replace(/^www\./, ''); } catch (_e) {}
+            return '<a class="msg-link-card" href="' + escapeAttr(lp.url) + '" target="_blank" rel="noopener noreferrer">' +
+                (thumb ? '<img class="msg-link-card-img" src="' + escapeAttr(thumb) + '" alt="" loading="lazy">' : '') +
+                '<span class="msg-link-card-body">' +
+                (lp.title ? '<span class="msg-link-card-title">' + escapeHtml(lp.title) + '</span>' : '') +
+                (lp.description ? '<span class="msg-link-card-desc">' + escapeHtml(lp.description) + '</span>' : '') +
+                (host ? '<span class="msg-link-card-host">' + escapeHtml(host) + '</span>' : '') +
+                '</span></a>';
+        }
+
         function buildMessageContextBanner(m, isOut) {
             var meta = (m && m.metadata) || {};
             var parts = [];
@@ -2714,7 +2731,8 @@
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
                 var contextBanner = buildMessageContextBanner(m, isOut);
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                var linkCard = m.hasMedia ? '' : buildLinkPreviewCard(m);
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + (linkCard ? ' msg-has-link-card' : '') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + linkCard + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position

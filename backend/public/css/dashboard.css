@@ -2320,6 +2320,22 @@
         .msg-media-dl { font-size: 0.85rem; font-weight: 500; }
         .msg-media-placeholder { padding: 10px 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); }
         .msg-caption { margin-top: 4px; font-size: 0.9rem; color: var(--text-secondary); }
+        .msg-link-card {
+            display: block;
+            margin: 2px 0 6px;
+            border-radius: 8px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.22);
+            color: inherit;
+            text-decoration: none;
+            max-width: 340px;
+        }
+        .msg-link-card:hover { background: rgba(0, 0, 0, 0.3); }
+        .msg-link-card-img { display: block; width: 100%; max-height: 220px; object-fit: cover; }
+        .msg-link-card-body { display: flex; flex-direction: column; gap: 2px; padding: 7px 10px 8px; }
+        .msg-link-card-title { font-weight: 600; font-size: 0.86rem; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .msg-link-card-desc { font-size: 0.78rem; opacity: 0.8; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .msg-link-card-host { font-size: 0.72rem; opacity: 0.6; direction: ltr; text-align: start; }
         .msg-media-link, .msg-file-link { color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
         .msg-media-link:hover, .msg-file-link:hover { text-decoration: underline; }
         .chat-send { display: flex; gap: 10px; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); background: var(--bg-card); border-top: 1px solid var(--border); align-items: stretch; flex-shrink: 0; flex-wrap: nowrap; flex-direction: column; box-sizing: border-box; width: 100%; min-width: 0; }
