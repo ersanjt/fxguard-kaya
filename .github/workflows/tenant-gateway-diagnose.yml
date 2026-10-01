@@ -1,0 +1,51 @@
+name: Tenant gateway diagnose
+
+# Repo is public: only keyword-filtered lines are printed and digits/emails are masked.
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: Company panel slug (e.g. nikaesthetic)
+        required: true
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Gateway process and filtered log
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          SLUG: ${{ github.event.inputs.slug }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: SLUG
+          timeout: 2m
+          command_timeout: 5m
+          script: |
+            set -u
+            case "$SLUG" in *[!a-z0-9-]*|"") echo "bad slug"; exit 1 ;; esac
+            mask() { sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/<email>/g; s/[0-9]{6,}/<num>/g' | cut -c1-240; }
+            echo "== processes =="
+            ps -eo pid,etimes,rss,args | grep -- "--tenant=$SLUG" | grep -v grep | awk '{print $1, "up="$2"s", "rss="$3"KB"}'
+            echo "== chromium children =="
+            ps -eo pid,ppid,etimes,args | grep -i chrom | grep -c -v grep
+            ROOT="${TENANT_GATEWAY_DATA_DIR:-$HOME/.fxguard-tenant-gateways}"
+            for d in "$ROOT"/*/; do
+              PIDF="$d/gateway.pid"
+              [ -f "$PIDF" ] || continue
+              PID="$(cat "$PIDF")"
+              if tr '\0' ' ' < "/proc/$PID/cmdline" 2>/dev/null | grep -q -- "--tenant=$SLUG"; then
+                echo "== session dir =="
+                ls -la "$d/session" 2>/dev/null | awk '{print $1, $5, $9}' | mask
+                find "$d/session" -maxdepth 4 -name 'Singleton*' 2>/dev/null | sed "s|$d||"
+                echo "== gateway.log (filtered, last 80) =="
+                grep -iE 'error|warn|fail|ready|qr|auth|start|initiali|chrom|puppeteer|lock|disconnect|timeout|listen' "$d/gateway.log" | tail -n 80 | mask
+              fi
+            done
+            echo "== backend app send errors (last 20) =="
+            pm2 logs crm-backend-app --nostream --lines 400 2>/dev/null | grep -iE 'gateway send|send error|deliver|503|502' | tail -n 20 | mask
