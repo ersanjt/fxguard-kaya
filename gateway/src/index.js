@@ -1746,6 +1746,34 @@ async function resolveOutboundChatId(to) {
     return base;
 }
 
+function isNoLidError(err) {
+    return /No LID for user/i.test(String((err && err.message) || err || ''));
+}
+
+/**
+ * واتساپ وب جدید به `شماره@c.us` بدون LID شناخته‌شده پیام نمی‌دهد. اول LID را از سرور واتساپ می‌گیریم؛
+ * بعد خود ارقام را به‌عنوان LID امتحان می‌کنیم (بعضی LIDها شبیه شمارهٔ واقعی‌اند و اشتباهی @c.us شده‌اند).
+ */
+async function lidFallbackTargets(chatId) {
+    const id = String(chatId || '');
+    if (!/@c\.us$/i.test(id)) return [];
+    const targets = [];
+    if (client && typeof client.getContactLidAndPhone === 'function') {
+        try {
+            const mapped = await Promise.race([
+                client.getContactLidAndPhone([id]),
+                timeoutReject(5000, 'lid_lookup_timeout'),
+            ]);
+            const row = Array.isArray(mapped) ? mapped[0] : mapped;
+            const lid = row && row.lid ? String(row.lid) : '';
+            if (/@lid$/i.test(lid)) targets.push(lid);
+        } catch (_) {}
+    }
+    const digits = id.replace(/@c\.us$/i, '').replace(/\D/g, '');
+    if (digits && !targets.includes(`${digits}@lid`)) targets.push(`${digits}@lid`);
+    return targets;
+}
+
 // SSRF protection + optional whitelist
 function isSafeMediaUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -2066,11 +2094,10 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
             return client.sendMessage(targetChatId, message || '', sendOpts);
         };
 
-        outboundApiSendDepth += 1;
-        try {
-            const sendTimeoutMs = media ? 120000 : 45000;
-            sentMsg = await Promise.race([
-                doSend(chatId),
+        const sendTimeoutMs = media ? 120000 : 45000;
+        const sendWithTimeout = (targetChatId) =>
+            Promise.race([
+                doSend(targetChatId),
                 new Promise((_, reject) =>
                     setTimeout(() => {
                         const err = new Error('send_timeout');
@@ -2079,6 +2106,37 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                     }, sendTimeoutMs)
                 ),
             ]);
+
+        outboundApiSendDepth += 1;
+        try {
+            try {
+                sentMsg = await sendWithTimeout(chatId);
+            } catch (firstErr) {
+                if (!isNoLidError(firstErr)) throw firstErr;
+                sentMsg = null;
+                for (const target of await lidFallbackTargets(chatId)) {
+                    await cleanupTempMedia(tmpMediaPath);
+                    tmpMediaPath = null;
+                    try {
+                        sentMsg = await sendWithTimeout(target);
+                        logger.info('Send retried on LID after "No LID for user"', {
+                            from: chatId,
+                            to: target,
+                        });
+                        chatId = target;
+                        break;
+                    } catch (retryErr) {
+                        if (!isNoLidError(retryErr)) throw retryErr;
+                    }
+                }
+                if (!sentMsg) {
+                    const err = new Error(
+                        'WhatsApp did not find this contact (No LID for user). Check the number, or ask the customer to message first.'
+                    );
+                    err.statusCode = 422;
+                    throw err;
+                }
+            }
         } finally {
             outboundApiSendDepth = Math.max(0, outboundApiSendDepth - 1);
         }

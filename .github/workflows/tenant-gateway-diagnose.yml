@@ -29,7 +29,7 @@ jobs:
           script: |
             set -u
             case "$SLUG" in *[!a-z0-9-]*|"") echo "bad slug"; exit 1 ;; esac
-            mask() { sed -E 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/<email>/g; s/[0-9]{6,}/<num>/g' | cut -c1-240; }
+            mask() { sed -E 's/[0-9]{6,}/<num>/g; s/@(c\.us|lid|g\.us|s\.whatsapp\.net)/#WA#\1/g; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/<email>/g; s/#WA#/@/g' | cut -c1-240; }
             echo "== processes =="
             ps -eo pid,etimes,rss,args | grep -- "--tenant=$SLUG" | grep -v grep | awk '{print $1, "up="$2"s", "rss="$3"KB"}'
             echo "== chromium children =="

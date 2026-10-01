@@ -900,7 +900,7 @@ async function runTests() {
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ content: 'hello' });
         assert(
-            [200, 201, 400, 502, 503].includes(r.status),
+            [200, 201, 400, 422, 503].includes(r.status),
             `Expected inbox send or gateway error, got ${r.status}`
         );
         assert.notStrictEqual(r.status, 403, 'unassigned live chat must be sendable');
@@ -984,7 +984,7 @@ async function runTests() {
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ content: 'after archive' });
         assert(
-            [200, 201, 400, 502, 503].includes(r.status),
+            [200, 201, 400, 422, 503].includes(r.status),
             `Expected live-thread send or gateway error, got ${r.status}`
         );
         if (r.status === 400) {
