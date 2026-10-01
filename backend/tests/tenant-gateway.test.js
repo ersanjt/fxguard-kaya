@@ -67,6 +67,7 @@ async function main() {
             get: (url) => wrap(req.get(url)),
             post: (url, body) => wrap(req.post(url)).send(body || {}),
             put: (url, body) => wrap(req.put(url)).send(body || {}),
+            patch: (url, body) => wrap(req.patch(url)).send(body || {}),
         };
     }
 
@@ -243,6 +244,60 @@ async function main() {
             const left = new Date(tenantA.trialEndsAt).getTime() - Date.now();
             assert(left > 13 * 86400000 && left <= 14 * 86400000, 'trial should end ~14 days from now');
             assert.notStrictEqual((await a.get('/api/customers')).status, 402);
+        });
+
+        await test('platform admin sees per-company usage, users and customers', async () => {
+            assert.strictEqual((await a.get('/api/tenants/admin/' + tenantA.id + '/details')).status, 404);
+            const list = await admin.get('/api/tenants/admin/list');
+            const row = list.body.tenants.find((t) => t.slug === 'gw-a');
+            assert.strictEqual(row.usage.users, 1);
+            assert.strictEqual(row.usage.customers, 1);
+            assert(row.usage.messages >= 1, JSON.stringify(row.usage));
+            const d = await admin.get('/api/tenants/admin/' + tenantA.id + '/details');
+            assert.strictEqual(d.status, 200, JSON.stringify(d.body));
+            assert.strictEqual(d.body.tenant.slug, 'gw-a');
+            assert.deepStrictEqual(d.body.users.map((u) => u.email), ['owner@gw-a.test']);
+            assert(!('password' in d.body.users[0]), 'password hash must never leave the server');
+            assert.strictEqual(d.body.customers[0].phone, '4915100000777');
+        });
+
+        await test('platform admin creates a company user who logs in with a username', async () => {
+            const body = { name: 'Sara', email: 'sara@gw-a.test', username: 'sara.gwa', role: 'agent' };
+            assert.strictEqual((await a.post('/api/tenants/admin/' + tenantA.id + '/users', body)).status, 404);
+            const r = await admin.post('/api/tenants/admin/' + tenantA.id + '/users', body);
+            assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+            assert.strictEqual(r.body.user.role, 'agent');
+            const login = await req.post('/api/auth/login').set('Host', 'gw-a.app.fxguard.io')
+                .send({ username: 'sara.gwa', password: r.body.password });
+            assert.strictEqual(login.status, 200, JSON.stringify(login.body));
+            const user = await models.User.findOne({ where: { email: 'sara@gw-a.test' }, skipTenantScope: true });
+            assert.strictEqual(user.tenantId, tenantA.id);
+            const dup = await admin.post('/api/tenants/admin/' + tenantB.id + '/users', { email: 'x@gw-b.test', username: 'sara.gwa' });
+            assert.strictEqual(dup.status, 409, JSON.stringify(dup.body));
+        });
+
+        await test('platform admin sets a new password, disables a user and keeps the last owner', async () => {
+            const sara = await models.User.findOne({ where: { email: 'sara@gw-a.test' }, skipTenantScope: true });
+            const base = '/api/tenants/admin/' + tenantA.id + '/users/';
+            const weak = await admin.patch(base + sara.id, { password: 'short' });
+            assert.strictEqual(weak.status, 400);
+            const pw = await admin.patch(base + sara.id, { password: 'NewSecret99' });
+            assert.strictEqual(pw.status, 200, JSON.stringify(pw.body));
+            const login = await req.post('/api/auth/login').set('Host', 'gw-a.app.fxguard.io')
+                .send({ email: 'sara@gw-a.test', password: 'NewSecret99' });
+            assert.strictEqual(login.status, 200, JSON.stringify(login.body));
+            const off = await admin.patch(base + sara.id, { isActive: false });
+            assert.strictEqual(off.body.user.isActive, false);
+            const blocked = await req.post('/api/auth/login').set('Host', 'gw-a.app.fxguard.io')
+                .send({ email: 'sara@gw-a.test', password: 'NewSecret99' });
+            assert.notStrictEqual(blocked.status, 200);
+
+            const owner = await models.User.findOne({ where: { email: 'owner@gw-a.test' }, skipTenantScope: true });
+            const demote = await admin.patch(base + owner.id, { role: 'admin' });
+            assert.strictEqual(demote.status, 400, JSON.stringify(demote.body));
+            assert.strictEqual(demote.body.code, 'LAST_OWNER');
+            const other = await models.User.findOne({ where: { email: 'owner@gw-b.test' }, skipTenantScope: true });
+            assert.strictEqual((await admin.patch(base + other.id, { name: 'x' })).status, 404);
         });
 
         await test('SQLite migration drops a global inline UNIQUE so two companies can share a value', async () => {

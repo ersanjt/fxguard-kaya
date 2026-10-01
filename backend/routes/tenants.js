@@ -38,6 +38,12 @@ const { Tenant, User } = require('../models');
 const { setAuthCookie } = require('../lib/authCookie');
 const { issueStaffToken } = require('../lib/staffSession');
 const { getPermissions } = require('../lib/permissions');
+const {
+    tenantUsageMap,
+    tenantDetails,
+    createTenantUser,
+    updateTenantUser,
+} = require('../services/tenancy/tenantAdminConsole');
 
 function createTenantsRouter(logger) {
     const router = express.Router();
@@ -269,6 +275,7 @@ function createTenantsRouter(logger) {
                 skipTenantScope: true,
             });
             const ownerEmail = new Map(owners.map((u) => [String(u.tenantId), u.email]));
+            const usage = await tenantUsageMap(rows.map((r) => r.id));
             const tenants = await Promise.all(rows.map(async (row) => ({
                 id: row.id,
                 slug: row.slug,
@@ -290,10 +297,88 @@ function createTenantsRouter(logger) {
                 gatewayEnabled: row.gatewayEnabled === true,
                 gatewayPort: row.gatewayPort || null,
                 gateway: row.gatewayEnabled && row.gatewayPort ? await probeTenantGateway(row, 1500) : null,
+                usage: usage.get(String(row.id)),
             })));
             return res.json({ ok: true, tenants });
         } catch (err) {
             return sendAdminError(res, err, 'خواندن سازمان‌ها ناموفق بود');
+        }
+    });
+
+    router.get('/tenants/admin/:id/details', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const { probeTenantGateway } = require('../services/tenantGatewaySupervisor');
+            const { tenant: row, usage, users, customers } = await tenantDetails(req.params.id);
+            return res.json({
+                ok: true,
+                tenant: {
+                    id: row.id,
+                    slug: row.slug,
+                    name: row.name,
+                    industry: normalizeIndustry(row.industry),
+                    status: row.status,
+                    planTier: row.planTier,
+                    trialEndsAt: row.trialEndsAt,
+                    createdAt: row.createdAt,
+                    customDomain: row.customDomain || null,
+                    enabledSkills: parseSkillsColumn(row.enabledSkills) || LEGACY_SKILLS.slice(),
+                    access: tenantAccessState(row).code || 'ok',
+                    loginUrl: tenantLoginUrl(row.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
+                    gatewayEnabled: row.gatewayEnabled === true,
+                    gatewayPort: row.gatewayPort || null,
+                    gateway: row.gatewayEnabled && row.gatewayPort ? await probeTenantGateway(row, 1500) : null,
+                },
+                usage,
+                users,
+                customers,
+            });
+        } catch (err) {
+            return sendAdminError(res, err, 'خواندن جزئیات سازمان ناموفق بود');
+        }
+    });
+
+    /** رمز فقط در همین پاسخ برمی‌گردد و جایی ذخیره نمی‌شود. */
+    router.post('/tenants/admin/:id/users', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const { user, password, tenant } = await createTenantUser(req.params.id, req.body);
+            if (logger && logger.info) {
+                logger.info('Tenant user created by platform admin', {
+                    tenantId: tenant.id,
+                    user: user.email,
+                    role: user.role,
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.status(201).json({
+                ok: true,
+                user,
+                password,
+                loginUrl: tenantLoginUrl(tenant.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
+            });
+        } catch (err) {
+            return sendAdminError(res, err, 'ساخت کاربر ناموفق بود');
+        }
+    });
+
+    router.patch('/tenants/admin/:id/users/:userId', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const { user, password, tenant } = await updateTenantUser(req.params.id, req.params.userId, req.body);
+            if (logger && logger.info) {
+                logger.info('Tenant user updated by platform admin', {
+                    tenantId: tenant.id,
+                    user: user.email,
+                    fields: Object.keys(req.body || {}).filter((k) => k !== 'password'),
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.json({
+                ok: true,
+                user,
+                password: password || undefined,
+                loginUrl: tenantLoginUrl(tenant.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
+            });
+        } catch (err) {
+            return sendAdminError(res, err, 'ویرایش کاربر ناموفق بود');
         }
     });
 

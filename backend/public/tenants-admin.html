@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/brand/fxguard-favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/fxguard-apple-touch.png">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/tenants-admin.css?v=tgw5">
+    <link rel="stylesheet" href="/css/tenants-admin.css?v=tgw6">
 </head>
 <body>
 <main class="ta-wrap">
@@ -40,6 +40,9 @@
         <article class="ta-stat"><span>منقضی / قفل</span><b id="taStatLocked">—</b></article>
         <article class="ta-stat"><span>Gateway روشن</span><b id="taStatGw">—</b></article>
         <article class="ta-stat"><span>واتساپ متصل</span><b id="taStatWa">—</b></article>
+        <article class="ta-stat"><span>کاربران پنل‌ها</span><b id="taStatUsers">—</b></article>
+        <article class="ta-stat"><span>مشتریان</span><b id="taStatCustomers">—</b></article>
+        <article class="ta-stat"><span>پیام‌ها</span><b id="taStatMessages">—</b></article>
     </section>
 
     <div class="ta-msg" id="taMsg" role="status" aria-live="polite"></div>
@@ -73,21 +76,22 @@
                     <th>وضعیت</th>
                     <th class="ta-hide-sm">آزمایش</th>
                     <th>پرداخت</th>
+                    <th>استفاده</th>
                     <th>Gateway</th>
                     <th class="ta-hide-sm">واتساپ</th>
                     <th>عملیات</th>
                 </tr>
             </thead>
             <tbody id="taBody">
-                <tr><td colspan="9" class="ta-empty"><div class="ta-skel" style="width:42%;margin:0 auto"></div></td></tr>
+                <tr><td colspan="10" class="ta-empty"><div class="ta-skel" style="width:42%;margin:0 auto"></div></td></tr>
             </tbody>
         </table>
     </div>
 </main>
 
 <dialog class="ta-dialog" id="taCred">
-    <h2>رمز موقت مالک</h2>
-    <p>این رمز فقط همین یک بار نشان داده می‌شود. نشست‌های قبلی مالک بسته شده است. از او بخواهید بعد از ورود رمز خودش را عوض کند.</p>
+    <h2 id="taCredTitle">رمز موقت مالک</h2>
+    <p>این رمز فقط همین یک بار نشان داده می‌شود و جایی ذخیره نمی‌شود. نشست‌های قبلی این کاربر بسته شده است. از او بخواهید بعد از ورود رمز خودش را عوض کند.</p>
     <div class="ta-cred" id="taCredBody"></div>
     <div class="ta-dialog-actions">
         <button type="button" class="ta-btn" id="taCredClose">بستن</button>
@@ -95,6 +99,51 @@
     </div>
 </dialog>
 
-<script src="/js/tenants-admin.js?v=tgw7"></script>
+<dialog class="ta-dialog ta-drawer" id="taDetail" aria-labelledby="taDetailTitle">
+    <div class="ta-drawer-head">
+        <div>
+            <p class="ta-kicker" id="taDetailKicker">جزئیات سازمان</p>
+            <h2 id="taDetailTitle">—</h2>
+        </div>
+        <button type="button" class="ta-btn" id="taDetailClose">بستن</button>
+    </div>
+    <nav class="ta-tabs" role="tablist">
+        <button type="button" class="ta-tab active" data-tab="overview" role="tab">خلاصه</button>
+        <button type="button" class="ta-tab" data-tab="users" role="tab">کاربران و دسترسی</button>
+        <button type="button" class="ta-tab" data-tab="customers" role="tab">مشتریان اخیر</button>
+    </nav>
+    <div class="ta-drawer-body" id="taDetailBody"></div>
+</dialog>
+
+<dialog class="ta-dialog" id="taUserDlg" aria-labelledby="taUserTitle">
+    <form id="taUserForm" method="dialog" autocomplete="off">
+        <h2 id="taUserTitle">کاربر جدید</h2>
+        <p id="taUserHint">ورود با ایمیل یا نام کاربری انجام می‌شود. اگر رمز را خالی بگذارید یک رمز امن ساخته و یک بار نمایش داده می‌شود.</p>
+        <div class="ta-form">
+            <label>نام نمایشی<input class="ta-search" name="name" maxlength="120"></label>
+            <label>ایمیل<input class="ta-search ta-ltr" name="email" type="email" required></label>
+            <label>نام کاربری (اختیاری)<input class="ta-search ta-ltr" name="username" pattern="[a-z0-9._\-]{3,40}" placeholder="e.g. sara.k"></label>
+            <label>نقش
+                <select class="ta-select" name="role">
+                    <option value="owner">مالک</option>
+                    <option value="admin" selected>مدیر</option>
+                    <option value="manager">مدیر بخش</option>
+                    <option value="supervisor">ناظر</option>
+                    <option value="agent">کارشناس</option>
+                </select>
+            </label>
+            <label>رمز جدید<input class="ta-search ta-ltr" name="password" type="text" minlength="8" placeholder="خالی = ساخت خودکار"></label>
+            <label class="ta-check" id="taUserActiveRow"><input type="checkbox" name="isActive" checked> حساب فعال باشد</label>
+            <label class="ta-check" id="taUserGenRow"><input type="checkbox" name="generatePassword"> ساخت رمز جدید خودکار</label>
+        </div>
+        <div class="ta-msg" id="taUserMsg" role="alert"></div>
+        <div class="ta-dialog-actions">
+            <button type="button" class="ta-btn" id="taUserCancel">انصراف</button>
+            <button type="submit" class="ta-btn primary" id="taUserSave">ذخیره</button>
+        </div>
+    </form>
+</dialog>
+
+<script src="/js/tenants-admin.js?v=tgw8"></script>
 </body>
 </html>
