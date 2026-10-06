@@ -646,6 +646,78 @@ body:has(.su-shell) {
 }
 .su-main { width: 100%; max-width: none; }
 .su-main .lp-card { padding-top: 28px; }
+.su-wizard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    list-style: none;
+    margin: 0 0 22px;
+    padding: 0;
+}
+.su-wizard button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--lp-text3);
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: start;
+    cursor: pointer;
+}
+.su-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: #eef1f6;
+    color: #667085;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+.su-wizard li.is-current button {
+    background: #f3fbf7;
+    border-color: #d7f3e6;
+    color: #065f46;
+}
+.su-wizard li.is-done button { color: #1b2437; }
+.su-wizard li.is-current .su-num,
+.su-wizard li.is-done .su-num {
+    background: #10b981;
+    color: #fff;
+}
+.su-pane { display: none; }
+.su-pane.active { display: block; animation: stepIn 0.28s ease both; }
+html[dir="rtl"] .su-pane.active { animation-name: stepInRtl; }
+body.ltr .su-pane.active { animation-name: stepIn !important; }
+.su-nav { display: flex; gap: 10px; align-items: stretch; }
+.su-nav .lp-btn,
+.su-nav .lp-btn-secondary { width: auto; flex: 1; margin-top: 8px; }
+.su-nav .lp-btn[hidden],
+.su-nav .lp-btn-secondary[hidden] { display: none !important; }
+.su-nav .su-back { flex: 0 0 34%; }
+@media (max-width: 640px) {
+    .su-wizard button { position: relative; justify-content: center; padding: 8px; }
+    .su-wizard button span:not(.su-num) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+}
+.su-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 .su-sec {
     margin: 18px 0 8px;
     font-size: 0.8rem;
@@ -692,8 +764,127 @@ body:has(.su-shell) {
     line-height: 1.6;
 }
 @media (max-width: 900px) {
-    .su-shell { grid-template-columns: 1fr; gap: 8px; }
+    .su-shell { grid-template-columns: 1fr; gap: 18px; }
     .su-aside { padding-top: 0; }
     .su-hero { font-size: 1.55rem; }
     .su-points { display: none; }
 }
+
+/* Signup light canvas — login page stays dark */
+body:has(.su-shell) {
+    --lp-bg: #f4f6fb;
+    --lp-bg2: #eef1f8;
+    --lp-card: #ffffff;
+    --lp-border: #e6e9f2;
+    --lp-text: #1b2437;
+    --lp-text2: #667085;
+    --lp-text3: #98a2b3;
+    --lp-input-bg: #f7f8fc;
+    --lp-input-bdr: #e4e7f0;
+    --lp-accent-s: #e8f8f1;
+    background: #f4f6fb;
+    color: #1b2437;
+    align-items: flex-start;
+}
+body:has(.su-shell) .lp-bg {
+    background:
+        radial-gradient(ellipse at 0% 0%, rgba(124, 108, 255, 0.08) 0%, transparent 42%),
+        radial-gradient(ellipse at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
+        #f4f6fb;
+}
+body:has(.su-shell) .lp-bg::after { display: none; }
+body:has(.su-shell) .lp-blob { display: none; }
+body:has(.su-shell) .lp-card {
+    background: #fff;
+    border: 1px solid #e7ebf4;
+    border-radius: 22px;
+    box-shadow: 0 16px 40px rgba(28, 39, 76, 0.06);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+body:has(.su-shell) .lp-lang {
+    background: #f3f5fa;
+    border-color: transparent;
+}
+body:has(.su-shell) .lp-lang button { color: #667085; }
+body:has(.su-shell) .lp-lang button:hover { color: #1b2437; background: transparent; }
+body:has(.su-shell) .lp-lang button.active {
+    background: #fff;
+    color: #1b2437;
+    box-shadow: 0 1px 3px rgba(28, 39, 76, 0.12);
+}
+body:has(.su-shell) .lp-input {
+    background: #f7f8fc;
+    border-color: #e4e7f0;
+    border-radius: 12px;
+    color: #1b2437;
+}
+body:has(.su-shell) .lp-input:focus {
+    background: #fff;
+    border-color: #10b981;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
+}
+body:has(.su-shell) .lp-input::placeholder { color: #98a2b3; }
+body:has(.su-shell) .lp-btn {
+    border-radius: 12px;
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.22);
+}
+body:has(.su-shell) .lp-btn-secondary {
+    background: #fff;
+    border: 1px solid #e4e7f0;
+    color: #344054;
+    border-radius: 12px;
+}
+body:has(.su-shell) .lp-btn-secondary:hover {
+    background: #f7f8fc;
+    color: #1b2437;
+    border-color: #d5dae6;
+}
+body:has(.su-shell) .lp-industry-opt {
+    background: #fff;
+    border-color: #e4e7f0;
+    border-radius: 14px;
+    color: #1b2437;
+}
+body:has(.su-shell) .lp-industry-opt:hover { border-color: #cfd6e4; background: #fafbfe; }
+body:has(.su-shell) .lp-industry-opt:has(input:checked) {
+    border-color: #10b981;
+    background: #f3fbf7;
+}
+body:has(.su-shell) .su-kicker {
+    background: #e8f8f1;
+    color: #047857;
+}
+body:has(.su-shell) .su-aside {
+    background: #fff;
+    border: 1px solid #e7ebf4;
+    border-radius: 22px;
+    padding: 28px 26px 22px;
+    box-shadow: 0 16px 40px rgba(28, 39, 76, 0.05);
+}
+body:has(.su-shell) .su-dot {
+    background: #eef2ff;
+    border-color: transparent;
+    color: #5b4dff;
+    border-radius: 50%;
+}
+body:has(.su-shell) .su-points li:first-child .su-dot {
+    background: #10b981;
+    color: #fff;
+}
+body:has(.su-shell) .su-trust span {
+    background: #f4f6fb;
+    border-color: transparent;
+    color: #667085;
+}
+body:has(.su-shell) .su-url-preview {
+    border: 1px solid #e4e7f0;
+    background: #f7f8fc;
+    color: #344054;
+    border-radius: 12px;
+}
+body:has(.su-shell) .su-strength i { background: #e8ebf2; }
+body:has(.su-shell) .su-slug-ok { color: #059669 !important; }
+body:has(.su-shell) .lp-msg.has-text { background: #fef2f2; }
+body:has(.su-shell) .lp-msg.success.has-text { background: #ecfdf5; color: #047857; }
+body:has(.su-shell) .lp-forgot-row a { color: #059669; }

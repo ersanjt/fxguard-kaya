@@ -27,6 +27,20 @@
             trust_3: 'فارسی، English، Türkçe',
             sec_org: 'سازمان',
             sec_account: 'حساب مالک',
+            step1: 'سازمان',
+            step2: 'فعالیت',
+            step3: 'حساب',
+            step4: 'ورود',
+            step1_title: 'نام مجموعه',
+            step1_sub: 'همین نام بالای پنل دیده می‌شود.',
+            step2_title: 'زمینهٔ فعالیت',
+            step2_sub: 'منوی پنل بر اساس این انتخاب چیده می‌شود. بعداً هم می‌توانید عوضش کنید.',
+            step3_title: 'نام و ایمیل مالک',
+            step3_sub: 'فقط همین دو مورد. رمز در قدم بعد است.',
+            step4_title: 'رمز و شناسه پنل',
+            step4_sub: 'شناسه از نام مجموعه پیشنهاد می‌شود. با ساخت پنل وارد داشبورد می‌شوید.',
+            next: 'ادامه',
+            back: 'بازگشت',
             sub: '۱۴ روز آزمایش رایگان — بعد از آن برای ادامه اشتراک لازم است',
             lang_label: 'انتخاب زبان',
             title: 'ساخت پنل شما',
@@ -63,6 +77,7 @@
             slug_checking: 'در حال بررسی شناسه…',
             slug_free: 'این شناسه آزاد است.',
             slug_unavailable: 'این شناسه در دسترس نیست.',
+            err_company: 'نام مجموعه را وارد کنید.',
             err_industry: 'زمینهٔ فعالیت مجموعه را انتخاب کنید.',
             err_required: 'همهٔ فیلدهای لازم را پر کنید.',
             err_slug_taken: 'شناسه پنل در دسترس نیست. یک شناسه دیگر انتخاب کنید.',
@@ -93,6 +108,20 @@
             trust_3: 'فارسی, English, Türkçe',
             sec_org: 'Organization',
             sec_account: 'Owner account',
+            step1: 'Business',
+            step2: 'Industry',
+            step3: 'Account',
+            step4: 'Sign-in',
+            step1_title: 'Company name',
+            step1_sub: 'This name appears at the top of the panel.',
+            step2_title: 'Industry',
+            step2_sub: 'The panel menu follows this choice. You can change modules later.',
+            step3_title: 'Owner name and email',
+            step3_sub: 'Just these two. The password is the next step.',
+            step4_title: 'Password and panel ID',
+            step4_sub: 'The panel ID is suggested from the company name. Creating the panel signs you into the dashboard.',
+            next: 'Continue',
+            back: 'Back',
             sub: '14-day free trial — a subscription is required afterwards',
             lang_label: 'Language',
             title: 'Create your panel',
@@ -129,6 +158,7 @@
             slug_checking: 'Checking panel ID…',
             slug_free: 'This panel ID is available.',
             slug_unavailable: 'This panel ID is not available.',
+            err_company: 'Enter the company name.',
             err_industry: 'Select your industry.',
             err_required: 'Please fill in all required fields.',
             err_slug_taken: 'This panel ID is not available. Choose another one.',
@@ -159,6 +189,20 @@
             trust_3: 'فارسی, English, Türkçe',
             sec_org: 'Kuruluş',
             sec_account: 'Sahip hesabı',
+            step1: 'Kuruluş',
+            step2: 'Sektör',
+            step3: 'Hesap',
+            step4: 'Giriş',
+            step1_title: 'Şirket adı',
+            step1_sub: 'Bu ad panelin üstünde görünür.',
+            step2_title: 'Sektör',
+            step2_sub: 'Panel menüsü bu seçime göre düzenlenir. Modülleri sonra değiştirebilirsiniz.',
+            step3_title: 'Sahip adı ve e-posta',
+            step3_sub: 'Yalnızca bu ikisi. Şifre sonraki adımda.',
+            step4_title: 'Şifre ve panel kimliği',
+            step4_sub: 'Panel kimliği şirket adından önerilir. Paneli oluşturunca panele girersiniz.',
+            next: 'Devam',
+            back: 'Geri',
             sub: '14 gün ücretsiz deneme — sonrasında abonelik gerekir',
             lang_label: 'Dil seçimi',
             title: 'Panelinizi oluşturun',
@@ -195,6 +239,7 @@
             slug_checking: 'Panel kimliği kontrol ediliyor…',
             slug_free: 'Bu panel kimliği kullanılabilir.',
             slug_unavailable: 'Bu panel kimliği kullanılamıyor.',
+            err_company: 'Şirket adını girin.',
             err_industry: 'Sektörünüzü seçin.',
             err_required: 'Lütfen tüm zorunlu alanları doldurun.',
             err_slug_taken: 'Bu panel kimliği kullanılamıyor. Başka bir tane seçin.',
@@ -244,6 +289,8 @@
     let slugStatusOk = null;
     let msgKey = '';
     let msgOk = false;
+    let step = 1;
+    let wizardReady = false;
 
     function paintMsg() {
         if (!msgEl) return;
@@ -427,6 +474,7 @@
         paintMsg();
         paintStrength();
         renderIndustryModules();
+        if (wizardReady) paintStepCopy();
         const toggleBtn = document.getElementById('suTogglePass');
         if (toggleBtn && passEl) {
             const shown = passEl.type === 'text';
@@ -469,6 +517,17 @@
         form.querySelectorAll('input[name="industry"]').forEach(function (el) {
             el.addEventListener('change', renderIndustryModules);
         });
+        try {
+            const allowedIndustry = { travel: 1, health: 1, exchange: 1, manufacturing: 1, food_distribution: 1, real_estate: 1, general: 1 };
+            const pickedIndustry = new URLSearchParams(window.location.search).get('industry');
+            const industryRadio = pickedIndustry && allowedIndustry[pickedIndustry]
+                ? form.querySelector('input[name="industry"][value="' + pickedIndustry + '"]')
+                : null;
+            if (industryRadio) {
+                industryRadio.checked = true;
+                renderIndustryModules();
+            }
+        } catch (e) {}
     }
 
     if (passEl) passEl.addEventListener('input', paintStrength);
@@ -499,9 +558,99 @@
         slugEl.addEventListener('blur', checkSlugAvailability);
     }
 
+    const titleEl = document.getElementById('suTitle');
+    const subEl = document.getElementById('suSub');
+    const nextBtn = document.getElementById('suNext');
+    const backBtn = document.getElementById('suBack');
+
+    function paintStepCopy() {
+        if (titleEl) titleEl.textContent = t('step' + step + '_title');
+        if (subEl) subEl.textContent = t('step' + step + '_sub');
+        document.querySelectorAll('#suWizard li').forEach(function (li) {
+            const n = Number(li.getAttribute('data-step'));
+            const current = n === step;
+            li.classList.toggle('is-current', current);
+            li.classList.toggle('is-done', n < step);
+            const b = li.querySelector('button');
+            if (b) {
+                if (current) b.setAttribute('aria-current', 'step');
+                else b.removeAttribute('aria-current');
+            }
+        });
+        if (backBtn) backBtn.hidden = step === 1;
+        if (nextBtn) nextBtn.hidden = step === 4;
+        if (btn) btn.hidden = step !== 4;
+    }
+
+    function validateStep(n) {
+        if (n === 1) {
+            if (!(companyEl && companyEl.value || '').trim()) {
+                setMsg('err_company');
+                return false;
+            }
+            return true;
+        }
+        if (n === 2) {
+            const picked = form && form.querySelector('input[name="industry"]:checked');
+            if (!picked) {
+                setMsg('err_industry');
+                return false;
+            }
+            return true;
+        }
+        if (n === 3) {
+            const email = (emailEl && emailEl.value || '').trim();
+            if (!email || email.indexOf('@') < 1) {
+                setMsg('err_email_invalid');
+                return false;
+            }
+            return true;
+        }
+        return true;
+    }
+
+    function showStep(n, focus) {
+        step = n;
+        document.querySelectorAll('.su-pane').forEach(function (pane) {
+            pane.classList.toggle('active', Number(pane.getAttribute('data-pane')) === n);
+        });
+        paintStepCopy();
+        setMsg('');
+        if (n === 4) autofillSlug();
+        if (!focus) return;
+        const pane = document.querySelector('.su-pane.active');
+        const field = pane && pane.querySelector('input:not([type="radio"])');
+        if (field) field.focus();
+    }
+
+    function goStep(n) {
+        if (n < 1 || n > 4 || n === step) return;
+        if (n > step) {
+            for (let i = step; i < n; i++) {
+                if (!validateStep(i)) return;
+            }
+        }
+        showStep(n, true);
+    }
+
+    document.querySelectorAll('#suWizard button').forEach(function (b) {
+        b.addEventListener('click', function () {
+            const li = b.closest('li');
+            goStep(Number(li && li.getAttribute('data-step')));
+        });
+    });
+    if (nextBtn) nextBtn.addEventListener('click', function () { goStep(step + 1); });
+    if (backBtn) backBtn.addEventListener('click', function () { goStep(step - 1); });
+    wizardReady = true;
+    paintStepCopy();
+
     if (form) {
         form.addEventListener('submit', function (ev) {
             ev.preventDefault();
+            if (step < 4) {
+                goStep(step + 1);
+                return;
+            }
             setMsg('');
             const company = (companyEl.value || '').trim();
             const ownerName = (document.getElementById('suOwner') && document.getElementById('suOwner').value || '').trim();
@@ -511,11 +660,17 @@
             const password2 = (pass2El && pass2El.value) || '';
             const industryEl = form.querySelector('input[name="industry"]:checked');
             const industry = industryEl ? industryEl.value : '';
+            if (!company) {
+                showStep(1, true);
+                setMsg('err_company');
+                return;
+            }
             if (!industry) {
+                showStep(2, true);
                 setMsg('err_industry');
                 return;
             }
-            if (!company || !slug || !email || !password) {
+            if (!slug || !email || !password) {
                 setMsg('err_required');
                 return;
             }

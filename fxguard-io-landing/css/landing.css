@@ -1318,42 +1318,46 @@ footer:not(.site-footer) a:hover { color: var(--accent); background: var(--accen
 
 /* ----- Shared icon badge (custom FXGuard set) ----- */
 .icon-box {
-    width: 54px;
-    height: 54px;
-    border-radius: 16px;
-    background:
-        linear-gradient(145deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.05) 100%);
-    border: 1px solid rgba(16, 185, 129, 0.22);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    width: 56px;
+    height: 56px;
+    border-radius: 18px;
+    background: none;
+    border: 0;
+    box-shadow: none;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--accent);
     flex-shrink: 0;
-    transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+    transition: transform 0.25s ease;
 }
 .icon-box .fx-icon,
-.icon-box svg { width: 26px; height: 26px; display: block; }
+.icon-box svg {
+    width: 56px;
+    height: 56px;
+    display: block;
+    overflow: visible;
+    filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.28));
+}
 .icon-box .fx-fill { fill: currentColor; }
 .feature-card:hover .icon-box,
 .model-card:hover .icon-box,
 .service-card:hover .icon-box,
 .price-card:hover .pkg-icon {
-    transform: translateY(-2px);
-    border-color: rgba(16, 185, 129, 0.45);
-    background: linear-gradient(145deg, rgba(16, 185, 129, 0.28) 0%, rgba(16, 185, 129, 0.08) 100%);
-    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.12);
+    transform: translateY(-3px);
 }
 .icon-box-danger {
-    background: linear-gradient(145deg, rgba(248, 113, 113, 0.18) 0%, rgba(248, 113, 113, 0.05) 100%);
-    border-color: rgba(248, 113, 113, 0.28);
-    color: #f87171;
-    width: 42px;
-    height: 42px;
-    border-radius: 12px;
+    background: none;
+    border: 0;
+    width: 48px;
+    height: 48px;
 }
 .icon-box-danger .fx-icon,
-.icon-box-danger svg { width: 20px; height: 20px; }
+.icon-box-danger svg {
+    width: 48px;
+    height: 48px;
+    filter: hue-rotate(-78deg) saturate(1.35) drop-shadow(0 10px 14px rgba(0, 0, 0, 0.28));
+}
 .pkg-icon { margin-bottom: 14px; }
 .trust-icon {
     display: inline-flex;
@@ -1374,8 +1378,8 @@ footer:not(.site-footer) a:hover { color: var(--accent); background: var(--accen
 .problem-card-head h3 { margin-bottom: 0; font-size: 1rem; color: var(--text); }
 .solution-box-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 12px; }
 .solution-box-head h3 { margin-bottom: 0; }
-.solution-box-head .icon-box { width: 44px; height: 44px; }
-.solution-box-head .icon-box svg { width: 22px; height: 22px; }
+.solution-box-head .icon-box,
+.solution-box-head .icon-box svg { width: 52px; height: 52px; }
 
 /* ----- Live badge (demo) ----- */
 .live-badge {
@@ -1589,8 +1593,8 @@ a.cred-value:hover { color: var(--accent); }
     transition: all 0.3s;
 }
 .service-card:hover { border-color: var(--border-hover); background: var(--bg-card-hover); transform: translateY(-3px); }
-.service-card .icon-box { width: 44px; height: 44px; margin-bottom: 16px; }
-.service-card .icon-box svg { width: 22px; height: 22px; }
+.service-card .icon-box { width: 48px; height: 48px; margin-bottom: 16px; }
+.service-card .icon-box svg { width: 48px; height: 48px; }
 .service-card h3 { font-size: 1rem; margin-bottom: 8px; }
 .service-card p { color: var(--text-muted); font-size: 0.88rem; line-height: 1.55; }
 

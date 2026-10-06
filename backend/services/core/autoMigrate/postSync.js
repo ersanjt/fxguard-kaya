@@ -122,13 +122,22 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
 
     try {
         const waDesc = await qi.describeTable('whatsapp_configs');
-        if (waDesc && waDesc.conversationEndedMessage === undefined) {
-            try {
-                await qi.addColumn('whatsapp_configs', 'conversationEndedMessage', { type: DataTypes.TEXT, allowNull: true });
-                logger.info('✅ whatsapp_configs: conversationEndedMessage column added (auto-migration)');
-            } catch (e) {
-                if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
-                    logger.warn('whatsapp_configs.conversationEndedMessage', e.message);
+        const waMsgCols = [
+            ['deptAssignedMessage', { type: DataTypes.TEXT, allowNull: true }],
+            ['employeeIntroMessage', { type: DataTypes.TEXT, allowNull: true }],
+            ['conversationEndedMessage', { type: DataTypes.TEXT, allowNull: true }],
+            ['callIntroMessage', { type: DataTypes.TEXT, allowNull: true }],
+            ['autoAssignmentMessagesEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+        ];
+        for (const [name, def] of waMsgCols) {
+            if (waDesc && waDesc[name] === undefined) {
+                try {
+                    await qi.addColumn('whatsapp_configs', name, def);
+                    logger.info('✅ whatsapp_configs: ' + name + ' column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('whatsapp_configs.' + name, e.message);
+                }
             }
         }
         const waTrialCols = [

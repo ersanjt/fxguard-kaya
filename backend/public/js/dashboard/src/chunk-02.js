@@ -1739,12 +1739,14 @@
             }
             if (claimBtn) claimBtn.disabled = true;
             setTenantCryptoMsg(t('tenant_paywall_claiming'), false);
+            var holdClaim = false;
             try {
                 var res = await apiFetch('/api/billing/crypto/claim', {
                     method: 'POST',
                     body: JSON.stringify({ network: _tenantCryptoNetwork, txId: txId })
                 });
                 if (res && res.ok && res.data && res.data.ok) {
+                    holdClaim = true;
                     setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_ok'), false);
                     if (res.data.activated || res.data.alreadyActive) {
                         if (typeof toast === 'function') toast(t('tenant_paywall_claim_ok'));
@@ -1756,17 +1758,14 @@
                     }
                     setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_pending'), false);
                     if (txInput) txInput.disabled = true;
-                    if (claimBtn) {
-                        claimBtn.disabled = true;
-                        claimBtn.textContent = t('tenant_paywall_claim_pending_btn');
-                    }
+                    if (claimBtn) claimBtn.textContent = t('tenant_paywall_claim_pending_btn');
                     return;
                 }
                 setTenantCryptoMsg((res && res.error) || t('tenant_paywall_claim_fail'), true);
             } catch (err) {
                 setTenantCryptoMsg((err && err.message) || t('tenant_paywall_claim_fail'), true);
             } finally {
-                if (claimBtn) claimBtn.disabled = false;
+                if (claimBtn && !holdClaim) claimBtn.disabled = false;
             }
         }
 

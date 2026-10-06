@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg">
+<symbol id="icon-inbox" viewBox="0 0 64 64">
+    <linearGradient id="g-inbox" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-inbox)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M4 8h16v8H4z M4 8l8 5 8-5" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-customers" viewBox="0 0 64 64">
+    <linearGradient id="g-customers" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-customers)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M8 10a3 3 0 1 0 .01 0 M3 18c1-3 3-4 5-4s4 1 5 4 M16 11a2.4 2.4 0 1 0 .01 0 M16 14c2 0 4 1 4.5 3" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-ticket" viewBox="0 0 64 64">
+    <linearGradient id="g-ticket" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-ticket)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M4 8h16v8H4z M4 12h16" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-tasks" viewBox="0 0 64 64">
+    <linearGradient id="g-tasks" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-tasks)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 7h12 M6 12h12 M6 17h8" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-roles" viewBox="0 0 64 64">
+    <linearGradient id="g-roles" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-roles)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 4l2 4 4 .5-3 3 .8 4.5L12 14l-3.8 2 .8-4.5-3-3L10 8z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-branches" viewBox="0 0 64 64">
+    <linearGradient id="g-branches" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-branches)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 6h4v4H6z M14 6h4v4h-4z M10 14h4v4h-4z M8 10v2h8v-2 M12 12v2" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-fx" viewBox="0 0 64 64">
+    <linearGradient id="g-fx" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-fx)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 8h12 M6 12h12 M6 16h8 M16 15l3 2-3 2" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-security" viewBox="0 0 64 64">
+    <linearGradient id="g-security" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-security)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 4l7 3v5c0 4-3 6-7 8-4-2-7-4-7-8V7z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-cloud" viewBox="0 0 64 64">
+    <linearGradient id="g-cloud" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-cloud)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M8 16h8a4 4 0 0 0 .4-8 5 5 0 0 0-9.6 1.2A3.5 3.5 0 0 0 8 16z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-license" viewBox="0 0 64 64">
+    <linearGradient id="g-license" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-license)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M7 4h10v16l-5-2-5 2z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-managed" viewBox="0 0 64 64">
+    <linearGradient id="g-managed" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-managed)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M5 18V9l7-4 7 4v9 M9 18v-5h6v5" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-phones" viewBox="0 0 64 64">
+    <linearGradient id="g-phones" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-phones)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M7 4h4v12H7z M13 7h5v11h-5z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-history-lost" viewBox="0 0 64 64">
+    <linearGradient id="g-history-lost" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-history-lost)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 7h10v7H9l-3 2z M16 15l2 2 M18 15l-2 2" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-no-owner" viewBox="0 0 64 64">
+    <linearGradient id="g-no-owner" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-no-owner)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 8a3 3 0 1 0 .01 0 M6 18c1.2-3 3-4.5 6-4.5s4.8 1.5 6 4.5 M16 6l4 4" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-unlock" viewBox="0 0 64 64">
+    <linearGradient id="g-unlock" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-unlock)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M8 11h8v7H8z M10 11V8a2 2 0 0 1 4 0" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-solve" viewBox="0 0 64 64">
+    <linearGradient id="g-solve" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-solve)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 12l4 4 8-8" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-monitor" viewBox="0 0 64 64">
+    <linearGradient id="g-monitor" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-monitor)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M4 6h16v10H4z M9 20h6 M12 16v4" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-backup" viewBox="0 0 64 64">
+    <linearGradient id="g-backup" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-backup)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 4v10 M8 10l4 4 4-4 M6 18h12" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-lock" viewBox="0 0 64 64">
+    <linearGradient id="g-lock" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-lock)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M8 11h8v7H8z M10 11V8a2 2 0 0 1 4 0v3" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-globe" viewBox="0 0 64 64">
+    <linearGradient id="g-globe" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-globe)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 4a8 8 0 1 0 .01 0 M4 12h16 M12 4c2 2.5 3 11.5 0 16 M12 4c-2 2.5-3 11.5 0 16" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-rollout" viewBox="0 0 64 64">
+    <linearGradient id="g-rollout" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-rollout)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M5 16l5-5 3 3 6-7" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-uptime" viewBox="0 0 64 64">
+    <linearGradient id="g-uptime" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-uptime)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M12 4a8 8 0 1 0 .01 0 M12 8v5l3 2" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-gdpr" viewBox="0 0 64 64">
+    <linearGradient id="g-gdpr" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-gdpr)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M8 5h8v4H8z M6 9h12v10H6z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-onboard" viewBox="0 0 64 64">
+    <linearGradient id="g-onboard" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-onboard)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M5 16l4-8 3 5 2-3 5 6z" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-check" viewBox="0 0 64 64">
+    <linearGradient id="g-check" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-check)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M6 12l4 4 8-8" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-desktop" viewBox="0 0 64 64">
+    <linearGradient id="g-desktop" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-desktop)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M4 6h16v10H4z M8 20h8" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+<symbol id="icon-mobile" viewBox="0 0 64 64">
+    <linearGradient id="g-mobile" x1="18%" y1="0%" x2="90%" y2="100%">
+      <stop offset="0%" stop-color="#ecfdf5"/>
+      <stop offset="38%" stop-color="#6ee7b7"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <rect x="6" y="5" width="52" height="52" rx="18" fill="#064e3b" transform="translate(0 2)" opacity=".35"/>
+    <rect x="6" y="4" width="52" height="52" rx="18" fill="url(#g-mobile)"/>
+    <ellipse cx="28" cy="16" rx="14" ry="6" fill="#fff" opacity=".22"/>
+    <path d="M9 4h6v16H9z M11 17h2" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 33) scale(1.72) translate(-12 -12)"/>
+  </symbol>
+</svg>

@@ -890,34 +890,34 @@
 
     var SEO_META = {
         en: {
-            title: 'FXGuard | WhatsApp CRM for exchange, remittance and finance desks',
-            description: 'Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo inbox. Business from $249 with the FX pack. License from $4,000.',
-            keywords: 'WhatsApp CRM for exchange offices, remittance WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM, WhatsApp CRM Istanbul, döviz WhatsApp CRM',
-            imageAlt: 'FXGuard staff panel: WhatsApp inbox and FX rates on one desktop screen'
+            title: 'FXGuard | Business WhatsApp panel — exchange, clinics, agencies and teams',
+            description: 'One company WhatsApp panel: shared inbox, customer book, roles and 2FA. Exchange desks quote rates on the same screen. Clinics get patient records. 14-day trial, no card. From $49/mo.',
+            keywords: 'business WhatsApp panel, WhatsApp CRM for exchange offices, clinic WhatsApp CRM, travel agency WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM',
+            imageAlt: 'FXGuard staff panel: company WhatsApp inbox with the tools of the desk on one screen'
         },
         fa: {
-            title: 'CRM واتساپ برای صرافی و حواله | نرخ روی همان پنل | FXGuard',
-            description: 'نرخ را در واتساپ بگویید؛ پرونده مشتری مال شرکت بماند. Cloud Start ۴۹ دلار در ماه (۱ شعبه، ۳ نفر، بدون نرخ). Business از ۲۴۹ دلار با ماژول نرخ. بازگشت وجه ۷روزه ماه اول.',
-            keywords: 'واتساپ CRM صرافی, پنل واتساپ صرافی, نرم‌افزار صرافی واتساپ, CRM حواله, نرخ ارز واتساپ, صندوق پیام واتساپ سازمانی',
-            imageAlt: 'پنل کارکنان FXGuard: صندوق پیام واتساپ و نرخ ارز روی یک صفحه دسکتاپ'
+            title: 'پنل واتساپ کسب‌وکار | صرافی، کلینیک و تیم‌ها | FXGuard',
+            description: 'صندوق واتساپ مال شرکت، نقش و ورود جدا. صرافی نرخ را روی همان پنل می‌بیند. کلینیک پرونده بیمار دارد. آزمایش ۱۴روزه بدون کارت. از ۴۹ دلار در ماه.',
+            keywords: 'واتساپ CRM صرافی, پنل واتساپ کسب‌وکار, نرم‌افزار صرافی واتساپ, واتساپ کلینیک, CRM حواله, نرخ ارز واتساپ',
+            imageAlt: 'پنل کارکنان FXGuard: صندوق واتساپ شرکت و ابزار میز کار روی یک صفحه'
         },
         tr: {
-            title: 'Döviz bürosu ve havale için WhatsApp CRM | FXGuard',
-            description: 'Kur, WhatsApp ile aynı panelde. Müşteri kaydı şirkette kalır. Cloud Start aylık 49$. Business 249$’dan kur paketiyle. Lisans 4.000$’dan. İlk ay 7 gün iade.',
-            keywords: 'döviz WhatsApp CRM, havale WhatsApp, döviz bürosu CRM, şubeli WhatsApp paneli, FXGuard İstanbul',
-            imageAlt: 'FXGuard personel paneli: WhatsApp gelen kutusu ve döviz kurları tek ekranda'
+            title: 'İşletme WhatsApp paneli | döviz, klinik ve ekipler | FXGuard',
+            description: 'Şirket gelen kutusu, müşteri kaydı, roller ve 2FA. Döviz bürosu kuru aynı ekranda verir. Klinik hasta kaydı alır. 14 gün deneme, kart yok. Aylık 49$’dan.',
+            keywords: 'döviz WhatsApp CRM, işletme WhatsApp paneli, klinik WhatsApp, döviz bürosu CRM, şubeli WhatsApp paneli, FXGuard İstanbul',
+            imageAlt: 'FXGuard personel paneli: şirket WhatsApp gelen kutusu ve masa araçları tek ekranda'
         },
         ar: {
-            title: 'CRM واتساب لمكاتب الصرافة والحوالات | FXGuard',
-            description: 'سعر الصرف على لوحة واتساب نفسها. ملف العملاء ملك الشركة. Cloud Start 49$ شهرياً. Business من 249$ مع حزمة الأسعار. ترخيص من 4000$.',
-            keywords: 'واتساب صرافة, CRM حوالات, لوحة واتساب شركات الصرافة, WhatsApp CRM دبي, صرافة متعددة الفروع',
-            imageAlt: 'لوحة موظفي FXGuard: صندوق وارد واتساب وأسعار الصرف على شاشة واحدة'
+            title: 'لوحة واتساب للأعمال | صرافة وعيادات وفرق | FXGuard',
+            description: 'صندوق الشركة وملف العملاء والأدوار والتحقق بخطوتين. مكتب الصرافة يعلن السعر على الشاشة نفسها. العيادة تحصل على ملفات المرضى. تجربة ١٤ يوماً بلا بطاقة. من 49$ شهرياً.',
+            keywords: 'واتساب صرافة, لوحة واتساب أعمال, واتساب عيادة, CRM حوالات, WhatsApp CRM دبي',
+            imageAlt: 'لوحة موظفي FXGuard: صندوق واتساب الشركة وأدوات المكتب على شاشة واحدة'
         },
         ru: {
-            title: 'WhatsApp CRM для обменных пунктов и переводов | FXGuard',
-            description: 'Курс на той же панели, что и WhatsApp. Клиентская база остаётся в компании. Cloud Start $49/мес. Business от $249 с курсами. Лицензия от $4000.',
-            keywords: 'WhatsApp CRM обменник, CRM для обменных пунктов, WhatsApp для денежных переводов, FXGuard Стамбул',
-            imageAlt: 'Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране'
+            title: 'WhatsApp-панель для бизнеса | обмен, клиники и команды | FXGuard',
+            description: 'Корпоративный ящик, база клиентов, роли и 2FA. Обменный пункт называет курс на том же экране. Клиника получает карты пациентов. 14 дней без карты. От $49/мес.',
+            keywords: 'WhatsApp CRM обменник, WhatsApp панель для бизнеса, WhatsApp клиника, CRM для обменных пунктов, FXGuard Стамбул',
+            imageAlt: 'Панель FXGuard: корпоративный WhatsApp и инструменты стола на одном экране'
         }
     };
 
@@ -1268,14 +1268,17 @@
         applyLang(detectPreferredLang());
     }
 
-    function offerRegionalHomepage() {
-        if (!isHomepagePath()) return;
-        var params = new URLSearchParams(window.location.search);
-        if (params.has('lang')) return;
-        try {
-            if (localStorage.getItem('landing_lang') || sessionStorage.getItem('fxg_region_prompt')) return;
-        } catch (e) {}
+    function countryToLang(cc) {
+        cc = String(cc || '').toUpperCase();
+        if (!/^[A-Z]{2}$/.test(cc) || cc === 'XX' || cc === 'T1') return null;
+        if (cc === 'IR' || cc === 'AF' || cc === 'TJ') return 'fa';
+        if (cc === 'TR') return 'tr';
+        if (['AE', 'SA', 'QA', 'KW', 'BH', 'OM', 'EG', 'JO', 'LB', 'IQ', 'SY', 'MA', 'DZ', 'TN', 'LY', 'YE', 'SD', 'PS'].indexOf(cc) !== -1) return 'ar';
+        if (cc === 'RU' || cc === 'BY' || cc === 'KZ') return 'ru';
+        return null;
+    }
 
+    function browserSuggestedLang() {
         var suggested = null;
         var locales = navigator.languages && navigator.languages.length
             ? navigator.languages
@@ -1289,6 +1292,28 @@
             if (!suggested && localeGuess === 'en') suggested = 'en';
         }
         if (!suggested || suggested === 'en') suggested = guessLangFromTimezone();
+        return suggested;
+    }
+
+    function offerRegionalHomepage() {
+        if (!isHomepagePath()) return;
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('lang')) return;
+        try {
+            if (localStorage.getItem('landing_lang') || sessionStorage.getItem('fxg_region_prompt')) return;
+        } catch (e) {}
+
+        var suggested = browserSuggestedLang();
+        fetch('/geo.php', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                var geoLang = data && countryToLang(data.country);
+                showRegionalPrompt(geoLang || suggested);
+            })
+            .catch(function () { showRegionalPrompt(suggested); });
+    }
+
+    function showRegionalPrompt(suggested) {
         if (!suggested || suggested === 'en' || !LANG_HOME[suggested]) return;
 
         var copy = {
