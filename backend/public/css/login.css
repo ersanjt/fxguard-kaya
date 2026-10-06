@@ -557,24 +557,18 @@ button:focus-visible, a:focus-visible, input:focus-visible {
     .lp-aside { display: none; }
 }
 
-/* ─── Signup ─────────────────────────────────────── */
+/* ─── Signup — same dark split as the staff login ─ */
 body:has(.su-shell) {
-    align-items: flex-start;
-    padding-top: 36px;
-    padding-bottom: 56px;
+    align-items: safe center;
 }
 .su-shell {
     position: relative;
     z-index: 1;
-    width: min(1120px, 100%);
+    width: min(1040px, 100%);
     display: grid;
-    grid-template-columns: minmax(0, 0.92fr) minmax(340px, 540px);
-    gap: 40px;
-    align-items: start;
-}
-.su-aside { padding-top: 12px; }
-@media (min-width: 901px) {
-    .su-aside { position: sticky; top: 28px; }
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 440px);
+    gap: 56px;
+    align-items: center;
 }
 .su-brand {
     display: flex;
@@ -619,14 +613,13 @@ body:has(.su-shell) {
 .su-points strong { display: block; font-size: 0.92rem; }
 .su-points li > div > span { display: block; color: var(--lp-text2); font-size: 0.82rem; line-height: 1.6; margin-top: 2px; }
 .su-dot {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid var(--lp-border);
+    background: var(--lp-accent-s);
     color: var(--lp-accent);
     font-size: 0.78rem;
     font-weight: 700;
@@ -677,17 +670,17 @@ body:has(.su-shell) {
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: #eef1f6;
-    color: #667085;
+    background: rgba(255,255,255,0.06);
+    color: var(--lp-text2);
     font-size: 0.72rem;
     font-weight: 700;
 }
 .su-wizard li.is-current button {
-    background: #f3fbf7;
-    border-color: #d7f3e6;
-    color: #065f46;
+    background: var(--lp-accent-s);
+    border-color: rgba(16,185,129,0.35);
+    color: #6ee7b7;
 }
-.su-wizard li.is-done button { color: #1b2437; }
+.su-wizard li.is-done button { color: var(--lp-text); }
 .su-wizard li.is-current .su-num,
 .su-wizard li.is-done .su-num {
     background: #10b981;
@@ -763,128 +756,7 @@ body.ltr .su-pane.active { animation-name: stepIn !important; }
     font-size: 0.75rem;
     line-height: 1.6;
 }
-@media (max-width: 900px) {
-    .su-shell { grid-template-columns: 1fr; gap: 18px; }
-    .su-aside { padding-top: 0; }
-    .su-hero { font-size: 1.55rem; }
-    .su-points { display: none; }
+@media (max-width: 860px) {
+    .su-shell { grid-template-columns: 1fr; justify-items: center; gap: 0; }
+    .su-aside { display: none; }
 }
-
-/* Signup light canvas — login page stays dark */
-body:has(.su-shell) {
-    --lp-bg: #f4f6fb;
-    --lp-bg2: #eef1f8;
-    --lp-card: #ffffff;
-    --lp-border: #e6e9f2;
-    --lp-text: #1b2437;
-    --lp-text2: #667085;
-    --lp-text3: #98a2b3;
-    --lp-input-bg: #f7f8fc;
-    --lp-input-bdr: #e4e7f0;
-    --lp-accent-s: #e8f8f1;
-    background: #f4f6fb;
-    color: #1b2437;
-    align-items: flex-start;
-}
-body:has(.su-shell) .lp-bg {
-    background:
-        radial-gradient(ellipse at 0% 0%, rgba(124, 108, 255, 0.08) 0%, transparent 42%),
-        radial-gradient(ellipse at 100% 100%, rgba(16, 185, 129, 0.08) 0%, transparent 40%),
-        #f4f6fb;
-}
-body:has(.su-shell) .lp-bg::after { display: none; }
-body:has(.su-shell) .lp-blob { display: none; }
-body:has(.su-shell) .lp-card {
-    background: #fff;
-    border: 1px solid #e7ebf4;
-    border-radius: 22px;
-    box-shadow: 0 16px 40px rgba(28, 39, 76, 0.06);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-}
-body:has(.su-shell) .lp-lang {
-    background: #f3f5fa;
-    border-color: transparent;
-}
-body:has(.su-shell) .lp-lang button { color: #667085; }
-body:has(.su-shell) .lp-lang button:hover { color: #1b2437; background: transparent; }
-body:has(.su-shell) .lp-lang button.active {
-    background: #fff;
-    color: #1b2437;
-    box-shadow: 0 1px 3px rgba(28, 39, 76, 0.12);
-}
-body:has(.su-shell) .lp-input {
-    background: #f7f8fc;
-    border-color: #e4e7f0;
-    border-radius: 12px;
-    color: #1b2437;
-}
-body:has(.su-shell) .lp-input:focus {
-    background: #fff;
-    border-color: #10b981;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.12);
-}
-body:has(.su-shell) .lp-input::placeholder { color: #98a2b3; }
-body:has(.su-shell) .lp-btn {
-    border-radius: 12px;
-    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.22);
-}
-body:has(.su-shell) .lp-btn-secondary {
-    background: #fff;
-    border: 1px solid #e4e7f0;
-    color: #344054;
-    border-radius: 12px;
-}
-body:has(.su-shell) .lp-btn-secondary:hover {
-    background: #f7f8fc;
-    color: #1b2437;
-    border-color: #d5dae6;
-}
-body:has(.su-shell) .lp-industry-opt {
-    background: #fff;
-    border-color: #e4e7f0;
-    border-radius: 14px;
-    color: #1b2437;
-}
-body:has(.su-shell) .lp-industry-opt:hover { border-color: #cfd6e4; background: #fafbfe; }
-body:has(.su-shell) .lp-industry-opt:has(input:checked) {
-    border-color: #10b981;
-    background: #f3fbf7;
-}
-body:has(.su-shell) .su-kicker {
-    background: #e8f8f1;
-    color: #047857;
-}
-body:has(.su-shell) .su-aside {
-    background: #fff;
-    border: 1px solid #e7ebf4;
-    border-radius: 22px;
-    padding: 28px 26px 22px;
-    box-shadow: 0 16px 40px rgba(28, 39, 76, 0.05);
-}
-body:has(.su-shell) .su-dot {
-    background: #eef2ff;
-    border-color: transparent;
-    color: #5b4dff;
-    border-radius: 50%;
-}
-body:has(.su-shell) .su-points li:first-child .su-dot {
-    background: #10b981;
-    color: #fff;
-}
-body:has(.su-shell) .su-trust span {
-    background: #f4f6fb;
-    border-color: transparent;
-    color: #667085;
-}
-body:has(.su-shell) .su-url-preview {
-    border: 1px solid #e4e7f0;
-    background: #f7f8fc;
-    color: #344054;
-    border-radius: 12px;
-}
-body:has(.su-shell) .su-strength i { background: #e8ebf2; }
-body:has(.su-shell) .su-slug-ok { color: #059669 !important; }
-body:has(.su-shell) .lp-msg.has-text { background: #fef2f2; }
-body:has(.su-shell) .lp-msg.success.has-text { background: #ecfdf5; color: #047857; }
-body:has(.su-shell) .lp-forgot-row a { color: #059669; }
