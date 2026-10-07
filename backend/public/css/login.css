@@ -637,31 +637,43 @@ body:has(.su-shell) {
     padding: 5px 10px;
     background: rgba(255,255,255,0.03);
 }
-.su-main { width: 100%; max-width: none; }
-.su-main .lp-card { padding-top: 28px; }
+.su-main { width: 100%; max-width: none; min-width: 0; }
+.su-main .lp-card { padding-top: 28px; overflow: hidden; }
 .su-wizard {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 10px;
     list-style: none;
     margin: 0 0 22px;
     padding: 0;
+    min-width: 0;
 }
+.su-wizard li { min-width: 0; }
 .su-wizard button {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 8px 10px;
+    justify-content: center;
+    gap: 6px;
+    width: 36px;
+    height: 36px;
+    padding: 0;
     border: 1px solid transparent;
-    border-radius: 999px;
+    border-radius: 50%;
     background: transparent;
     color: var(--lp-text3);
     font: inherit;
     font-size: 0.78rem;
     font-weight: 600;
-    text-align: start;
     cursor: pointer;
+}
+.su-wizard button span:not(.su-num) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
 }
 .su-num {
     width: 22px;
@@ -676,9 +688,23 @@ body:has(.su-shell) {
     font-weight: 700;
 }
 .su-wizard li.is-current button {
+    width: auto;
+    max-width: 100%;
+    padding-block: 0;
+    padding-inline: 6px 12px;
+    border-radius: 999px;
     background: var(--lp-accent-s);
     border-color: rgba(16,185,129,0.35);
     color: #6ee7b7;
+}
+.su-wizard li.is-current button span:not(.su-num) {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    clip: auto;
 }
 .su-wizard li.is-done button { color: var(--lp-text); }
 .su-wizard li.is-current .su-num,
@@ -696,10 +722,6 @@ body.ltr .su-pane.active { animation-name: stepIn !important; }
 .su-nav .lp-btn[hidden],
 .su-nav .lp-btn-secondary[hidden] { display: none !important; }
 .su-nav .su-back { flex: 0 0 34%; }
-@media (max-width: 640px) {
-    .su-wizard button { position: relative; justify-content: center; padding: 8px; }
-    .su-wizard button span:not(.su-num) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
-}
 .su-sr {
     position: absolute;
     width: 1px;
