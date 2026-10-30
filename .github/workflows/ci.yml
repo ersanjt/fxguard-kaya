@@ -129,11 +129,9 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
-      # Device SDK ships inside Xcode; simulator runtimes may be missing on the runner image
-      # (actool then fails with "AppIcon did not have any applicable content").
       - name: Build KayaStaff without signing
         working-directory: ios-app
         run: |
           xcodebuild -project KayaStaff.xcodeproj -scheme KayaStaff \
-            -destination 'generic/platform=iOS' \
+            -destination 'generic/platform=iOS Simulator' \
             CODE_SIGNING_ALLOWED=NO build
