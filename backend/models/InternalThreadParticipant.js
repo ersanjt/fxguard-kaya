@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const InternalThreadParticipant = sequelize.define('InternalThreadParticipant', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -24,6 +28,7 @@ module.exports = (sequelize) => {
         timestamps: false,
         tableName: 'InternalThreadParticipants',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['threadId'] },
             { fields: ['userId'] },
             { unique: true, fields: ['threadId', 'userId'] }

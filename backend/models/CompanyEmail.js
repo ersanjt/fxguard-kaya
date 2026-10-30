@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const CompanyEmail = sequelize.define('CompanyEmail', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
@@ -43,6 +47,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'company_emails',
         indexes: [
+            { fields: ['tenantId'] },
             { unique: true, fields: ['email'] },
             { fields: ['assignedUserId'] },
             { fields: ['isActive'] }

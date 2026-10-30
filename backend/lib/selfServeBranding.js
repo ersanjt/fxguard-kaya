@@ -9,7 +9,8 @@
 
 const { isSelfServeEnabled, isKayaStaffHost, parseTenantSlugFromHost } = require('./tenantHost');
 
-const FXGUARD_LOGO = '/brand/fxguard-logo.svg';
+const FXGUARD_LOGO = '/brand/fxguard-mark.svg';
+const FXGUARD_FAVICON = '/brand/fxguard-favicon.svg';
 const FXGUARD_NAME = 'FXGuard';
 
 function looksLikeKayaBrand(s) {
@@ -17,29 +18,29 @@ function looksLikeKayaBrand(s) {
         s && s.siteName,
         s && s.loginTitle,
         s && s.pageTitle,
+        s && s.footerText,
         s && s.logoUrl,
         s && s.loginLogoUrl,
         s && s.faviconUrl,
-    ]
-        .join(' ')
-        .toLowerCase();
-    return /kaya/.test(blob);
+    ].join(' ');
+    return /kaya|کایا/i.test(blob);
 }
 
 function fxguardProductBranding(base) {
     const src = base && typeof base === 'object' ? base : {};
     const keepTitle = (v) => {
         const t = String(v || '').trim();
-        if (!t || /kaya/i.test(t)) return '';
+        if (!t || /kaya|کایا/i.test(t)) return '';
         return t;
     };
     return Object.assign({}, src, {
         siteName: FXGUARD_NAME,
         loginTitle: keepTitle(src.loginTitle) || 'ورود به FXGuard',
         pageTitle: keepTitle(src.pageTitle) || 'ورود | FXGuard',
+        footerText: keepTitle(src.footerText) || 'FXGuard',
         logoUrl: FXGUARD_LOGO,
         loginLogoUrl: FXGUARD_LOGO,
-        faviconUrl: FXGUARD_LOGO,
+        faviconUrl: FXGUARD_FAVICON,
     });
 }
 
@@ -68,5 +69,6 @@ module.exports = {
     fxguardProductBranding,
     looksLikeKayaBrand,
     FXGUARD_LOGO,
+    FXGUARD_FAVICON,
     FXGUARD_NAME,
 };

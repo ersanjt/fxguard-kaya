@@ -1684,7 +1684,7 @@ router.post('/:id/send', async (req, res, next) => {
 });
 
 // ——— تماس صوتی/تصویری واتساپ (فقط Gateway — نه Cloud API)
-router.post('/:id/call', async (req, res, next) => {
+router.post('/:id/call', async (req, res, _next) => {
     try {
         if (!req.canAccess('conversations'))
             return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });

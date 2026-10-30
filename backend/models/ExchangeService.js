@@ -5,6 +5,10 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const ExchangeService = sequelize.define('ExchangeService', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -42,6 +46,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['isActive'] },
             { fields: ['sortOrder'] }
         ]

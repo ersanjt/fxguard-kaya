@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const AnnouncementRead = sequelize.define('AnnouncementRead', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -19,7 +23,7 @@ module.exports = (sequelize) => {
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW
         }
-    }, { timestamps: false, tableName: 'AnnouncementReads', indexes: [{ unique: true, fields: ['announcementId', 'userId'] }] });
+    }, { timestamps: false, tableName: 'AnnouncementReads', indexes: [{ fields: ['tenantId'] }, { unique: true, fields: ['announcementId', 'userId'] }] });
 
     AnnouncementRead.associate = (models) => {
         AnnouncementRead.belongsTo(models.Announcement, { foreignKey: 'announcementId', as: 'announcement' });

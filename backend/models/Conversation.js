@@ -290,7 +290,12 @@ const DepartmentModel = (sequelize) => {
             defaultValue: {}
         }
     }, {
-        timestamps: true
+        timestamps: true,
+        indexes: [
+            { fields: ['tenantId'] },
+            { fields: ['branchId'] },
+            { fields: ['isActive'] }
+        ]
     });
 
     Department.associate = (models) => {
@@ -353,6 +358,10 @@ const AutoResponseModel = (sequelize) => {
 // ==================== Template Model ====================
 const TemplateModel = (sequelize) => {
     const Template = sequelize.define('Template', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -382,7 +391,10 @@ const TemplateModel = (sequelize) => {
             defaultValue: 0
         }
     }, {
-        timestamps: true
+        timestamps: true,
+        indexes: [
+            { fields: ['tenantId'] }
+        ]
     });
 
     return Template;
@@ -391,6 +403,10 @@ const TemplateModel = (sequelize) => {
 // ==================== Tag Model ====================
 const TagModel = (sequelize) => {
     const Tag = sequelize.define('Tag', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -398,8 +414,7 @@ const TagModel = (sequelize) => {
         },
         name: {
             type: DataTypes.STRING,
-            allowNull: false,
-            unique: true
+            allowNull: false
         },
         color: {
             type: DataTypes.STRING,
@@ -409,7 +424,10 @@ const TagModel = (sequelize) => {
             type: DataTypes.TEXT
         }
     }, {
-        timestamps: true
+        timestamps: true,
+        indexes: [
+            { unique: true, fields: ['tenantId', 'name'] }
+        ]
     });
 
     Tag.associate = (models) => {

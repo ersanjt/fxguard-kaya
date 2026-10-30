@@ -5,15 +5,14 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const Transaction = sequelize.define('Transaction', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
-        },
-        tenantId: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            comment: 'سازمان مالک — جداسازی داده در Cloud'
         },
         type: {
             type: DataTypes.STRING(30),

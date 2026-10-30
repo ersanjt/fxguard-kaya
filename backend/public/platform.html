@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ساخت پنل شرکت | FxGuard</title>
+    <style>
+        :root { color-scheme: dark; }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: #07111a;
+            color: #e8eef5;
+            font-family: Tahoma, sans-serif;
+        }
+        main {
+            width: min(440px, calc(100% - 32px));
+            background: #101a24;
+            border: 1px solid #1e3344;
+            border-radius: 16px;
+            padding: 28px 24px;
+        }
+        h1 { margin: 0 0 8px; font-size: 1.25rem; }
+        p { margin: 0 0 18px; color: #9fb0c0; line-height: 1.7; font-size: .92rem; }
+        label { display: block; margin: 12px 0 6px; font-size: .85rem; }
+        input {
+            width: 100%;
+            box-sizing: border-box;
+            background: #0b141c;
+            color: #fff;
+            border: 1px solid #2a4256;
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        button {
+            width: 100%;
+            margin-top: 18px;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px;
+            background: #12b981;
+            color: #04281c;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        button:disabled { opacity: .6; cursor: wait; }
+        .msg { margin-top: 14px; white-space: pre-wrap; line-height: 1.6; }
+        .msg.err { color: #ff8d8d; }
+        .msg.ok { color: #7dface; }
+        a { color: #7dface; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>ساخت پنل شرکت</h1>
+    <p id="hint">هر شرکت آدرس و دیتابیس جدا می‌گیرد. پنل کایا روی همین سرور دست نمی‌خورد.</p>
+    <form id="form">
+        <label for="key">کلید پلتفرم</label>
+        <input id="key" type="password" autocomplete="off" required>
+        <label for="name">نام شرکت</label>
+        <input id="name" required placeholder="نیک استتیک">
+        <label for="slug">آدرس</label>
+        <input id="slug" required placeholder="nika" dir="ltr">
+        <label for="email">ایمیل مالک</label>
+        <input id="email" type="email" required dir="ltr" placeholder="info@example.com">
+        <label for="password">رمز مالک</label>
+        <input id="password" type="password" required dir="ltr">
+        <button type="submit" id="submit">ساخت پنل</button>
+    </form>
+    <div id="msg" class="msg"></div>
+</main>
+<script>
+(function () {
+    var hint = document.getElementById('hint');
+    var msg = document.getElementById('msg');
+    var environment = 'local';
+    fetch('/api/platform/host').then(function (r) { return r.json(); }).then(function (data) {
+        if (data.kind === 'platform' && data.environment === 'test') environment = 'test';
+        else if (data.kind === 'platform') environment = 'production';
+        else environment = 'local';
+        if (environment === 'local') {
+            hint.textContent = 'روی این رایانه پنل در آدرسی مثل http://nika.localhost:' + location.port + ' باز می‌شود.';
+        } else if (environment === 'test') {
+            hint.textContent = 'محیط تست: پنل روی چیزی.app.fxguard.io ساخته می‌شود.';
+        } else {
+            hint.textContent = 'پنل مشتری روی چیزی.fxguard.io ساخته می‌شود. kaya.fxguard.io همان کایا می‌ماند.';
+        }
+    }).catch(function () {});
+
+    document.getElementById('form').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var btn = document.getElementById('submit');
+        btn.disabled = true;
+        msg.className = 'msg';
+        msg.textContent = 'در حال ساخت دیتابیس...';
+        fetch('/api/platform/tenants', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Platform-Key': document.getElementById('key').value
+            },
+            body: JSON.stringify({
+                name: document.getElementById('name').value,
+                slug: document.getElementById('slug').value,
+                ownerEmail: document.getElementById('email').value,
+                ownerPassword: document.getElementById('password').value,
+                environment: environment
+            })
+        }).then(function (r) {
+            return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+        }).then(function (res) {
+            btn.disabled = false;
+            if (!res.ok) {
+                msg.className = 'msg err';
+                msg.textContent = (res.data && res.data.error) || 'ساخت انجام نشد';
+                return;
+            }
+            msg.className = 'msg ok';
+            msg.textContent = 'پنل آماده است: ' + res.data.panelUrl;
+        }).catch(function () {
+            btn.disabled = false;
+            msg.className = 'msg err';
+            msg.textContent = 'ارتباط با سرور قطع شد';
+        });
+    });
+})();
+</script>
+</body>
+</html>

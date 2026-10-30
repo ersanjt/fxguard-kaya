@@ -1,5 +1,5 @@
 /**
- * Kaya CRM — وضعیت آزمایش ۷روزه و قفل پس از انقضا
+ * Kaya CRM — وضعیت آزمایش رایگان پنل و قفل پس از انقضا
  * @file    backend/lib/tenantTrial.js
  * @layer   backend
  * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
@@ -12,7 +12,7 @@ const { isPlatformTenant } = require('./tenantContext');
 const PAID_PERIOD_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
 
 function trialEndsAtFromNow(days, now) {
-    const d = Number(days) || 7;
+    const d = Number(days) || 14;
     const t = now instanceof Date ? now.getTime() : Date.now();
     return new Date(t + d * 24 * 60 * 60 * 1000);
 }
@@ -56,6 +56,7 @@ function isTrialGateExemptPath(method, path) {
     if (p.indexOf('/api/webhook/') === 0) return true;
     if (p.indexOf('/api/tenants/signup') === 0) return true;
     if (p.indexOf('/api/tenants/check-slug') === 0) return true;
+    if (p.indexOf('/api/tenants/catalog') === 0) return true;
     if (m === 'GET' && (p === '/api/tenants/me' || p.indexOf('/api/tenants/me?') === 0)) return true;
     if (p.indexOf('/api/auth/') === 0) return true;
     if (m === 'OPTIONS') return true;
@@ -65,7 +66,7 @@ function isTrialGateExemptPath(method, path) {
 function trialErrorPayload(state) {
     const code = (state && state.code) || 'PAYMENT_REQUIRED';
     const messages = {
-        TRIAL_EXPIRED: 'دورهٔ آزمایش ۷روزه تمام شده است. برای ادامه اشتراک را فعال کنید.',
+        TRIAL_EXPIRED: 'دورهٔ آزمایش رایگان تمام شده است. برای ادامه اشتراک را فعال کنید.',
         PAYMENT_REQUIRED: 'برای ادامه باید اشتراک را پرداخت کنید.',
         TENANT_SUSPENDED: 'این پنل تعلیق شده است. با پشتیبانی تماس بگیرید.',
     };
@@ -99,6 +100,9 @@ function publicTenantPayload(tenant, now) {
         locked: !state.ok,
         lockCode: state.code,
         panelHost: tenant.host || null,
+        industry: tenant.industry || null,
+        enabledSkills: Array.isArray(tenant.enabledSkills) ? tenant.enabledSkills : null,
+        gatewayEnabled: tenant.gatewayEnabled === true,
     };
 }
 

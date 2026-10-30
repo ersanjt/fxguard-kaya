@@ -2,12 +2,15 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const Announcement = sequelize.define('Announcement', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
-        tenantId: { type: DataTypes.UUID, allowNull: true },
         fromUserId: {
             type: DataTypes.UUID,
             allowNull: false,
@@ -40,6 +43,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'Announcements',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['fromUserId'] },
             { fields: ['targetType', 'targetId'] },
             { fields: ['createdAt'] }

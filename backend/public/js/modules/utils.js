@@ -169,12 +169,12 @@
         function overlayIsOpen(overlay) {
             if (!overlay || overlay.hidden) return false;
             if (overlay.style.display === 'none') return false;
-            var cs = window.getComputedStyle(overlay);
+            const cs = window.getComputedStyle(overlay);
             return cs.display !== 'none' && cs.visibility !== 'hidden' && cs.opacity !== '0';
         }
 
         function focusableIn(root) {
-            var nodes = root.querySelectorAll(
+            const nodes = root.querySelectorAll(
                 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
             );
             return Array.prototype.filter.call(nodes, function (el) {
@@ -183,9 +183,9 @@
         }
 
         function openOverlay() {
-            var list = document.querySelectorAll('.modal-overlay');
-            var found = null;
-            for (var i = 0; i < list.length; i++) {
+            const list = document.querySelectorAll('.modal-overlay');
+            let found = null;
+            for (let i = 0; i < list.length; i++) {
                 if (overlayIsOpen(list[i])) found = list[i];
             }
             return found;
@@ -193,13 +193,13 @@
 
         document.addEventListener('keydown', function (e) {
             if (e.key !== 'Tab') return;
-            var overlay = openOverlay();
+            const overlay = openOverlay();
             if (!overlay) return;
-            var box = overlay.querySelector('.modal-box') || overlay;
-            var items = focusableIn(box);
+            const box = overlay.querySelector('.modal-box') || overlay;
+            const items = focusableIn(box);
             if (!items.length) return;
-            var first = items[0];
-            var last = items[items.length - 1];
+            const first = items[0];
+            const last = items[items.length - 1];
             if (e.shiftKey) {
                 if (document.activeElement === first || !box.contains(document.activeElement)) {
                     e.preventDefault();
@@ -211,23 +211,23 @@
             }
         });
 
-        var lastFocus = null;
+        let lastFocus = null;
         function onOverlayShown(overlay) {
             lastFocus = document.activeElement;
-            var box = overlay.querySelector('.modal-box') || overlay;
+            const box = overlay.querySelector('.modal-box') || overlay;
             box.setAttribute('role', box.getAttribute('role') || 'dialog');
             box.setAttribute('aria-modal', 'true');
-            var items = focusableIn(box);
-            var prefer = box.querySelector('input:not([type="hidden"]), select, textarea, button.btn-primary');
+            const items = focusableIn(box);
+            const prefer = box.querySelector('input:not([type="hidden"]), select, textarea, button.btn-primary');
             if (prefer && items.indexOf(prefer) >= 0) prefer.focus();
             else if (items[0]) items[0].focus();
         }
 
         document.querySelectorAll('.modal-overlay').forEach(function (overlay) {
-            var wasOpen = overlayIsOpen(overlay);
+            let wasOpen = overlayIsOpen(overlay);
             if (wasOpen) onOverlayShown(overlay);
-            var obs = new MutationObserver(function () {
-                var now = overlayIsOpen(overlay);
+            const obs = new MutationObserver(function () {
+                const now = overlayIsOpen(overlay);
                 if (now && !wasOpen) onOverlayShown(overlay);
                 if (!now && wasOpen && lastFocus && typeof lastFocus.focus === 'function') {
                     try { lastFocus.focus(); } catch (_) { /* ignore */ }

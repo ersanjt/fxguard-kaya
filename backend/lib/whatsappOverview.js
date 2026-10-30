@@ -12,6 +12,17 @@ function getPublicBaseUrl(req) {
     return host ? `${proto}://${host}` : '';
 }
 
+function getCloudWebhookUrl(req) {
+    const publicUrl = getPublicBaseUrl(req);
+    if (!publicUrl) return '';
+    const webhook = new URL(`${publicUrl}/api/webhook/whatsapp-cloud`);
+    const tenant = req && req.tenant;
+    if (tenant && tenant.id && tenant.slug && !tenant.isPlatform) {
+        webhook.searchParams.set('panel', tenant.slug);
+    }
+    return webhook.toString();
+}
+
 async function fetchGatewayStatus(cfg) {
     if (cfg.gatewayEnabled === false) {
         return { reachable: false, connected: false, reason: 'disabled' };
@@ -53,7 +64,7 @@ async function buildWhatsappOverview(req) {
     const cloudConfigured = await isCloudApiConfigured();
     const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
     const publicUrl = getPublicBaseUrl(req);
-    const webhookUrl = publicUrl ? `${publicUrl}/api/webhook/whatsapp-cloud` : '';
+    const webhookUrl = getCloudWebhookUrl(req);
 
     const gateway = await fetchGatewayStatus(cfg);
     const cloudReady = cloudConfigured && cfg.cloudEnabled !== false;
@@ -132,4 +143,4 @@ async function buildWhatsappOverview(req) {
     };
 }
 
-module.exports = { buildWhatsappOverview };
+module.exports = { buildWhatsappOverview, getCloudWebhookUrl };

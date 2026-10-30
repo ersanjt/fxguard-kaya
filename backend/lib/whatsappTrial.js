@@ -83,8 +83,9 @@ function applyExpired(row, now) {
 
 async function loadTrialRow() {
     const { WhatsappConfig } = require('../models');
+    const { getPanelSettingsKey } = require('./tenantContext');
     const [cfg] = await WhatsappConfig.findOrCreate({
-        where: { id: 'default' },
+        where: { id: getPanelSettingsKey() },
         defaults: { welcomeEnabled: true },
     });
     return cfg;

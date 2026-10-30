@@ -52,6 +52,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['ticketNumber'] },
             { fields: ['status'] },
             { fields: ['dueDate'] },

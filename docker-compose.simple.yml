@@ -14,7 +14,12 @@ services:
       NODE_ENV: production
       PORT: 3002
       USE_SQLITE: "true"
-      JWT_SECRET: ${JWT_SECRET:-YourSuperSecretJWTKey123456789!}
+      MAIN_ADMIN_EMAIL: ${MAIN_ADMIN_EMAIL:?MAIN_ADMIN_EMAIL must be set in .env}
+      MAIN_ADMIN_PASSWORD: ${MAIN_ADMIN_PASSWORD:?MAIN_ADMIN_PASSWORD must be set in .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      ENCRYPT_SECRET: ${ENCRYPT_SECRET:?ENCRYPT_SECRET must be set in .env}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET must be set in .env}
+      GATEWAY_API_SECRET: ${GATEWAY_API_SECRET:?GATEWAY_API_SECRET must be set in .env}
       GATEWAY_URL: http://gateway:3001
       CORS_ORIGINS: http://localhost:3000,http://localhost:3002
       FRONTEND_URL: http://localhost:3000
@@ -37,6 +42,8 @@ services:
       NODE_ENV: production
       PORT: 3001
       WHATSAPP_SESSION_PATH: /app/sessions
+      GATEWAY_API_SECRET: ${GATEWAY_API_SECRET:?GATEWAY_API_SECRET must be set in .env}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:?WEBHOOK_SECRET must be set in .env}
       BACKEND_API_URL: http://backend:3002
       FRONTEND_URL: http://localhost:3000
     ports:

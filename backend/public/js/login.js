@@ -21,7 +21,7 @@
             login_btn:            'ورود به سیستم',
             login_loading:        'در حال ورود...',
             login_forgot_password:'فراموشی رمز عبور',
-            login_signup:         '۷ روز رایگان — ساخت پنل',
+            login_signup:         '۱۴ روز رایگان — ساخت پنل',
             login_panel_lbl:      'شناسه پنل',
             login_panel_ph:       'مثلاً your-desk',
             login_panel_active:   'پنل فعال:',
@@ -75,6 +75,15 @@
             reset_confirm_ph:     'تکرار رمز',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkce',
             lang_label: 'انتخاب زبان',
+            aside_kicker: 'پورتال کارکنان',
+            aside_title: 'ورود امن به پنل سازمان',
+            aside_lead: 'ایمیل و رمز خود را وارد کنید. اگر چند سازمان روی این آدرس هستند، شناسه پنل را هم بنویسید.',
+            aside_p1_t: 'صندوق یکپارچه',
+            aside_p1_d: 'مکالمات، مشتریان و پیگیری در یک پنل.',
+            aside_p2_t: 'دسترسی نقش‌محور',
+            aside_p2_d: 'هر همکار فقط بخش مربوط به نقش خودش را می‌بیند.',
+            aside_p3_t: 'حفاظت ورود',
+            aside_p3_d: 'احراز دو مرحله‌ای و بازیابی رمز از همین صفحه.',
         },
         en: {
             login_title:          'Staff Portal',
@@ -84,7 +93,7 @@
             login_btn:            'Sign in',
             login_loading:        'Signing in...',
             login_forgot_password:'Forgot password',
-            login_signup:         '7-day free trial — create your panel',
+            login_signup:         '14-day free trial — create your panel',
             login_panel_lbl:      'Panel ID',
             login_panel_ph:       'e.g. your-desk',
             login_panel_active:   'Active panel:',
@@ -138,6 +147,15 @@
             reset_confirm_ph:     'Confirm password',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
             lang_label: 'Language',
+            aside_kicker: 'Staff portal',
+            aside_title: 'Sign in to your organization',
+            aside_lead: 'Use your email and password. If several organizations share this address, enter the panel ID too.',
+            aside_p1_t: 'One inbox',
+            aside_p1_d: 'Conversations, customers, and follow-ups in a single panel.',
+            aside_p2_t: 'Role-based access',
+            aside_p2_d: 'Each teammate only sees what their role allows.',
+            aside_p3_t: 'Protected sign-in',
+            aside_p3_d: 'Two-factor authentication and password reset live on this page.',
         },
         tr: {
             login_title:          'Personel Portalı',
@@ -147,11 +165,11 @@
             login_btn:            'Giriş yap',
             login_loading:        'Giriş yapılıyor...',
             login_forgot_password:'Şifremi unuttum',
-            login_signup:         '7 gün ücretsiz — panel oluştur',
-            login_panel_lbl:      'Panel ID',
-            login_panel_ph:       'örn. your-desk',
+            login_signup:         '14 gün ücretsiz — panel oluştur',
+            login_panel_lbl:      'Panel kimliği',
+            login_panel_ph:       'ör. your-desk',
             login_panel_active:   'Aktif panel:',
-            login_panel_required: 'Panel ID girin.',
+            login_panel_required: 'Panel kimliğini girin.',
             login_email_required: 'E-posta veya kullanıcı adınızı girin.',
             login_pass_required:  'Şifrenizi girin.',
             login_err_connect:    'Sunucuya bağlanılamadı. Lütfen tekrar deneyin.',
@@ -201,6 +219,15 @@
             reset_confirm_ph:     'Şifre tekrar',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
             lang_label: 'Dil seçimi',
+            aside_kicker: 'Personel portalı',
+            aside_title: 'Kuruluş panelinize güvenli giriş',
+            aside_lead: 'E-posta ve şifrenizi girin. Bu adreste birden fazla kuruluş varsa panel kimliğini de yazın.',
+            aside_p1_t: 'Tek gelen kutusu',
+            aside_p1_d: 'Sohbetler, müşteriler ve takipler tek panelde.',
+            aside_p2_t: 'Role dayalı erişim',
+            aside_p2_d: 'Her ekip arkadaşı yalnızca rolünün izin verdiğini görür.',
+            aside_p3_t: 'Korumalı giriş',
+            aside_p3_d: 'İki faktörlü doğrulama ve şifre sıfırlama bu sayfada.',
         }
     };
 
@@ -683,10 +710,10 @@
         return h === 'app.fxguard.io' || h.slice(-15) === '.app.fxguard.io';
     }
     var LP_ON_APP = lpIsFxguardAppHost();
-    var LP_DEFAULT_LOGO = LP_ON_APP ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+    var LP_DEFAULT_LOGO = LP_ON_APP ? '/brand/fxguard-mark.svg' : '/brand/kaya-logo.png';
     var LP_DEFAULT_NAME = LP_ON_APP ? 'FXGuard' : 'KAYA';
-    var LP_DEFAULT_FAVICON = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-favicon-32.png?v=2';
-    var LP_DEFAULT_APPLE = LP_ON_APP ? '/brand/fxguard-logo.svg?v=ssbrand2' : '/brand/kaya-apple-touch.png?v=2';
+    var LP_DEFAULT_FAVICON = LP_ON_APP ? '/brand/fxguard-favicon.svg' : '/brand/kaya-favicon-32.png?v=2';
+    var LP_DEFAULT_APPLE = LP_ON_APP ? '/brand/fxguard-apple-touch.png' : '/brand/kaya-apple-touch.png?v=2';
 
     function lpSafeHref(raw, fallback) {
         var s = String(raw || '').trim();

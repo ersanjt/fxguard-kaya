@@ -197,7 +197,7 @@
             const annBadge = document.getElementById('mobileTabAnnBadge');
             if (annBadge) { const na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
         }
-        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','system-status','staff-activity'];
+        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','clinic-appointments','clinic-patients','clinic-doctors','clinic-packages','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','system-status','staff-activity'];
         function mobileCanAccessSection(sec) {
             if (typeof canAccessSection === 'function') return canAccessSection(sec);
             if (sec === 'profile' || sec === 'dashboard') return true;

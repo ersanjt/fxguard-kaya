@@ -28,6 +28,25 @@ const { createSendRateLimiter } = require('./sendRateLimiter');
 const { downloadAndDecryptWhatsAppMedia } = require('./waMediaDecrypt');
 require('dotenv').config();
 
+// Gateway اختصاصی یک سازمان (Backend آن را اجرا می‌کند): هر وب‌هوک شناسهٔ سازمان را می‌فرستد
+const GATEWAY_TENANT_ID = String(process.env.GATEWAY_TENANT_ID || '').trim();
+
+/** سازمان (tenant) این نشست واتساپ در Cloud — خالی = سکو/کایا */
+const GATEWAY_TENANT_SLUG = String(process.env.GATEWAY_TENANT_SLUG || '')
+    .trim()
+    .toLowerCase();
+
+/** هدرهای وب‌هوک Backend — secret و در حالت سازمانی، شناسه/slug سازمان */
+function backendWebhookHeaders(extra) {
+    const webhookSecret = process.env.WEBHOOK_SECRET || '';
+    return {
+        ...(extra || {}),
+        ...(webhookSecret ? { 'x-webhook-secret': webhookSecret } : {}),
+        ...(GATEWAY_TENANT_ID ? { 'x-gateway-tenant': GATEWAY_TENANT_ID } : {}),
+        ...(GATEWAY_TENANT_SLUG ? { 'x-tenant-slug': GATEWAY_TENANT_SLUG } : {}),
+    };
+}
+
 // ==================== Config ====================
 const CONFIG = {
     // امنیت
@@ -142,7 +161,6 @@ const upload = multer({
 });
 
 const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
-const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
 /** message IDs we sent via API — skip message_create echo to backend (avoids duplicate CRM rows) */
 const recentGatewaySentIds = new Map();
 /** during API sendMessage, message_create fires before we have the id — skip echo processing */
@@ -183,10 +201,38 @@ function serializedJid(val) {
     if (typeof val === 'string') return val.trim();
     if (typeof val === 'object') {
         if (val._serialized) return String(val._serialized).trim();
+        // WhatsApp Web (July 2026) renamed _serialized to $1
+        if (val.$1) return String(val.$1).trim();
         if (val.user && val.server) return `${val.user}@${val.server}`;
         if (val.id) return serializedJid(val.id);
     }
     return '';
+}
+
+/** کارت پیش‌نمایش لینکی که خود واتساپ برای پیام ساخته (عنوان، توضیح، تصویر کوچک base64). */
+function extractLinkPreview(msg) {
+    const d = (msg && msg._data) || {};
+    const firstLink = Array.isArray(msg && msg.links) && msg.links[0] ? msg.links[0].link : '';
+    return normalizeLinkPreview({
+        url: d.canonicalUrl || d.matchedText || firstLink,
+        title: d.title,
+        description: d.description,
+        thumbnail: d.thumbnail,
+    });
+}
+
+function normalizeLinkPreview(p) {
+    if (!p) return null;
+    const url = String(p.url || '').trim();
+    if (!/^https?:\/\//i.test(url)) return null;
+    const title = typeof p.title === 'string' ? p.title : '';
+    const description = typeof p.description === 'string' ? p.description : '';
+    let thumbnail = typeof p.thumbnail === 'string' ? p.thumbnail.trim() : '';
+    if (thumbnail && !thumbnail.startsWith('data:'))
+        thumbnail = 'data:image/jpeg;base64,' + thumbnail;
+    if (thumbnail.length > 200000) thumbnail = '';
+    if (!title && !description && !thumbnail) return null;
+    return { url, title, description, thumbnail };
 }
 
 function isWhatsAppGroupChat(chat, msg) {
@@ -384,17 +430,8 @@ async function buildOutboundMessageMedia(media, _message) {
         if (!buf.length || buf.length < 64) {
             throw new Error('Voice payload empty or too small');
         }
-        const tmpDir = path.join(UPLOADS_DIR, 'tmp');
-        await ensureDir(tmpDir);
-        const tmpPath = path.join(
-            tmpDir,
-            `ptt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ogg`
-        );
-        await fs.writeFile(tmpPath, buf);
-        const mediaObj = MessageMedia.fromFilePath(tmpPath);
-        mediaObj.mimetype = WHATSAPP_VOICE_MIME;
-        mediaObj.filename = WHATSAPP_VOICE_FILENAME;
-        return { mediaObj, asVoice: true, tmpPath, mime: WHATSAPP_VOICE_MIME };
+        const mediaObj = new MessageMedia(WHATSAPP_VOICE_MIME, buf.toString('base64'), 'voice.ogg');
+        return { mediaObj, asVoice: true, tmpPath: null, mime: WHATSAPP_VOICE_MIME };
     }
     const mediaObj = new MessageMedia(mime, media.data, waSafeFilename(media.filename || 'file'));
     return { mediaObj, asVoice: false, tmpPath: null, mime };
@@ -804,9 +841,24 @@ io.use((socket, next) => {
 });
 
 // ==================== Redis ====================
-const redisClient = redis.createClient({
+// چند Gateway روی یک Redis: کلیدهای هر Gateway با پیشوند خودش جدا می‌شوند (QR/وضعیت قاطی نشود)
+const REDIS_KEY_PREFIX = String(process.env.GATEWAY_REDIS_PREFIX || '');
+const REDIS_KEYED_COMMANDS = new Set(['get', 'set', 'del', 'expire']);
+const rawRedisClient = redis.createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
 });
+const redisClient = !REDIS_KEY_PREFIX
+    ? rawRedisClient
+    : new Proxy(rawRedisClient, {
+          get(target, prop) {
+              const value = target[prop];
+              if (typeof value !== 'function') return value;
+              if (REDIS_KEYED_COMMANDS.has(prop)) {
+                  return (key, ...args) => value.call(target, REDIS_KEY_PREFIX + key, ...args);
+              }
+              return value.bind(target);
+          },
+      });
 
 redisClient.on('error', () => {});
 redisClient
@@ -844,6 +896,8 @@ function isOutgoingMessageSigned(content, signature) {
 }
 
 async function connectRabbitMQ() {
+    // صف خروجی مال Gateway اصلی سکوست؛ Gateway سازمانی نباید پیام پنل دیگری را بفرستد
+    if (process.env.GATEWAY_DISABLE_RABBITMQ === 'true') return;
     try {
         const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
         rabbitChannel = await connection.createChannel();
@@ -1397,6 +1451,7 @@ function attachClientEvents(c) {
             },
             author: authorId,
             authorName: authorName,
+            linkPreview: extractLinkPreview(msg),
         };
 
         await attachMediaToMessageData(messageData, msg);
@@ -1461,16 +1516,12 @@ function attachClientEvents(c) {
         io.emit('message_status', { messageId: msg?.id?.id, status: statusStr });
         const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
         const secret = process.env.GATEWAY_API_SECRET || '';
-        const webhookSecret = process.env.WEBHOOK_SECRET || '';
         axios
             .post(
                 backendUrl + '/api/webhook/message-status',
                 { messageId: msg?.id?.id, status: statusStr },
                 {
-                    headers: {
-                        ...(secret ? { 'X-Gateway-Secret': secret } : {}),
-                        ...(webhookSecret ? { 'x-webhook-secret': webhookSecret } : {}),
-                    },
+                    headers: backendWebhookHeaders(secret ? { 'X-Gateway-Secret': secret } : {}),
                     timeout: 5000,
                     validateStatus: () => true,
                 }
@@ -1601,19 +1652,6 @@ async function persistInboundMediaFile(media, type) {
         });
         return media;
     }
-}
-
-/** سازمان (tenant) این نشست واتساپ در Cloud — خالی = سکو/کایا */
-const GATEWAY_TENANT_SLUG = String(process.env.GATEWAY_TENANT_SLUG || '')
-    .trim()
-    .toLowerCase();
-
-function backendWebhookHeaders() {
-    const headers = {};
-    const webhookSecret = process.env.WEBHOOK_SECRET || '';
-    if (webhookSecret) headers['x-webhook-secret'] = webhookSecret;
-    if (GATEWAY_TENANT_SLUG) headers['x-tenant-slug'] = GATEWAY_TENANT_SLUG;
-    return headers;
 }
 
 async function sendToBackendWithRetry(messageData) {
@@ -1797,6 +1835,34 @@ async function resolveOutboundChatId(to) {
         }
     } catch (_) {}
     return base;
+}
+
+function isNoLidError(err) {
+    return /No LID for user/i.test(String((err && err.message) || err || ''));
+}
+
+/**
+ * واتساپ وب جدید به `شماره@c.us` بدون LID شناخته‌شده پیام نمی‌دهد. اول LID را از سرور واتساپ می‌گیریم؛
+ * بعد خود ارقام را به‌عنوان LID امتحان می‌کنیم (بعضی LIDها شبیه شمارهٔ واقعی‌اند و اشتباهی @c.us شده‌اند).
+ */
+async function lidFallbackTargets(chatId) {
+    const id = String(chatId || '');
+    if (!/@c\.us$/i.test(id)) return [];
+    const targets = [];
+    if (client && typeof client.getContactLidAndPhone === 'function') {
+        try {
+            const mapped = await Promise.race([
+                client.getContactLidAndPhone([id]),
+                timeoutReject(5000, 'lid_lookup_timeout'),
+            ]);
+            const row = Array.isArray(mapped) ? mapped[0] : mapped;
+            const lid = row && row.lid ? String(row.lid) : '';
+            if (/@lid$/i.test(lid)) targets.push(lid);
+        } catch (_) {}
+    }
+    const digits = id.replace(/@c\.us$/i, '').replace(/\D/g, '');
+    if (digits && !targets.includes(`${digits}@lid`)) targets.push(`${digits}@lid`);
+    return targets;
 }
 
 function mediaSafetyOpts() {
@@ -2088,11 +2154,10 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
             return client.sendMessage(targetChatId, message || '', sendOpts);
         };
 
-        outboundApiSendDepth += 1;
-        try {
-            const sendTimeoutMs = media ? 120000 : 45000;
-            sentMsg = await Promise.race([
-                doSend(chatId),
+        const sendTimeoutMs = media ? 120000 : 45000;
+        const sendWithTimeout = (targetChatId) =>
+            Promise.race([
+                doSend(targetChatId),
                 new Promise((_, reject) =>
                     setTimeout(() => {
                         const err = new Error('send_timeout');
@@ -2101,6 +2166,37 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                     }, sendTimeoutMs)
                 ),
             ]);
+
+        outboundApiSendDepth += 1;
+        try {
+            try {
+                sentMsg = await sendWithTimeout(chatId);
+            } catch (firstErr) {
+                if (!isNoLidError(firstErr)) throw firstErr;
+                sentMsg = null;
+                for (const target of await lidFallbackTargets(chatId)) {
+                    await cleanupTempMedia(tmpMediaPath);
+                    tmpMediaPath = null;
+                    try {
+                        sentMsg = await sendWithTimeout(target);
+                        logger.info('Send retried on LID after "No LID for user"', {
+                            from: chatId,
+                            to: target,
+                        });
+                        chatId = target;
+                        break;
+                    } catch (retryErr) {
+                        if (!isNoLidError(retryErr)) throw retryErr;
+                    }
+                }
+                if (!sentMsg) {
+                    const err = new Error(
+                        'WhatsApp did not find this contact (No LID for user). Check the number, or ask the customer to message first.'
+                    );
+                    err.statusCode = 422;
+                    throw err;
+                }
+            }
         } finally {
             outboundApiSendDepth = Math.max(0, outboundApiSendDepth - 1);
         }
@@ -2532,6 +2628,7 @@ async function ingestStoreInboundMessage(raw, via) {
         },
         author: raw.author || null,
         authorName: raw.authorName || raw.notifyName || null,
+        linkPreview: normalizeLinkPreview(raw.linkPreview),
     };
 
     if (raw.media && raw.media.data) {
@@ -2640,8 +2737,19 @@ async function hookIncomingMessageObserver() {
                 if (!v) return '';
                 if (typeof v === 'string') return v;
                 if (v._serialized) return String(v._serialized);
+                if (v.$1) return String(v.$1);
                 if (v.user && v.server) return `${v.user}@${v.server}`;
                 return '';
+            }
+            function packLinkPreview(m) {
+                const url = String(m.canonicalUrl || m.matchedText || '');
+                if (!/^https?:\/\//i.test(url)) return null;
+                return {
+                    url,
+                    title: typeof m.title === 'string' ? m.title : '',
+                    description: typeof m.description === 'string' ? m.description : '',
+                    thumbnail: typeof m.thumbnail === 'string' ? m.thumbnail : '',
+                };
             }
             function toB64(input) {
                 if (!input) return '';
@@ -2809,7 +2917,7 @@ async function hookIncomingMessageObserver() {
                 } catch (_) {}
                 return {
                     id: idObj.id || '',
-                    serializedId: idObj._serialized || '',
+                    serializedId: idObj._serialized || idObj.$1 || '',
                     from,
                     to,
                     chatId,
@@ -2821,6 +2929,7 @@ async function hookIncomingMessageObserver() {
                         ['image', 'video', 'ptt', 'audio', 'document', 'sticker'].indexOf(type) >= 0
                     ),
                     notifyName: m.notifyName || m.verifiedName || '',
+                    linkPreview: packLinkPreview(m),
                     chatName: '',
                     contactNumber,
                     contactLid: lid,
@@ -2894,8 +3003,19 @@ async function pollUnreadIncomingMessages() {
                     if (!v) return '';
                     if (typeof v === 'string') return v;
                     if (v._serialized) return String(v._serialized);
+                    if (v.$1) return String(v.$1);
                     if (v.user && v.server) return `${v.user}@${v.server}`;
                     return '';
+                }
+                function packLinkPreview(m) {
+                    const url = String(m.canonicalUrl || m.matchedText || '');
+                    if (!/^https?:\/\//i.test(url)) return null;
+                    return {
+                        url,
+                        title: typeof m.title === 'string' ? m.title : '',
+                        description: typeof m.description === 'string' ? m.description : '',
+                        thumbnail: typeof m.thumbnail === 'string' ? m.thumbnail : '',
+                    };
                 }
                 function packMsg(m) {
                     if (!m) return null;
@@ -2949,7 +3069,7 @@ async function pollUnreadIncomingMessages() {
                         '';
                     return {
                         id: idObj.id || '',
-                        serializedId: idObj._serialized || '',
+                        serializedId: idObj._serialized || idObj.$1 || '',
                         from,
                         to,
                         chatId,
@@ -2963,6 +3083,7 @@ async function pollUnreadIncomingMessages() {
                             ) >= 0
                         ),
                         notifyName: m.notifyName || m.verifiedName || '',
+                        linkPreview: packLinkPreview(m),
                         chatName: '',
                         contactNumber,
                         contactLid: lid,

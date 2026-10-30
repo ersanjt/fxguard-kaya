@@ -21,6 +21,7 @@ const {
 } = require('../lib/tenantHost');
 const { runWithTenant, setPlatformTenantCache, getCachedPlatformTenant } = require('../lib/tenantContext');
 const { COOKIE_NAME } = require('../lib/authCookie');
+const { normalizeIndustry, parseSkillsColumn } = require('../lib/tenantSkills');
 
 function platformShape(row) {
     if (row) {
@@ -64,6 +65,10 @@ function tenantShape(row, extra) {
         stripeSubscriptionId: row.stripeSubscriptionId || null,
         billingProvider: row.billingProvider || null,
         billingPaidUntil: row.billingPaidUntil || null,
+        industry: normalizeIndustry(row.industry),
+        enabledSkills: parseSkillsColumn(row.enabledSkills),
+        gatewayEnabled: row.gatewayEnabled === true,
+        gatewayPort: row.gatewayPort || null,
     };
     return extra ? Object.assign(base, extra) : base;
 }
@@ -115,9 +120,20 @@ async function tenantFromAuthCookie(req, host) {
     }
 }
 
+/** وب‌هوک Gateway اختصاصی سازمان از localhost می‌آید؛ سازمان از هدر امضاشده خوانده می‌شود، نه Host. */
+async function tenantFromGatewayWebhook(req, host) {
+    if (requestPath(req).indexOf('/api/webhook/') !== 0) return null;
+    const { isValidTenantWebhook, gatewayTenantIdFromHeaders } = require('./webhookAuth');
+    if (!isValidTenantWebhook(req)) return null;
+    return loadTenantById(gatewayTenantIdFromHeaders(req), host);
+}
+
 async function resolveTenantFromRequest(req) {
     const host = requestHostname(req);
     const parsed = parseTenantSlugFromHost(host);
+
+    const fromGateway = await tenantFromGatewayWebhook(req, host);
+    if (fromGateway) return fromGateway;
 
     if (process.env.NODE_ENV === 'test') {
         const headerSlug = req.headers && req.headers['x-tenant-slug'];
@@ -190,10 +206,24 @@ async function resolveTenantFromRequest(req) {
     return platform;
 }
 
+function requestPath(req) {
+    return String((req && (req.originalUrl || req.url)) || '').split('?')[0];
+}
+
+function missingTenantBlocksApi(req) {
+    const path = requestPath(req);
+    if (path !== '/api' && path.indexOf('/api/') !== 0) return false;
+    if (path === '/api/ping' || path.indexOf('/api/ping/') === 0) return false;
+    return true;
+}
+
 function tenantContextMiddleware(req, res, next) {
     resolveTenantFromRequest(req)
         .then((tenant) => {
             req.tenant = tenant;
+            if (tenant && tenant.missing && missingTenantBlocksApi(req)) {
+                return res.status(404).json({ error: 'پنلی با این آدرس ثبت نشده است.' });
+            }
             runWithTenant(tenant, () => next());
         })
         .catch(() => {

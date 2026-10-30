@@ -110,6 +110,27 @@ module.exports = (sequelize) => {
                 allowNull: true,
                 comment: 'زمان آخرین رویداد اشتراک اعمال‌شده — رویداد قدیمی‌تر نادیده گرفته می‌شود',
             },
+            industry: {
+                type: DataTypes.STRING(32),
+                allowNull: true,
+                comment: 'حوزهٔ فعالیت — lib/tenantSkills.js',
+            },
+            enabledSkills: {
+                type: DataTypes.TEXT,
+                allowNull: true,
+                comment: 'اسکیل‌های روشن (JSON array)؛ null یعنی همه روشن',
+            },
+            gatewayEnabled: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+                comment: 'اتصال QR (Gateway اختصاصی) — فقط مدیر سکو روشن می‌کند',
+            },
+            gatewayPort: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                comment: 'پورت محلی Gateway اختصاصی این سازمان',
+            },
         },
         {
             timestamps: true,

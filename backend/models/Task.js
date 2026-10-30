@@ -63,6 +63,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['createdBy'] },
             { fields: ['assignedTo'] },
             { fields: ['assignedToDepartmentId'] },

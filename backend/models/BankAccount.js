@@ -5,15 +5,14 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const BankAccount = sequelize.define('BankAccount', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
-        },
-        tenantId: {
-            type: DataTypes.UUID,
-            allowNull: true,
-            comment: 'سازمان مالک — جداسازی داده در Cloud'
         },
         name: {
             type: DataTypes.STRING,

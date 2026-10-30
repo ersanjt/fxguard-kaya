@@ -1,6 +1,8 @@
 # راهنمای آپلود و راه‌اندازی سیستم روی سرور (Ubuntu)
 
-این راهنما برای سرور **FXGuard** (Ubuntu 22.04، IP: `92.205.58.83`) است.
+> **سند آرشیوی:** مسیرها و نام پردازه‌های این فایل مربوط به استقرار قدیمی FXGuard هستند. برای production فعلی کایا فقط از [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md) و workflow شاخهٔ `main` استفاده کنید.
+
+این راهنما صرفاً برای نگهداری سرور قدیمی **FXGuard** (Ubuntu 22.04، IP: `92.205.58.83`) حفظ شده است.
 
 ---
 
@@ -158,7 +160,7 @@ certbot --nginx -d yourdomain.com
 
 ## به‌روزرسانی بعدی (بعد از تغییر در گیت)
 
-**خودکار:** با هر push به `master`، GitHub Actions سرور را به‌روز می‌کند. راهنما: [DEPLOY-SETUP.md](DEPLOY-SETUP.md)
+**استقرار production فعلی:** با push به `main` طبق [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md) انجام می‌شود.
 
 **دستی** روی سرور:
 
@@ -220,7 +222,7 @@ curl -sS https://api.github.com/meta | jq -r '.actions[]'
 
 ### از کامپیوتر خود (با SSH به سرور)
 
-۱. مطمئن شوید آخرین کد روی `master` در GitHub است (push کرده‌اید).  
+۱. مطمئن شوید آخرین کد روی `main` در GitHub است (push کرده‌اید).
 ۲. با SSH به سرور وصل شوید (با همان کاربری که در workflow استفاده می‌کنید، مثلاً `fxguard`):
 
 ```bash
@@ -233,7 +235,7 @@ ssh fxguard@92.205.58.83
 set -e
 cd /var/www/fxguard-kaya
 git fetch origin
-git reset --hard origin/master
+git reset --hard origin/main
 cd backend
 node scripts/backup-database.js || true
 npm ci --only=production

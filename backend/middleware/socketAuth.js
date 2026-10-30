@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
-const { User, Tenant } = require('../models');
+const { User } = require('../models');
 const { assertMatchingTokenVersion } = require('../lib/staffSession');
 const { COOKIE_NAME } = require('../lib/authCookie');
-const { getCachedPlatformTenant } = require('../lib/tenantContext');
-const { PLATFORM_SLUG } = require('../lib/tenantHost');
+const { resolveTenantFromRequest } = require('./tenantContext');
+const { assertUserMatchesRequestTenant } = require('./auth');
 
 function tokenFromCookieHeader(cookieHeader) {
     const raw = String(cookieHeader || '');
@@ -66,30 +66,24 @@ module.exports = async (socket, next) => {
                     lastErr = new Error('نشست باطل شده است');
                     continue;
                 }
+                const tenant = await resolveTenantFromRequest({
+                    headers: (socket.handshake && socket.handshake.headers) || {},
+                    cookies: {},
+                    query: {},
+                    originalUrl: '/socket.io/',
+                });
+                try {
+                    assertUserMatchesRequestTenant({ tenant }, user);
+                } catch (_) {
+                    lastErr = new Error('این حساب به این پنل تعلق ندارد');
+                    continue;
+                }
                 socket.userId = user.id;
                 socket.departmentId = user.departmentId;
                 socket.userRole = user.role;
                 socket.user = user;
-                socket.tenantId = user.tenantId || null;
-                socket.tenant = getCachedPlatformTenant();
-                if (user.tenantId) {
-                    try {
-                        const row = await Tenant.findByPk(user.tenantId);
-                        if (row) {
-                            socket.tenant = {
-                                id: row.id,
-                                slug: row.slug,
-                                name: row.name,
-                                status: row.status,
-                                planTier: row.planTier,
-                                trialEndsAt: row.trialEndsAt,
-                                panelKey: row.panelKey || 'default',
-                                customDomain: row.customDomain,
-                                isPlatform: row.slug === PLATFORM_SLUG,
-                            };
-                        }
-                    } catch (_) {}
-                }
+                socket.tenantId = user.tenantId || (tenant && tenant.id) || null;
+                socket.tenant = tenant && !tenant.missing ? tenant : null;
                 return next();
             } catch (err) {
                 lastErr = err;

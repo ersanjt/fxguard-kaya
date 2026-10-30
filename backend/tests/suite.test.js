@@ -14,6 +14,8 @@ process.env.MAIN_ADMIN_PASSWORD = 'Admin@Test123!';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3099';
 process.env.DISABLE_RATE_LIMIT = 'true';
+// .env محلی WEBHOOK_SECRET دارد؛ dotenv مقدار موجود را عوض نمی‌کند
+process.env.WEBHOOK_SECRET = '';
 delete process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 delete process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
 delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
@@ -898,7 +900,7 @@ async function runTests() {
             .set('Authorization', `Bearer ${agentToken}`)
             .send({ content: 'hello' });
         assert(
-            [200, 201, 400, 502, 503].includes(r.status),
+            [200, 201, 400, 422, 503].includes(r.status),
             `Expected inbox send or gateway error, got ${r.status}`
         );
         assert.notStrictEqual(r.status, 403, 'unassigned live chat must be sendable');
@@ -982,7 +984,7 @@ async function runTests() {
             .set('Authorization', `Bearer ${adminToken}`)
             .send({ content: 'after archive' });
         assert(
-            [200, 201, 400, 502, 503].includes(r.status),
+            [200, 201, 400, 422, 503].includes(r.status),
             `Expected live-thread send or gateway error, got ${r.status}`
         );
         if (r.status === 400) {
@@ -1638,6 +1640,14 @@ async function runTests() {
         assert.strictEqual(r.page, 1);
         assert(r.limit > 0);
         assert.strictEqual(r.offset, 0);
+    });
+
+    await test('geoip rejects ambiguous and invalid IP addresses', async () => {
+        const { getCountryFromIp } = require('../lib/geoip');
+        assert.strictEqual(getCountryFromIp('127.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('::ffff:127.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('0177.0.0.1'), null);
+        assert.strictEqual(getCountryFromIp('not-an-ip'), null);
     });
 
     // ── Password Validation ──────────────────────────────────────────────────

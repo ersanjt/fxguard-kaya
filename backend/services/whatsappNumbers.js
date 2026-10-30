@@ -3,19 +3,39 @@
  */
 const { WhatsappNumber, WhatsappConnection } = require('../models');
 const { getWhatsappConnectionConfig, invalidateCache } = require('../lib/whatsappConnectionLoader');
-const { getPanelSettingsKey } = require('../lib/tenantContext');
+const {
+    getPanelSettingsKey,
+    getCurrentTenant,
+    getCurrentTenantId,
+    getCachedPlatformTenant,
+} = require('../lib/tenantContext');
+const { isSelfServeTenant } = require('../lib/tenantGateway');
 
 const PRIMARY_SLOT = 'primary';
 const MAX_STANDBY = 5;
 
-let _numbersCache = null;
-let _numbersCacheTs = 0;
+const _numbersCache = new Map();
 const NUMBERS_TTL_MS = 15000;
 
 function invalidateNumbersCache() {
-    _numbersCache = null;
-    _numbersCacheTs = 0;
+    _numbersCache.clear();
     invalidateCache();
+}
+
+/** بدون context درخواست (کارهای پس‌زمینه) شماره‌های سکو؛ هرگز شماره‌های همهٔ سازمان‌ها. */
+function ownerTenantId() {
+    const platform = getCachedPlatformTenant();
+    return getCurrentTenantId() || (platform && platform.id) || null;
+}
+
+function ownWhere(where = {}) {
+    const tenantId = ownerTenantId();
+    return tenantId ? { ...where, tenantId } : where;
+}
+
+/** آدرس Gateway شمارهٔ سازمان را سرور تعیین می‌کند (Gateway اختصاصی خودش)، نه ورودی پنل. */
+function customGatewayAllowed() {
+    return !isSelfServeTenant(getCurrentTenant());
 }
 
 function sanitizeNumberRow(row, { includeSecrets = false } = {}) {
@@ -86,12 +106,12 @@ function assessReady(sanitized, baseCfg) {
 }
 
 /**
- * اطمینان از وجود اسلات primary هم‌تراز با WhatsappConnection.default
+ * اطمینان از وجود اسلات primary هم‌تراز با WhatsappConnection همین پنل
  */
 async function ensurePrimaryNumber() {
     let primary = null;
     try {
-        primary = await WhatsappNumber.findOne({ where: { slotKey: PRIMARY_SLOT } });
+        primary = await WhatsappNumber.findOne({ where: ownWhere({ slotKey: PRIMARY_SLOT }) });
     } catch (e) {
         if (/no such table|does not exist/i.test(String(e.message || ''))) return null;
         throw e;
@@ -121,7 +141,7 @@ async function ensurePrimaryNumber() {
 
     if (!primary) {
         primary = await WhatsappNumber.create({
-            slotKey: PRIMARY_SLOT,
+            ...ownWhere({ slotKey: PRIMARY_SLOT }),
             ...defaults,
         });
         invalidateNumbersCache();
@@ -166,7 +186,7 @@ async function syncPrimaryFromConnection(connRow) {
     if (!connRow) return;
     try {
         const [primary] = await WhatsappNumber.findOrCreate({
-            where: { slotKey: PRIMARY_SLOT },
+            where: ownWhere({ slotKey: PRIMARY_SLOT }),
             defaults: {
                 label: 'شماره اصلی',
                 role: 'primary',
@@ -193,13 +213,18 @@ async function syncPrimaryFromConnection(connRow) {
 
 async function listNumbers() {
     const now = Date.now();
-    if (_numbersCache && now - _numbersCacheTs < NUMBERS_TTL_MS) return _numbersCache;
+    const cacheKey = getPanelSettingsKey();
+    const hit = _numbersCache.get(cacheKey);
+    if (hit && now - hit.ts < NUMBERS_TTL_MS) return hit.value;
 
     await ensurePrimaryNumber();
     const baseCfg = await getWhatsappConnectionConfig();
     let rows = [];
     try {
-        rows = await WhatsappNumber.findAll({ order: [['priority', 'ASC'], ['createdAt', 'ASC']] });
+        rows = await WhatsappNumber.findAll({
+            where: ownWhere(),
+            order: [['priority', 'ASC'], ['createdAt', 'ASC']],
+        });
     } catch (e) {
         if (/no such table|does not exist/i.test(String(e.message || ''))) return [];
         throw e;
@@ -218,8 +243,7 @@ async function listNumbers() {
         readyStandbyCount: list.filter((n) => n.role === 'standby' && n.enabled && n.ready).length,
         canFailover: failoverEnabled && list.filter((n) => n.enabled && n.ready).length >= 2,
     };
-    _numbersCache = payload;
-    _numbersCacheTs = now;
+    _numbersCache.set(cacheKey, { ts: now, value: payload });
     return payload;
 }
 
@@ -233,7 +257,7 @@ function nextStandbySlotKey(existingKeys) {
 
 async function createStandbyNumber(body = {}) {
     await ensurePrimaryNumber();
-    const all = await WhatsappNumber.findAll({ attributes: ['slotKey', 'role'] });
+    const all = await WhatsappNumber.findAll({ where: ownWhere(), attributes: ['slotKey', 'role'] });
     const standbyCount = all.filter((r) => r.role === 'standby').length;
     if (standbyCount >= MAX_STANDBY) {
         const err = new Error(`حداکثر ${MAX_STANDBY} شماره پشتیبان مجاز است`);
@@ -248,8 +272,9 @@ async function createStandbyNumber(body = {}) {
         throw err;
     }
     const priority = 10 + standbyCount * 10;
+    const ownGateway = customGatewayAllowed();
     const row = await WhatsappNumber.create({
-        slotKey,
+        ...ownWhere({ slotKey }),
         label: String(body.label || `شماره پشتیبان ${standbyCount + 1}`).trim().slice(0, 128),
         role: 'standby',
         priority,
@@ -261,8 +286,8 @@ async function createStandbyNumber(body = {}) {
         cloudAccessToken: body.cloudAccessToken ? String(body.cloudAccessToken).trim() : null,
         cloudPhoneNumberId: body.cloudPhoneNumberId ? String(body.cloudPhoneNumberId).trim() : null,
         cloudVerifyToken: body.cloudVerifyToken ? String(body.cloudVerifyToken).trim() : null,
-        gatewayUrl: body.gatewayUrl ? String(body.gatewayUrl).trim().replace(/\/$/, '') : null,
-        gatewayApiSecret: body.gatewayApiSecret ? String(body.gatewayApiSecret).trim() : null,
+        gatewayUrl: ownGateway && body.gatewayUrl ? String(body.gatewayUrl).trim().replace(/\/$/, '') : null,
+        gatewayApiSecret: ownGateway && body.gatewayApiSecret ? String(body.gatewayApiSecret).trim() : null,
         gatewaySessionKey: body.gatewaySessionKey ? String(body.gatewaySessionKey).trim().slice(0, 64) : null,
         useSharedGateway: body.useSharedGateway !== false,
         notes: body.notes ? String(body.notes).trim().slice(0, 2000) : null,
@@ -273,7 +298,7 @@ async function createStandbyNumber(body = {}) {
 }
 
 async function updateNumber(id, body = {}) {
-    const row = await WhatsappNumber.findByPk(id);
+    const row = await WhatsappNumber.findOne({ where: ownWhere({ id }) });
     if (!row) {
         const err = new Error('شماره یافت نشد');
         err.status = 404;
@@ -295,10 +320,11 @@ async function updateNumber(id, body = {}) {
     if (body.cloudVerifyToken !== undefined) {
         row.cloudVerifyToken = String(body.cloudVerifyToken || '').trim() || null;
     }
-    if (body.gatewayUrl !== undefined) {
+    const ownGateway = customGatewayAllowed();
+    if (ownGateway && body.gatewayUrl !== undefined) {
         row.gatewayUrl = String(body.gatewayUrl || '').trim().replace(/\/$/, '') || null;
     }
-    if (body.gatewayApiSecret !== undefined) {
+    if (ownGateway && body.gatewayApiSecret !== undefined) {
         const v = String(body.gatewayApiSecret || '').trim();
         if (v) row.gatewayApiSecret = v;
     }
@@ -316,7 +342,7 @@ async function updateNumber(id, body = {}) {
     if (row.slotKey === PRIMARY_SLOT) {
         try {
             const [conn] = await WhatsappConnection.findOrCreate({
-                where: { id: 'default' },
+                where: { id: getPanelSettingsKey() },
                 defaults: { connectionMode: 'cloud_first' },
             });
             if (body.cloudAccessToken !== undefined && String(body.cloudAccessToken || '').trim()) {
@@ -334,7 +360,7 @@ async function updateNumber(id, body = {}) {
 }
 
 async function deleteNumber(id) {
-    const row = await WhatsappNumber.findByPk(id);
+    const row = await WhatsappNumber.findOne({ where: ownWhere({ id }) });
     if (!row) {
         const err = new Error('شماره یافت نشد');
         err.status = 404;
@@ -352,7 +378,7 @@ async function deleteNumber(id) {
 
 async function setFailoverEnabled(enabled) {
     const [conn] = await WhatsappConnection.findOrCreate({
-        where: { id: 'default' },
+        where: { id: getPanelSettingsKey() },
         defaults: { connectionMode: 'cloud_first', numberFailoverEnabled: true },
     });
     conn.numberFailoverEnabled = !!enabled;
@@ -371,17 +397,22 @@ async function buildEffectiveConfigForNumber(numberRow, baseCfg) {
     const mode = pref === 'inherit' ? (base.connectionMode || 'cloud_first') : pref;
     const isPrimary = j.slotKey === PRIMARY_SLOT || j.role === 'primary';
 
-    const cloudAccessToken = (j.cloudAccessToken && String(j.cloudAccessToken).trim())
-        || (isPrimary ? base.cloudAccessToken : '');
-    const cloudPhoneNumberId = (j.cloudPhoneNumberId && String(j.cloudPhoneNumberId).trim())
-        || (isPrimary ? base.cloudPhoneNumberId : '');
-    const cloudVerifyToken = (j.cloudVerifyToken && String(j.cloudVerifyToken).trim())
-        || (isPrimary ? base.cloudVerifyToken : '');
+    // اسلات اصلی آینهٔ اتصال همین پنل است؛ مقدار کپی‌شده در ردیف ممکن است کهنه باشد
+    const own = (v) => (v && String(v).trim()) || '';
+    const cloudAccessToken = isPrimary
+        ? base.cloudAccessToken || own(j.cloudAccessToken)
+        : own(j.cloudAccessToken);
+    const cloudPhoneNumberId = isPrimary
+        ? base.cloudPhoneNumberId || own(j.cloudPhoneNumberId)
+        : own(j.cloudPhoneNumberId);
+    const cloudVerifyToken = isPrimary
+        ? base.cloudVerifyToken || own(j.cloudVerifyToken)
+        : own(j.cloudVerifyToken);
 
-    const ownGw = j.gatewayUrl && String(j.gatewayUrl).trim();
+    const ownGw = customGatewayAllowed() && j.gatewayUrl && String(j.gatewayUrl).trim();
     const useShared = j.useSharedGateway !== false;
     const gatewayUrl = ownGw || (useShared || isPrimary ? base.gatewayUrl : '');
-    const gatewayApiSecret = (j.gatewayApiSecret && String(j.gatewayApiSecret).trim())
+    const gatewayApiSecret = (ownGw && own(j.gatewayApiSecret))
         || ((useShared || isPrimary) ? base.gatewayApiSecret : '');
 
     return {
@@ -418,7 +449,7 @@ async function resolveOutboundNumberChain(opts = {}) {
     let rows = [];
     try {
         rows = await WhatsappNumber.findAll({
-            where: { enabled: true },
+            where: ownWhere({ enabled: true }),
             order: [['priority', 'ASC'], ['createdAt', 'ASC']],
         });
     } catch (e) {
@@ -457,7 +488,7 @@ async function resolveOutboundNumberChain(opts = {}) {
 async function markNumberResult(numberId, { ok, error } = {}) {
     if (!numberId) return;
     try {
-        const row = await WhatsappNumber.findByPk(numberId);
+        const row = await WhatsappNumber.findOne({ where: ownWhere({ id: numberId }) });
         if (!row) return;
         row.lastUsedAt = new Date();
         if (ok) {

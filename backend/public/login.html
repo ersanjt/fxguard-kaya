@@ -10,10 +10,10 @@
     <meta name="theme-color" content="#080d1a">
     <title>ورود | KAYA</title>
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=cf3c53e53232">
-    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=cf3c53e53232">
+    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=779a9f926adf">
+    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=779a9f926adf">
     <meta name="description" content="ورود به پورتال کارکنان KAYA">
-    <meta name="crm-build" content="cf3c53e53232">
+    <meta name="crm-build" content="779a9f926adf">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap"
@@ -21,7 +21,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=cf3c53e53232">
+    <link rel="stylesheet" href="/css/login.css?v=779a9f926adf">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -29,9 +29,9 @@
         if(h==='app.fxguard.io'||h.slice(-15)==='.app.fxguard.io'){
             document.title='ورود | FXGuard';
             var f=document.getElementById('lpFavicon');
-            if(f){f.type='image/svg+xml';f.href='/brand/fxguard-logo.svg?v=cf3c53e53232';}
+            if(f){f.type='image/svg+xml';f.href='/brand/fxguard-favicon.svg';}
             var a=document.getElementById('lpAppleTouch');
-            if(a)a.href='/brand/fxguard-logo.svg?v=cf3c53e53232';
+            if(a)a.href='/brand/fxguard-apple-touch.png';
             var t=document.getElementById('lpAppTitle');
             if(t)t.setAttribute('content','FXGuard');
         }
@@ -74,6 +74,42 @@
     <div class="lp-blob lp-blob-3"></div>
 </div>
 
+<div class="lp-shell">
+<aside class="lp-aside">
+    <p class="lp-aside-kicker" data-i18n="aside_kicker">پورتال کارکنان</p>
+    <h2 class="lp-aside-title" data-i18n="aside_title">ورود امن به پنل سازمان</h2>
+    <p class="lp-aside-lead" data-i18n="aside_lead">ایمیل و رمز خود را وارد کنید. اگر چند سازمان روی این آدرس هستند، شناسه پنل را هم بنویسید.</p>
+    <ul class="lp-aside-list">
+        <li>
+            <span class="lp-aside-mark" aria-hidden="true">
+                <svg width="18" height="18"><use href="#lp-send"/></svg>
+            </span>
+            <div>
+                <strong data-i18n="aside_p1_t">صندوق یکپارچه</strong>
+                <span data-i18n="aside_p1_d">مکالمات، مشتریان و پیگیری در یک پنل.</span>
+            </div>
+        </li>
+        <li>
+            <span class="lp-aside-mark" aria-hidden="true">
+                <svg width="18" height="18"><use href="#lp-check"/></svg>
+            </span>
+            <div>
+                <strong data-i18n="aside_p2_t">دسترسی نقش‌محور</strong>
+                <span data-i18n="aside_p2_d">هر همکار فقط بخش مربوط به نقش خودش را می‌بیند.</span>
+            </div>
+        </li>
+        <li>
+            <span class="lp-aside-mark" aria-hidden="true">
+                <svg width="18" height="18"><use href="#lp-shield"/></svg>
+            </span>
+            <div>
+                <strong data-i18n="aside_p3_t">حفاظت ورود</strong>
+                <span data-i18n="aside_p3_d">احراز دو مرحله‌ای و بازیابی رمز از همین صفحه.</span>
+            </div>
+        </li>
+    </ul>
+</aside>
+
 <!-- Main content -->
 <main class="lp-main" id="lpMain" tabindex="-1">
     <div class="lp-card">
@@ -91,7 +127,7 @@
             if(h!=='app.fxguard.io'&&h.slice(-15)!=='.app.fxguard.io')return;
             var wrap=document.getElementById('lpLogoWrap');
             var img=wrap&&wrap.querySelector('img');
-            if(img){img.src='/brand/fxguard-logo.svg';img.alt='FXGuard';}
+            if(img){img.src='/brand/fxguard-mark.svg';img.alt='FXGuard';}
             var n=document.getElementById('lpBrandName');
             if(n)n.textContent='FXGuard';
         }catch(e){}})();</script>
@@ -149,7 +185,7 @@
                 <a href="#" id="lpForgotLink" data-i18n="login_forgot_password">فراموشی رمز عبور</a>
             </div>
             <p class="lp-signup-row" id="lpSignupRow" hidden>
-                <a href="/signup" id="lpSignupLink" data-i18n="login_signup">۷ روز رایگان — ساخت پنل</a>
+                <a href="/signup" id="lpSignupLink" data-i18n="login_signup">۱۴ روز رایگان — ساخت پنل</a>
             </p>
 
             <div class="lp-msg error" id="loginMsg" role="alert" aria-live="polite"></div>
@@ -252,7 +288,8 @@
 
     </div>
 </main>
+</div>
 
-<script src="/js/login.js?v=cf3c53e53232"></script>
+<script src="/js/login.js?v=779a9f926adf"></script>
 </body>
 </html>

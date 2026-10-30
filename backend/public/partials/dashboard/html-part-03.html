@@ -80,6 +80,86 @@
                         <div id="branchList" class="branch-list branch-cards"></div>
                     </div>
                 </div>
+                <div id="pageClinicAppointments" class="page clinic-page">
+                    <div class="clinic-page-header">
+                        <div>
+                            <h2 data-i18n="nav_clinic_appointments">نوبت‌ها</h2>
+                            <p class="clinic-intro" data-i18n="clinic_appointments_intro">نوبت‌های روز را ببینید، پذیرش کنید و وضعیت هر ویزیت را ثبت کنید. تداخل نوبت پزشک یا بیمار خودکار جلوگیری می‌شود.</p>
+                        </div>
+                        <button type="button" class="btn-primary" data-clinic-action="new" data-i18n="clinic_new_appointment">نوبت جدید</button>
+                    </div>
+                    <div class="clinic-toolbar">
+                        <label class="clinic-filter"><span data-i18n="clinic_f_date">تاریخ</span><input type="date" data-clinic-filter="date" dir="ltr"></label>
+                        <label class="clinic-filter"><span data-i18n="clinic_f_doctor">پزشک</span><select data-clinic-filter="doctorId"><option value="" data-i18n="clinic_any">همه</option></select></label>
+                        <label class="clinic-filter"><span data-i18n="clinic_col_status">وضعیت</span>
+                            <select data-clinic-filter="status">
+                                <option value="" data-i18n="clinic_any">همه</option>
+                                <option value="scheduled" data-i18n="clinic_status_scheduled">رزرو شده</option>
+                                <option value="confirmed" data-i18n="clinic_status_confirmed">تأیید شده</option>
+                                <option value="checked_in" data-i18n="clinic_status_checked_in">پذیرش شده</option>
+                                <option value="completed" data-i18n="clinic_status_completed">انجام شده</option>
+                                <option value="cancelled" data-i18n="clinic_status_cancelled">لغو شده</option>
+                                <option value="no_show" data-i18n="clinic_status_no_show">عدم حضور</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div data-clinic-list></div>
+                    <div class="clinic-pager" data-clinic-pager></div>
+                </div>
+                <div id="pageClinicPatients" class="page clinic-page">
+                    <div class="clinic-page-header">
+                        <div>
+                            <h2 data-i18n="nav_clinic_patients">پرونده بیماران</h2>
+                            <p class="clinic-intro" data-i18n="clinic_patients_intro">هر بیمار یک شماره پرونده یکتا می‌گیرد. پرونده‌ها حذف نمی‌شوند؛ در صورت نیاز غیرفعال کنید.</p>
+                        </div>
+                        <button type="button" class="btn-primary" data-clinic-action="new" data-i18n="clinic_new_patient">پرونده جدید</button>
+                    </div>
+                    <div class="clinic-toolbar">
+                        <input type="search" class="clinic-search" data-clinic-filter="q" data-i18n-ph="clinic_patient_search_ph" placeholder="نام، تلفن، شماره پرونده یا پاسپورت…" autocomplete="off">
+                        <label class="clinic-filter"><span data-i18n="clinic_f_source">نوع بیمار</span>
+                            <select data-clinic-filter="source">
+                                <option value="" data-i18n="clinic_any">همه</option>
+                                <option value="local" data-i18n="clinic_source_local">بیمار داخلی</option>
+                                <option value="health_tourism" data-i18n="clinic_source_health_tourism">گردشگر سلامت</option>
+                            </select>
+                        </label>
+                        <label class="clinic-check"><input type="checkbox" data-clinic-filter="inactive"> <span data-i18n="clinic_show_inactive">نمایش غیرفعال‌ها</span></label>
+                    </div>
+                    <div data-clinic-list></div>
+                    <div class="clinic-pager" data-clinic-pager></div>
+                </div>
+                <div id="pageClinicDoctors" class="page clinic-page">
+                    <div class="clinic-page-header">
+                        <div>
+                            <h2 data-i18n="nav_clinic_doctors">پزشکان</h2>
+                            <p class="clinic-intro" data-i18n="clinic_doctors_intro">پزشکان و مدت پیش‌فرض هر نوبت را تعریف کنید. پزشک غیرفعال نوبت جدید نمی‌گیرد.</p>
+                        </div>
+                        <button type="button" class="btn-primary" data-clinic-action="new" data-i18n="clinic_new_doctor">افزودن پزشک</button>
+                    </div>
+                    <p class="clinic-hint-banner" data-clinic-manager-hint hidden data-i18n="clinic_manager_only_hint">فقط مدیران می‌توانند پزشک و پکیج تعریف یا ویرایش کنند.</p>
+                    <div class="clinic-toolbar">
+                        <input type="search" class="clinic-search" data-clinic-filter="q" data-i18n-ph="clinic_search_ph" placeholder="جست‌وجو…" autocomplete="off">
+                        <label class="clinic-check"><input type="checkbox" data-clinic-filter="inactive"> <span data-i18n="clinic_show_inactive">نمایش غیرفعال‌ها</span></label>
+                    </div>
+                    <div data-clinic-list></div>
+                    <div class="clinic-pager" data-clinic-pager></div>
+                </div>
+                <div id="pageClinicPackages" class="page clinic-page">
+                    <div class="clinic-page-header">
+                        <div>
+                            <h2 data-i18n="nav_clinic_packages">پکیج‌های درمانی</h2>
+                            <p class="clinic-intro" data-i18n="clinic_packages_intro">پکیج‌های گردشگری سلامت: درمان، مدت اقامت، قیمت و خدمات همراه مثل هتل و ترانسفر.</p>
+                        </div>
+                        <button type="button" class="btn-primary" data-clinic-action="new" data-i18n="clinic_new_package">پکیج جدید</button>
+                    </div>
+                    <p class="clinic-hint-banner" data-clinic-manager-hint hidden data-i18n="clinic_manager_only_hint">فقط مدیران می‌توانند پزشک و پکیج تعریف یا ویرایش کنند.</p>
+                    <div class="clinic-toolbar">
+                        <input type="search" class="clinic-search" data-clinic-filter="q" data-i18n-ph="clinic_search_ph" placeholder="جست‌وجو…" autocomplete="off">
+                        <label class="clinic-check"><input type="checkbox" data-clinic-filter="inactive"> <span data-i18n="clinic_show_inactive">نمایش غیرفعال‌ها</span></label>
+                    </div>
+                    <div data-clinic-list></div>
+                    <div class="clinic-pager" data-clinic-pager></div>
+                </div>
                 <div id="pageStaffActivity" class="page staff-activity-page">
                     <header class="staff-activity-header">
                         <div class="staff-activity-header-main">
@@ -787,6 +867,7 @@
                     <header class="rates-page-header">
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
                         <p class="rates-intro text-muted" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
+                        <p class="rates-readonly-note" role="note" data-i18n="rates_settings_read_only">نرخ‌ها از منبع قیمت سرور نمایش داده می‌شوند. تنظیم توکن، ارزها و تعدیل نرخ در این پنل فعلاً فقط‌خواندنی است.</p>
                     </header>
                     <section class="rates-api-keys-box" id="ratesApiKeysBox" aria-labelledby="ratesApiKeysTitle">
                         <div class="rates-api-keys-head">

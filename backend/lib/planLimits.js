@@ -8,6 +8,8 @@
 
 'use strict';
 
+const { attachTenantSkillsToSettings } = require('./tenantSkills');
+
 const PLAN_TIERS = ['legacy', 'start', 'business', 'multi', 'license', 'managed'];
 const FX_NAV_PAGES = ['rates', 'rates-charts', 'services'];
 const DEFAULT_TIER = 'legacy';
@@ -240,6 +242,7 @@ async function attachPlanToSettings(out) {
     out.planTier = snap.tier;
     out.planLimits = snap;
     out.navHiddenSections = mergeFxHidden(out.hiddenSections, snap);
+    attachTenantSkillsToSettings(out);
     return out;
 }
 

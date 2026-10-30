@@ -24,6 +24,7 @@ const {
     isTrialGateExemptPath,
     publicTenantPayload,
 } = require('../lib/tenantTrial');
+const { getCloudWebhookUrl } = require('../lib/whatsappOverview');
 
 let passed = 0;
 let failed = 0;
@@ -99,6 +100,31 @@ test('login URL and public config', () => {
     assert.strictEqual(cfg.wildcardDns, false);
 });
 
+test('Cloud webhook URL identifies a self-serve tenant', () => {
+    const previousPublicUrl = process.env.BACKEND_PUBLIC_URL;
+    delete process.env.BACKEND_PUBLIC_URL;
+    const req = {
+        tenant: { id: 'tenant-1', slug: 'acme', isPlatform: false },
+        get(name) {
+            if (name === 'x-forwarded-proto') return 'https';
+            if (name === 'x-forwarded-host') return 'app.fxguard.io';
+            return '';
+        },
+        protocol: 'http',
+    };
+    assert.strictEqual(
+        getCloudWebhookUrl(req),
+        'https://app.fxguard.io/api/webhook/whatsapp-cloud?panel=acme'
+    );
+    req.tenant = { id: 'platform', slug: 'platform', isPlatform: true };
+    assert.strictEqual(
+        getCloudWebhookUrl(req),
+        'https://app.fxguard.io/api/webhook/whatsapp-cloud'
+    );
+    if (previousPublicUrl === undefined) delete process.env.BACKEND_PUBLIC_URL;
+    else process.env.BACKEND_PUBLIC_URL = previousPublicUrl;
+});
+
 test('trial lock after end; platform never locked', () => {
     const now = new Date('2026-09-08T12:00:00Z');
     const ended = trialEndsAtFromNow(7, new Date('2026-08-01T00:00:00Z'));
@@ -159,6 +185,13 @@ test('self-serve apex hides copied Kaya brand; tenant desks keep theirs', () => 
         { host: 'app.fxguard.io', env }
     );
     assert.strictEqual(customFx.logoUrl, '/uploads/fx.png');
+    const copiedFooter = overlaySelfServePlatformBranding(
+        { siteName: 'KAYA', footerText: 'صرافی کایا — پورتال کارکنان', logoUrl: '/uploads/logo.png' },
+        { host: 'app.fxguard.io', env, tenant: { isPlatform: true, slug: 'platform' } }
+    );
+    assert.strictEqual(copiedFooter.siteName, 'FXGuard');
+    assert.strictEqual(copiedFooter.footerText, 'FXGuard');
+    assert.strictEqual(copiedFooter.logoUrl, FXGUARD_LOGO);
 });
 
 console.log(`\nResults: ${passed} passed, ${failed} failed`);

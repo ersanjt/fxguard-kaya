@@ -1,6 +1,6 @@
 # 🚀 WhatsApp Enterprise CRM - راهنمای نصب و راه‌اندازی
 
-> **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/** — ورود: `admin@kaya.fxguard.io` / `Admin@123`.  
+> **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/**. اسکریپت ویندوز در اجرای اول رمز محلی تصادفی می‌سازد و یک‌بار نمایش می‌دهد؛ در اجراهای بعد از مقادیر `backend/.env` استفاده می‌شود.
 > راهنمای تحویل به مشتری و استفاده روزمره: **[README-تحویل-مشتری.md](README-تحویل-مشتری.md)** | خلاصه راه‌اندازی: **[راه‌اندازی-سریع.md](راه‌اندازی-سریع.md)**
 
 **ساختار مخزن:** `backend/` (API + داشبورد) · `gateway/` (واتساپ) · `docs/`  
@@ -27,12 +27,14 @@ chmod +x start-all.sh
 
 ### با Docker
 ```bash
+cp .env.example .env
+# همهٔ مقادیر change-this / replace-with را با رازهای تصادفی واقعی جایگزین کنید.
 docker-compose -f docker-compose.simple.yml up -d
 ```
 
 بعد از اجرا:
 - **داشبورد:** http://localhost:3002/  
-- **ورود:** `admin@kaya.fxguard.io` / `Admin@123`  
+- **ورود محلی:** ایمیل و رمز هنگام اجرای اسکریپت اعلام می‌شود و در `backend/.env` با کلیدهای `MAIN_ADMIN_EMAIL` و `MAIN_ADMIN_PASSWORD` قرار دارد.
 - به بخش «اتصال واتساپ» بروید و QR را با گوشی اسکن کنید.
 
 ---
@@ -211,95 +213,25 @@ npm run seed
 npm start
 ```
 
-#### D. داشبورد وب (همان Backend)
+#### D. داشبورد وب
 
-رابط کاربری اصلی داخل **`backend/public`** (مثلاً `dashboard.html`) سرو می‌شود؛ پوشهٔ جداگانهٔ `frontend` در این مخزن **وجود ندارد**. پس از `npm install` و `npm start` در backend، آدرس پنل همان `http://localhost:3002/` است.
+پنل نهایی از **`backend/public`** سرو می‌شود. کدهای جدید رابط در **`frontend/`** با Vite توسعه داده می‌شوند و خروجی `npm run dashboard:build` از ریشهٔ مخزن داخل `backend/public/js/app/` قرار می‌گیرد. برای توسعه با HMR از `npm run dashboard:dev` (پورت 5173) استفاده کنید؛ آدرس پنل یکپارچه پس از اجرای Backend همان `http://localhost:3002/` است.
 
 ---
 
 ## ⚙️ پیکربندی
 
-### 📄 فایل `.env` برای Gateway:
+نمونه‌های مرجع و کامل:
 
-```env
-# Server
-PORT=3001
-NODE_ENV=production
+- Backend: [`backend/.env.example`](backend/.env.example)
+- Gateway: [`gateway/.env.example`](gateway/.env.example)
 
-# WhatsApp
-WHATSAPP_SESSION_PATH=./sessions
-WHATSAPP_CLIENT_ID=enterprise-crm
-
-# RabbitMQ
-RABBITMQ_URL=amqp://localhost:5672
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Backend API
-BACKEND_API_URL=http://localhost:3002
-
-# Frontend
-FRONTEND_URL=http://localhost:3000
-
-# Security
-SESSION_SECRET=your_super_secret_key_here
-
-# Logging
-LOG_LEVEL=info
-LOG_FILE=./logs/gateway.log
+```bash
+cp backend/.env.example backend/.env
+cp gateway/.env.example gateway/.env
 ```
 
-### 📄 فایل `.env` برای Backend:
-
-```env
-# Server
-PORT=3002
-NODE_ENV=production
-
-# PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=whatsapp_crm
-DB_USER=crm_user
-DB_PASSWORD=your_password
-
-# MongoDB
-MONGODB_URL=mongodb://localhost:27017/whatsapp_crm
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# RabbitMQ
-RABBITMQ_URL=amqp://localhost:5672
-
-# JWT
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRES_IN=7d
-
-# Webhook (در production اجباری — حداقل ۱۶ کاراکتر)
-WEBHOOK_SECRET=your_webhook_secret
-
-# Frontend
-FRONTEND_URL=http://localhost:3000
-
-# WhatsApp Gateway
-GATEWAY_URL=http://localhost:3001
-
-# Email (اختیاری)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-
-# File Upload
-MAX_FILE_SIZE=10485760
-UPLOAD_PATH=./uploads
-
-# Rate Limiting (staff API, per signed-in browser / 15 minutes)
-API_RATE_LIMIT_WINDOW_MS=900000
-API_RATE_LIMIT_MAX=12000
-```
+مقادیر `MAIN_ADMIN_EMAIL`، `MAIN_ADMIN_PASSWORD`، `JWT_SECRET`، `ENCRYPT_SECRET`، `WEBHOOK_SECRET` و `GATEWAY_API_SECRET` الزامی‌اند. رازها را تصادفی بسازید؛ `WEBHOOK_SECRET` و `GATEWAY_API_SECRET` باید در Backend و Gateway یکسان باشند. فایل‌های `.env` را commit نکنید.
 
 ---
 
@@ -439,8 +371,8 @@ npm run dev
 
 1. **ورود به سیستم:**
    - آدرس: `https://kaya.fxguard.io`
-   - نام کاربری پیش‌فرض: `admin@kaya.fxguard.io`
-   - رمز عبور پیش‌فرض: `Admin@123`
+   - نام کاربری و رمز عبور: مقادیر `MAIN_ADMIN_EMAIL` و `MAIN_ADMIN_PASSWORD` در محیط استقرار
+   - در شروع سریع محلی، اسکریپت در اجرای اول رمز تصادفی امن می‌سازد و همان‌جا نمایش می‌دهد.
 
 2. **اسکن QR Code:**
    - بعد از ورود، به بخش "تنظیمات WhatsApp" بروید

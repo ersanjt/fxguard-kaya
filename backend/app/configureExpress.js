@@ -23,6 +23,7 @@ const { protectSensitiveUploads } = require('../middleware/protectedUploads');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
 const { tenantContextMiddleware } = require('../middleware/tenantContext');
 const { tenantTrialGate } = require('../middleware/tenantTrialGate');
+const { tenantSkillGate } = require('../middleware/tenantSkillGate');
 const { isSelfServeEnabled, requestHostname } = require('../lib/tenantHost');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
 const {
@@ -157,6 +158,7 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
 
     app.use(tenantContextMiddleware);
     app.use('/api', tenantTrialGate);
+    app.use('/api', tenantSkillGate);
 
     const redisClient = createRedisClient(logger);
 
@@ -369,6 +371,15 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
     }
     app.get('/signup', serveSignup);
     app.get('/signup/', (req, res) => res.redirect('/signup'));
+
+    app.get('/tenants-admin', (req, res) => {
+        if (!isSelfServeEnabled(process.env, requestHostname(req))) {
+            return res.redirect(302, '/login');
+        }
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('X-Robots-Tag', 'noindex, nofollow');
+        res.sendFile(path.join(__dirname, '..', 'public', 'tenants-admin.html'));
+    });
 
     app.use((req, res, next) => {
         const p = String(req.path || '').toLowerCase();

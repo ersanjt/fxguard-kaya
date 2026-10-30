@@ -10,7 +10,8 @@
         'branches', 'supervision', 'system-status', 'staff-activity', 'profile', 'announcements',
         'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings',
         // موتور عمومی (ماژول‌های سازمان) و نوبت‌دهی
-        'records', 'appointments', 'modules'
+        'records', 'appointments', 'modules',
+        'clinic-patients', 'clinic-doctors', 'clinic-appointments', 'clinic-packages'
     ];
 
     const PAGE_TO_SECTION = {
@@ -35,7 +36,11 @@
         'message-templates': 'conversations',
         records: 'records',
         appointments: 'appointments',
-        modules: 'records'
+        modules: 'records',
+        'clinic-patients': 'clinic',
+        'clinic-doctors': 'clinic',
+        'clinic-appointments': 'clinic',
+        'clinic-packages': 'clinic'
     };
 
     const PAGE_IDS = {
@@ -62,7 +67,11 @@
         'panel-settings': 'pagePanelSettings',
         records: 'pageRecords',
         appointments: 'pageAppointments',
-        modules: 'pageModules'
+        modules: 'pageModules',
+        'clinic-patients': 'pageClinicPatients',
+        'clinic-doctors': 'pageClinicDoctors',
+        'clinic-appointments': 'pageClinicAppointments',
+        'clinic-packages': 'pageClinicPackages'
     };
 
     const PAGE_TITLES = {
@@ -89,7 +98,11 @@
         'panel-settings': 'nav_panel_settings',
         records: 'nav_records',
         appointments: 'nav_appointments',
-        modules: 'nav_modules'
+        modules: 'nav_modules',
+        'clinic-patients': 'nav_clinic_patients',
+        'clinic-doctors': 'nav_clinic_doctors',
+        'clinic-appointments': 'nav_clinic_appointments',
+        'clinic-packages': 'nav_clinic_packages'
     };
 
     window.CRM = window.CRM || {};

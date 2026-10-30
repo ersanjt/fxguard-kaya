@@ -5,7 +5,7 @@ const { Message, Conversation, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
-const { getSendTarget } = require('../lib/phoneUtils');
+const { getCustomerSendTarget } = require('../lib/phoneUtils');
 const { validateOutboundSender, applyStaffSignatureToOutboundText, buildStaffMediaCaption, buildForwardOutboundText, buildStaffVoiceIntroText } = require('./outboundMessagePrefix');
 const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
 const {
@@ -22,6 +22,9 @@ const {
     WHATSAPP_VOICE_FILENAME,
 } = require('../lib/audioConverter');
 const { inboxPreviewFromOutgoing } = require('./conversationPreview');
+
+/** نه 502: Cloudflare پاسخ 502/504 مبدأ را با صفحهٔ خودش عوض می‌کند و متن خطای ما به کاربر نمی‌رسد. */
+const DELIVERY_FAILED_STATUS = 422;
 
 const MIME_FROM_EXT = {
     '.pdf': 'application/pdf',
@@ -275,7 +278,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         } catch (_) {}
     }
 
-    const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
+    const toPhone = getCustomerSendTarget(conversation.customer, conversation) || conversation.customer.phone;
     if (!toPhone) {
         await msg.update({ status: 'failed' });
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
@@ -306,7 +309,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                         return {
                             msg,
                             error: 'پیام صوتی به فرمت قابل پخش در واتساپ تبدیل نشد. ffmpeg را روی سرور بررسی کنید.',
-                            status: 502,
+                            status: DELIVERY_FAILED_STATUS,
                         };
                     }
                     const playbackRel = '/uploads/' + path.basename(readPath);
@@ -356,7 +359,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                         error:
                             'پیام صوتی آماده ارسال نشد: ' +
                             (readErr.message || 'خطا در خواندن یا تبدیل فایل'),
-                        status: 502,
+                        status: DELIVERY_FAILED_STATUS,
                     };
                 }
                 if (mediaUrl) {
@@ -374,7 +377,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                 return {
                     msg,
                     error: 'فایل صوتی روی سرور یافت نشد — ارسال ویس از URL پشتیبانی نمی‌شود.',
-                    status: 502,
+                    status: DELIVERY_FAILED_STATUS,
                 };
             }
             payload.media = {
@@ -384,7 +387,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             };
             if (msgType === 'document') payload.media.sendAsDocument = true;
             await msg.update({ status: 'failed' });
-            return { msg, error: 'فایل برای ارسال یافت نشد.', status: 502 };
+            return { msg, error: 'فایل برای ارسال یافت نشد.', status: DELIVERY_FAILED_STATUS };
         }
         // PTT must not carry staff prefix as caption (would break download on recipient phones)
         if (isVoiceNote) payload.message = '';
@@ -416,11 +419,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     }
 
     try {
-        if (voiceIntroLine) {
-            try {
-                await sendWhatsAppMessage({ to: toPhone, message: voiceIntroLine }, { timeout: 10000 });
-            } catch (_) {}
-        }
+        // خط «نام: 🎤» را به واتساپ نفرست. اگر خود ویس خطا بدهد فقط همین ایموجی برای مشتری می‌ماند.
         // فقط وقتی مسیر ارسال واقعاً Gateway است، ready را از قبل چک کن
         const toStr = String(toPhone || '');
         const { isLikelyWhatsAppLid, isGroupJid } = require('../lib/phoneUtils');
@@ -518,7 +517,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             errMsg += ' — برای پیام صوتی/فایل، در Gateway: MEDIA_ALLOW_LOCALHOST=true یا MEDIA_URL_WHITELIST تنظیم کنید؛ در Backend: BACKEND_PUBLIC_URL را به آدرسی که Gateway به آن دسترسی دارد تنظیم کنید.';
         }
         await msg.update({ status: 'failed' });
-        return { msg, error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg, status: 502 };
+        return { msg, error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg, status: DELIVERY_FAILED_STATUS };
     }
 
     await logActivity({

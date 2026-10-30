@@ -57,18 +57,33 @@ async function resolveUserFromToken(token) {
         throw err;
     }
     assertMatchingTokenVersion(decoded, user);
-    return user;
-}
-
-function assertUserMatchesRequestTenant(req, user) {
-    const tenant = req && req.tenant;
-    if (!tenant || isPlatformTenant(tenant) || tenant.missing) return;
-    if (!tenant.id) return;
-    if (String(user.tenantId || '') !== String(tenant.id)) {
+    if (decoded.tid && String(decoded.tid) !== String(user.tenantId || '')) {
         const err = new Error('wrong_tenant');
         err.code = 'WRONG_TENANT';
         throw err;
     }
+    return user;
+}
+
+function rejectWrongTenant() {
+    const err = new Error('wrong_tenant');
+    err.code = 'WRONG_TENANT';
+    throw err;
+}
+
+function assertUserMatchesRequestTenant(req, user) {
+    const tenant = req && req.tenant;
+    if (!tenant || tenant.missing) rejectWrongTenant();
+    const userTid = user && user.tenantId ? String(user.tenantId) : '';
+    if (isPlatformTenant(tenant)) {
+        if (!tenant.id) {
+            if (userTid) rejectWrongTenant();
+            return;
+        }
+        if (userTid && userTid !== String(tenant.id)) rejectWrongTenant();
+        return;
+    }
+    if (!tenant.id || userTid !== String(tenant.id)) rejectWrongTenant();
 }
 
 /**

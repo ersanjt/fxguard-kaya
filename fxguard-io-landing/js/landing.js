@@ -10,8 +10,9 @@
             nav_pricing: 'Packages', nav_panel_btn: 'Buy / Demo',
             aria_menu: 'Menu', aria_close: 'Close', aria_lang: 'Language', aria_nav: 'Primary', aria_nav_mobile: 'Mobile menu', aria_wa_buy: 'Get an FXGuard quote on WhatsApp', aria_wa_demo: 'Book an FXGuard demo on WhatsApp',
             hero_badge: 'WhatsApp CRM',
-            hero_title: 'WhatsApp CRM for <span>exchange, remittance and finance</span> desks',
-            hero_desc: 'One company WhatsApp number. The whole team replies from one panel. Customer history stays with the company — not on an employee’s phone. We customize the panel for your trade.',
+            hero_title: 'Your WhatsApp desk. <span>One secure workspace.</span>',
+            hero_desc: 'Shared conversations, customer history, live FX tools, tasks and branch controls — isolated for your organization and available on desktop or mobile.',
+            hero_status: 'Platform online',
             hero_cta_demo: 'See demo', hero_cta_signup: 'Start 7-day trial', hero_cta_packages: 'Prices', hero_cta_wa: 'Talk on WhatsApp',
             hero_who_label: 'Who it is for',
             hero_a1: 'Exchange offices', hero_a2: 'Remittance desks', hero_a3: 'Finance firms',
@@ -114,8 +115,9 @@
             nav_pricing: 'پکیج‌ها', nav_panel_btn: 'خرید / دمو',
             aria_menu: 'منو', aria_close: 'بستن', aria_lang: 'زبان', aria_nav: 'منوی اصلی', aria_nav_mobile: 'منوی موبایل', aria_wa_buy: 'استعلام FXGuard در واتساپ', aria_wa_demo: 'رزرو دموی FXGuard در واتساپ',
             hero_badge: 'واتساپ CRM',
-            hero_title: 'نرخ را در واتساپ بگویید. پرونده مشتری مال <span>شرکت</span> بماند.',
-            hero_desc: 'یک شماره واتساپ سازمانی. کل تیم از یک پنل جواب می‌دهد. تاریخچه مشتری مال شرکت می‌ماند — نه روی گوشی کارمند. پنل را برای صنف شما اختصاصی می‌کنیم.',
+            hero_title: 'میز واتساپ شما؛ <span>یک محیط امن سازمانی.</span>',
+            hero_desc: 'مکالمات مشترک، تاریخچه مشتری، ابزار زنده نرخ ارز، تسک‌ها و کنترل شعب — با دادهٔ جدا برای سازمان شما، روی دسکتاپ و موبایل.',
+            hero_status: 'سامانه آنلاین است',
             hero_cta_demo: 'مشاهده دمو', hero_cta_signup: '۷ روز رایگان', hero_cta_packages: 'قیمت‌ها', hero_cta_wa: 'گفتگو در واتساپ',
             hero_who_label: 'مناسب برای',
             hero_a1: 'صرافی',             hero_a2: 'دفاتر حواله', hero_a3: 'خدمات مالی',
@@ -218,8 +220,9 @@
             nav_pricing: 'Paketler', nav_panel_btn: 'Al / Demo',
             aria_menu: 'Menü', aria_close: 'Kapat', aria_lang: 'Dil', aria_nav: 'Ana menü', aria_nav_mobile: 'Mobil menü', aria_wa_buy: 'FXGuard teklifi WhatsApp’tan alın', aria_wa_demo: 'FXGuard demosu WhatsApp’tan alın',
             hero_badge: 'Döviz · havale · finans',
-            hero_title: 'Kuru WhatsApp’tan verin. <span>Defter şirkette kalsın.</span>',
-            hero_desc: 'Kişisel sohbetlerde satış kaybetmeyi bırakın. FXGuard ekibinize ortak WhatsApp gelen kutusu, müşteriler, ticket, görev, çok şube ve 2FA verir — sonra nasıl alacağınızı seçin: aylık $49\'dan Cloud, tek seferlik Lisans veya Managed Dedicated.',
+            hero_title: 'WhatsApp masanız. <span>Tek güvenli şirket alanı.</span>',
+            hero_desc: 'Ortak konuşmalar, müşteri geçmişi, canlı döviz araçları, görevler ve şube kontrolleri — kuruluşunuza özel yalıtılmış veriyle masaüstü ve mobilde.',
+            hero_status: 'Platform çevrimiçi',
             hero_cta_demo: 'Ücretsiz Demo', hero_cta_signup: '7 gün ücretsiz', hero_cta_packages: 'Fiyat & Satın Al', hero_cta_wa: 'WhatsApp\'tan Al',
             trust_demo: 'Ücretsiz açık demo', trust_secure: '2FA korumalı', trust_multibranch: 'Çok şubeli satış', trust_uptime: 'Bugün satın almaya hazır',
             hero_offer: 'Ücretsiz canlı demo · <strong>$49/ay</strong>\'dan · Dakikalar içinde WhatsApp teklifi', outcomes_title: 'Ekipler Neden FXGuard Satın Alır', outcomes_sub: 'Daha fazla satış kapatmak ve her müşteri sohbetini korumak için — sıradan bir mesaj uygulaması değil.', out1_title: 'Sohbette para kaybetmeyi bırakın', out1_desc: 'Okunmamış mesaj = kayıp müşteri. Ortak gelen kutusu hiçbir şeyin kaçmaması demektir.', out2_title: 'Tam geçmişle satın', out2_desc: 'Etiket, not ve eski sohbetler müşteride kalır — ekip bağlamla kapatır.', out3_title: 'Kim ne görür kontrol edin', out3_desc: 'Roller, şubeler ve 2FA ile sahipler her lokasyonda hakimiyet kurar.', out4_title: 'Bir kez alın. İstediğiniz gibi kurun', out4_desc: 'Aylık $49\'dan Cloud, kendi sunucunuzda tek seferlik lisans veya tamamen yönetilen.', buy_title: 'Nasıl Satın Alınır — 3 Adım', buy_sub: 'Uzun satış süreci yok. Ücretsiz demo, paket seçin, WhatsApp veya formdan satın alın.', buy1_title: '1. Ücretsiz demoyu deneyin', buy1_desc: 'app.fxguard.io açın — kullanıcı demo, rezerveli rehberli demo. Gerçek ürünü dakikalar içinde görün.', buy2_title: '2. Paketinizi seçin', buy2_desc: 'Hız için Cloud, sahiplik için Lisans, ops\'suz için Managed Dedicated.', buy3_title: '3. Bugün satın alın', buy3_desc: 'WhatsApp yazın veya formu gönderin. Satış iş gününde 24 saat içinde yanıtlar — çoğu zaman daha hızlı.', buy_cta_wa: 'WhatsApp\'tan Satın Almaya Başla', buy_cta_form: 'Veya satın alma isteği gönderin', pkg1_wa: 'Abonelik için WhatsApp', pkg2_wa: 'Lisans için WhatsApp', pkg3_wa: 'Managed için WhatsApp', packages_guarantee: 'Ödemeden önce satışla konuşun. Demo ücretsiz. Demo için kart gerekmez.', cta_wa: 'WhatsApp\'tan Satın Al', sticky_text: '$49/ay\'dan · Ücretsiz demo', sticky_demo: 'Demo', sticky_buy: 'Al', wa_msg_buy: 'Merhaba, FXGuard WhatsApp CRM satın almak istiyorum. Lütfen paketleri ve sonraki adımları gönderin.', wa_msg_cloud: 'Merhaba, FXGuard Hosted Cloud aboneliği istiyorum.', wa_msg_license: 'Merhaba, FXGuard Self-hosted Lisans teklifi istiyorum.', wa_msg_managed: 'Merhaba, FXGuard Managed Dedicated teklifi istiyorum.', wa_msg_general: 'Merhaba, FXGuard WhatsApp CRM satın almak / teklif almak istiyorum.',
@@ -335,8 +338,9 @@
             aria_wa_buy: 'اطلب عرض FXGuard عبر واتساب',
             aria_wa_demo: 'احجز عرض FXGuard عبر واتساب',
             hero_badge: 'صرافة · حوالة · مال',
-            hero_title: 'أعلن السعر على واتساب. <span>دفتر العملاء يبقى للشركة.</span>',
-            hero_desc: 'توقّف عن خسارة الصفقات في الدردشات الشخصية. FXGuard يمنح فريقك صندوق وارد واتساب مشتركًا وعملاء وتذاكر ومهام وتعدد فروع وتحقق بخطوتين — ثم اختر طريقة الشراء: سحابة من 49$/شهر أو ترخيص لمرة واحدة أو استضافة مُدارة.',
+            hero_title: 'مكتب واتساب لفريقك. <span>مساحة شركة آمنة واحدة.</span>',
+            hero_desc: 'محادثات مشتركة وسجل العملاء وأدوات أسعار الصرف المباشرة والمهام والتحكم بالفروع — ببيانات معزولة لمؤسستك على سطح المكتب والجوال.',
+            hero_status: 'المنصة متصلة',
             hero_cta_demo: 'عرض مجاني',
             hero_cta_signup: 'تجربة ۷ أيام',
             hero_cta_packages: 'الأسعار والشراء',
@@ -590,8 +594,9 @@
             aria_wa_buy: 'Запросить КП FXGuard в WhatsApp',
             aria_wa_demo: 'Записать демо FXGuard в WhatsApp',
             hero_badge: 'Отделы продаж не цель — обмен, переводы, финансы',
-            hero_title: 'Назовите курс в WhatsApp. <span>Книга клиентов остаётся в компании.</span>',
-            hero_desc: 'Хватит терять сделки в личных чатах. FXGuard даёт команде общий WhatsApp inbox, клиентов, тикеты, задачи, филиалы и 2FA — затем выберите покупку: Cloud от $49/мес, разовая License или Managed Dedicated.',
+            hero_title: 'Ваш WhatsApp-отдел. <span>Единое защищённое пространство.</span>',
+            hero_desc: 'Общие диалоги, история клиентов, курсы валют, задачи и контроль филиалов — изолированные данные вашей организации на компьютере и телефоне.',
+            hero_status: 'Платформа доступна',
             hero_cta_demo: 'Бесплатное демо',
             hero_cta_signup: '7 дней бесплатно',
             hero_cta_packages: 'Цены и покупка',
@@ -885,34 +890,34 @@
 
     var SEO_META = {
         en: {
-            title: 'FXGuard | WhatsApp CRM for exchange, remittance and finance desks',
-            description: 'Quote FX rates on the same panel as WhatsApp. Company-owned customer book, roles, branches, 2FA. Cloud Start $49/mo inbox. Business from $249 with the FX pack. License from $4,000.',
-            keywords: 'WhatsApp CRM for exchange offices, remittance WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM, WhatsApp CRM Istanbul, döviz WhatsApp CRM',
-            imageAlt: 'FXGuard staff panel: WhatsApp inbox and FX rates on one desktop screen'
+            title: 'FXGuard | Business WhatsApp panel — exchange, clinics, agencies and teams',
+            description: 'One company WhatsApp panel: shared inbox, customer book, roles and 2FA. Exchange desks quote rates on the same screen. Clinics get patient records. 14-day trial, no card. From $49/mo.',
+            keywords: 'business WhatsApp panel, WhatsApp CRM for exchange offices, clinic WhatsApp CRM, travel agency WhatsApp inbox, FX rates WhatsApp CRM, multi-branch WhatsApp CRM',
+            imageAlt: 'FXGuard staff panel: company WhatsApp inbox with the tools of the desk on one screen'
         },
         fa: {
-            title: 'CRM واتساپ برای صرافی و حواله | نرخ روی همان پنل | FXGuard',
-            description: 'نرخ را در واتساپ بگویید؛ پرونده مشتری مال شرکت بماند. Cloud Start ۴۹ دلار در ماه (۱ شعبه، ۳ نفر، بدون نرخ). Business از ۲۴۹ دلار با ماژول نرخ. بازگشت وجه ۷روزه ماه اول.',
-            keywords: 'واتساپ CRM صرافی, پنل واتساپ صرافی, نرم‌افزار صرافی واتساپ, CRM حواله, نرخ ارز واتساپ, صندوق پیام واتساپ سازمانی',
-            imageAlt: 'پنل کارکنان FXGuard: صندوق پیام واتساپ و نرخ ارز روی یک صفحه دسکتاپ'
+            title: 'پنل واتساپ کسب‌وکار | صرافی، کلینیک و تیم‌ها | FXGuard',
+            description: 'صندوق واتساپ مال شرکت، نقش و ورود جدا. صرافی نرخ را روی همان پنل می‌بیند. کلینیک پرونده بیمار دارد. آزمایش ۱۴روزه بدون کارت. از ۴۹ دلار در ماه.',
+            keywords: 'واتساپ CRM صرافی, پنل واتساپ کسب‌وکار, نرم‌افزار صرافی واتساپ, واتساپ کلینیک, CRM حواله, نرخ ارز واتساپ',
+            imageAlt: 'پنل کارکنان FXGuard: صندوق واتساپ شرکت و ابزار میز کار روی یک صفحه'
         },
         tr: {
-            title: 'Döviz bürosu ve havale için WhatsApp CRM | FXGuard',
-            description: 'Kur, WhatsApp ile aynı panelde. Müşteri kaydı şirkette kalır. Cloud Start aylık 49$. Business 249$’dan kur paketiyle. Lisans 4.000$’dan. İlk ay 7 gün iade.',
-            keywords: 'döviz WhatsApp CRM, havale WhatsApp, döviz bürosu CRM, şubeli WhatsApp paneli, FXGuard İstanbul',
-            imageAlt: 'FXGuard personel paneli: WhatsApp gelen kutusu ve döviz kurları tek ekranda'
+            title: 'İşletme WhatsApp paneli | döviz, klinik ve ekipler | FXGuard',
+            description: 'Şirket gelen kutusu, müşteri kaydı, roller ve 2FA. Döviz bürosu kuru aynı ekranda verir. Klinik hasta kaydı alır. 14 gün deneme, kart yok. Aylık 49$’dan.',
+            keywords: 'döviz WhatsApp CRM, işletme WhatsApp paneli, klinik WhatsApp, döviz bürosu CRM, şubeli WhatsApp paneli, FXGuard İstanbul',
+            imageAlt: 'FXGuard personel paneli: şirket WhatsApp gelen kutusu ve masa araçları tek ekranda'
         },
         ar: {
-            title: 'CRM واتساب لمكاتب الصرافة والحوالات | FXGuard',
-            description: 'سعر الصرف على لوحة واتساب نفسها. ملف العملاء ملك الشركة. Cloud Start 49$ شهرياً. Business من 249$ مع حزمة الأسعار. ترخيص من 4000$.',
-            keywords: 'واتساب صرافة, CRM حوالات, لوحة واتساب شركات الصرافة, WhatsApp CRM دبي, صرافة متعددة الفروع',
-            imageAlt: 'لوحة موظفي FXGuard: صندوق وارد واتساب وأسعار الصرف على شاشة واحدة'
+            title: 'لوحة واتساب للأعمال | صرافة وعيادات وفرق | FXGuard',
+            description: 'صندوق الشركة وملف العملاء والأدوار والتحقق بخطوتين. مكتب الصرافة يعلن السعر على الشاشة نفسها. العيادة تحصل على ملفات المرضى. تجربة ١٤ يوماً بلا بطاقة. من 49$ شهرياً.',
+            keywords: 'واتساب صرافة, لوحة واتساب أعمال, واتساب عيادة, CRM حوالات, WhatsApp CRM دبي',
+            imageAlt: 'لوحة موظفي FXGuard: صندوق واتساب الشركة وأدوات المكتب على شاشة واحدة'
         },
         ru: {
-            title: 'WhatsApp CRM для обменных пунктов и переводов | FXGuard',
-            description: 'Курс на той же панели, что и WhatsApp. Клиентская база остаётся в компании. Cloud Start $49/мес. Business от $249 с курсами. Лицензия от $4000.',
-            keywords: 'WhatsApp CRM обменник, CRM для обменных пунктов, WhatsApp для денежных переводов, FXGuard Стамбул',
-            imageAlt: 'Панель FXGuard: WhatsApp-inbox и курсы валют на одном экране'
+            title: 'WhatsApp-панель для бизнеса | обмен, клиники и команды | FXGuard',
+            description: 'Корпоративный ящик, база клиентов, роли и 2FA. Обменный пункт называет курс на том же экране. Клиника получает карты пациентов. 14 дней без карты. От $49/мес.',
+            keywords: 'WhatsApp CRM обменник, WhatsApp панель для бизнеса, WhatsApp клиника, CRM для обменных пунктов, FXGuard Стамбул',
+            imageAlt: 'Панель FXGuard: корпоративный WhatsApp и инструменты стола на одном экране'
         }
     };
 
@@ -1263,6 +1268,109 @@
         applyLang(detectPreferredLang());
     }
 
+    function countryToLang(cc) {
+        cc = String(cc || '').toUpperCase();
+        if (!/^[A-Z]{2}$/.test(cc) || cc === 'XX' || cc === 'T1') return null;
+        if (cc === 'IR' || cc === 'AF' || cc === 'TJ') return 'fa';
+        if (cc === 'TR') return 'tr';
+        if (['AE', 'SA', 'QA', 'KW', 'BH', 'OM', 'EG', 'JO', 'LB', 'IQ', 'SY', 'MA', 'DZ', 'TN', 'LY', 'YE', 'SD', 'PS'].indexOf(cc) !== -1) return 'ar';
+        if (cc === 'RU' || cc === 'BY' || cc === 'KZ') return 'ru';
+        return null;
+    }
+
+    function browserSuggestedLang() {
+        var suggested = null;
+        var locales = navigator.languages && navigator.languages.length
+            ? navigator.languages
+            : [navigator.language || navigator.userLanguage];
+        for (var i = 0; i < locales.length; i += 1) {
+            var localeGuess = guessLangFromLocale(locales[i]);
+            if (localeGuess && localeGuess !== 'en') {
+                suggested = localeGuess;
+                break;
+            }
+            if (!suggested && localeGuess === 'en') suggested = 'en';
+        }
+        if (!suggested || suggested === 'en') suggested = guessLangFromTimezone();
+        return suggested;
+    }
+
+    function offerRegionalHomepage() {
+        if (!isHomepagePath()) return;
+        var params = new URLSearchParams(window.location.search);
+        if (params.has('lang')) return;
+        try {
+            if (localStorage.getItem('landing_lang') || sessionStorage.getItem('fxg_region_prompt')) return;
+        } catch (e) {}
+
+        var suggested = browserSuggestedLang();
+        fetch('/geo.php', { credentials: 'same-origin', headers: { Accept: 'application/json' } })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                var geoLang = data && countryToLang(data.country);
+                showRegionalPrompt(geoLang || suggested);
+            })
+            .catch(function () { showRegionalPrompt(suggested); });
+    }
+
+    function showRegionalPrompt(suggested) {
+        if (!suggested || suggested === 'en' || !LANG_HOME[suggested]) return;
+
+        var copy = {
+            fa: ['نسخه فارسی FXGuard در دسترس است', 'مشاهده فارسی', 'بستن'],
+            tr: ['FXGuard Türkçe olarak kullanılabilir', 'Türkçe görüntüle', 'Kapat'],
+            ar: ['يتوفر FXGuard باللغة العربية', 'عرض العربية', 'إغلاق'],
+            ru: ['FXGuard доступен на русском языке', 'Открыть на русском', 'Закрыть']
+        }[suggested];
+        if (!copy) return;
+
+        var style = document.createElement('style');
+        style.textContent = [
+            '.region-prompt{position:fixed;inset:auto 1rem 1rem 1rem;z-index:1200;display:flex;align-items:center;justify-content:center;gap:.75rem;max-width:560px;margin:auto;padding:.75rem 1rem;border:1px solid rgba(74,222,128,.34);border-radius:14px;background:rgba(5,14,9,.96);color:#effff4;box-shadow:0 18px 54px rgba(0,0,0,.4);font:600 14px/1.4 inherit;backdrop-filter:blur(16px)}',
+            '.region-prompt__link{display:inline-flex;align-items:center;min-height:38px;padding:0 .9rem;border-radius:9px;background:#49e181;color:#041109;text-decoration:none;white-space:nowrap}',
+            '.region-prompt__close{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:9px;background:rgba(255,255,255,.08);color:#fff;font:700 20px/1 inherit;cursor:pointer}',
+            '@media(min-width:700px){.region-prompt{inset:auto auto 1.25rem 1.25rem;margin:0}}',
+            '@media(prefers-reduced-motion:no-preference){.region-prompt{animation:fxg-region-in .28s ease-out both}@keyframes fxg-region-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}}'
+        ].join('');
+        document.head.appendChild(style);
+
+        var prompt = document.createElement('aside');
+        prompt.className = 'region-prompt';
+        prompt.dir = suggested === 'fa' || suggested === 'ar' ? 'rtl' : 'ltr';
+        prompt.setAttribute('aria-live', 'polite');
+        prompt.setAttribute('aria-label', copy[0]);
+
+        var message = document.createElement('span');
+        message.textContent = copy[0];
+        var link = document.createElement('a');
+        link.className = 'region-prompt__link';
+        link.href = LANG_HOME[suggested];
+        link.hreflang = suggested;
+        link.textContent = copy[1];
+        var close = document.createElement('button');
+        close.className = 'region-prompt__close';
+        close.type = 'button';
+        close.setAttribute('aria-label', copy[2]);
+        close.textContent = '×';
+
+        function rememberPrompt() {
+            try { sessionStorage.setItem('fxg_region_prompt', '1'); } catch (e) {}
+        }
+        link.addEventListener('click', function () {
+            try { localStorage.setItem('landing_lang', suggested); } catch (e) {}
+            rememberPrompt();
+        });
+        close.addEventListener('click', function () {
+            rememberPrompt();
+            prompt.remove();
+            style.remove();
+        });
+        prompt.appendChild(message);
+        prompt.appendChild(link);
+        prompt.appendChild(close);
+        document.body.appendChild(prompt);
+    }
+
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
         btn.addEventListener('click', function() {
             var lang = this.getAttribute('data-lang');
@@ -1312,6 +1420,7 @@
         });
     })();
 
+    offerRegionalHomepage();
     detectAndSetLang();
 
     /* Mobile sticky buy bar after leaving hero */

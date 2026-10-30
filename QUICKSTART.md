@@ -23,6 +23,7 @@ cd whatsapp-crm
 
 # 2. کپی فایل محیطی
 cp .env.example .env
+# همهٔ مقادیر change-this / replace-with را با رازهای تصادفی واقعی جایگزین کنید.
 
 # 3. راه‌اندازی
 docker-compose up -d
@@ -33,7 +34,8 @@ docker-compose ps
 
 **✅ تمام! سیستم آماده است.**
 
-- Frontend: http://localhost:3000
+- Dashboard (Backend): http://localhost:3002
+- Reverse proxy: http://localhost
 - Backend API: http://localhost:3002
 - Gateway: http://localhost:3001
 - RabbitMQ Management: http://localhost:15672
@@ -62,35 +64,33 @@ sudo systemctl start rabbitmq-server
 
 # 2. نصب Gateway
 cd gateway
-npm install
+npm ci
 cp .env.example .env
 npm start
 
 # 3. نصب Backend (در Terminal جدید)
 cd ../backend
-npm install
+npm ci
 cp .env.example .env
 npm run migrate
 npm run seed
 npm start
 
-# 4. نصب Frontend (در Terminal جدید)
+# 4. ساخت ماژول‌های Frontend (یک‌بار یا پس از تغییر کد)
 cd ../frontend
-npm install
-npm start
+npm ci
+npm run build
 ```
+
+برای راه‌اندازی محلی ساده‌تر، از ریشهٔ مخزن فقط `./start-all.sh` یا در ویندوز `.\start-all.ps1` را اجرا کنید. پنل نهایی توسط Backend سرو می‌شود؛ سرور جداگانهٔ Vite فقط برای توسعه و HMR است.
 
 ---
 
 ### گام 4: ورود اولیه
 
-1. باز کردن مرورگر: http://localhost:3000
+1. باز کردن مرورگر: http://localhost:3002
 
-2. اطلاعات ورود پیش‌فرض:
-   ```
-   ایمیل: admin@kaya.fxguard.io
-   رمز عبور: Admin@123
-   ```
+2. با مقادیر `MAIN_ADMIN_EMAIL` و `MAIN_ADMIN_PASSWORD` در `backend/.env` وارد شوید. اسکریپت‌های شروع سریع در اجرای اول یک رمز تصادفی امن می‌سازند و نمایش می‌دهند.
 
 3. بعد از ورود، به **تنظیمات > اتصال WhatsApp** بروید
 
@@ -225,13 +225,10 @@ docker-compose restart
 ### مشکل: نمی‌توانم ورود کنم
 
 ```bash
-# Reset رمز Admin
-cd backend
-npm run reset-admin-password
-
-# یا در دیتابیس:
-psql -U crm_user whatsapp_crm
-UPDATE "Users" SET password = '$2b$10$...' WHERE email = 'admin@kaya.fxguard.io';
+# پروژه فرمان reset-admin-password ندارد. اگر هنوز با یک حساب مالک
+# دسترسی دارید، رمز را از پنل کاربران تغییر دهید. در غیر این صورت
+# طبق رویهٔ بازیابی امن محیط استقرار، یک hash جدید bcrypt بسازید و
+# رکورد همان کاربر را در دیتابیس به‌روزرسانی کنید.
 ```
 
 ---
@@ -247,7 +244,7 @@ ifconfig  # یا ipconfig در Windows
 # مثلاً IP شما: 192.168.1.100
 
 # 2. باز کردن در مرورگر موبایل:
-http://192.168.1.100:3000
+http://192.168.1.100:3002
 ```
 
 ---
@@ -269,16 +266,13 @@ server {
     server_name kaya.fxguard.io;
 
     location / {
-        proxy_pass http://localhost:3000;
+        # Backend both serves the dashboard and handles API/Socket.IO.
+        proxy_pass http://localhost:3002;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
-    }
-
-    location /api {
-        proxy_pass http://localhost:3002;
     }
 }
 

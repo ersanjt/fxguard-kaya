@@ -5,6 +5,10 @@ const { DataTypes } = require('sequelize');
  */
 module.exports = (sequelize) => {
     const ProcessInstanceStep = sequelize.define('ProcessInstanceStep', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -45,6 +49,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['instanceId'] },
             { fields: ['assignedTo'] }
         ]

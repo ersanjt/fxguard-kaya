@@ -2,6 +2,10 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const CustomerDocument = sequelize.define('CustomerDocument', {
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true
+        },
         id: {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4,
@@ -71,6 +75,7 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['customerId'] },
             { fields: ['category'] },
             { fields: ['fileType'] },

@@ -104,6 +104,10 @@ const models = {
     // نوبت‌دهی / رزرو
     BookableService: require('./BookableService')(sequelize),
     Appointment: require('./Appointment')(sequelize),
+    ClinicDoctor: require('./ClinicDoctor')(sequelize),
+    ClinicPatient: require('./ClinicPatient')(sequelize),
+    ClinicTreatmentPackage: require('./ClinicTreatmentPackage')(sequelize),
+    ClinicAppointment: require('./ClinicAppointment')(sequelize),
 };
 
 // تعریف روابط

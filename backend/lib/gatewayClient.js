@@ -24,10 +24,18 @@ function getGatewayHeadersFromConfig(cfg) {
     return headers;
 }
 
+/** بدون آدرس یعنی این پنل Gateway ندارد؛ نباید به Gateway پیش‌فرض سرور (مال سکو) برود. */
+function gatewayBaseUrl(cfg) {
+    const url = String((cfg && cfg.gatewayUrl) || '').trim().replace(/\/$/, '');
+    if (url) return url;
+    const err = new Error('Gateway (QR) برای این پنل فعال نیست');
+    err.code = 'GATEWAY_NOT_CONFIGURED';
+    throw err;
+}
+
 async function gatewayGet(path, options = {}) {
     const cfg = options.cfg || (await getWhatsappConnectionConfig());
-    const url = (cfg.gatewayUrl || getDefaultGatewayUrl()).replace(/\/$/, '');
-    return axios.get(url + path, {
+    return axios.get(gatewayBaseUrl(cfg) + path, {
         timeout: options.timeout || 5000,
         headers: getGatewayHeadersFromConfig(cfg),
     });
@@ -35,8 +43,7 @@ async function gatewayGet(path, options = {}) {
 
 async function gatewayPost(path, data, options = {}) {
     const cfg = options.cfg || (await getWhatsappConnectionConfig());
-    const url = (cfg.gatewayUrl || getDefaultGatewayUrl()).replace(/\/$/, '');
-    return axios.post(url + path, data, {
+    return axios.post(gatewayBaseUrl(cfg) + path, data, {
         timeout: options.timeout || 10000,
         headers: getGatewayHeadersFromConfig(cfg),
     });
@@ -67,6 +74,17 @@ function isVoiceOutboundPayload(payload) {
     return mime.startsWith('audio/') && (mime.includes('ogg') || mime.includes('opus') || media.type === 'audio');
 }
 
+/** Gateway process is up and the WhatsApp Web session for this slot is logged in. */
+async function isGatewaySessionReady(cfg) {
+    try {
+        const r = await gatewayGet('/api/status', { timeout: 4000, cfg });
+        const data = r.data || {};
+        return data.whatsapp === true || data.status === 'ready';
+    } catch (_) {
+        return false;
+    }
+}
+
 /**
  * ارسال با یک کانفیگ مشخص (یک اسلات شماره)
  */
@@ -74,58 +92,66 @@ async function sendWhatsAppMessageWithConfig(payload, cfg, options = {}) {
     const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
     const mode = cfg.connectionMode || 'cloud_first';
     const wantsTemplate = !!(payload?.templateName);
-    const gwOk = cfg.gatewayEnabled !== false && !!(cfg.gatewayUrl || getDefaultGatewayUrl());
+    const gwOk = cfg.gatewayEnabled !== false && !!cfg.gatewayUrl;
     const isVoice = isVoiceOutboundPayload(payload);
     const toStr = String(payload?.to || '');
     const forceGateway = isGroupJid(toStr) || isLikelyWhatsAppLid(toStr) || /@lid\b/i.test(toStr);
-    const gwOpts = { ...options, cfg };
+    const gwOpts = isVoice
+        ? { ...options, cfg, timeout: Math.max(Number(options.timeout) || 0, 45000) }
+        : { ...options, cfg };
+
+    async function postGateway() {
+        return gatewayPost('/api/send-message', payload, gwOpts);
+    }
+
+    async function gatewayIfReady(cloudErr) {
+        if (gwOk && (await isGatewaySessionReady(cfg))) return postGateway();
+        if (cloudErr) throw cloudErr;
+        return postGateway();
+    }
 
     if (wantsTemplate) {
         if (!cloudOk) throw new Error('Cloud API template send requires Meta Cloud configuration');
         return sendCloudMessage(payload, cfg);
     }
 
-    if ((isVoice || forceGateway) && gwOk && mode !== 'cloud') {
-        return gatewayPost('/api/send-message', payload, gwOpts);
-    }
+    // LID/group still require the QR session. Voice notes use the same channel as text,
+    // so a Cloud chat is not blocked by a disconnected Gateway.
     if (forceGateway && gwOk) {
-        return gatewayPost('/api/send-message', payload, gwOpts);
+        return postGateway();
     }
     if (forceGateway && !gwOk) {
         throw new Error('این مخاطب شناسهٔ واتساپ (LID/گروه) دارد و فقط از طریق Gateway قابل ارسال است');
     }
 
     if (mode === 'gateway') {
-        return gatewayPost('/api/send-message', payload, gwOpts);
+        if (isVoice && cloudOk && !(await isGatewaySessionReady(cfg))) {
+            return sendCloudMessage(payload, cfg);
+        }
+        return postGateway();
     }
     if (mode === 'cloud_first') {
         if (cloudOk) {
             try {
                 return await sendCloudMessage(payload, cfg);
             } catch (cloudErr) {
-                if (gwOk) {
-                    return gatewayPost('/api/send-message', payload, gwOpts);
-                }
-                throw cloudErr;
+                return gatewayIfReady(cloudErr);
             }
         }
-        return gatewayPost('/api/send-message', payload, gwOpts);
+        return postGateway();
     }
     if (mode === 'cloud') {
         if (cloudOk) {
             try {
                 return await sendCloudMessage(payload, cfg);
             } catch (cloudErr) {
-                if (gwOk) {
-                    return gatewayPost('/api/send-message', payload, gwOpts);
-                }
-                throw cloudErr;
+                return gatewayIfReady(cloudErr);
             }
         }
-        if (gwOk) return gatewayPost('/api/send-message', payload, gwOpts);
+        if (gwOk) return postGateway();
         throw new Error('WhatsApp Cloud API not configured');
     }
-    return gatewayPost('/api/send-message', payload, gwOpts);
+    return postGateway();
 }
 
 /**

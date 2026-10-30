@@ -7,7 +7,8 @@ async function runPreSync(sequelize, logger) {
     const qi = sequelize.getQueryInterface();
 
     try {
-        const { addTenantIdColumns } = require('../../tenantPlatform');
+        const { addTenantIdColumns, ensureTenantTableColumns } = require('../../tenantPlatform');
+        await ensureTenantTableColumns(sequelize, logger);
         await addTenantIdColumns(sequelize, logger);
     } catch (e) {
         if (logger && logger.warn) logger.warn('tenantId pre-sync:', e.message);

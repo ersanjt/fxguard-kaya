@@ -197,7 +197,7 @@
             const annBadge = document.getElementById('mobileTabAnnBadge');
             if (annBadge) { const na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
         }
-        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','system-status','staff-activity'];
+        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','clinic-appointments','clinic-patients','clinic-doctors','clinic-packages','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','system-status','staff-activity'];
         function mobileCanAccessSection(sec) {
             if (typeof canAccessSection === 'function') return canAccessSection(sec);
             if (sec === 'profile' || sec === 'dashboard') return true;
@@ -3733,6 +3733,10 @@
                 { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user' },
                 { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2' },
                 { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand' },
+                { page: 'clinic-appointments', section: 'clinic', title: t('nav_clinic_appointments'), icon: 'icon-calendar' },
+                { page: 'clinic-patients', section: 'clinic', title: t('nav_clinic_patients'), icon: 'icon-users' },
+                { page: 'clinic-doctors', section: 'clinic', title: t('nav_clinic_doctors'), icon: 'icon-user' },
+                { page: 'clinic-packages', section: 'clinic', title: t('nav_clinic_packages'), icon: 'icon-file-plus' },
                 { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone' },
                 { page: 'message-templates', section: 'conversations', title: t('nav_message_templates'), icon: 'icon-file-plus' },
                 { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart' },
@@ -3747,6 +3751,7 @@
             ];
             const CARD_GROUPS = [
                 { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
+                { key: 'clinic', titleKey: 'nav_clinic', pages: ['clinic-appointments', 'clinic-patients', 'clinic-doctors', 'clinic-packages'] },
                 { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
                 { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
                 { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity', 'announcements'] },
@@ -3770,7 +3775,11 @@
                 stats = stats || {};
                 const defByPage = {};
                 CARD_DEFS.forEach(function(c) { defByPage[c.page] = c; });
-                const fxLocked = stats.planLimits && stats.planLimits.fxEnabled === false;
+                const tenantSkills = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && Array.isArray(currentUser.tenant.enabledSkills))
+                    ? currentUser.tenant.enabledSkills
+                    : null;
+                const fxLocked = stats.planLimits && stats.planLimits.fxEnabled === false
+                    && (!tenantSkills || tenantSkills.indexOf('fx_rates') >= 0);
                 const hidden = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
                 let html = '';
                 CARD_GROUPS.forEach(function(grp) {
@@ -4305,12 +4314,14 @@
             }
             if (claimBtn) claimBtn.disabled = true;
             setTenantCryptoMsg(t('tenant_paywall_claiming'), false);
+            var holdClaim = false;
             try {
                 var res = await apiFetch('/api/billing/crypto/claim', {
                     method: 'POST',
                     body: JSON.stringify({ network: _tenantCryptoNetwork, txId: txId })
                 });
                 if (res && res.ok && res.data && res.data.ok) {
+                    holdClaim = true;
                     setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_ok'), false);
                     if (res.data.activated || res.data.alreadyActive) {
                         if (typeof toast === 'function') toast(t('tenant_paywall_claim_ok'));
@@ -4322,17 +4333,14 @@
                     }
                     setTenantCryptoMsg(res.data.message || t('tenant_paywall_claim_pending'), false);
                     if (txInput) txInput.disabled = true;
-                    if (claimBtn) {
-                        claimBtn.disabled = true;
-                        claimBtn.textContent = t('tenant_paywall_claim_pending_btn');
-                    }
+                    if (claimBtn) claimBtn.textContent = t('tenant_paywall_claim_pending_btn');
                     return;
                 }
                 setTenantCryptoMsg((res && res.error) || t('tenant_paywall_claim_fail'), true);
             } catch (err) {
                 setTenantCryptoMsg((err && err.message) || t('tenant_paywall_claim_fail'), true);
             } finally {
-                if (claimBtn) claimBtn.disabled = false;
+                if (claimBtn && !holdClaim) claimBtn.disabled = false;
             }
         }
 
@@ -4364,7 +4372,7 @@
                 }
                 var msg = (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant && currentUser.tenant.slug)
                     ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + currentUser.tenant.slug)
-                    : 'Hi, I want to activate FXGuard Cloud after the 7-day trial.';
+                    : 'Hi, I want to activate FXGuard Cloud after the free trial.';
                 window.open(tenantSalesWhatsAppUrl(msg), '_blank', 'noopener');
                 if (typeof toast === 'function') {
                     toast((res && res.error) || t('tenant_paywall_billing_off'), true);
@@ -5258,6 +5266,12 @@
                     startTenantPaddleCheckout();
                     return;
                 }
+                if (target.closest('#btnTenantPaywallLogout') && typeof logout === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    logout();
+                    return;
+                }
                 if (target.closest('#btnTenantPaywallClaim')) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -5291,7 +5305,7 @@
                     var txHint = txEl && txEl.value ? ('\nTXID: ' + String(txEl.value).trim()) : '';
                     var waMsg = slug
                         ? ('Hi, I want to activate FXGuard Cloud after trial. Panel: ' + slug + txHint)
-                        : ('Hi, I want to activate FXGuard Cloud after the 7-day trial.' + txHint);
+                        : ('Hi, I want to activate FXGuard Cloud after the free trial.' + txHint);
                     window.open(tenantSalesWhatsAppUrl(waMsg), '_blank', 'noopener');
                     return;
                 }
@@ -5299,6 +5313,18 @@
                     e.preventDefault();
                     e.stopPropagation();
                     saveTenantCustomDomain();
+                    return;
+                }
+                if (target.closest('#btnSaveSkills') && typeof saveTenantSkills === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    saveTenantSkills();
+                    return;
+                }
+                if (target.closest('#btnSkillsResetDefaults') && typeof resetTenantSkillsToDefaults === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetTenantSkillsToDefaults();
                     return;
                 }
                 if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }
@@ -8073,6 +8099,23 @@
                 }
             });
         }
+        function buildLinkPreviewCard(m) {
+            var meta = m.metadata;
+            if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (_e) { meta = null; } }
+            var lp = meta && meta.linkPreview;
+            if (!lp || !/^https?:\/\//i.test(String(lp.url || ''))) return '';
+            var thumb = /^data:image\/(jpeg|png|webp);base64,/.test(String(lp.thumbnail || '')) ? lp.thumbnail : '';
+            var host = '';
+            try { host = new URL(lp.url).hostname.replace(/^www\./, ''); } catch (_e) {}
+            return '<a class="msg-link-card" href="' + escapeAttr(lp.url) + '" target="_blank" rel="noopener noreferrer">' +
+                (thumb ? '<img class="msg-link-card-img" src="' + escapeAttr(thumb) + '" alt="" loading="lazy">' : '') +
+                '<span class="msg-link-card-body">' +
+                (lp.title ? '<span class="msg-link-card-title">' + escapeHtml(lp.title) + '</span>' : '') +
+                (lp.description ? '<span class="msg-link-card-desc">' + escapeHtml(lp.description) + '</span>' : '') +
+                (host ? '<span class="msg-link-card-host">' + escapeHtml(host) + '</span>' : '') +
+                '</span></a>';
+        }
+
         function buildMessageContextBanner(m, isOut) {
             var meta = (m && m.metadata) || {};
             var parts = [];
@@ -8499,7 +8542,8 @@
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
                 var contextBanner = buildMessageContextBanner(m, isOut);
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + escapeAttr(m.id || '') + '" data-whatsapp-id="' + escapeAttr(m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                var linkCard = m.hasMedia ? '' : buildLinkPreviewCard(m);
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + (linkCard ? ' msg-has-link-card' : '') + '" data-msg-id="' + escapeAttr(m.id || '') + '" data-whatsapp-id="' + escapeAttr(m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + linkCard + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position
@@ -10768,6 +10812,8 @@
             const avatarEl = document.getElementById('userAvatar');
             const avatarMobile = document.getElementById('userAvatarMobile');
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
+            const tenantsAdminLink = document.getElementById('userDropdownTenantsAdmin');
+            if (tenantsAdminLink && typeof u.canManageTenants === 'boolean') tenantsAdminLink.hidden = !u.canManageTenants;
             const setAvatar = function(el) {
                 if (!el) return;
                 el.classList.remove('avatar-img-failed');
@@ -10875,11 +10921,40 @@
                 return false;
             }
         }
+        function isFxguardPlatformApex() {
+            try {
+                if ((location.hostname || '').toLowerCase() !== 'app.fxguard.io') return false;
+                var panel = '';
+                try { panel = new URLSearchParams(location.search).get('panel') || ''; } catch (_) {}
+                panel = String(panel).toLowerCase();
+                return !panel || panel === 'platform';
+            } catch (_) {
+                return false;
+            }
+        }
+        function withoutCopiedKayaBrand(b) {
+            if (!b || !isFxguardPlatformApex()) return b;
+            var blob = [b.siteName, b.loginTitle, b.pageTitle, b.footerText, b.logoUrl, b.loginLogoUrl, b.faviconUrl].join(' ');
+            if (!/kaya|کایا/i.test(blob)) return b;
+            var keep = function (v) {
+                var t = String(v || '').trim();
+                return !t || /kaya|کایا/i.test(t) ? '' : t;
+            };
+            return Object.assign({}, b, {
+                siteName: 'FXGuard',
+                loginTitle: keep(b.loginTitle) || 'FXGuard',
+                pageTitle: keep(b.pageTitle) || 'FXGuard',
+                footerText: keep(b.footerText) || 'FXGuard',
+                logoUrl: '/brand/fxguard-mark.svg',
+                loginLogoUrl: '/brand/fxguard-mark.svg',
+                faviconUrl: '/brand/fxguard-favicon.svg'
+            });
+        }
         function defaultPanelLogoSrc() {
-            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-logo.png';
+            return isFxguardAppHost() ? '/brand/fxguard-mark.svg' : '/brand/kaya-logo.png';
         }
         function defaultPanelFaviconSrc() {
-            return isFxguardAppHost() ? '/brand/fxguard-logo.svg' : '/brand/kaya-favicon-32.png';
+            return isFxguardAppHost() ? '/brand/fxguard-favicon.svg' : '/brand/kaya-favicon-32.png';
         }
         function defaultBrandSiteName() {
             if (isFxguardAppHost()) return 'FXGuard';
@@ -10926,6 +11001,7 @@
         var PANEL_BRANDING_STATE = {};
         function applyBranding(s, brandingOpts) {
             if (!s) return;
+            s = withoutCopiedKayaBrand(s);
             brandingOpts = brandingOpts || {};
             if (brandingOpts.full) {
                 PANEL_BRANDING_STATE = Object.assign({}, s);
@@ -10977,7 +11053,7 @@
             }
             updateBottomBarVisibility();
             const loginTitleEl = document.getElementById('loginTitle');
-            if (loginTitleEl) loginTitleEl.textContent = (b.loginTitle && String(b.loginTitle).trim()) ? b.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
+            if (loginTitleEl) loginTitleEl.textContent = (b.loginTitle && String(b.loginTitle).trim()) ? b.loginTitle : (isFxguardAppHost() ? 'FXGuard' : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal'));
             const setLoginLogo = function(containerId, size) {
                 const c = document.getElementById(containerId);
                 if (!c) return;
@@ -11027,7 +11103,14 @@
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
-            const sections = order.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
+            // بخش‌های جدیدتر از ترتیب ذخیره‌شده، جای پیش‌فرض خود (بعد از بخش قبلی) را می‌گیرند
+            const full = order.slice();
+            SIDEBAR_SECTIONS.forEach(function(s, i) {
+                if (full.indexOf(s.section) >= 0) return;
+                const prev = i > 0 ? full.indexOf(SIDEBAR_SECTIONS[i - 1].section) : -1;
+                full.splice(prev + 1, 0, s.section);
+            });
+            const sections = full.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
             if (sections.length === 0) return;
             sections.forEach(function(el) { inner.appendChild(el); });
         }
@@ -11035,7 +11118,7 @@
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
             const can = canAccessSection;
-            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'system-status': 'system_status', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'system-status': 'system_status', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations', 'clinic-patients': 'clinic', 'clinic-doctors': 'clinic', 'clinic-appointments': 'clinic', 'clinic-packages': 'clinic' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
                 const section = link.getAttribute('data-section') || pageToSection[page];
@@ -11076,11 +11159,39 @@
             if (typeof window.engineSyncNavVisibility === 'function') window.engineSyncNavVisibility();
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
+        var INDUSTRY_TERM_ORIGINALS = {};
+        function applyIndustryTerminology(terms) {
+            var packs = { fa: window.__I18N_FA, en: window.__I18N_EN, tr: window.__I18N_TR };
+            var merged = typeof I18N !== 'undefined' ? I18N : {};
+            var langs = ['fa', 'en', 'tr'];
+            Object.keys(INDUSTRY_TERM_ORIGINALS).forEach(function(key) {
+                langs.forEach(function(l) {
+                    var orig = INDUSTRY_TERM_ORIGINALS[key][l];
+                    if (orig === undefined) return;
+                    if (packs[l]) packs[l][key] = orig;
+                    if (merged[l]) merged[l][key] = orig;
+                });
+            });
+            INDUSTRY_TERM_ORIGINALS = {};
+            var map = terms && typeof terms === 'object' ? terms : {};
+            Object.keys(map).forEach(function(key) {
+                var byLang = map[key] || {};
+                INDUSTRY_TERM_ORIGINALS[key] = {};
+                langs.forEach(function(l) {
+                    if (!byLang[l]) return;
+                    INDUSTRY_TERM_ORIGINALS[key][l] = packs[l] && packs[l][key] !== undefined ? packs[l][key] : (merged[l] && merged[l][key]);
+                    if (packs[l]) packs[l][key] = byLang[l];
+                    if (merged[l]) merged[l][key] = byLang[l];
+                });
+            });
+            if (typeof window.applyTranslations === 'function') window.applyTranslations();
+        }
         async function loadPanelSettingsAndApply() {
             const res = await apiFetch('/api/panel-settings', { timeoutMs: 10000 });
             if (res.ok && res.data) {
                 applyBranding(res.data, { full: true });
                 window.__kayaPlanLimits = res.data.planLimits || null;
+                applyIndustryTerminology(res.data.terminology);
                 if (res.data.navHiddenSections || res.data.hiddenSections) {
                     applyHiddenSections(res.data.navHiddenSections || res.data.hiddenSections);
                 }
@@ -11100,6 +11211,7 @@
                     safeJson(fetch(API + '/api/panel-settings/public/languages'))
                 ]);
                 if (brandingRes) applyBranding(brandingRes, { full: true });
+                if (visRes) applyIndustryTerminology(visRes.terminology);
                 if (visRes && visRes.hiddenSections) applyHiddenSections(visRes.hiddenSections);
                 if (langRes && langRes.supportedLanguages && window.applySupportedLanguages) {
                     window.applySupportedLanguages(langRes.supportedLanguages, langRes.defaultLanguage);
@@ -11115,6 +11227,10 @@
             { page: 'tickets', labelKey: 'nav_tickets' },
             { page: 'tasks', labelKey: 'nav_tasks' },
             { page: 'processes', labelKey: 'nav_processes' },
+            { page: 'clinic-appointments', labelKey: 'nav_clinic_appointments' },
+            { page: 'clinic-patients', labelKey: 'nav_clinic_patients' },
+            { page: 'clinic-doctors', labelKey: 'nav_clinic_doctors' },
+            { page: 'clinic-packages', labelKey: 'nav_clinic_packages' },
             { page: 'departments', labelKey: 'nav_departments' },
             { page: 'users', labelKey: 'nav_users' },
             { page: 'branches', labelKey: 'nav_branches' },
@@ -11144,7 +11260,13 @@
             if (loadingEl) loadingEl.style.display = 'none';
             if (contentEl) contentEl.style.display = 'block';
             if (!res.ok) { toast(res.data && res.data.error ? res.data.error : t('err_generic'), true); return; }
-            const d = res.data || {};
+            const d = withoutCopiedKayaBrand(res.data || {});
+            if (isFxguardPlatformApex()) {
+                [['panelSettingSiteName', 'FXGuard'], ['panelSettingPageTitle', 'FXGuard'], ['panelSettingFooterText', 'FXGuard'], ['panelSettingLoginTitle', 'FXGuard']].forEach(function (pair) {
+                    const ph = document.getElementById(pair[0]);
+                    if (ph) ph.placeholder = pair[1];
+                });
+            }
             const set = function(id, v) { const el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
             set('panelSettingSiteName', d.siteName);
             set('panelSettingLogoUrl', d.logoUrl);
@@ -11264,6 +11386,7 @@
             }
             fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || null);
             loadTenantDomainFromApi();
+            loadTenantSkillsUi();
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -11369,9 +11492,177 @@
             fillTenantDomainUi((typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) || { slug: (res.data && res.data.slug) || '', customDomain: next });
             if (typeof toast === 'function') toast(t('panel_custom_domain_saved'));
         }
+        var tenantSkillsState = null;
+        function skillText(labels) {
+            if (!labels) return '';
+            return labels[LANG] || labels.en || labels.fa || '';
+        }
+        function industryDefaultSkills(industryId) {
+            if (!tenantSkillsState) return [];
+            var ind = tenantSkillsState.industries.find(function(i) { return i.id === industryId; });
+            return ind && Array.isArray(ind.skills) ? ind.skills.slice() : [];
+        }
+        async function loadTenantSkillsUi() {
+            var wrap = document.getElementById('panelSkillsSection');
+            if (!wrap) return;
+            var res = await apiFetch('/api/tenants/skills');
+            if (!res.ok || !res.data || res.data.platform) {
+                wrap.hidden = true;
+                return;
+            }
+            tenantSkillsState = {
+                industries: res.data.industries || [],
+                skills: res.data.skills || [],
+                industry: res.data.industry || 'general',
+                enabled: Array.isArray(res.data.enabledSkills) ? res.data.enabledSkills.slice() : [],
+            };
+            wrap.hidden = false;
+            renderTenantSkillsUi();
+        }
+        function renderTenantSkillsUi() {
+            var st = tenantSkillsState;
+            if (!st) return;
+            var sel = document.getElementById('panelSkillsIndustry');
+            if (sel) {
+                sel.innerHTML = '';
+                st.industries.forEach(function(ind) {
+                    var opt = document.createElement('option');
+                    opt.value = ind.id;
+                    opt.textContent = skillText(ind.label);
+                    sel.appendChild(opt);
+                });
+                sel.value = st.industry;
+                sel.onchange = function() {
+                    st.industry = sel.value;
+                    st.enabled = industryDefaultSkills(st.industry);
+                    renderTenantSkillsUi();
+                };
+            }
+            var list = document.getElementById('panelSkillsList');
+            if (!list) return;
+            list.innerHTML = '';
+            var currentInd = st.industries.find(function(i) { return i.id === st.industry; });
+            var industryTitle = t('panel_skills_group_industry').replace('{industry}', currentInd ? skillText(currentInd.label) : '');
+            var general = st.skills.filter(function(s) { return s.tier === 'general'; });
+            var own = st.skills.filter(function(s) { return s.tier === 'industry' && s.industries.indexOf(st.industry) >= 0; });
+            var addons = st.skills.filter(function(s) { return s.tier === 'addon'; });
+            list.appendChild(buildSkillsGroup(t('panel_skills_group_general'), general, t('panel_skills_general_hint')));
+            list.appendChild(buildSkillsGroup(industryTitle, own, own.length ? '' : t('panel_skills_industry_empty')));
+            list.appendChild(buildSkillsGroup(t('panel_skills_group_addon'), addons, ''));
+            var shown = {};
+            own.forEach(function(s) { shown[s.id] = true; });
+            var others = document.createElement('details');
+            others.className = 'panel-skills-others';
+            var summary = document.createElement('summary');
+            summary.textContent = t('panel_skills_group_other');
+            others.appendChild(summary);
+            var extraCount = 0;
+            st.industries.forEach(function(ind) {
+                if (ind.id === st.industry) return;
+                var items = st.skills.filter(function(s) {
+                    return s.tier === 'industry' && !shown[s.id] && s.industries.indexOf(ind.id) >= 0;
+                });
+                if (!items.length) return;
+                items.forEach(function(s) {
+                    shown[s.id] = true;
+                    if (st.enabled.indexOf(s.id) >= 0) extraCount++;
+                });
+                others.appendChild(buildSkillsGroup(skillText(ind.label), items, ''));
+            });
+            if (extraCount > 0) others.open = true;
+            list.appendChild(others);
+        }
+        function buildSkillsGroup(title, items, hint) {
+            var st = tenantSkillsState;
+            var box = document.createElement('fieldset');
+            box.className = 'panel-skills-group';
+            var legend = document.createElement('legend');
+            legend.textContent = title;
+            box.appendChild(legend);
+            if (hint) {
+                var p = document.createElement('p');
+                p.className = 'panel-skills-group-hint';
+                p.textContent = hint;
+                box.appendChild(p);
+            }
+            items.forEach(function(s) {
+                var locked = s.tier === 'general';
+                var label = document.createElement('label');
+                label.className = 'panel-skills-item';
+                var cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = locked || st.enabled.indexOf(s.id) >= 0;
+                cb.disabled = locked;
+                cb.onchange = function() {
+                    toggleSkillWithDependencies(s.id, cb.checked);
+                    renderTenantSkillsUi();
+                };
+                var text = document.createElement('span');
+                text.textContent = skillText(s.label);
+                label.appendChild(cb);
+                label.appendChild(text);
+                if (locked || s.comingSoon) {
+                    var badge = document.createElement('span');
+                    badge.className = 'panel-skills-badge' + (s.comingSoon ? ' is-soon' : '');
+                    badge.textContent = t(locked ? 'panel_skills_core' : 'panel_skills_soon');
+                    label.appendChild(badge);
+                }
+                box.appendChild(label);
+            });
+            return box;
+        }
+        /** روشن‌کردن یک ماژول پیش‌نیازهایش را هم روشن می‌کند؛ خاموش‌کردن، وابسته‌ها را خاموش می‌کند (هم‌راستا با normalizeSkills سرور). */
+        function toggleSkillWithDependencies(id, on) {
+            var st = tenantSkillsState;
+            var byId = {};
+            st.skills.forEach(function(s) { byId[s.id] = s; });
+            if (on) {
+                (function add(skillId) {
+                    if (st.enabled.indexOf(skillId) >= 0) return;
+                    st.enabled.push(skillId);
+                    ((byId[skillId] && byId[skillId].requires) || []).forEach(add);
+                })(id);
+                return;
+            }
+            (function remove(skillId) {
+                var idx = st.enabled.indexOf(skillId);
+                if (idx < 0) return;
+                st.enabled.splice(idx, 1);
+                st.skills.forEach(function(s) {
+                    if ((s.requires || []).indexOf(skillId) >= 0) remove(s.id);
+                });
+            })(id);
+        }
+        function resetTenantSkillsToDefaults() {
+            if (!tenantSkillsState) return;
+            tenantSkillsState.enabled = industryDefaultSkills(tenantSkillsState.industry);
+            renderTenantSkillsUi();
+        }
+        async function saveTenantSkills() {
+            var st = tenantSkillsState;
+            if (!st) return;
+            var res = await apiFetch('/api/tenants/skills', {
+                method: 'PUT',
+                body: JSON.stringify({ industry: st.industry, enabledSkills: st.enabled }),
+            });
+            if (!res.ok) {
+                if (typeof toast === 'function') toast(getApiError(res) || t('panel_skills_fail'), true);
+                return;
+            }
+            st.industry = (res.data && res.data.industry) || st.industry;
+            st.enabled = (res.data && res.data.enabledSkills) || st.enabled;
+            if (typeof currentUser !== 'undefined' && currentUser && currentUser.tenant) {
+                currentUser.tenant.industry = st.industry;
+                currentUser.tenant.enabledSkills = st.enabled.slice();
+            }
+            renderTenantSkillsUi();
+            await loadPanelSettingsAndApply();
+            if (typeof toast === 'function') toast(t('panel_skills_saved'));
+        }
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
             { section: 'communications', labelKey: 'nav_communications' },
+            { section: 'clinic', labelKey: 'nav_clinic' },
             { section: 'organization', labelKey: 'nav_organization' },
             { section: 'settings', labelKey: 'nav_settings' }
         ];
@@ -12109,7 +12400,7 @@
             }
             if (btn) btn.disabled = false;
         }
-        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
         function applyHashRoute() {
             try {
                 initSidebarCollapsedState();
@@ -12231,6 +12522,11 @@
             if (page === 'tickets') runPageInit('tickets', function() { loadTicketFiltersInit(); loadTickets(); });
             if (page === 'tasks') runPageInit('tasks', function() { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } });
             if (page === 'processes') runPageInit('processes', function() { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); });
+            if (page.indexOf('clinic-') === 0) runPageInit(page, function() {
+                var role = (currentUser && currentUser.role) || '';
+                var canManage = !!(currentUser && currentUser.isMainAdmin) || ['owner', 'admin', 'manager'].indexOf(role) >= 0;
+                if (window.CRM && window.CRM.Clinic) window.CRM.Clinic.show(page, { canManage: canManage });
+            });
             if (page === 'whatsapp') runPageInit('whatsapp', function() {
                 initWhatsappProTabs();
                 switchWhatsappMainTab(_whatsappActiveTab || 'channels', true);
@@ -12243,7 +12539,14 @@
                 if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
             });
             if (page === 'message-templates') runPageInit('message-templates', function() { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); });
-            if (page === 'rates') runPageInit('rates', function() { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); });
+            if (page === 'rates') runPageInit('rates', function() {
+                const readOnly = typeof isSelfServeTenantDesk === 'function' && isSelfServeTenantDesk();
+                const ratesPage = document.getElementById('pageRates');
+                if (ratesPage) ratesPage.classList.toggle('rates-page--readonly', readOnly);
+                loadRatesAdjustments();
+                if (readOnly) return;
+                loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus();
+            });
             if (page === 'rates-charts') runPageInit('rates-charts', function() { initRatesChartsPage(); });
             if (page === 'services') runPageInit('services', function() { initServicesTabs(); loadServicesPage(); });
             if (page === 'branches') runPageInit('branches', function() { loadBranches(); });
@@ -13281,10 +13584,10 @@
             filterAndRenderUsers();
         }
         let currentEditUserId = null;
-        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', system_status: 'section_system_status', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', system_status: 'section_system_status', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', clinic: 'section_clinic', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
         const permGroups = [
             { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone', 'bulk_messaging'] },
-            { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision', 'system_status'] },
+            { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'clinic', 'staff_activity', 'supervision', 'system_status'] },
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
         ];
@@ -15228,8 +15531,23 @@
                 return false;
             }
         }
+        /** پنل خودخدمت بدون Gateway اختصاصی (مدیر سکو روشن نکرده) فقط Cloud API دارد. */
+        function isSelfServeWhatsappCloudOnly() {
+            return isSelfServeTenantDesk() && !(currentUser.tenant && currentUser.tenant.gatewayEnabled === true);
+        }
         function applySelfServeWhatsappCloudLock() {
-            if (!isSelfServeTenantDesk()) return;
+            var managed = isSelfServeTenantDesk();
+            var cloudOnly = isSelfServeWhatsappCloudOnly();
+            if (document.body) document.body.classList.toggle('self-serve-cloud-only', cloudOnly);
+            if (!managed) return;
+            var trialBanner = document.getElementById('whatsappTrialBanner');
+            if (trialBanner) trialBanner.hidden = true;
+            ['whatsappGatewayUrl', 'whatsappGatewayApiSecret'].forEach(function (id) {
+                var input = document.getElementById(id);
+                var row = input && input.closest('.whatsapp-form-row');
+                if (row) row.style.display = 'none';
+            });
+            if (!cloudOnly) return;
             var mode = document.getElementById('whatsappConnectionMode');
             if (mode) {
                 mode.value = 'cloud';
@@ -15251,17 +15569,11 @@
                 b.style.display = 'none';
             });
             var hint = document.querySelector('[data-i18n="whatsapp_connection_settings_hint"]');
-            if (hint) {
-                hint.textContent = LANG === 'tr'
-                    ? 'Self-serve paneller yalnızca Meta Cloud API kullanır. QR/Gateway bu planda yok.'
-                    : (LANG === 'fa'
-                        ? 'پنل‌های خودخدمت فقط Meta Cloud API دارند. QR/Gateway در این پلن فعال نیست.'
-                        : 'Self-serve desks use Meta Cloud API only. QR/Gateway is not available on this plan.');
-            }
+            if (hint) hint.textContent = t('whatsapp_self_serve_cloud_only_hint');
             if (typeof switchWhatsappConnectionTab === 'function') switchWhatsappConnectionTab('cloud');
         }
         function switchWhatsappConnectionTab(tab) {
-            if (isSelfServeTenantDesk() && tab === 'gateway') tab = 'cloud';
+            if (isSelfServeWhatsappCloudOnly() && tab === 'gateway') tab = 'cloud';
             document.querySelectorAll('.whatsapp-conn-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
             var cloud = document.getElementById('whatsappCloudSettings');
             var gw = document.getElementById('whatsappGatewaySettings');
@@ -15284,7 +15596,7 @@
             var gwEn = document.getElementById('whatsappGatewayEnabled');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
-            var forcedCloud = isSelfServeTenantDesk();
+            var forcedCloud = isSelfServeWhatsappCloudOnly();
             if (mode) mode.value = forcedCloud ? 'cloud' : (d.connectionMode || 'cloud_first');
             if (typeof switchWhatsappConnectionTab === 'function') {
                 switchWhatsappConnectionTab((forcedCloud ? 'cloud' : ((d.connectionMode || 'cloud_first') === 'gateway' ? 'gateway' : 'cloud')));
@@ -15361,13 +15673,13 @@
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
             var body = {
-                connectionMode: isSelfServeTenantDesk() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
+                connectionMode: isSelfServeWhatsappCloudOnly() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
                 cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
                 cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
                 cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
                 cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
-                gatewayEnabled: isSelfServeTenantDesk() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
+                gatewayEnabled: isSelfServeWhatsappCloudOnly() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
                 gatewayUrl: isSelfServeTenantDesk() ? undefined : ((gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined),
                 numberFailoverEnabled: fo ? !!fo.checked : true
             };

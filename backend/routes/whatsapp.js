@@ -3,6 +3,7 @@ const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
 const { getPanelSettingsKey, isPlatformTenant } = require('../lib/tenantContext');
+const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 const { buildWhatsappOverview } = require('../lib/whatsappOverview');
@@ -154,11 +155,16 @@ router.get('/connection', async (req, res, next) => {
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
-            selfServeCloudOnly: !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id),
+            selfServeCloudOnly: isSelfServeTenant(req.tenant) && !isTenantGatewayAllowed(req.tenant),
+            gatewayManaged: isSelfServeTenant(req.tenant),
         };
         if (payload.selfServeCloudOnly) {
             payload.connectionMode = 'cloud';
             payload.gatewayEnabled = false;
+        }
+        if (payload.gatewayManaged) {
+            payload.gatewayUrl = '';
+            payload.gatewayApiSecretSet = false;
         }
         try {
             const { getTrialSnapshot } = require('../lib/whatsappTrial');
@@ -196,7 +202,8 @@ router.put('/connection', async (req, res, next) => {
             where: { id: getPanelSettingsKey() },
             defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
         });
-        const cloudOnlyDesk = !!(req.tenant && !isPlatformTenant(req.tenant) && req.tenant.id);
+        const cloudOnlyDesk = isSelfServeTenant(req.tenant) && !isTenantGatewayAllowed(req.tenant);
+        const gatewayManaged = isSelfServeTenant(req.tenant);
         if (cloudOnlyDesk) {
             row.connectionMode = 'cloud';
             row.cloudEnabled = true;
@@ -219,8 +226,8 @@ router.put('/connection', async (req, res, next) => {
             row.cloudBulkTemplateLanguage = lang || 'fa';
         }
         if (!cloudOnlyDesk && typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
-        if (!cloudOnlyDesk && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
-        if (!cloudOnlyDesk && body.gatewayApiSecret !== undefined) {
+        if (!gatewayManaged && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
+        if (!gatewayManaged && body.gatewayApiSecret !== undefined) {
             const v = String(body.gatewayApiSecret || '').trim();
             row.gatewayApiSecret = v || null;
         }
@@ -242,9 +249,11 @@ router.put('/connection', async (req, res, next) => {
             cloudBulkTemplateName: row.cloudBulkTemplateName || '',
             cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
             gatewayEnabled: row.gatewayEnabled,
-            gatewayUrl: row.gatewayUrl || '',
-            gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+            gatewayUrl: gatewayManaged ? '' : row.gatewayUrl || '',
+            gatewayApiSecretSet: !gatewayManaged && !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
             numberFailoverEnabled: row.numberFailoverEnabled !== false,
+            selfServeCloudOnly: cloudOnlyDesk,
+            gatewayManaged,
         });
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
@@ -355,11 +364,8 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
         const whatsappCloud = require('../lib/whatsappCloudApi');
         const { getOutboundTemplateName } = require('../lib/whatsappOutboundPolicy');
         const cfg = await getWhatsappConnectionConfig();
-        const env = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
-        const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
-        const host = req.get('x-forwarded-host') || req.get('host') || '';
-        const publicUrl = env || (host ? `${proto}://${host}` : '');
-        const webhookUrl = publicUrl ? `${publicUrl}/api/webhook/whatsapp-cloud` : '';
+        const { getCloudWebhookUrl } = require('../lib/whatsappOverview');
+        const webhookUrl = getCloudWebhookUrl(req);
         const verifyTokenSet = !!String(cfg.cloudVerifyToken || '').trim();
         const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
         const meta = await whatsappCloud.verifyCredentials();
@@ -371,7 +377,7 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
                 phoneNumberId: !!String(cfg.cloudPhoneNumberId || '').trim(),
                 verifyToken: verifyTokenSet,
                 appSecret: appSecretSet,
-                publicUrl: !!publicUrl,
+                publicUrl: !!webhookUrl,
                 bulkTemplate: !!getOutboundTemplateName(cfg),
                 metaApi: meta.ok === true,
             },
@@ -381,7 +387,7 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
                 verifyTokenConfigured: verifyTokenSet,
                 appSecretConfigured: appSecretSet,
                 verifyHint: webhookUrl
-                    ? `${webhookUrl}?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
+                    ? `${webhookUrl}${webhookUrl.includes('?') ? '&' : '?'}hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
                     : null,
             },
             sessionWindowHours: parseInt(process.env.WHATSAPP_CLOUD_SESSION_HOURS || '24', 10) || 24,
@@ -457,6 +463,12 @@ function requireOwnerOrAdmin(req, res, next) {
 router.post('/trial/start', requireOwnerOrAdmin, async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.tenant && req.tenant.id && !isPlatformTenant(req.tenant)) {
+            return res.status(400).json({
+                error: 'پنل‌های خودخدمت برای تست واتساپ از Meta Cloud API استفاده می‌کنند؛ اتصال QR مشترک نیست.',
+                code: 'SELF_SERVE_CLOUD_ONLY',
+            });
+        }
         const { startWhatsappTrial } = require('../lib/whatsappTrial');
         const trial = await startWhatsappTrial();
         res.json({ ok: true, trial });

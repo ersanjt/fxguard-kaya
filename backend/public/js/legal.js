@@ -6,12 +6,12 @@
  * @see     docs/CODEBASE-MAP.md
  */
 (function () {
-    var FOOT = {
+    const FOOT = {
         en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
         fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
         tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' }
     };
-    var T = {
+    const T = {
         privacy: {
             en: {},
             fa: {
@@ -240,7 +240,7 @@
     };
 
     function pageKey() {
-        var p = location.pathname.replace(/\/$/, '') || '/';
+        const p = location.pathname.replace(/\/$/, '') || '/';
         if (p.indexOf('privacy') !== -1) return 'privacy';
         if (p.indexOf('terms') !== -1) return 'terms';
         if (p.indexOf('procurement') !== -1) return 'procurement';
@@ -249,12 +249,12 @@
     }
 
     function apply(lang) {
-        var pack = T[pageKey()] || {};
-        var dict = Object.assign({}, FOOT[lang] || FOOT.en, pack[lang] || {});
+        const pack = T[pageKey()] || {};
+        const dict = Object.assign({}, FOOT[lang] || FOOT.en, pack[lang] || {});
         document.documentElement.lang = lang === 'fa' ? 'fa' : lang === 'tr' ? 'tr' : 'en';
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
         document.querySelectorAll('[data-i18n]').forEach(function (el) {
-            var key = el.getAttribute('data-i18n');
+            const key = el.getAttribute('data-i18n');
             if (dict[key]) el.innerHTML = dict[key];
         });
         document.querySelectorAll('.langs button').forEach(function (btn) {
@@ -263,15 +263,15 @@
         try { localStorage.setItem('kaya_legal_lang', lang); } catch (e) { /* ignore */ }
     }
 
-    var start = 'en';
+    let start = 'en';
     try { start = localStorage.getItem('kaya_legal_lang') || start; } catch (e) { /* ignore */ }
-    var q = new URLSearchParams(location.search).get('lang');
+    const q = new URLSearchParams(location.search).get('lang');
     if (q === 'fa' || q === 'tr' || q === 'en') start = q;
     apply(start);
     document.querySelectorAll('.langs button').forEach(function (btn) {
         btn.addEventListener('click', function () { apply(btn.getAttribute('data-lang')); });
     });
-    var printBtn = document.querySelector('.print-btn');
+    const printBtn = document.querySelector('.print-btn');
     if (printBtn) {
         printBtn.addEventListener('click', function () { window.print(); });
     }
