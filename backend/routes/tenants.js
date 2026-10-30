@@ -105,7 +105,7 @@ function createTenantsRouter(logger) {
                 return res.json({ ok: true, tenant: null, platform: true });
             }
             const row = await Tenant.findByPk(tenant.id, {
-                attributes: ['id', 'slug', 'name', 'status', 'planTier', 'trialEndsAt', 'customDomain', 'panelKey'],
+                attributes: ['id', 'slug', 'name', 'status', 'planTier', 'trialEndsAt', 'customDomain', 'panelKey', 'billingPaidUntil'],
             });
             const shaped = row
                 ? {
@@ -117,6 +117,7 @@ function createTenantsRouter(logger) {
                     trialEndsAt: row.trialEndsAt,
                     customDomain: row.customDomain,
                     panelKey: row.panelKey,
+                    billingPaidUntil: row.billingPaidUntil,
                     isPlatform: false,
                 }
                 : tenant;

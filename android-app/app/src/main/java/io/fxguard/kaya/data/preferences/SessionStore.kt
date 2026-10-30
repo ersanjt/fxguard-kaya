@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import io.fxguard.kaya.BuildConfig
 import io.fxguard.kaya.data.models.StaffUser
 import org.json.JSONObject
 
@@ -50,10 +51,12 @@ class SessionStore(context: Context) {
 
     var baseUrl: String
         get() {
+            if (!BuildConfig.DEBUG) return DEFAULT_URL
             val raw = (prefs.getString(KEY_URL, DEFAULT_URL) ?: DEFAULT_URL).trimEnd('/')
             return normalizeBaseUrl(raw) ?: DEFAULT_URL
         }
         set(value) {
+            if (!BuildConfig.DEBUG) return
             val normalized = normalizeBaseUrl(value) ?: DEFAULT_URL
             prefs.edit().putString(KEY_URL, normalized).apply()
         }

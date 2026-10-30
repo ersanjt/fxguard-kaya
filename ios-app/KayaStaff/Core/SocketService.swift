@@ -196,6 +196,16 @@ final class SocketService: NSObject, URLSessionWebSocketDelegate {
         if error != nil { scheduleReconnect() }
     }
 
+    /// وب‌سوکت هم پین می‌شود — همان سیاست ApiClient
+    func urlSession(
+        _ session: URLSession,
+        didReceive challenge: URLAuthenticationChallenge,
+        completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void
+    ) {
+        let (disposition, credential) = CertificatePinning.disposition(for: challenge)
+        completionHandler(disposition, credential)
+    }
+
     private static func parseEvent(name: String, obj: [String: Any]) -> SocketEvent {
         let message = obj["message"] as? [String: Any]
         let customer = obj["customer"] as? [String: Any]

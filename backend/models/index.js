@@ -95,6 +95,15 @@ const models = {
     DevicePushToken: require('./DevicePushToken')(sequelize),
     ProductFitSurvey: require('./ProductFitSurvey')(sequelize),
     ContactLead: require('./ContactLead')(sequelize),
+    IdempotencyKey: require('./IdempotencyKey')(sequelize),
+    BillingPayment: require('./BillingPayment')(sequelize),
+    // موتور عمومی (ماژول‌ساز / فرم‌ساز) — برای همهٔ صنایع
+    CustomObject: require('./CustomObject')(sequelize),
+    FieldDefinition: require('./FieldDefinition')(sequelize),
+    CustomRecord: require('./CustomRecord')(sequelize),
+    // نوبت‌دهی / رزرو
+    BookableService: require('./BookableService')(sequelize),
+    Appointment: require('./Appointment')(sequelize),
 };
 
 // تعریف روابط

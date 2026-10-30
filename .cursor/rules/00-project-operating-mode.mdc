@@ -1,0 +1,16 @@
+﻿---
+description: Core operating rules for Cursor Agent across this repository
+alwaysApply: true
+---
+
+# Project Operating Mode
+
+- Start by reading the relevant README, package manifests, existing Cursor rules, and files directly related to the task.
+- Prefer the repository's existing architecture, naming, styling, and helper APIs before adding new patterns.
+- Keep changes scoped to the user's request. Do not rewrite unrelated code, config, history, or formatting.
+- Choose the package manager from the lockfile already present in the repo.
+- Never expose, log, hard-code, or invent secrets, API keys, private URLs, wallet keys, or customer data.
+- For user-facing product work, include realistic loading, empty, error, success, mobile, and accessibility states.
+- For financial, CRM, payment, admin, auth, or exchange workflows, treat permissions, auditability, idempotency, decimals, and rollback as first-class requirements.
+- Before finishing, run the narrowest useful verification available: lint, typecheck, unit test, build, or a focused manual/browser check.
+- In final replies, answer the user in Persian unless the user or repository explicitly asks for another language.

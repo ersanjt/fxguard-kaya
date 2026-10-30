@@ -17,7 +17,11 @@ final class SessionStore: ObservableObject {
     }
 
     @Published var baseUrl: String {
-        didSet { UserDefaults.standard.set(baseUrl, forKey: "kaya.base") }
+        didSet {
+            #if DEBUG
+            UserDefaults.standard.set(baseUrl, forKey: "kaya.base")
+            #endif
+        }
     }
 
     var token: String? {
@@ -51,8 +55,12 @@ final class SessionStore: ObservableObject {
 
     init() {
         language = UserDefaults.standard.string(forKey: "kaya.lang") ?? "fa"
+        #if DEBUG
         let stored = UserDefaults.standard.string(forKey: "kaya.base") ?? SessionStore.defaultURL
         baseUrl = SessionStore.normalizeBaseUrl(stored) ?? SessionStore.defaultURL
+        #else
+        baseUrl = SessionStore.defaultURL
+        #endif
     }
 
     /// HTTPS only, except loopback HTTP for local debug.

@@ -9,6 +9,8 @@
 
 const { isPlatformTenant } = require('./tenantContext');
 
+const PAID_PERIOD_GRACE_MS = 3 * 24 * 60 * 60 * 1000;
+
 function trialEndsAtFromNow(days, now) {
     const d = Number(days) || 7;
     const t = now instanceof Date ? now.getTime() : Date.now();
@@ -23,14 +25,18 @@ function tenantAccessState(tenant, now) {
     if (status === 'suspended') {
         return { ok: false, code: 'TENANT_SUSPENDED', status };
     }
+    const t = now instanceof Date ? now.getTime() : Date.now();
     if (status === 'active') {
+        const paidUntil = tenant.billingPaidUntil ? new Date(tenant.billingPaidUntil).getTime() : 0;
+        if (paidUntil && t > paidUntil + PAID_PERIOD_GRACE_MS) {
+            return { ok: false, code: 'PAYMENT_REQUIRED', status: 'past_due' };
+        }
         return { ok: true, code: null, status };
     }
     if (status === 'past_due') {
         return { ok: false, code: 'PAYMENT_REQUIRED', status };
     }
     const ends = tenant.trialEndsAt ? new Date(tenant.trialEndsAt).getTime() : 0;
-    const t = now instanceof Date ? now.getTime() : Date.now();
     if (status === 'trial' && ends && t > ends) {
         return { ok: false, code: 'TRIAL_EXPIRED', status: 'trial' };
     }
@@ -87,6 +93,7 @@ function publicTenantPayload(tenant, now) {
         status: tenant.status,
         planTier: tenant.planTier || 'start',
         trialEndsAt: tenant.trialEndsAt || null,
+        paidUntil: tenant.billingPaidUntil || null,
         customDomain: tenant.customDomain || null,
         remainingDays: remainingTrialDays(tenant, now),
         locked: !state.ok,

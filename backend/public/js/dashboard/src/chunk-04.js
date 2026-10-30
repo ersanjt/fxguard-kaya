@@ -144,12 +144,13 @@
                     document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
                     document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
                     this.classList.add('active');
-                    const pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : tab === 'documents' ? 'customerDocumentsPanel' : 'customerNotesPanel';
+                    const pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : tab === 'documents' ? 'customerDocumentsPanel' : tab === 'records' ? 'customerRecordsPanel' : tab === 'appointments' ? 'customerAppointmentsPanel' : 'customerNotesPanel';
                     const panel = document.getElementById(pid);
                     if (panel) { panel.style.display = 'block'; panel.classList.add('show'); }
                     if (tab === 'notes' && currentCustomerId) loadCustomerNotes(currentCustomerId);
                     if (tab === 'transactions' && currentCustomerId) loadCustomerTransactions(currentCustomerId);
                     if (tab === 'documents' && currentCustomerId) loadCustomerDocuments(currentCustomerId);
+                    if ((tab === 'records' || tab === 'appointments') && currentCustomerId && typeof window.engineOnCustomerTab === 'function') window.engineOnCustomerTab(tab, currentCustomerId);
                 };
             });
         }
@@ -541,18 +542,32 @@
         function renderCustomerModalCustomFields(cf) {
             const container = document.getElementById('customerModalCustomFields');
             if (!container) return;
-            const keys = Object.keys(cf || {});
-            container.innerHTML = keys.map(function(k) {
-                return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(String(cf[k] || '')) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button></div>';
-            }).join('');
-            // Bind remove buttons for all custom field rows
-            setTimeout(function() {
-                const removeButtons = container.querySelectorAll('.btn-remove-field');
-                removeButtons.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
-                    btn.addEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
-                });
-            }, 50);
+            const cfObj = cf || {};
+            // فیلدهای تعریف‌شده در فرم‌ساز (schema) به‌صورت ورودی تایپ‌دار رندر می‌شوند؛
+            // بقیهٔ کلیدها همان ردیف‌های آزاد کلید/مقدار قبلی هستند.
+            const renderFree = function(skipKeys) {
+                const skip = Array.isArray(skipKeys) ? skipKeys : [];
+                const keys = Object.keys(cfObj).filter(function(k) { return skip.indexOf(k) < 0 && !/^softDeleted/.test(k); });
+                container.innerHTML = keys.map(function(k) {
+                    const raw = cfObj[k];
+                    const val = (raw && typeof raw === 'object') ? JSON.stringify(raw) : String(raw == null ? '' : raw);
+                    return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(val) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button></div>';
+                }).join('');
+                // Bind remove buttons for all custom field rows
+                setTimeout(function() {
+                    const removeButtons = container.querySelectorAll('.btn-remove-field');
+                    removeButtons.forEach(function(btn) {
+                        btn.removeEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
+                        btn.addEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
+                    });
+                }, 50);
+            };
+            if (typeof window.engineRenderCustomerSchemaFields === 'function') {
+                container.innerHTML = '';
+                window.engineRenderCustomerSchemaFields(container, cfObj).then(renderFree).catch(function() { renderFree([]); });
+            } else {
+                renderFree([]);
+            }
         }
         function bindCustomerModalAddCustomField() {
             const btn = document.getElementById('btnCustomerModalAddCustomField');
@@ -580,6 +595,9 @@
                 const v = (row.querySelector('.cf-val') && row.querySelector('.cf-val').value || '').trim();
                 if (k) out[k] = v;
             });
+            if (typeof window.engineCollectCustomerSchemaFields === 'function') {
+                try { Object.assign(out, window.engineCollectCustomerSchemaFields()); } catch (_) {}
+            }
             return out;
         }
         function bindCustomerModalAvatarUpload() {
@@ -758,7 +776,8 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
-            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            const activeNavLink = document.querySelector('.nav-link.active');
+            const activePage = activeNavLink ? activeNavLink.getAttribute('data-page') : null;
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             if (typeof applyPhoneSearchPlaceholders === 'function') applyPhoneSearchPlaceholders();
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
@@ -967,7 +986,8 @@
             const tickerEl = document.getElementById('priceTicker');
             if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
             updateBottomBarVisibility();
-            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            const activeNavLink = document.querySelector('.nav-link.active');
+            const activePage = activeNavLink ? activeNavLink.getAttribute('data-page') : null;
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
@@ -988,6 +1008,7 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
+            if (typeof window.engineSyncNavVisibility === 'function') window.engineSyncNavVisibility();
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         async function loadPanelSettingsAndApply() {
@@ -999,6 +1020,8 @@
                     applyHiddenSections(res.data.navHiddenSections || res.data.hiddenSections);
                 }
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
+                if (window.applyLabelOverrides) window.applyLabelOverrides(res.data.labelOverrides || {});
+                if (typeof window.engineBootstrapNav === 'function') window.engineBootstrapNav();
                 return;
             }
             const pubFetchOpts = { credentials: 'include', headers: headers() };
@@ -1016,7 +1039,9 @@
                 if (langRes && langRes.supportedLanguages && window.applySupportedLanguages) {
                     window.applySupportedLanguages(langRes.supportedLanguages, langRes.defaultLanguage);
                 }
+                if (visRes && window.applyLabelOverrides) window.applyLabelOverrides(visRes.labelOverrides || {});
             } catch (_) {}
+            if (typeof window.engineBootstrapNav === 'function') window.engineBootstrapNav();
         }
         const SECTIONS_FOR_VISIBILITY = [
             { page: 'dashboard', labelKey: 'nav_dashboard' },
@@ -1038,6 +1063,8 @@
             { page: 'rates', labelKey: 'nav_rates' },
             { page: 'rates-charts', labelKey: 'nav_rates_charts' },
             { page: 'services', labelKey: 'nav_services' },
+            { page: 'appointments', labelKey: 'nav_appointments' },
+            { page: 'records', labelKey: 'nav_records' },
             { page: 'panel-settings', labelKey: 'nav_panel_settings' }
         ];
         let panelSettingsTabsInited = false;
@@ -2022,6 +2049,12 @@
             try {
                 initSidebarCollapsedState();
                 const hash = (location.hash || '').replace(/^#/, '');
+                const recordsMatch = hash.match(/^records\/([a-z][a-z0-9_]{0,47})$/);
+                if (recordsMatch) {
+                    window.__engineRecordsKey = recordsMatch[1];
+                    showPage('records');
+                    return;
+                }
                 const customerMatch = hash.match(/^customer-detail(?:\/(.+))?$/);
                 if (customerMatch) {
                     if (typeof canAccessSection === 'function' && !canAccessSection('customers')) {
@@ -2072,14 +2105,17 @@
                 try { window.history.replaceState(null, '', baseHidden + '#dashboard'); } catch (e) {}
                 if (fxLockedNav && typeof toast === 'function') toast(t('dash_fx_locked_body'));
             }
-            var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            var prevActiveLink = document.querySelector('.nav-link.active');
+            var prevPage = prevActiveLink ? prevActiveLink.getAttribute('data-page') : null;
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
+            var hashTarget = (page === 'records' && window.__engineRecordsKey) ? 'records/' + window.__engineRecordsKey : page;
+            if (page && window.location.hash !== '#' + hashTarget) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + hashTarget); } catch (e) {} }
             try { sessionStorage.setItem('crm_last_page', page); } catch (_) {}
             const navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
+            if (typeof window.engineSyncActiveNav === 'function') window.engineSyncActiveNav(page);
             updateMobileTabBar(page);
             const pageTitles = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TITLES : {};
             const titleKey = pageTitles[page] || 'nav_dashboard';
@@ -2185,6 +2221,9 @@
             if (page === 'supervision') runPageInit('supervision', function() { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); });
             if (page === 'system-status') runPageInit('system-status', function() { loadSystemStatus(true); startSystemStatusLive(); }); else { stopSystemStatusLive(); }
             if (page === 'panel-settings') runPageInit('panel-settings', function() { loadPanelSettings(); });
+            if (page === 'records') runPageInit('records', function() { if (typeof window.initRecordsPage === 'function') window.initRecordsPage(); });
+            if (page === 'appointments') runPageInit('appointments', function() { if (typeof window.initAppointmentsPage === 'function') window.initAppointmentsPage(); });
+            if (page === 'modules') runPageInit('modules', function() { if (typeof window.initModulesPage === 'function') window.initModulesPage(); });
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
                 runPageInit('internal-chat-leave', function() {
                     const headerEl = document.getElementById('internalChatHeader');

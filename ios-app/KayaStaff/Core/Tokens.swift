@@ -168,7 +168,7 @@ struct AuthRemoteImage: View {
 enum StaffMediaLoader {
     static func image(url: URL?, token: String?, apiHost: String?) async -> UIImage? {
         guard let url, let req = request(url: url, token: token, apiHost: apiHost) else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await URLSession.pinned.data(for: req),
               let http = resp as? HTTPURLResponse,
               (200 ..< 300).contains(http.statusCode),
               let img = UIImage(data: data)
@@ -178,7 +178,7 @@ enum StaffMediaLoader {
 
     static func data(url: URL, token: String?, apiHost: String?) async -> Data? {
         guard let req = request(url: url, token: token, apiHost: apiHost) else { return nil }
-        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+        guard let (data, resp) = try? await URLSession.pinned.data(for: req),
               let http = resp as? HTTPURLResponse,
               (200 ..< 300).contains(http.statusCode)
         else { return nil }

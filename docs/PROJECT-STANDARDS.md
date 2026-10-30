@@ -13,7 +13,7 @@ fxguard-kaya/
 ├── backend/              # API (Express + Sequelize)، داشبورد کلاسیک (public/)، خروجی Vite در public/js/app/
 ├── frontend/             # داشبورد مدرن (Vite + ES modules) — `npm run build` → backend/public/js/app/
 ├── gateway/              # سرویس واتساپ (whatsapp-web.js، Redis، صف)
-├── android-app/          # اپ اندروید (Kotlin، Jetpack Compose، Hilt، Retrofit)
+├── android-app/          # اپ اندروید (Kotlin، Jetpack Compose، OkHttp دستی)
 ├── ios-app/              # اپ iOS (Swift)
 ├── docs/                 # مستندات استقرار، امنیت، معماری
 ├── docker-compose*.yml   # اجرای محلی / سرور
@@ -43,14 +43,14 @@ fxguard-kaya/
 
 | دستور | توضیح |
 |--------|--------|
-| `npm run quality` | **یک دروازهٔ کیفیت:** `lint` (backend + gateway) + `test` (backend) + `dashboard:build` (Vite) |
+| `npm run quality` | **دروازهٔ کیفیت محصول:** `lint` + `test` + باندل داشبورد کلاسیک (`dashboard:bundle`). بیلد Vite جداست (`dashboard:build`) و UI زنده نیست |
 | `npm run lint` | ESLint روی `backend` و `gateway` |
 | `npm run lint:fix` | اصلاح خودکار ESLint (جایی که امکان‌پذیر است) |
 | `npm run format` / `format:write` | Prettier — backend و gateway (جداگانه از ریشه با `--prefix`) |
 | `npm test` | تست‌های اصلی backend (SQLite in-process) |
 | `npm run test:all` | همان تست‌ها + تست‌های integration سبک |
 
-**اندروید (لوکال):** JDK 17+، سپس داخل `android-app/` اجرای `./gradlew lintDebug assembleDebug` (در CI نیز lint/compile اجرا می‌شود).
+**اندروید (لوکال):** JDK 17+، سپس داخل `android-app/` اجرای `./gradlew lintDebug assembleRelease`. CI آرتیفکت release می‌سازد (اگر keystore نباشد با امضای debug، بدون cleartext).
 
 معادل per-package: `cd backend && npm run lint` و غیره.
 
@@ -78,13 +78,13 @@ fxguard-kaya/
 
 | لایه | مسیر نمونه | نقش |
 |------|-------------|-----|
-| UI | `app/.../ui/` | Compose Screens، theme، کامپوننت‌های مشترک |
-| Data | `app/.../data/` | `api/`، `models/`، `repository/`، `preferences/`، `network/` |
-| DI | `app/.../di/` | ماژول‌های Hilt |
-| Root | `MainActivity.kt`، `KayaCrmApp.kt` (Application) | نقطهٔ ورود |
+| UI | `app/.../ui/` | Compose Screens، theme |
+| Data | `app/.../data/` | `ApiClient.kt` (OkHttp)، `SessionStore`، `SocketService` |
+| Graph | `AppGraph.kt` | سیم‌کشی دستی (Hilt/Retrofit در این درخت نیست) |
+| Root | `MainActivity.kt`، `KayaCrmApp.kt` | نقطهٔ ورود |
 
-- **وابستگی‌ها:** Retrofit + OkHttp، Gson، Hilt با **KSP** (نه kapt).
-- **شبکه:** اینترسپتور احراز هویت؛ در release لاگ بدنهٔ HTTP خاموش است (`BuildConfig.DEBUG`).
+- **وابستگی‌ها:** OkHttp و Compose. ViewModelها در `MainActivity` / مدل اپ هستند، نه لایهٔ Retrofit.
+- **شبکه:** `PinnedHttp` برای `*.fxguard.io`؛ در release آدرس سرور قفل است و cleartext خاموش است.
 - **Lint:** اجرای `lintDebug` در CI؛ خطاهای Lint نباید بدون دلیل نادیده گرفته شوند.
 - **سبک رسمی Kotlin:** در `android-app/gradle.properties` مقدار `kotlin.code.style=official` فعال است (هم‌خوان با [قرارداد رسمی JetBrains](https://kotlinlang.org/docs/coding-conventions.html)).
 - **برندینگ سفارشی (white-label):** اپ اندروید **نام و لوگوی سازمان** را از API عمومی **`GET /api/panel-settings/public/branding`** می‌خواند (همان داده‌ای که در پنل وب از مسیر **ظاهر پنل** / `#panel-settings` تنظیم می‌شود). برچسب کوتاه نصب (لانچر) در `res/values/strings.xml` به‌صورت عمومی نگه داشته می‌شود تا وابستگی به یک نام ثابت تجاری در سطح OS کم باشد.

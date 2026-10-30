@@ -11,8 +11,20 @@ const { PLATFORM_SLUG } = require('../lib/tenantHost');
 const { setPlatformTenantCache } = require('../lib/tenantContext');
 
 async function ensurePlatformTenant(logger) {
-    const { Tenant, User, Customer, Conversation, Message, Ticket, Task, Branch, Department } =
-        require('../models');
+    const {
+        Tenant,
+        User,
+        Customer,
+        Conversation,
+        Message,
+        Ticket,
+        Task,
+        Branch,
+        Department,
+        CashBox,
+        BankAccount,
+        Transaction,
+    } = require('../models');
 
     const [row] = await Tenant.findOrCreate({
         where: { slug: PLATFORM_SLUG },
@@ -48,9 +60,13 @@ async function ensurePlatformTenant(logger) {
         { model: Task, name: 'Tasks' },
         { model: Branch, name: 'Branches' },
         { model: Department, name: 'Departments' },
+        { model: CashBox, name: 'CashBoxes' },
+        { model: BankAccount, name: 'BankAccounts' },
+        { model: Transaction, name: 'Transactions' },
     ];
 
     for (const t of tables) {
+        if (!t.model) continue;
         try {
             await t.model.update(
                 { tenantId: row.id },
@@ -78,6 +94,16 @@ async function addTenantIdColumns(sequelize, logger) {
         'Tasks',
         'Branches',
         'Departments',
+        'CashBoxes',
+        'BankAccounts',
+        'Transactions',
+        'InternalThreads',
+        'InternalMessages',
+        'Announcements',
+        'device_push_tokens',
+        'whatsapp_numbers',
+        'whatsapp_connections',
+        'notification_preferences',
     ];
     for (const table of tables) {
         try {

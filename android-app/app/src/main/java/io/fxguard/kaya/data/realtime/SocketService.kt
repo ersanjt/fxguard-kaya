@@ -7,6 +7,7 @@
  */
 package io.fxguard.kaya.data.realtime
 
+import io.fxguard.kaya.data.api.PinnedHttp
 import io.fxguard.kaya.data.preferences.SessionStore
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -29,6 +30,8 @@ class SocketService(private val session: SessionStore) {
     private var socket: Socket? = null
     private val _events = MutableSharedFlow<SocketEvent>(extraBufferCapacity = 64)
     val events: SharedFlow<SocketEvent> = _events
+    /** سوکت هم از همان کلاینت پین‌شده استفاده می‌کند (websocket + polling) */
+    private val pinnedHttp = PinnedHttp.baseClient()
 
     @Synchronized
     fun connect() {
@@ -39,6 +42,8 @@ class SocketService(private val session: SessionStore) {
             extraHeaders = mapOf("Authorization" to listOf("Bearer $token"))
             reconnection = true
             transports = arrayOf("websocket", "polling")
+            callFactory = pinnedHttp
+            webSocketFactory = pinnedHttp
         }
         val s = IO.socket(URI.create(session.baseUrl), opts)
         fun listen(name: String) {

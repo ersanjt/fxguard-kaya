@@ -119,7 +119,7 @@ function stampLoginHtml(buildId) {
     const loginPath = path.join(root, 'public/login.html');
     if (!fs.existsSync(loginPath)) return;
     let raw = readNormalized(loginPath);
-    raw = raw.replace(/\?v=[a-f0-9]+/gi, '?v=' + BUILD_PLACEHOLDER);
+    raw = raw.replace(/\?v=[^"'&\s]+/g, '?v=' + BUILD_PLACEHOLDER);
     raw = raw.replace(/content="[a-f0-9]+"/, 'content="' + BUILD_PLACEHOLDER + '"');
     fs.writeFileSync(loginPath, stampBuildId(raw, buildId), 'utf8');
     console.log('[bundle-dashboard] Stamped login.html');

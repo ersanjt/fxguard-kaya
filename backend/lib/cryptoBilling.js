@@ -109,9 +109,14 @@ function isCryptoPayEnabled(env) {
     return listWallets(src).length > 0;
 }
 
+/**
+ * فعال‌سازی خودکار پنل با ثبت TXID.
+ * پیش‌فرض خاموش: TXID فقط از نظر فرمت چک می‌شود و مبلغ/آدرس/تأیید زنجیره بررسی نمی‌شود؛
+ * فعال کردن آن یعنی هر TXID خوش‌فرم پنل را باز می‌کند. فقط با CRYPTO_PAY_AUTO_ACTIVATE=true.
+ */
 function cryptoAutoActivate(env) {
     const src = env || process.env;
-    if (String(src.CRYPTO_PAY_AUTO_ACTIVATE || '').trim() === '') return true;
+    if (String(src.CRYPTO_PAY_AUTO_ACTIVATE || '').trim() === '') return false;
     return envFlagOn(src.CRYPTO_PAY_AUTO_ACTIVATE);
 }
 
@@ -175,23 +180,73 @@ function assertValidNetwork(networkId) {
     return !!NETWORKS[networkId];
 }
 
-function confirmTokenForTenant(tenantId, secret) {
-    const key = String(secret || process.env.JWT_SECRET || '').trim();
-    if (!key || !tenantId) return '';
-    const body = String(tenantId);
-    const sig = crypto.createHmac('sha256', key).update('crypto-confirm:' + body).digest('hex').slice(0, 24);
-    return Buffer.from(body + '.' + sig).toString('base64url');
+/** طول عمر لینک تأیید دستی (ساعت) — پیش‌فرض ۷ روز */
+const CONFIRM_TOKEN_TTL_HOURS_DEFAULT = 24 * 7;
+
+function confirmTokenTtlMs(env) {
+    const src = env || process.env;
+    const hours = Number(src.CRYPTO_CONFIRM_TOKEN_TTL_HOURS);
+    const h = Number.isFinite(hours) && hours > 0 ? hours : CONFIRM_TOKEN_TTL_HOURS_DEFAULT;
+    return Math.round(h * 3600 * 1000);
 }
 
-function parseConfirmToken(token, secret) {
+/** اثر انگشت TXID — توکن به همان ادعای پرداخت قفل می‌شود، نه به سازمان به‌تنهایی */
+function txIdFingerprint(txId) {
+    const norm = String(txId || '').trim().toLowerCase();
+    if (!norm) return '0';
+    return crypto.createHash('sha256').update(norm).digest('hex').slice(0, 16);
+}
+
+function confirmSignature(body, key) {
+    return crypto.createHmac('sha256', key).update('crypto-confirm:v2:' + body).digest('hex').slice(0, 32);
+}
+
+/**
+ * لینک تأیید دستی: tenantId + انقضا + اثر انگشت TXID، امضاشده با JWT_SECRET.
+ * @param {string} tenantId
+ * @param {string} secret
+ * @param {object} [opts]
+ * @param {string} [opts.txId]       TXID ادعا شده — توکن فقط برای همین TXID معتبر است
+ * @param {number} [opts.expiresAt]  epoch ms؛ پیش‌فرض now + TTL
+ * @param {number} [opts.now]
+ */
+function confirmTokenForTenant(tenantId, secret, opts = {}) {
+    const key = String(secret || process.env.JWT_SECRET || '').trim();
+    if (!key || !tenantId) return '';
+    const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+    const exp = Number.isFinite(opts.expiresAt) ? Math.floor(opts.expiresAt) : now + confirmTokenTtlMs();
+    const jti = String(opts.jti || crypto.randomBytes(16).toString('hex'));
+    const body = [String(tenantId), String(exp), txIdFingerprint(opts.txId), jti].join('.');
+    return Buffer.from(body + '.' + confirmSignature(body, key)).toString('base64url');
+}
+
+function mintConfirmToken(tenantId, secret, opts = {}) {
+    const jti = String(opts.jti || crypto.randomBytes(16).toString('hex'));
+    return { token: confirmTokenForTenant(tenantId, secret, { ...opts, jti }), jti };
+}
+
+/**
+ * @returns {{tenantId:string, expiresAt:number, txIdFingerprint:string, jti:string}|null}
+ * null = امضا نامعتبر، ساختار خراب، یا منقضی
+ */
+function parseConfirmToken(token, secret, opts = {}) {
     try {
+        const key = String(secret || process.env.JWT_SECRET || '').trim();
+        if (!key) return null;
         const raw = Buffer.from(String(token || ''), 'base64url').toString('utf8');
         const parts = raw.split('.');
-        if (parts.length !== 2) return null;
-        const tenantId = parts[0];
-        const expected = confirmTokenForTenant(tenantId, secret);
-        if (!expected || expected !== String(token)) return null;
-        return tenantId;
+        if (parts.length !== 5) return null;
+        const [tenantId, expStr, fingerprint, jti, sig] = parts;
+        if (!tenantId || !/^\d+$/.test(expStr) || !fingerprint || !/^[a-f0-9]{32}$/.test(jti) || !sig) {
+            return null;
+        }
+        const expected = confirmSignature([tenantId, expStr, fingerprint, jti].join('.'), key);
+        if (sig.length !== expected.length) return null;
+        if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+        const expiresAt = Number(expStr);
+        const now = Number.isFinite(opts.now) ? opts.now : Date.now();
+        if (!Number.isFinite(expiresAt) || expiresAt <= now) return null;
+        return { tenantId, expiresAt, txIdFingerprint: fingerprint, jti };
     } catch (_) {
         return null;
     }
@@ -210,6 +265,9 @@ module.exports = {
     validateTxId,
     assertValidNetwork,
     confirmTokenForTenant,
+    mintConfirmToken,
     parseConfirmToken,
+    txIdFingerprint,
+    confirmTokenTtlMs,
     salesWhatsApp,
 };

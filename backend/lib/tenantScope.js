@@ -49,6 +49,22 @@ const TENANT_SCOPED_MODELS = [
     'Task',
     'Branch',
     'Department',
+    // مالی صرافی — بدون این، owner/admin یک سازمان صندوق/تراکنش همهٔ سازمان‌ها را می‌بیند
+    'CashBox',
+    'BankAccount',
+    'Transaction',
+    'InternalThread',
+    'InternalMessage',
+    'Announcement',
+    'DevicePushToken',
+    'WhatsappNumber',
+    'NotificationPreference',
+    // موتور عمومی و نوبت‌دهی
+    'CustomObject',
+    'FieldDefinition',
+    'CustomRecord',
+    'BookableService',
+    'Appointment',
 ];
 
 function applyTenantScopeToModels(models) {

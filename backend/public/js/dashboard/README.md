@@ -15,8 +15,10 @@
 | `src/chunk-04.js` | `chunk-04 \| showPage` | **`showPage`**, `applyHashRoute`, **`loadPanelSettings`**, مشتریان، تسک |
 | `src/chunk-05.js` | `chunk-05 \| کاربران` | **`renderUserList`**, تیکت، دپارتمان، شعب |
 | `src/chunk-06.js` | `chunk-06 \| runAfterAuthReady` | واتساپ، قالب پیام، نظارت، **`runAfterAuthReady`**, **`restoreSessionFromServer`** |
+| `src/chunk-07.js` | `chunk-07 \| موتور عمومی` | رکوردهای داینامیک (**`initRecordsPage`**), منوی پویا (**`engineBootstrapNav`**), نوبت‌ها (**`initAppointmentsPage`**, `openAppointmentForm`), ماژول‌ساز/قالب صنعت (**`initModulesPage`**), فیلدهای schema مشتری |
 
-> chunkهای ۰۲–۰۶ وسط یک IIFE ادغام می‌شوند؛ به‌تنهایی اجرا نکن — فقط منبع ویرایش هستند.
+> chunkهای ۰۲–۰۷ وسط یک IIFE ادغام می‌شوند؛ به‌تنهایی اجرا نکن — فقط منبع ویرایش هستند.
+> در chunk-07 برای state از `var` استفاده کن (کد top-level بین chunkها مشترک است) و برای تب‌ها کلاس `engine-view-tabs` را به کار ببر — کلاس `task-quick-tabs` توسط هندلر سراسری chunk-02 مصرف می‌شود. صفت `onchange` اینلاین را CSP حذف می‌کند؛ با `addEventListener` بایند کن.
 
 ## ماژول‌های جدا (قبل از dashboard.js)
 
@@ -28,6 +30,7 @@
 | `js/modules/dashboard-i18n.js` | `t()`, `setLang()` |
 | `js/modules/dashboard-login-bootstrap.js` | برندینگ و bootstrap لاگین |
 | `js/i18n-fa.js` / `en` / `tr` | ترجمه‌ها |
+| `js/i18n-engine.js` | ترجمه‌های موتور عمومی (`eng_*`, `mb_*`, `bk_*`) — بعد از پک‌های زبان و قبل از `dashboard-i18n.js` |
 
 ## HTML و CSS
 

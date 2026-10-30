@@ -3,7 +3,9 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
-const { sequelize, Customer, Conversation, Message, CustomerNote, CustomerDocument, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
+const models = require('../models');
+const { sequelize, Customer, Conversation, Message, CustomerNote, CustomerDocument, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = models;
+const { loadCustomerFields, mergeCustomerCustomFields } = require('../lib/customerFields');
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
@@ -325,13 +327,16 @@ router.post('/', async (req, res, next) => {
                 if (m) safeBirthDate = m[3] + '-' + m[1].padStart(2, '0') + '-' + m[2].padStart(2, '0');
             }
         }
+        const cfFields = await loadCustomerFields(models);
+        const cfMerged = mergeCustomerCustomFields(cfFields, null, customFields, { partial: false });
+        if (!cfMerged.ok) return res.status(400).json({ error: cfMerged.errors[0], errors: cfMerged.errors });
         const customerData = {
             name: name ? String(name).trim() : null,
             phone: normalizedPhone,
             email: email ? String(email).trim().toLowerCase() : null,
             notes: notes ? String(notes).trim() : null,
             status: status && allowedStatuses.includes(status) ? status : 'active',
-            customFields: customFields && typeof customFields === 'object' ? customFields : {},
+            customFields: cfMerged.value,
             source: source || 'manual',
             profilePic: profilePic ? String(profilePic).trim() : null,
             isRestrictedFromStaff: false,
@@ -388,7 +393,12 @@ router.put('/:id', async (req, res, next) => {
         }
         if (email !== undefined) updateData.email = email;
         if (notes !== undefined) updateData.notes = notes;
-        if (customFields !== undefined) updateData.customFields = customFields;
+        if (customFields !== undefined) {
+            const cfFields = await loadCustomerFields(models);
+            const cfMerged = mergeCustomerCustomFields(cfFields, customer.customFields, customFields, { partial: true });
+            if (!cfMerged.ok) return res.status(400).json({ error: cfMerged.errors[0], errors: cfMerged.errors });
+            updateData.customFields = cfMerged.value;
+        }
         if (req.body.profilePic !== undefined) updateData.profilePic = req.body.profilePic;
         if (updateData.profilePic !== undefined && updateData.profilePic) {
             try {

@@ -5,6 +5,15 @@ const { Op } = require('sequelize');
 const { Department, User, Branch } = require('../models');
 const { normalizeKeywords, normalizeDescription } = require('../lib/keywordUtils');
 const { isValidUUID } = require('../lib/validation');
+const { getCurrentTenantId } = require('../lib/tenantContext');
+
+/** «فقط یک دپارتمان پیش‌فرض» باید داخل همان سازمان اعمال شود، نه روی همهٔ سازمان‌ها */
+function otherDepartmentsOfSameTenant(dept) {
+    const where = { id: { [Op.ne]: dept.id } };
+    const tid = dept.tenantId || getCurrentTenantId();
+    if (tid) where.tenantId = tid;
+    return where;
+}
 
 async function list(req, res, next) {
     try {
@@ -70,7 +79,7 @@ async function create(req, res, next) {
         if (body.description) body.description = normalizeDescription(body.description);
         const dept = await Department.create(body);
         if (dept.isDefault) {
-            await Department.update({ isDefault: false }, { where: { id: { [Op.ne]: dept.id } } });
+            await Department.update({ isDefault: false }, { where: otherDepartmentsOfSameTenant(dept) });
         }
         res.status(201).json(dept);
     } catch (err) {
@@ -95,7 +104,7 @@ async function update(req, res, next) {
         if (isDefault !== undefined) {
             dept.isDefault = !!isDefault;
             if (dept.isDefault) {
-                await Department.update({ isDefault: false }, { where: { id: { [Op.ne]: dept.id } } });
+                await Department.update({ isDefault: false }, { where: otherDepartmentsOfSameTenant(dept) });
             }
         }
         if (isActive !== undefined) dept.isActive = !!isActive;

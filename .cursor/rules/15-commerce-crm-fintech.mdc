@@ -1,0 +1,14 @@
+﻿---
+description: Domain rules for CRM, SMM, exchange, fintech, admin, and business dashboards
+globs: **/*.{ts,tsx,js,jsx,php,py,sql}
+alwaysApply: false
+---
+
+# Commerce CRM Fintech
+
+- Treat CRM, SMM, exchange, payment, invoice, lead, customer, order, ticket, and admin flows as production business systems.
+- Preserve audit trails and avoid destructive edits to customer, transaction, balance, order, or campaign data.
+- Use explicit statuses, timestamps, and ownership checks for workflow transitions.
+- Dashboards should optimize for scanning, filtering, bulk actions, export, pagination, and recovery from partial failures.
+- For money or balances, show currency, precision, rounding, and timezone clearly.
+- Keep admin actions reversible or confirmed when they affect many users or financial records.

@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { authMiddleware, optionalAuthMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
+const { resolveInboundTenant, runInboundWithTenant, pickHeaderSlug } = require('../lib/inboundTenant');
 const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
 const { getCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
 const models = require('../models');
@@ -49,6 +50,13 @@ const createInternalRouter = require('./internal');
 const devicesRoutes = require('./devices');
 const companyEmailsRoutes = require('./companyEmails');
 const panelSettingsRoutes = require('./panelSettings');
+// موتور عمومی (ماژول‌ساز/فرم‌ساز)، قالب‌های صنعت و نوبت‌دهی
+const customObjectsRoutes = require('./customObjects');
+const fieldDefinitionsRoutes = require('./fieldDefinitions');
+const recordsRoutes = require('./records');
+const industryTemplatesRoutes = require('./industryTemplates');
+const appointmentsRoutes = require('./appointments');
+const bookableServicesRoutes = require('./bookableServices');
 const { createSystemStatusRouter } = require('./systemStatus');
 const { getProfileImage } = require('./profileImage');
 
@@ -248,6 +256,12 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), createInternalRouter(io));
     apiRouter.use('/panel-settings', panelSettingsRoutes);
     apiRouter.use('/company-emails', authMiddleware, companyEmailsRoutes);
+    apiRouter.use('/objects', authMiddleware, customObjectsRoutes);
+    apiRouter.use('/fields', authMiddleware, fieldDefinitionsRoutes);
+    apiRouter.use('/records', authMiddleware, requireSection('records'), recordsRoutes);
+    apiRouter.use('/industry-templates', authMiddleware, industryTemplatesRoutes);
+    apiRouter.use('/appointments', authMiddleware, requireSection('appointments'), appointmentsRoutes);
+    apiRouter.use('/bookable-services', authMiddleware, bookableServicesRoutes);
     apiRouter.use(
         '/system-status',
         authMiddleware,
@@ -255,7 +269,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     );
 
     // بدنه با express.json در server.js (WEBHOOK_BODY_LIMIT، پیش‌فرض 25mb) پارس شده
-    apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
+    apiRouter.post('/webhook/incoming-message', webhookAuth, async (req, res) => {
         const body = req.body;
         if (!body || typeof body !== 'object') {
             return res.status(400).json({ error: 'Invalid payload' });
@@ -263,8 +277,26 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         if (body.from !== undefined && typeof body.from !== 'string') {
             return res.status(400).json({ error: 'Invalid payload: from must be string' });
         }
+        // سازمان مقصد قبل از هر persist — پیام هرگز در سازمان اشتباه ذخیره نشود
+        let inbound;
+        try {
+            inbound = await resolveInboundTenant({
+                headerSlug: pickHeaderSlug(req.headers),
+                payloadSlug: body.tenantSlug,
+                reqTenant: req.tenant,
+            });
+        } catch (err) {
+            logger.error('Webhook tenant resolve error:', err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        if (!inbound.ok) {
+            logger.warn('Webhook rejected: unknown tenant slug', { slug: inbound.slug });
+            return res.status(400).json({ error: 'Unknown tenant' });
+        }
         const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
-        processIncomingMessage(body, { io, rabbitChannel, redisClient, logger })
+        runInboundWithTenant(inbound.tenant, () =>
+            processIncomingMessage(body, { io, rabbitChannel, redisClient, logger })
+        )
             .then(() => res.json({ ok: true }))
             .catch(err => {
                 logger.error('Webhook process error:', err);
@@ -307,6 +339,16 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             for (const entry of entries) {
                 const internalMessages = transformCloudWebhookToInternal(entry);
                 for (const msgData of internalMessages) {
+                    const inbound = await resolveInboundTenant({
+                        reqTenant: req.tenant,
+                        phoneNumberId: msgData.phoneNumberId,
+                    });
+                    if (!inbound.ok) {
+                        logger.warn('Cloud webhook skipped: phone number is not mapped to a tenant', {
+                            slug: inbound.slug,
+                        });
+                        continue;
+                    }
                     if (msgData._cloudMediaId) {
                         try {
                             const downloaded = await downloadMedia(msgData._cloudMediaId);
@@ -317,7 +359,9 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                         delete msgData._cloudMediaId;
                     }
                     const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
-                    await processIncomingMessage(msgData, { io, rabbitChannel, redisClient, logger });
+                    await runInboundWithTenant(inbound.tenant, () =>
+                        processIncomingMessage(msgData, { io, rabbitChannel, redisClient, logger })
+                    );
                 }
             }
             res.status(200).send('ok');

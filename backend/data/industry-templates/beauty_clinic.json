@@ -1,0 +1,88 @@
+{
+  "key": "beauty_clinic",
+  "labels": { "fa": "کلینیک زیبایی", "en": "Beauty clinic", "tr": "Güzellik kliniği" },
+  "description": {
+    "fa": "مراجعان، نوبت‌دهی، پروندهٔ درمان‌ها و پیگیری جلسات بعدی از طریق واتساپ.",
+    "en": "Clients, appointments, treatment history and follow-ups over WhatsApp.",
+    "tr": "Danışanlar, randevular, işlem geçmişi ve WhatsApp üzerinden takip."
+  },
+  "icon": "sparkles",
+  "hiddenSections": ["rates", "rates-charts", "services"],
+  "labelOverrides": {
+    "nav_customers": { "fa": "مراجعان", "en": "Clients", "tr": "Danışanlar" },
+    "dashboard_quick_new_customer": { "fa": "مراجع جدید", "en": "New client", "tr": "Yeni danışan" }
+  },
+  "booking": { "enabled": true, "reminderHours": 24 },
+  "customerFields": [
+    { "key": "skin_type", "type": "select", "labels": { "fa": "نوع پوست", "en": "Skin type", "tr": "Cilt tipi" },
+      "options": [
+        { "value": "normal", "labels": { "fa": "معمولی", "en": "Normal", "tr": "Normal" } },
+        { "value": "dry", "labels": { "fa": "خشک", "en": "Dry", "tr": "Kuru" } },
+        { "value": "oily", "labels": { "fa": "چرب", "en": "Oily", "tr": "Yağlı" } },
+        { "value": "combination", "labels": { "fa": "مختلط", "en": "Combination", "tr": "Karma" } },
+        { "value": "sensitive", "labels": { "fa": "حساس", "en": "Sensitive", "tr": "Hassas" } }
+      ] },
+    { "key": "allergies", "type": "textarea", "labels": { "fa": "حساسیت‌ها", "en": "Allergies", "tr": "Alerjiler" }, "showInList": false },
+    { "key": "referral_source", "type": "select", "labels": { "fa": "نحوهٔ آشنایی", "en": "Referral source", "tr": "Nereden duydu" },
+      "options": [
+        { "value": "instagram", "labels": { "fa": "اینستاگرام", "en": "Instagram", "tr": "Instagram" } },
+        { "value": "friend", "labels": { "fa": "معرفی دوستان", "en": "Friend", "tr": "Arkadaş" } },
+        { "value": "google", "labels": { "fa": "گوگل", "en": "Google", "tr": "Google" } },
+        { "value": "walk_in", "labels": { "fa": "حضوری", "en": "Walk-in", "tr": "Yürüyerek" } }
+      ] },
+    { "key": "consent_signed", "type": "boolean", "labels": { "fa": "فرم رضایت امضا شده", "en": "Consent signed", "tr": "Onam imzalandı" } }
+  ],
+  "appointmentFields": [
+    { "key": "room", "type": "text", "labels": { "fa": "اتاق", "en": "Room", "tr": "Oda" } },
+    { "key": "deposit_paid", "type": "boolean", "labels": { "fa": "بیعانه پرداخت شده", "en": "Deposit paid", "tr": "Kapora ödendi" } }
+  ],
+  "bookableServices": [
+    { "name": "مشاوره رایگان", "labels": { "fa": "مشاوره رایگان", "en": "Free consultation", "tr": "Ücretsiz danışma" }, "durationMin": 20, "color": "#22c55e" },
+    { "name": "بوتاکس", "labels": { "fa": "بوتاکس", "en": "Botox", "tr": "Botoks" }, "durationMin": 30, "color": "#a855f7" },
+    { "name": "فیلر", "labels": { "fa": "فیلر", "en": "Filler", "tr": "Dolgu" }, "durationMin": 45, "color": "#ec4899" },
+    { "name": "لیزر موهای زائد", "labels": { "fa": "لیزر موهای زائد", "en": "Laser hair removal", "tr": "Lazer epilasyon" }, "durationMin": 60, "color": "#f97316" },
+    { "name": "پاکسازی پوست", "labels": { "fa": "پاکسازی پوست", "en": "Facial cleansing", "tr": "Cilt bakımı" }, "durationMin": 60, "color": "#06b6d4" }
+  ],
+  "objects": [
+    {
+      "key": "treatments",
+      "labels": { "fa": "درمان‌ها", "en": "Treatments", "tr": "İşlemler" },
+      "singularLabels": { "fa": "درمان", "en": "Treatment", "tr": "İşlem" },
+      "icon": "sparkles",
+      "color": "#a855f7",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "planned", "labels": { "fa": "برنامه‌ریزی‌شده", "en": "Planned", "tr": "Planlandı" }, "color": "#3b82f6" },
+        { "key": "in_progress", "labels": { "fa": "در حال انجام", "en": "In progress", "tr": "Devam ediyor" }, "color": "#f59e0b" },
+        { "key": "done", "labels": { "fa": "انجام شد", "en": "Done", "tr": "Tamamlandı" }, "color": "#22c55e", "isFinal": true },
+        { "key": "cancelled", "labels": { "fa": "لغو شد", "en": "Cancelled", "tr": "İptal" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "procedure", "type": "text", "labels": { "fa": "نوع درمان", "en": "Procedure", "tr": "İşlem" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "area", "type": "text", "labels": { "fa": "ناحیه", "en": "Area", "tr": "Bölge" } },
+        { "key": "sessions_total", "type": "number", "labels": { "fa": "تعداد جلسات", "en": "Total sessions", "tr": "Toplam seans" }, "validation": { "min": 1, "max": 100 } },
+        { "key": "sessions_done", "type": "number", "labels": { "fa": "جلسات انجام‌شده", "en": "Sessions done", "tr": "Yapılan seans" }, "validation": { "min": 0, "max": 100 } },
+        { "key": "next_session", "type": "date", "labels": { "fa": "جلسهٔ بعدی", "en": "Next session", "tr": "Sonraki seans" } },
+        { "key": "price", "type": "money", "labels": { "fa": "مبلغ کل", "en": "Total price", "tr": "Toplam ücret" } },
+        { "key": "paid", "type": "money", "labels": { "fa": "پرداخت‌شده", "en": "Paid", "tr": "Ödenen" } },
+        { "key": "notes", "type": "textarea", "labels": { "fa": "یادداشت", "en": "Notes", "tr": "Notlar" }, "showInList": false }
+      ]
+    },
+    {
+      "key": "packages",
+      "labels": { "fa": "پکیج‌ها و قیمت", "en": "Packages & pricing", "tr": "Paketler ve fiyat" },
+      "singularLabels": { "fa": "پکیج", "en": "Package", "tr": "Paket" },
+      "icon": "tag",
+      "color": "#06b6d4",
+      "linkToCustomer": false,
+      "hasAssignee": false,
+      "fields": [
+        { "key": "name", "type": "text", "labels": { "fa": "نام پکیج", "en": "Package name", "tr": "Paket adı" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "sessions", "type": "number", "labels": { "fa": "تعداد جلسات", "en": "Sessions", "tr": "Seans" } },
+        { "key": "price", "type": "money", "labels": { "fa": "قیمت", "en": "Price", "tr": "Fiyat" } },
+        { "key": "active", "type": "boolean", "labels": { "fa": "فعال", "en": "Active", "tr": "Aktif" }, "defaultValue": true }
+      ]
+    }
+  ]
+}

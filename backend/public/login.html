@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" translate="no" class="notranslate">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover,user-scalable=yes,interactive-widget=resizes-content">
@@ -10,10 +10,10 @@
     <meta name="theme-color" content="#080d1a">
     <title>ورود | KAYA</title>
     <link rel="manifest" href="/manifest.json">
-    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=47adb2fc8f13">
-    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=47adb2fc8f13">
+    <link rel="icon" id="lpFavicon" type="image/png" href="/brand/kaya-favicon-32.png?v=cf3c53e53232">
+    <link rel="apple-touch-icon" id="lpAppleTouch" href="/brand/kaya-apple-touch.png?v=cf3c53e53232">
     <meta name="description" content="ورود به پورتال کارکنان KAYA">
-    <meta name="crm-build" content="47adb2fc8f13">
+    <meta name="crm-build" content="cf3c53e53232">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap"
@@ -21,7 +21,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=ssdesk2">
+    <link rel="stylesheet" href="/css/login.css?v=cf3c53e53232">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -29,9 +29,9 @@
         if(h==='app.fxguard.io'||h.slice(-15)==='.app.fxguard.io'){
             document.title='ورود | FXGuard';
             var f=document.getElementById('lpFavicon');
-            if(f){f.type='image/svg+xml';f.href='/brand/fxguard-logo.svg?v=ssbrand2';}
+            if(f){f.type='image/svg+xml';f.href='/brand/fxguard-logo.svg?v=cf3c53e53232';}
             var a=document.getElementById('lpAppleTouch');
-            if(a)a.href='/brand/fxguard-logo.svg?v=ssbrand2';
+            if(a)a.href='/brand/fxguard-logo.svg?v=cf3c53e53232';
             var t=document.getElementById('lpAppTitle');
             if(t)t.setAttribute('content','FXGuard');
         }
@@ -98,10 +98,10 @@
 
         <!-- Language switcher — NO onclick, handled by JS -->
         <div class="lp-lang-wrap" id="lpLangWrap">
-            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان" data-i18n-aria-label="lang_label">
-                <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
-                <button type="button" data-lang="en" aria-pressed="false">English</button>
-                <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
+            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان" data-i18n-aria-label="lang_label" translate="no">
+                <button type="button" data-lang="fa" class="active notranslate" aria-pressed="true" translate="no" lang="fa">فارسی</button>
+                <button type="button" data-lang="en" class="notranslate" aria-pressed="false" translate="no" lang="en">English</button>
+                <button type="button" data-lang="tr" class="notranslate" aria-pressed="false" translate="no" lang="tr">Türkçe</button>
             </div>
         </div>
 
@@ -116,6 +116,7 @@
                        data-i18n-ph="login_panel_ph"
                        placeholder="مثلاً your-desk"
                        autocomplete="off" autocapitalize="none" spellcheck="false" dir="ltr" maxlength="24">
+                <p class="lp-host-hint" id="lpPanelHint" hidden></p>
             </div>
             <div class="lp-field">
                 <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
@@ -252,6 +253,6 @@
     </div>
 </main>
 
-<script src="/js/login.js?v=ssdesk2"></script>
+<script src="/js/login.js?v=cf3c53e53232"></script>
 </body>
 </html>

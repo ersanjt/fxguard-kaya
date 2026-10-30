@@ -402,11 +402,28 @@ class StaffViewModel(
             setAuthI18n("server_https")
             return false
         }
+        val previous = session.baseUrl
+        if (normalized == previous) {
+            serverUrl = normalized
+            if (gate == Gate.App) socket.connect()
+            return true
+        }
+        if (session.isLoggedIn) {
+            // نشست به سرور قبلی تعلق دارد؛ JWT هرگز نباید به هاست جدید فرستاده شود.
+            // اول روی سرور قبلی خارج می‌شویم، بعد آدرس را عوض می‌کنیم و ورود دوباره می‌خواهیم.
+            viewModelScope.launch {
+                PushRegistrar.onLoggedOut(api)
+                socket.disconnect()
+                runCatching { api.logout() }
+                session.baseUrl = normalized
+                serverUrl = normalized
+                resetToLogin()
+                setAuthI18n("server_changed_relogin")
+            }
+            return true
+        }
         session.baseUrl = normalized
         serverUrl = normalized
-        if (gate == Gate.App) {
-            socket.connect()
-        }
         return true
     }
 

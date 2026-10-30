@@ -16,7 +16,8 @@ final class ApiClient {
         self.session = session
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 30
-        urlSession = URLSession(configuration: config)
+        // پین‌شده برای *.fxguard.io — یک TLS جعلی نمی‌تواند JWT را بگیرد
+        urlSession = URLSession(configuration: config, delegate: PinnedSessionDelegate.shared, delegateQueue: nil)
     }
 
     func resolveUrl(_ path: String?) -> URL? {

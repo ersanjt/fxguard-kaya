@@ -1,0 +1,16 @@
+﻿---
+description: Backend, API, database, auth, and security standards
+globs: **/*.{ts,js,tsx,jsx,php,py,sql}
+alwaysApply: false
+---
+
+# Backend And Security
+
+- Validate inputs at every external boundary using the local framework pattern: Zod, FormRequest, schema validation, typed DTOs, or explicit checks.
+- Keep authorization server-side. Check ownership, role, tenant, and status before reads, writes, exports, payments, or admin actions.
+- Use parameterized database access and existing query builders/ORMs. Avoid string-built SQL.
+- Do not leak stack traces, secrets, tokens, PII, payment data, or internal IDs in client-visible errors or logs.
+- For money, exchange, invoices, accounting, subscriptions, and wallet-like flows, avoid floating point math for stored values. Use decimals/minor units consistently.
+- Make external calls idempotent where retries are possible. Store provider IDs and reconcile webhooks safely.
+- Add migrations with rollback awareness and preserve existing production data.
+- Prefer typed responses and clear error handling over silent catch blocks.

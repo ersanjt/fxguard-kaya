@@ -81,6 +81,35 @@ module.exports = (sequelize) => {
                 type: DataTypes.DATE,
                 allowNull: true,
             },
+            cryptoConfirmJti: {
+                type: DataTypes.STRING(64),
+                allowNull: true,
+                comment: 'شناسه یک‌بارمصرف لینک تأیید کریپتو؛ بعد از مصرف پاک می‌شود',
+            },
+            billingProvider: {
+                type: DataTypes.STRING(16),
+                allowNull: true,
+                comment: 'iyzico | paddle | stripe | crypto',
+            },
+            billingCustomerId: {
+                type: DataTypes.STRING(64),
+                allowNull: true,
+            },
+            billingSubscriptionId: {
+                type: DataTypes.STRING(64),
+                allowNull: true,
+                comment: 'Paddle subscription id — رویدادهای اشتراک دیگر روی این سازمان اثر ندارند',
+            },
+            billingPaidUntil: {
+                type: DataTypes.DATE,
+                allowNull: true,
+                comment: 'پایان دورهٔ پرداخت‌شده برای پرداخت یک‌باره (iyzico)؛ خالی = اشتراک خودکار',
+            },
+            billingEventAt: {
+                type: DataTypes.DATE,
+                allowNull: true,
+                comment: 'زمان آخرین رویداد اشتراک اعمال‌شده — رویداد قدیمی‌تر نادیده گرفته می‌شود',
+            },
         },
         {
             timestamps: true,

@@ -226,7 +226,12 @@ body {
     font-family: inherit; font-size: 0.8rem; font-weight: 500;
     cursor: pointer; transition: all 0.2s ease; white-space: nowrap;
     -webkit-tap-highlight-color: transparent;
+    unicode-bidi: isolate;
+    direction: ltr;
 }
+.lp-lang button[data-lang="fa"] { font-family: var(--font-fa); direction: rtl; }
+.lp-lang button[data-lang="en"],
+.lp-lang button[data-lang="tr"] { font-family: var(--font-en); }
 .lp-lang button:hover { color: var(--lp-text); background: rgba(255,255,255,0.06); }
 .lp-lang button.active {
     background: var(--lp-accent); color: #fff;

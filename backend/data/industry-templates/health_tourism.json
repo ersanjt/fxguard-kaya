@@ -1,0 +1,100 @@
+{
+  "key": "health_tourism",
+  "labels": { "fa": "توریسم سلامت", "en": "Health tourism", "tr": "Sağlık turizmi" },
+  "description": {
+    "fa": "بیماران بین‌المللی: درخواست درمان، برآورد هزینه، هماهنگی سفر و اقامت، پیگیری پس از درمان در واتساپ.",
+    "en": "International patients: treatment requests, quotes, travel & stay coordination, post-care follow-up over WhatsApp.",
+    "tr": "Uluslararası hastalar: tedavi talebi, fiyat teklifi, seyahat ve konaklama, WhatsApp ile tedavi sonrası takip."
+  },
+  "icon": "globe",
+  "hiddenSections": ["services"],
+  "labelOverrides": {
+    "nav_customers": { "fa": "بیماران", "en": "Patients", "tr": "Hastalar" },
+    "dashboard_quick_new_customer": { "fa": "بیمار جدید", "en": "New patient", "tr": "Yeni hasta" }
+  },
+  "booking": { "enabled": true, "reminderHours": 48 },
+  "customerFields": [
+    { "key": "passport_no", "type": "text", "labels": { "fa": "شمارهٔ پاسپورت", "en": "Passport no.", "tr": "Pasaport no" }, "showInList": false, "searchable": true },
+    { "key": "language", "type": "select", "labels": { "fa": "زبان ارتباط", "en": "Language", "tr": "Dil" },
+      "options": [
+        { "value": "fa", "labels": { "fa": "فارسی", "en": "Persian", "tr": "Farsça" } },
+        { "value": "en", "labels": { "fa": "انگلیسی", "en": "English", "tr": "İngilizce" } },
+        { "value": "tr", "labels": { "fa": "ترکی", "en": "Turkish", "tr": "Türkçe" } },
+        { "value": "ar", "labels": { "fa": "عربی", "en": "Arabic", "tr": "Arapça" } },
+        { "value": "ru", "labels": { "fa": "روسی", "en": "Russian", "tr": "Rusça" } }
+      ] },
+    { "key": "agent_name", "type": "text", "labels": { "fa": "واسطه / نماینده", "en": "Agent", "tr": "Aracı" } },
+    { "key": "medical_docs_received", "type": "boolean", "labels": { "fa": "مدارک پزشکی دریافت شد", "en": "Medical docs received", "tr": "Tıbbi belgeler alındı" } }
+  ],
+  "appointmentFields": [
+    { "key": "interpreter_needed", "type": "boolean", "labels": { "fa": "نیاز به مترجم", "en": "Interpreter needed", "tr": "Tercüman gerekli" } },
+    { "key": "clinic", "type": "text", "labels": { "fa": "کلینیک / بیمارستان", "en": "Clinic / hospital", "tr": "Klinik / hastane" } }
+  ],
+  "bookableServices": [
+    { "name": "مشاوره آنلاین", "labels": { "fa": "مشاوره آنلاین", "en": "Online consultation", "tr": "Online danışma" }, "durationMin": 30, "color": "#3b82f6" },
+    { "name": "ویزیت حضوری", "labels": { "fa": "ویزیت حضوری", "en": "In-person visit", "tr": "Yüz yüze muayene" }, "durationMin": 30, "color": "#8b5cf6" },
+    { "name": "ترانسفر فرودگاه", "labels": { "fa": "ترانسفر فرودگاه", "en": "Airport transfer", "tr": "Havalimanı transferi" }, "durationMin": 90, "color": "#10b981" }
+  ],
+  "objects": [
+    {
+      "key": "cases",
+      "labels": { "fa": "پرونده‌های درمان", "en": "Treatment cases", "tr": "Tedavi dosyaları" },
+      "singularLabels": { "fa": "پروندهٔ درمان", "en": "Case", "tr": "Dosya" },
+      "icon": "briefcase-medical",
+      "color": "#0ea5e9",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "lead", "labels": { "fa": "درخواست اولیه", "en": "Lead", "tr": "İlk talep" }, "color": "#3b82f6" },
+        { "key": "docs", "labels": { "fa": "دریافت مدارک", "en": "Collecting docs", "tr": "Belge toplama" }, "color": "#8b5cf6" },
+        { "key": "quoted", "labels": { "fa": "برآورد ارسال شد", "en": "Quote sent", "tr": "Teklif gönderildi" }, "color": "#f59e0b" },
+        { "key": "scheduled", "labels": { "fa": "زمان‌بندی شد", "en": "Scheduled", "tr": "Planlandı" }, "color": "#0ea5e9" },
+        { "key": "in_treatment", "labels": { "fa": "در حال درمان", "en": "In treatment", "tr": "Tedavide" }, "color": "#ec4899" },
+        { "key": "aftercare", "labels": { "fa": "پیگیری پس از درمان", "en": "Aftercare", "tr": "Tedavi sonrası" }, "color": "#22c55e" },
+        { "key": "closed", "labels": { "fa": "بسته شد", "en": "Closed", "tr": "Kapatıldı" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "treatment", "type": "text", "labels": { "fa": "درمان درخواستی", "en": "Requested treatment", "tr": "İstenen tedavi" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "specialty", "type": "select", "labels": { "fa": "تخصص", "en": "Specialty", "tr": "Uzmanlık" },
+          "options": [
+            { "value": "dental", "labels": { "fa": "دندانپزشکی", "en": "Dental", "tr": "Diş" } },
+            { "value": "hair", "labels": { "fa": "کاشت مو", "en": "Hair transplant", "tr": "Saç ekimi" } },
+            { "value": "plastic", "labels": { "fa": "جراحی زیبایی", "en": "Plastic surgery", "tr": "Estetik cerrahi" } },
+            { "value": "eye", "labels": { "fa": "چشم", "en": "Ophthalmology", "tr": "Göz" } },
+            { "value": "ivf", "labels": { "fa": "ناباروری", "en": "IVF", "tr": "Tüp bebek" } },
+            { "value": "cardio", "labels": { "fa": "قلب", "en": "Cardiology", "tr": "Kardiyoloji" } },
+            { "value": "other", "labels": { "fa": "سایر", "en": "Other", "tr": "Diğer" } }
+          ] },
+        { "key": "quote_amount", "type": "money", "labels": { "fa": "مبلغ برآورد", "en": "Quote", "tr": "Teklif" } },
+        { "key": "quote_currency", "type": "select", "labels": { "fa": "ارز", "en": "Currency", "tr": "Para birimi" },
+          "options": [{ "value": "USD" }, { "value": "EUR" }, { "value": "TRY" }, { "value": "IRR" }, { "value": "AED" }], "defaultValue": "USD" },
+        { "key": "arrival_date", "type": "date", "labels": { "fa": "تاریخ ورود", "en": "Arrival", "tr": "Varış" } },
+        { "key": "departure_date", "type": "date", "labels": { "fa": "تاریخ خروج", "en": "Departure", "tr": "Ayrılış" } },
+        { "key": "hotel", "type": "text", "labels": { "fa": "هتل / اقامت", "en": "Hotel / stay", "tr": "Otel / konaklama" } },
+        { "key": "visa_status", "type": "select", "labels": { "fa": "وضعیت ویزا", "en": "Visa status", "tr": "Vize durumu" },
+          "options": [
+            { "value": "not_needed", "labels": { "fa": "نیاز نیست", "en": "Not needed", "tr": "Gerekmiyor" } },
+            { "value": "pending", "labels": { "fa": "در انتظار", "en": "Pending", "tr": "Beklemede" } },
+            { "value": "issued", "labels": { "fa": "صادر شد", "en": "Issued", "tr": "Verildi" } }
+          ] },
+        { "key": "notes", "type": "textarea", "labels": { "fa": "یادداشت", "en": "Notes", "tr": "Notlar" }, "showInList": false }
+      ]
+    },
+    {
+      "key": "partners",
+      "labels": { "fa": "مراکز و پزشکان همکار", "en": "Partner clinics & doctors", "tr": "Ortak klinik ve doktorlar" },
+      "singularLabels": { "fa": "مرکز همکار", "en": "Partner", "tr": "Ortak" },
+      "icon": "hospital",
+      "color": "#8b5cf6",
+      "linkToCustomer": false,
+      "hasAssignee": false,
+      "fields": [
+        { "key": "name", "type": "text", "labels": { "fa": "نام مرکز / پزشک", "en": "Name", "tr": "Ad" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "city", "type": "text", "labels": { "fa": "شهر", "en": "City", "tr": "Şehir" } },
+        { "key": "specialties", "type": "text", "labels": { "fa": "تخصص‌ها", "en": "Specialties", "tr": "Uzmanlıklar" } },
+        { "key": "contact_phone", "type": "phone", "labels": { "fa": "تلفن", "en": "Phone", "tr": "Telefon" } },
+        { "key": "commission_pct", "type": "number", "labels": { "fa": "درصد کمیسیون", "en": "Commission %", "tr": "Komisyon %" }, "validation": { "min": 0, "max": 100 } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+﻿---
+description: Verification workflow for reliable AI-assisted changes
+globs: **/*.{ts,tsx,js,jsx,php,py,swift,css,scss}
+alwaysApply: false
+---
+
+# Tests And Quality
+
+- Find the existing scripts before inventing checks. Prefer npm scripts, composer scripts, pytest, xcodebuild, or documented repo commands.
+- Run the smallest check that proves the change, then one broader check if the touched area has user-facing or shared behavior.
+- For UI changes, use browser verification or screenshots when practical, especially for responsive layout, forms, dashboards, and navigation.
+- For bug fixes, add or update a focused regression test when the project has a nearby test pattern.
+- Do not update lockfiles unless dependencies actually changed.
+- If a check cannot run locally, state exactly why and provide the next best verification performed.

@@ -1,5 +1,5 @@
 /**
- * FXGuard — خرید خودخدمت Cloud Start (کریپتو اول، Stripe اختیاری)
+ * FXGuard — خرید خودخدمت Cloud Start (iyzico برای ترکیه، Paddle بین‌المللی، کریپتو، Stripe اختیاری)
  * @file    backend/routes/billing.js
  * @layer   backend
  * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
@@ -23,18 +23,50 @@ const {
     extractPaidCheckout,
     paidLeadMarker,
     paidLeadFields,
+    publicSiteUrl,
 } = require('../lib/billingCheckout');
 const {
     isCryptoPayEnabled,
-    cryptoAutoActivate,
     assertValidNetwork,
     validateTxId,
     publicCryptoBillingConfig,
-    confirmTokenForTenant,
+    mintConfirmToken,
     parseConfirmToken,
+    txIdFingerprint,
     salesWhatsApp,
     AMOUNT_USDT,
 } = require('../lib/cryptoBilling');
+const {
+    CONSENT_VERSION,
+    isIyzicoEnabled,
+    publicIyzicoConfig,
+    sanitizeBillingInfo,
+    initializeCheckoutForm,
+    retrieveCheckoutForm,
+    extractPaidIyzico,
+    tenantIdFromConversation,
+    sanitizeToken,
+    minorToAmount,
+    iyzicoLeadMarker,
+} = require('../lib/iyzicoCheckout');
+const {
+    isPaddleEnabled,
+    publicPaddleConfig,
+    createPaddleTransaction,
+    verifyPaddleWebhook,
+    extractPaddleEvent,
+    paddleLeadMarker,
+} = require('../lib/paddleBilling');
+const { tenantDashboardUrl } = require('../lib/tenantHost');
+
+function escapeHtml(s) {
+    return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
 
 const checkoutLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -48,6 +80,14 @@ const cryptoClaimLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 12,
     message: { error: 'تعداد ثبت TXID زیاد است. کمی صبر کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const gatewayReturnLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    message: { error: 'too_many_requests' },
     standardHeaders: true,
     legacyHeaders: false,
 });
@@ -68,6 +108,138 @@ async function stripePostForm({ url, auth, body }) {
         throw err;
     }
     return r.data;
+}
+
+async function gatewayPostJson({ url, headers, body }) {
+    const r = await axios.post(url, body, {
+        headers,
+        timeout: 20000,
+        validateStatus: () => true,
+        maxRedirects: 0,
+    });
+    if (r.status >= 400) {
+        const detail =
+            (r.data && r.data.error && (r.data.error.detail || r.data.error.code)) ||
+            (r.data && r.data.errorMessage) ||
+            'gateway_error';
+        const err = new Error(String(detail).slice(0, 200));
+        err.code = 'GATEWAY_HTTP_ERROR';
+        err.status = r.status;
+        throw err;
+    }
+    return r.data;
+}
+
+async function persistGatewayLead(paid, slug, logger) {
+    const marker =
+        paid.provider === 'iyzico' ? iyzicoLeadMarker(paid.paymentId) : paddleLeadMarker(paid.paymentId);
+    try {
+        await ContactLead.create({
+            purpose: 'purchase',
+            name: slug || paid.tenantId || 'Cloud Start ' + paid.provider,
+            email: 'billing@fxguard.io',
+            phone: null,
+            message: marker,
+            source: paid.provider,
+        });
+    } catch (err) {
+        logger.warn('Gateway paid lead persist failed', { provider: paid.provider, error: err.message });
+    }
+}
+
+async function notifyGatewayPayment(paid, result, logger) {
+    const lines = [
+        'FXGuard Cloud Start payment — ' + paid.provider,
+        'Tenant: ' + ((result && result.slug) || paid.tenantId || 'not matched — check manually'),
+        'Payment: ' + paid.paymentId,
+        'Amount: ' + minorToAmount(paid.amountMinor) + ' ' + paid.currency,
+        'Status: ' + (result && result.activated ? 'panel activated' : 'recorded, panel not activated'),
+        paid.provider === 'iyzico'
+            ? 'Invoice: issue e-Arşiv / e-Fatura to the buyer for this payment.'
+            : 'Invoice: Paddle is merchant of record; ERST invoices Paddle per payout.',
+    ];
+    try {
+        const emailService = require('../services/emailService');
+        const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+        const panelSettings = await getPanelSettings();
+        const panelEmailConfig = getPanelEmailConfig(panelSettings);
+        if (panelEmailConfig || emailService.isEnabled()) {
+            await emailService.sendContactForm({
+                purpose: 'purchase',
+                name: (result && result.slug) || 'Gateway payment',
+                email: 'billing@fxguard.io',
+                phone: '',
+                message: lines.join('\n'),
+                emailConfig: panelEmailConfig,
+            });
+        }
+    } catch (err) {
+        logger.warn('Gateway payment email failed', { provider: paid.provider, error: err.message });
+    }
+    try {
+        const telegramService = require('../services/telegramService');
+        if (telegramService.isEnabled()) {
+            await telegramService.sendMessage(lines.join('\n'), null, { parse_mode: false });
+        }
+    } catch (err) {
+        logger.warn('Gateway payment telegram failed', { provider: paid.provider, error: err.message });
+    }
+}
+
+/** ثبت پرداخت + اعلان فقط بار اول (callback و webhook هر دو ممکن است برسند) */
+async function applyVerifiedPayment(paid, logger) {
+    const { recordGatewayPayment } = require('../services/billingGateways');
+    const result = await recordGatewayPayment(paid, logger);
+    if (!result.duplicate) {
+        logger.info('Gateway payment recorded', {
+            provider: paid.provider,
+            paymentId: paid.paymentId,
+            tenantId: result.tenantId || paid.tenantId || null,
+            activated: !!result.activated,
+        });
+        await persistGatewayLead(paid, result.slug, logger);
+        await notifyGatewayPayment(paid, result, logger);
+    }
+    return result;
+}
+
+async function verifyIyzicoToken(token, logger) {
+    const raw = await retrieveCheckoutForm(process.env, token, gatewayPostJson);
+    const verdict = extractPaidIyzico(raw, process.env);
+    const tenantId = tenantIdFromConversation(raw && raw.conversationId);
+    if (!verdict.ok) {
+        logger.warn('iyzico payment not accepted', {
+            reason: verdict.reason,
+            tenantId: tenantId || null,
+            errorCode: raw && raw.errorCode ? String(raw.errorCode).slice(0, 32) : null,
+        });
+        return { ok: false, reason: verdict.reason, tenantId };
+    }
+    const paid = Object.assign({}, verdict.paid, {
+        consentVersion: CONSENT_VERSION,
+        consentAt: new Date(),
+    });
+    const result = await applyVerifiedPayment(paid, logger);
+    return { ok: true, tenantId, result };
+}
+
+async function dashboardRedirectFor(tenantId, status) {
+    let slug = '';
+    if (tenantId) {
+        const row = await Tenant.findByPk(tenantId).catch(() => null);
+        if (row) slug = row.slug;
+    }
+    const base = slug ? tenantDashboardUrl(slug, process.env) : publicSiteUrl(process.env) + '/dashboard';
+    return base + (base.indexOf('?') >= 0 ? '&' : '?') + 'billing=' + encodeURIComponent(status);
+}
+
+function requireCheckoutConsent(req, res) {
+    if (req.body && req.body.acceptTerms === true) return true;
+    res.status(400).json({
+        error: 'برای پرداخت باید قرارداد فروش از راه دور و سیاست بازپرداخت را بپذیرید.',
+        code: 'CONSENT_REQUIRED',
+    });
+    return false;
 }
 
 async function persistPaidLead(paid, logger) {
@@ -201,7 +373,162 @@ function createBillingRouter(logger) {
 
     router.get('/billing/config', (req, res) => {
         res.set('Cache-Control', 'no-store');
-        res.json(publicBillingConfig(process.env));
+        res.json(
+            Object.assign({}, publicBillingConfig(process.env), {
+                gateways: {
+                    iyzico: publicIyzicoConfig(process.env),
+                    paddle: publicPaddleConfig(process.env),
+                },
+            })
+        );
+    });
+
+    router.post('/billing/iyzico/checkout', checkoutLimiter, authMiddleware, async (req, res) => {
+        if (!requireTenantOwnerOrAdmin(req, res)) return;
+        if (!isIyzicoEnabled(process.env)) {
+            return res.status(503).json({ error: 'پرداخت با iyzico هنوز فعال نیست.', code: 'IYZICO_DISABLED' });
+        }
+        if (!requireCheckoutConsent(req, res)) return;
+        const email = sanitizeCustomerEmail(req.user && req.user.email);
+        if (!email) {
+            return res.status(400).json({ error: 'ایمیل حساب کاربری برای صدور فاکتور لازم است.' });
+        }
+        const checked = sanitizeBillingInfo(req.body && req.body.billing);
+        if (!checked.ok) {
+            return res.status(400).json({
+                error: 'اطلاعات صورتحساب ناقص یا نامعتبر است.',
+                code: 'BILLING_INFO_INVALID',
+                field: checked.field,
+            });
+        }
+        try {
+            const callbackUrl = publicSiteUrl(process.env) + '/api/webhook/iyzico/callback';
+            const session = await initializeCheckoutForm(
+                process.env,
+                {
+                    tenantId: req.tenant.id,
+                    email,
+                    billing: checked.billing,
+                    ip: req.ip,
+                    locale: String((req.body && req.body.locale) || '').slice(0, 2),
+                    callbackUrl,
+                },
+                gatewayPostJson
+            );
+            if (!session.paymentPageUrl) {
+                return res.status(502).json({ error: 'صفحهٔ پرداخت iyzico ساخته نشد.' });
+            }
+            logger.info('iyzico checkout started', {
+                tenantId: req.tenant.id,
+                userId: req.user.id,
+                conversationId: session.conversationId,
+                consentVersion: CONSENT_VERSION,
+            });
+            res.json({ ok: true, provider: 'iyzico', url: session.paymentPageUrl });
+        } catch (err) {
+            logger.warn('iyzico checkout init failed', {
+                tenantId: req.tenant && req.tenant.id,
+                error: err && err.message,
+                status: err && err.status,
+            });
+            res.status(502).json({ error: 'ساخت جلسهٔ پرداخت iyzico ناموفق بود. دوباره تلاش کنید.' });
+        }
+    });
+
+    // مرورگر خریدار بعد از پرداخت از دامنهٔ iyzico به اینجا POST می‌شود؛ زیر /webhook/ تا CSRF گارد کوکی آن را رد نکند
+    router.post(
+        '/webhook/iyzico/callback',
+        gatewayReturnLimiter,
+        express.urlencoded({ extended: false, limit: '16kb' }),
+        async (req, res) => {
+            const token = sanitizeToken(req.body && req.body.token);
+            if (!token) return res.redirect(303, await dashboardRedirectFor('', 'failed'));
+            try {
+                const out = await verifyIyzicoToken(token, logger);
+                let status = 'error';
+                if (out.ok) status = out.result && (out.result.activated || out.result.duplicate) ? 'success' : 'received';
+                else if (out.reason === 'fraud_review') status = 'review';
+                else if (out.reason === 'not_paid' || out.reason === 'api_failure') status = 'failed';
+                res.redirect(303, await dashboardRedirectFor(out.tenantId, status));
+            } catch (err) {
+                logger.warn('iyzico callback failed', { error: err && err.message });
+                res.redirect(303, await dashboardRedirectFor('', 'error'));
+            }
+        }
+    );
+
+    // اعلان سرور‌به‌سرور iyzico: بدنه فقط محرک است؛ نتیجه دوباره با کلید مخفی از API خوانده می‌شود
+    router.post('/webhook/iyzico', gatewayReturnLimiter, express.json({ limit: '16kb' }), async (req, res) => {
+        if (!isIyzicoEnabled(process.env)) return res.status(503).json({ error: 'disabled' });
+        const token = sanitizeToken(req.body && req.body.token);
+        if (!token) return res.status(200).json({ received: true, ignored: true });
+        try {
+            await verifyIyzicoToken(token, logger);
+            res.json({ received: true });
+        } catch (err) {
+            logger.warn('iyzico webhook failed', { error: err && err.message });
+            res.status(500).json({ error: 'processing_failed' });
+        }
+    });
+
+    router.post('/billing/paddle/transaction', checkoutLimiter, authMiddleware, async (req, res) => {
+        if (!requireTenantOwnerOrAdmin(req, res)) return;
+        if (!isPaddleEnabled(process.env)) {
+            return res.status(503).json({ error: 'پرداخت بین‌المللی (Paddle) هنوز فعال نیست.', code: 'PADDLE_DISABLED' });
+        }
+        if (!requireCheckoutConsent(req, res)) return;
+        try {
+            const txn = await createPaddleTransaction(
+                process.env,
+                { tenantId: req.tenant.id, consentVersion: CONSENT_VERSION },
+                gatewayPostJson
+            );
+            logger.info('Paddle checkout started', {
+                tenantId: req.tenant.id,
+                userId: req.user.id,
+                transactionId: txn.transactionId,
+                consentVersion: CONSENT_VERSION,
+            });
+            const cfg = publicPaddleConfig(process.env);
+            res.json({
+                ok: true,
+                provider: 'paddle',
+                transactionId: txn.transactionId,
+                clientToken: cfg.clientToken,
+                environment: cfg.environment,
+                email: sanitizeCustomerEmail(req.user && req.user.email) || null,
+            });
+        } catch (err) {
+            logger.warn('Paddle transaction failed', {
+                tenantId: req.tenant && req.tenant.id,
+                error: err && err.message,
+                status: err && err.status,
+            });
+            res.status(502).json({ error: 'ساخت تراکنش Paddle ناموفق بود. دوباره تلاش کنید.' });
+        }
+    });
+
+    router.post('/webhook/paddle', express.raw({ type: 'application/json', limit: '256kb' }), async (req, res) => {
+        const raw = Buffer.isBuffer(req.body) ? req.body.toString('utf8') : String(req.body || '');
+        const verified = verifyPaddleWebhook(raw, req.headers['paddle-signature'], process.env.PADDLE_WEBHOOK_SECRET);
+        if (!verified.ok) {
+            logger.warn('Paddle webhook rejected', { error: verified.error });
+            return res.status(400).json({ error: 'invalid_signature' });
+        }
+        const evt = extractPaddleEvent(verified.event, process.env);
+        if (!evt) return res.json({ received: true, ignored: true });
+        try {
+            if (evt.kind === 'paid') {
+                await applyVerifiedPayment(evt.paid, logger);
+            } else if (evt.kind === 'status') {
+                const { applySubscriptionStatus } = require('../services/billingGateways');
+                await applySubscriptionStatus(evt, logger);
+            }
+            res.json({ received: true });
+        } catch (err) {
+            logger.warn('Paddle webhook processing failed', { error: err && err.message });
+            res.status(500).json({ error: 'processing_failed' });
+        }
     });
 
     router.post('/billing/checkout', checkoutLimiter, optionalAuthMiddleware, async (req, res) => {
@@ -286,32 +613,22 @@ function createBillingRouter(logger) {
                     return res.status(409).json({ error: 'این TXID قبلاً برای پنل دیگری ثبت شده است' });
                 }
 
-                const auto = cryptoAutoActivate(process.env);
-                const now = new Date();
+                // TXID خوش‌فرم اثبات زنجیره نیست. حتی اگر CRYPTO_PAY_AUTO_ACTIVATE روشن باشد،
+                // پنل فقط با تأیید دستی ادمین (یا لینک یک‌بارمصرف) فعال می‌شود.
+                const auto = false;
+                const minted = mintConfirmToken(tenant.id, process.env.JWT_SECRET, {
+                    txId: checked.txId,
+                });
                 await tenant.update({
                     cryptoTxId: checked.txId,
                     cryptoNetwork: network,
-                    cryptoPaymentStatus: auto ? 'confirmed' : 'pending',
-                    cryptoPaidAt: auto ? now : null,
+                    cryptoPaymentStatus: 'pending',
+                    cryptoPaidAt: null,
+                    cryptoConfirmJti: minted.jti,
                 });
 
-                let activated = false;
-                if (auto) {
-                    const { activateTenantFromPaid } = require('../services/tenantProvision');
-                    const result = await activateTenantFromPaid(
-                        {
-                            tenantId: tenant.id,
-                            email: req.user.email,
-                            cryptoTxId: checked.txId,
-                            cryptoNetwork: network,
-                            cryptoPaidAt: now,
-                        },
-                        logger
-                    );
-                    activated = !!(result && result.activated);
-                }
-
-                const token = confirmTokenForTenant(tenant.id, process.env.JWT_SECRET);
+                const activated = false;
+                const token = minted.token;
                 const site = String(
                     process.env.FRONTEND_URL ||
                         process.env.BACKEND_PUBLIC_URL ||
@@ -382,11 +699,26 @@ function createBillingRouter(logger) {
         res.json({ ok: true, items: rows });
     });
 
-    async function confirmCryptoTenant(tenantId, logger) {
+    /**
+     * @param {object} [opts]
+     * @param {string} [opts.txIdFingerprint] اثر انگشت TXID داخل توکن — باید با TXID فعلی سازمان بخواند
+     */
+    async function confirmCryptoTenant(tenantId, logger, opts = {}) {
         const row = await Tenant.findByPk(tenantId);
         if (!row) return { ok: false, status: 404, error: 'سازمان یافت نشد' };
         if (!row.cryptoTxId) {
             return { ok: false, status: 400, error: 'TXID ثبت نشده است' };
+        }
+        if (opts.txIdFingerprint && opts.txIdFingerprint !== txIdFingerprint(row.cryptoTxId)) {
+            return { ok: false, status: 400, error: 'این لینک برای TXID دیگری صادر شده است' };
+        }
+        if (opts.jti && (!row.cryptoConfirmJti || row.cryptoConfirmJti !== opts.jti)) {
+            return { ok: false, status: 400, error: 'این لینک یک‌بارمصرف است و دیگر معتبر نیست' };
+        }
+        // یک‌بارمصرف: پرداخت تأییدشده دوباره فعال‌سازی/به‌روزرسانی نمی‌شود
+        if (row.cryptoPaymentStatus === 'confirmed' && row.status === 'active') {
+            if (opts.jti) await row.update({ cryptoConfirmJti: null });
+            return { ok: true, activated: false, alreadyConfirmed: true, tenantId: row.id, slug: row.slug };
         }
         const { activateTenantFromPaid } = require('../services/tenantProvision');
         const result = await activateTenantFromPaid(
@@ -398,6 +730,7 @@ function createBillingRouter(logger) {
             },
             logger
         );
+        if (opts.jti) await row.update({ cryptoConfirmJti: null });
         return {
             ok: true,
             activated: !!(result && result.activated),
@@ -428,23 +761,30 @@ function createBillingRouter(logger) {
 
     router.get('/billing/crypto/confirm', async (req, res) => {
         try {
-            const tenantId = parseConfirmToken(req.query && req.query.token, process.env.JWT_SECRET);
-            if (!tenantId) {
-                return res.status(400).type('html').send('<p>لینک تأیید نامعتبر است.</p>');
+            const parsed = parseConfirmToken(req.query && req.query.token, process.env.JWT_SECRET);
+            if (!parsed) {
+                return res
+                    .status(400)
+                    .type('html')
+                    .send('<p>لینک تأیید نامعتبر یا منقضی است. از پنل ادمین تأیید کنید.</p>');
             }
-            const result = await confirmCryptoTenant(tenantId, logger);
+            const result = await confirmCryptoTenant(parsed.tenantId, logger, {
+                txIdFingerprint: parsed.txIdFingerprint,
+                jti: parsed.jti,
+            });
             if (!result.ok) {
                 return res
                     .status(result.status || 400)
                     .type('html')
-                    .send('<p>' + String(result.error || 'خطا') + '</p>');
+                    .send('<p>' + escapeHtml(String(result.error || 'خطا')) + '</p>');
             }
+            const slug = escapeHtml(String(result.slug || ''));
             res
                 .type('html')
                 .send(
-                    '<p>پنل <strong>' +
-                        String(result.slug || '') +
-                        '</strong> با کریپتو فعال شد.</p>'
+                    result.alreadyConfirmed
+                        ? '<p>پنل <strong>' + slug + '</strong> قبلاً فعال شده بود؛ این لینک دیگر اثری ندارد.</p>'
+                        : '<p>پنل <strong>' + slug + '</strong> با کریپتو فعال شد.</p>'
                 );
         } catch (err) {
             logger.warn('Crypto confirm token failed', { error: err && err.message });

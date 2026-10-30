@@ -2444,7 +2444,8 @@
             if (appEl && appEl.classList.contains('show')) {
                 updateBottomBarVisibility();
                 if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
-                const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+                const activeNavLink = document.querySelector('.nav-link.active');
+                const activePage = activeNavLink ? activeNavLink.getAttribute('data-page') : null;
                 if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             }
         });

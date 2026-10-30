@@ -12,7 +12,8 @@ const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { asCallId, callUserRoom, normalizeCallSignal, canRelayCallSignal } = require('../lib/internalCallSignaling');
 const { countUserSockets } = require('../lib/staffPresence');
-const { bindSocketTenant } = require('../lib/tenantContext');
+const { bindSocketTenant, tenantRoom } = require('../lib/tenantContext');
+const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -57,6 +58,8 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
 
         if (socket.userId) socket.join('user_' + String(socket.userId));
         if (socket.departmentId) socket.join(`department_${socket.departmentId}`);
+        // room سازمانی — رویدادهای کل پنل (escalation و …) فقط به همین سازمان
+        socket.join(tenantRoom(socket.tenantId));
 
         if (socket.userId) {
             try {
@@ -141,9 +144,9 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
                 const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
                 if (rabbitChannel && !isCloudApiConfigured()) {
-                    rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
+                    publishOutgoingMessage(rabbitChannel, {
                         to: toPhone, message: waContent, media: media, conversationId: conversation.id
-                    })), { persistent: true });
+                    });
                 } else {
                     sendWhatsAppMessage({ to: toPhone, message: waContent, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
                 }

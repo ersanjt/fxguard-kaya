@@ -45,6 +45,7 @@ const {
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 const { inboxPreviewFromIncoming } = require('../lib/conversationPreview');
+const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir))
@@ -566,18 +567,12 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
             timestamp: new Date(),
         });
         if (rabbitChannel && !isCloudApiConfigured()) {
-            rabbitChannel.sendToQueue(
-                'outgoing_messages',
-                Buffer.from(
-                    JSON.stringify({
-                        to: toPhone,
-                        message: customerMessage,
-                        conversationId: conversation.id,
-                        messageId: autoMsg.id,
-                    })
-                ),
-                { persistent: true }
-            );
+            publishOutgoingMessage(rabbitChannel, {
+                to: toPhone,
+                message: customerMessage,
+                conversationId: conversation.id,
+                messageId: autoMsg.id,
+            });
         } else {
             try {
                 await sendWhatsAppMessage(

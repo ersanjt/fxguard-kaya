@@ -62,6 +62,8 @@ function tenantShape(row, extra) {
         isPlatform: row.slug === PLATFORM_SLUG,
         stripeCustomerId: row.stripeCustomerId || null,
         stripeSubscriptionId: row.stripeSubscriptionId || null,
+        billingProvider: row.billingProvider || null,
+        billingPaidUntil: row.billingPaidUntil || null,
     };
     return extra ? Object.assign(base, extra) : base;
 }

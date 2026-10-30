@@ -8,6 +8,7 @@ module.exports = (sequelize) => {
             primaryKey: true,
             comment: 'تنظیمات اتصال واتساپ (فقط default)',
         },
+        tenantId: { type: DataTypes.UUID, allowNull: true },
         connectionMode: {
             type: DataTypes.STRING(32),
             allowNull: true,

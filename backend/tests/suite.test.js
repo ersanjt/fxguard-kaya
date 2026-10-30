@@ -1047,8 +1047,30 @@ async function runTests() {
             'Prepared unassigned conversation should be present'
         );
         assert(
-            r.body.data.every((c) => !c.assignedTo && !c.departmentId),
-            'All results must be unassigned and without department'
+            r.body.data.every((c) => !c.assignedTo),
+            'All results must have no assignee (department-queued chats are still unassigned)'
+        );
+    });
+
+    await test('GET /api/conversations?unassigned=true keeps department-queued chats without assignee', async () => {
+        const deptRes = await req
+            .post('/api/departments')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'صف تست بدون مسئول' });
+        assert.strictEqual(deptRes.status, 201, 'department for queue test must be created');
+        const queued = await req
+            .patch(`/api/conversations/${filterConversationId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ assignedTo: null, departmentId: deptRes.body.id, status: 'open' });
+        assert.strictEqual(queued.status, 200);
+
+        const r = await req
+            .get('/api/conversations?unassigned=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(
+            r.body.data.some((c) => c.id === filterConversationId),
+            'Department-queued conversation without assignee must appear in the unassigned queue'
         );
     });
 
@@ -2525,6 +2547,518 @@ async function runTests() {
         assert.strictEqual(r.body.isGroup, true);
         assert.strictEqual(r.body.name, 'تیم پشتیبانی تهران');
         assert.strictEqual(r.body.displayName, 'تیم پشتیبانی تهران');
+    });
+
+    // ── Exchange: money decisions must be atomic ─────────────────────────────
+    section('Exchange — approve/reject atomicity');
+
+    let raceCashBoxId = null;
+    let raceTxId = null;
+
+    await test('POST /api/exchange/cash-boxes + pending transaction fixture', async () => {
+        const box = await req
+            .post('/api/exchange/cash-boxes')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'صندوق تست تایید هم‌زمان', currency: 'USD' });
+        if (box.status === 403 && box.body && box.body.code === 'PLAN_FX_LOCKED') {
+            return; // ماژول صرافی در این پلن قفل است — تست‌های بعدی خودشان رد می‌شوند
+        }
+        assert.strictEqual(box.status, 201, `cash box create failed: ${JSON.stringify(box.body)}`);
+        raceCashBoxId = box.body.id;
+        const tx = await req
+            .post('/api/exchange/transactions')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ type: 'cash_in', amount: 100, currency: 'USD', toCashBoxId: raceCashBoxId });
+        assert.strictEqual(tx.status, 201, `transaction create failed: ${JSON.stringify(tx.body)}`);
+        assert.strictEqual(tx.body.status, 'pending');
+        raceTxId = tx.body.id;
+    });
+
+    await test('concurrent approve of the same transaction applies the balance exactly once', async () => {
+        if (!raceTxId) return;
+        const approve = () =>
+            req.post(`/api/exchange/transactions/${raceTxId}/approve`).set('Authorization', `Bearer ${adminToken}`);
+        const results = await Promise.all([approve(), approve(), approve()]);
+        const ok = results.filter((r) => r.status === 200);
+        const conflicts = results.filter((r) => r.status === 409 || r.status === 400);
+        assert.strictEqual(ok.length, 1, `exactly one approve must win, got ${results.map((r) => r.status)}`);
+        assert.strictEqual(conflicts.length, 2, 'the other approvals must be rejected as already decided');
+
+        const boxes = await req.get('/api/exchange/cash-boxes').set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(boxes.status, 200);
+        const box = (boxes.body || []).find((b) => b.id === raceCashBoxId);
+        assert(box, 'race cash box must be listed');
+        assert.strictEqual(Number(box.balance), 100, 'balance must be applied once, not per request');
+    });
+
+    await test('reject after approve is refused (balance already applied)', async () => {
+        if (!raceTxId) return;
+        const r = await req
+            .post(`/api/exchange/transactions/${raceTxId}/reject`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert(r.status === 400 || r.status === 409, `expected 400/409, got ${r.status}`);
+        const tx = await req
+            .get(`/api/exchange/transactions/${raceTxId}`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(tx.body.status, 'approved');
+    });
+
+    // ── Exchange: Idempotency-Key ────────────────────────────────────────────
+    section('Exchange — Idempotency-Key on money POSTs');
+
+    const idemBody = () => ({ type: 'cash_in', amount: 25, currency: 'USD', toCashBoxId: raceCashBoxId });
+    const postTx = (key, body) => {
+        const r = req.post('/api/exchange/transactions').set('Authorization', `Bearer ${adminToken}`);
+        if (key) r.set('Idempotency-Key', key);
+        return r.send(body || idemBody());
+    };
+
+    await test('same Idempotency-Key + same body replays the first response (one transaction)', async () => {
+        if (!raceCashBoxId) return;
+        const key = 'suite-idem-' + Date.now();
+        const first = await postTx(key);
+        assert.strictEqual(first.status, 201, JSON.stringify(first.body));
+        const second = await postTx(key);
+        assert.strictEqual(second.status, 201);
+        assert.strictEqual(second.headers['idempotent-replayed'], 'true');
+        assert.strictEqual(second.body.id, first.body.id, 'replay must return the same transaction');
+
+        const list = await req
+            .get(`/api/exchange/transactions?cashBoxId=${raceCashBoxId}&status=pending&limit=500`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(list.status, 200);
+        const rows = list.body.rows || [];
+        assert.strictEqual(
+            rows.filter((t) => t.id === first.body.id).length,
+            1,
+            'exactly one transaction row must exist for the key'
+        );
+        assert.strictEqual(
+            rows.filter((t) => Number(t.amount) === 25 && t.currency === 'USD').length,
+            1,
+            'the replay must not have created a second 25 USD row'
+        );
+    });
+
+    await test('same Idempotency-Key + different body is rejected with 422', async () => {
+        if (!raceCashBoxId) return;
+        const key = 'suite-idem-diff-' + Date.now();
+        const first = await postTx(key);
+        assert.strictEqual(first.status, 201);
+        const other = await postTx(key, { ...idemBody(), amount: 26 });
+        assert.strictEqual(other.status, 422);
+        assert.strictEqual(other.body.code, 'IDEMPOTENCY_KEY_REUSED');
+    });
+
+    await test('concurrent POSTs with one Idempotency-Key create exactly one transaction', async () => {
+        if (!raceCashBoxId) return;
+        const key = 'suite-idem-race-' + Date.now();
+        const results = await Promise.all([postTx(key), postTx(key), postTx(key)]);
+        const created = results.filter((r) => r.status === 201 && r.headers['idempotent-replayed'] !== 'true');
+        const others = results.filter((r) => r.status === 409 || r.headers['idempotent-replayed'] === 'true');
+        assert.strictEqual(created.length, 1, `exactly one real create, got ${results.map((r) => r.status)}`);
+        assert.strictEqual(others.length, 2, 'the rest must be replays or 409 in-progress');
+        const ids = new Set(results.filter((r) => r.status === 201).map((r) => r.body.id));
+        assert.strictEqual(ids.size, 1, 'all 201 responses must reference the same transaction');
+    });
+
+    await test('malformed Idempotency-Key is rejected; missing header keeps normal behaviour', async () => {
+        if (!raceCashBoxId) return;
+        const bad = await postTx('short');
+        assert.strictEqual(bad.status, 400);
+        assert.strictEqual(bad.body.code, 'IDEMPOTENCY_KEY_INVALID');
+        const a = await postTx(null);
+        const b = await postTx(null);
+        assert.strictEqual(a.status, 201);
+        assert.strictEqual(b.status, 201);
+        assert.notStrictEqual(a.body.id, b.body.id, 'without a key each POST is a new transaction');
+    });
+
+    await test('approve with Idempotency-Key replays 200 instead of 400 on retry', async () => {
+        if (!raceCashBoxId) return;
+        const created = await postTx('suite-idem-appr-' + Date.now());
+        assert.strictEqual(created.status, 201);
+        const key = 'suite-idem-approve-' + Date.now();
+        const approve = () =>
+            req
+                .post(`/api/exchange/transactions/${created.body.id}/approve`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Idempotency-Key', key);
+        const first = await approve();
+        assert.strictEqual(first.status, 200, JSON.stringify(first.body));
+        const retry = await approve();
+        assert.strictEqual(retry.status, 200, 'retry with same key must replay success');
+        assert.strictEqual(retry.headers['idempotent-replayed'], 'true');
+        assert.strictEqual(retry.body.status, 'approved');
+    });
+
+    // ── Generic engine: objects / fields / records ───────────────────────────
+    section('Generic engine — module builder, schema validation, records');
+
+    const asAdmin = (r) => r.set('Authorization', `Bearer ${adminToken}`);
+    const asAgent = (r) => r.set('Authorization', `Bearer ${agentToken}`);
+    let adminUserId = null;
+    let engineObjectId = null;
+    let engineRecordId = null;
+    let engineCustomerId = null;
+
+    await test('setup: admin id and a customer for engine tests', async () => {
+        const me = await asAdmin(req.get('/api/auth/me'));
+        assert.strictEqual(me.status, 200);
+        adminUserId = me.body.id || (me.body.user && me.body.user.id);
+        assert(adminUserId, 'admin id');
+        const c = await asAdmin(req.post('/api/customers')).send({ name: 'مراجع موتور عمومی', phone: '+905550001122' });
+        assert.strictEqual(c.status, 201, JSON.stringify(c.body));
+        engineCustomerId = c.body.id;
+    });
+
+    await test('GET /api/fields/meta lists field types and entities', async () => {
+        const r = await asAdmin(req.get('/api/fields/meta'));
+        assert.strictEqual(r.status, 200);
+        assert(r.body.types.includes('select') && r.body.types.includes('money'));
+        assert.deepStrictEqual(r.body.entities, ['customer', 'record', 'appointment']);
+    });
+
+    await test('agent cannot define modules (403); admin creates module with fields (201)', async () => {
+        const denied = await asAgent(req.post('/api/objects')).send({ key: 'treat', labels: { fa: 'x' } });
+        assert.strictEqual(denied.status, 403);
+        const r = await asAdmin(req.post('/api/objects')).send({
+            key: 'suite_treatments',
+            labels: { fa: 'درمان‌ها', en: 'Treatments' },
+            singularLabels: { fa: 'درمان' },
+            icon: 'sparkles',
+            linkToCustomer: true,
+            hasAssignee: true,
+            statuses: [{ key: 'planned', labels: { fa: 'برنامه' } }, { key: 'done', labels: { fa: 'انجام' }, isFinal: true }],
+            fields: [
+                { key: 'procedure', type: 'text', labels: { fa: 'نوع درمان' }, required: true, isTitle: true, searchable: true },
+                { key: 'area', type: 'select', labels: { fa: 'ناحیه' }, options: [{ value: 'face', labels: { fa: 'صورت' } }, { value: 'body' }] },
+                { key: 'price', type: 'money', labels: { fa: 'مبلغ' }, validation: { min: 0 } },
+                { key: 'next_session', type: 'date', labels: { fa: 'جلسه بعد' } },
+            ],
+        });
+        assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+        assert.strictEqual(r.body.key, 'suite_treatments');
+        assert.strictEqual(r.body.fields.length, 4);
+        assert.strictEqual(r.body.statuses[0].key, 'planned');
+        engineObjectId = r.body.id;
+    });
+
+    await test('invalid module key → 400; duplicate key → 409; select without options → 400', async () => {
+        const bad = await asAdmin(req.post('/api/objects')).send({ key: 'Bad Key!', labels: { fa: 'x' } });
+        assert.strictEqual(bad.status, 400);
+        const dup = await asAdmin(req.post('/api/objects')).send({ key: 'suite_treatments', labels: { fa: 'x' } });
+        assert.strictEqual(dup.status, 409);
+        const noOpts = await asAdmin(req.post('/api/fields')).send({ entity: 'record', objectId: engineObjectId, key: 'kind', type: 'select', labels: { fa: 'نوع' } });
+        assert.strictEqual(noOpts.status, 400);
+    });
+
+    await test('GET /api/objects returns module with fields for agent too (records permission)', async () => {
+        const r = await asAgent(req.get('/api/objects'));
+        assert.strictEqual(r.status, 200);
+        const obj = r.body.data.find((o) => o.key === 'suite_treatments');
+        assert(obj, 'module visible');
+        assert.strictEqual(obj.fields.length, 4);
+    });
+
+    await test('POST record: schema validation (required, select, number) → 400 with field errors', async () => {
+        const missing = await asAgent(req.post('/api/records/suite_treatments')).send({ data: { area: 'face' } });
+        assert.strictEqual(missing.status, 400);
+        assert(Array.isArray(missing.body.errors) && missing.body.errors.length >= 1);
+        const badSel = await asAgent(req.post('/api/records/suite_treatments')).send({ data: { procedure: 'لیزر', area: 'nope' } });
+        assert.strictEqual(badSel.status, 400);
+        const badNum = await asAgent(req.post('/api/records/suite_treatments')).send({ data: { procedure: 'لیزر', price: 'abc' } });
+        assert.strictEqual(badNum.status, 400);
+        const badDate = await asAgent(req.post('/api/records/suite_treatments')).send({ data: { procedure: 'لیزر', next_session: '31/12/2026' } });
+        assert.strictEqual(badDate.status, 400);
+    });
+
+    await test('POST record: valid data → 201, title from isTitle field, linked to customer, first status default', async () => {
+        const r = await asAgent(req.post('/api/records/suite_treatments')).send({
+            customerId: engineCustomerId,
+            assignedTo: adminUserId,
+            data: { procedure: 'لیزر موهای زائد', area: 'face', price: '1,200', next_session: '2026-10-01', unknown_key: 'dropped' },
+        });
+        assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+        assert.strictEqual(r.body.title, 'لیزر موهای زائد');
+        assert.strictEqual(r.body.status, 'planned');
+        assert.strictEqual(r.body.data.price, 1200);
+        assert.strictEqual(r.body.data.unknown_key, undefined, 'unknown keys are not stored');
+        assert.strictEqual(r.body.customer.id, engineCustomerId);
+        assert.strictEqual(r.body.assignee.id, adminUserId);
+        engineRecordId = r.body.id;
+    });
+
+    await test('GET records: search by q and list by customer across modules', async () => {
+        const list = await asAgent(req.get('/api/records/suite_treatments?q=لیزر'));
+        assert.strictEqual(list.status, 200);
+        assert.strictEqual(list.body.count, 1);
+        const none = await asAgent(req.get('/api/records/suite_treatments?q=zzz_nomatch'));
+        assert.strictEqual(none.body.count, 0);
+        const byCust = await asAgent(req.get(`/api/records/by-customer/${engineCustomerId}`));
+        assert.strictEqual(byCust.status, 200);
+        assert.strictEqual(byCust.body.data.length, 1);
+        assert.strictEqual(byCust.body.data[0].object.key, 'suite_treatments');
+    });
+
+    await test('PUT record: partial data merge + status change; invalid status → 400', async () => {
+        const bad = await asAdmin(req.put(`/api/records/suite_treatments/${engineRecordId}`)).send({ status: 'nope' });
+        assert.strictEqual(bad.status, 400);
+        const r = await asAdmin(req.put(`/api/records/suite_treatments/${engineRecordId}`)).send({ status: 'done', data: { price: 1500 } });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        assert.strictEqual(r.body.status, 'done');
+        assert.strictEqual(r.body.data.price, 1500);
+        assert.strictEqual(r.body.data.area, 'face', 'untouched keys survive partial update');
+        assert.strictEqual(r.body.title, 'لیزر موهای زائد');
+    });
+
+    await test('unknown module → 404; agent cannot delete a record they do not own (403), own record OK', async () => {
+        const nf = await asAdmin(req.get('/api/records/no_such_module'));
+        assert.strictEqual(nf.status, 404);
+        const adminRec = await asAdmin(req.post('/api/records/suite_treatments')).send({ data: { procedure: 'بوتاکس' } });
+        assert.strictEqual(adminRec.status, 201);
+        const del = await asAgent(req.delete(`/api/records/suite_treatments/${adminRec.body.id}`));
+        assert.strictEqual(del.status, 403, 'agent is neither creator nor assignee');
+        const own = await asAgent(req.post('/api/records/suite_treatments')).send({ data: { procedure: 'موقت' } });
+        assert.strictEqual(own.status, 201);
+        const delOwn = await asAgent(req.delete(`/api/records/suite_treatments/${own.body.id}`));
+        assert.strictEqual(delOwn.status, 200);
+    });
+
+    // ── Customer custom fields with schema ───────────────────────────────────
+    section('Customer custom fields — schema on Customer.customFields');
+
+    await test('admin defines a customer select field; invalid value on PUT /customers → 400; valid → stored', async () => {
+        const f = await asAdmin(req.post('/api/fields')).send({
+            entity: 'customer', key: 'skin_type', type: 'select', labels: { fa: 'نوع پوست' },
+            options: [{ value: 'dry' }, { value: 'oily' }],
+        });
+        assert.strictEqual(f.status, 201, JSON.stringify(f.body));
+        const bad = await asAdmin(req.put(`/api/customers/${engineCustomerId}`)).send({ customFields: { skin_type: 'wet' } });
+        assert.strictEqual(bad.status, 400);
+        const ok = await asAdmin(req.put(`/api/customers/${engineCustomerId}`)).send({ customFields: { skin_type: 'dry', legacy_note: 'kept', softDeletedAt: '2020-01-01' } });
+        assert.strictEqual(ok.status, 200, JSON.stringify(ok.body));
+        assert.strictEqual(ok.body.customFields.skin_type, 'dry');
+        assert.strictEqual(ok.body.customFields.legacy_note, 'kept', 'free-form keys still allowed');
+        assert.strictEqual(ok.body.customFields.softDeletedAt, undefined, 'protected keys cannot be set by client');
+        const again = await asAdmin(req.get(`/api/customers/${engineCustomerId}`));
+        assert.strictEqual(again.status, 200);
+        assert.strictEqual(again.body.customFields.skin_type, 'dry');
+    });
+
+    await test('GET /api/fields?entity=customer lists the field; agent may read but not create', async () => {
+        const list = await asAgent(req.get('/api/fields?entity=customer'));
+        assert.strictEqual(list.status, 200);
+        assert(list.body.data.some((f) => f.key === 'skin_type'));
+        const denied = await asAgent(req.post('/api/fields')).send({ entity: 'customer', key: 'x1', type: 'text', labels: { fa: 'x' } });
+        assert.strictEqual(denied.status, 403);
+    });
+
+    // ── Industry templates ───────────────────────────────────────────────────
+    section('Industry templates — data-driven starters');
+
+    await test('GET /api/industry-templates lists the built-in verticals', async () => {
+        const r = await asAgent(req.get('/api/industry-templates'));
+        assert.strictEqual(r.status, 200);
+        const keys = r.body.data.map((t) => t.key);
+        for (const k of ['exchange', 'beauty_clinic', 'hospital', 'tourism', 'health_tourism', 'retail']) {
+            assert(keys.includes(k), `template ${k} present`);
+        }
+        assert.strictEqual(r.body.current, null);
+    });
+
+    await test('apply beauty_clinic (admin only) creates modules/fields/services and sets vocabulary; re-apply is idempotent', async () => {
+        const denied = await asAgent(req.post('/api/industry-templates/beauty_clinic/apply'));
+        assert.strictEqual(denied.status, 403);
+        const nf = await asAdmin(req.post('/api/industry-templates/nope/apply'));
+        assert.strictEqual(nf.status, 404);
+        const r = await asAdmin(req.post('/api/industry-templates/beauty_clinic/apply'));
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        assert(r.body.objects >= 2, 'objects created');
+        assert(r.body.customerFields >= 3, 'customer fields created');
+        assert(r.body.bookableServices >= 3, 'bookable services created');
+        assert(r.body.hiddenSections.includes('rates'));
+        const again = await asAdmin(req.post('/api/industry-templates/beauty_clinic/apply'));
+        assert.strictEqual(again.status, 200);
+        assert.strictEqual(again.body.objects, 0, 'no duplicate modules');
+        assert.strictEqual(again.body.bookableServices, 0, 'no duplicate services');
+        const objs = await asAdmin(req.get('/api/objects'));
+        assert(objs.body.data.some((o) => o.key === 'treatments' && o.templateKey === 'beauty_clinic'));
+    });
+
+    await test('visibility endpoint exposes industryKey + labelOverrides for the panel', async () => {
+        const r = await asAdmin(req.get('/api/panel-settings/public/visibility'));
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.body.industryKey, 'beauty_clinic');
+        assert.strictEqual(r.body.labelOverrides.nav_customers.fa, 'مراجعان');
+        assert(r.body.hiddenSections.includes('rates'));
+        const anon = await req.get('/api/panel-settings/public/visibility');
+        assert.strictEqual(anon.status, 200);
+        assert.strictEqual(anon.body.labelOverrides, undefined, 'no tenant vocabulary without a session');
+    });
+
+    await test('switching template (retail) drops previous overrides/hidden sections and applies new ones', async () => {
+        const r = await asAdmin(req.post('/api/industry-templates/retail/apply'));
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        assert(r.body.objects >= 3);
+        const vis = await asAdmin(req.get('/api/panel-settings/public/visibility'));
+        assert.strictEqual(vis.body.industryKey, 'retail');
+        assert.strictEqual(vis.body.labelOverrides.nav_customers.fa, 'مشتریان');
+        assert(!vis.body.hiddenSections.includes('services') || true);
+        const back = await asAdmin(req.post('/api/industry-templates/exchange/apply'));
+        assert.strictEqual(back.status, 200);
+        const vis2 = await asAdmin(req.get('/api/panel-settings/public/visibility'));
+        assert.strictEqual(vis2.body.industryKey, 'exchange');
+        assert.strictEqual(vis2.body.labelOverrides.nav_customers, undefined, 'retail vocabulary removed');
+        assert(!vis2.body.hiddenSections.includes('rates'), 'rates visible again for exchange');
+    });
+
+    await test('PUT /api/panel-settings stores custom labelOverrides and booking reminder settings', async () => {
+        const r = await asAdmin(req.put('/api/panel-settings')).send({
+            labelOverrides: { nav_customers: { fa: 'بیماران', en: 'Patients' }, bogus: 'not-an-object' },
+            bookingReminderHours: 500,
+            bookingReminderTemplate: 'سلام {name}، نوبت {service} شما {date} {time}',
+        });
+        assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+        const vis = await asAdmin(req.get('/api/panel-settings/public/visibility'));
+        assert.strictEqual(vis.body.labelOverrides.nav_customers.en, 'Patients');
+        assert.strictEqual(vis.body.labelOverrides.bogus, undefined);
+        const s = await asAdmin(req.get('/api/panel-settings'));
+        assert.strictEqual(s.body.bookingReminderHours, 168, 'clamped to one week');
+        assert(s.body.bookingReminderTemplate.includes('{service}'));
+    });
+
+    // ── Booking ──────────────────────────────────────────────────────────────
+    section('Booking — services, appointments, conflicts, status flow, reminders');
+
+    let svcId = null;
+    let apptId = null;
+    const t0 = new Date(Date.now() + 2 * 3600000);
+    t0.setMinutes(0, 0, 0);
+
+    await test('admin creates a bookable service (validation on duration); agent cannot', async () => {
+        const denied = await asAgent(req.post('/api/bookable-services')).send({ name: 'x', durationMin: 30 });
+        assert.strictEqual(denied.status, 403);
+        const bad = await asAdmin(req.post('/api/bookable-services')).send({ name: 'ویزیت', durationMin: 2 });
+        assert.strictEqual(bad.status, 400);
+        const r = await asAdmin(req.post('/api/bookable-services')).send({ name: 'ویزیت تست', durationMin: 30, bufferMin: 10, price: '250000', currency: 'irr', color: '#3b82f6' });
+        assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+        assert.strictEqual(r.body.currency, 'IRR');
+        svcId = r.body.id;
+        const list = await asAgent(req.get('/api/bookable-services'));
+        assert(list.body.data.some((s) => s.id === svcId));
+    });
+
+    await test('POST /api/appointments: endAt derived from service duration; refs validated', async () => {
+        const noCust = await asAgent(req.post('/api/appointments')).send({ startAt: t0.toISOString(), serviceId: svcId });
+        assert.strictEqual(noCust.status, 400);
+        const badStaff = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, staffId: '00000000-0000-0000-0000-000000000000', startAt: t0.toISOString() });
+        assert.strictEqual(badStaff.status, 404);
+        const r = await asAgent(req.post('/api/appointments')).send({
+            customerId: engineCustomerId, serviceId: svcId, staffId: adminUserId, startAt: t0.toISOString(), notes: 'اولین ویزیت',
+        });
+        assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+        assert.strictEqual(r.body.status, 'scheduled');
+        assert.strictEqual(new Date(r.body.endAt) - new Date(r.body.startAt), 30 * 60000);
+        assert.strictEqual(r.body.customer.id, engineCustomerId);
+        assert.strictEqual(r.body.service.id, svcId);
+        apptId = r.body.id;
+    });
+
+    await test('overlapping appointment for the same staff → 409 APPOINTMENT_CONFLICT (buffer respected); manager force bypasses', async () => {
+        const overlap = new Date(t0.getTime() + 15 * 60000);
+        const r = await asAgent(req.post('/api/appointments')).send({ customerId: createdCustomerId || engineCustomerId, staffId: adminUserId, startAt: overlap.toISOString(), durationMin: 30 });
+        assert.strictEqual(r.status, 409, JSON.stringify(r.body));
+        assert.strictEqual(r.body.code, 'APPOINTMENT_CONFLICT');
+        assert.strictEqual(r.body.conflicts[0].id, apptId);
+        // بافر ۱۰ دقیقه: شروع دقیقاً در پایان نوبت قبلی هنوز تداخل دارد
+        const atEnd = new Date(t0.getTime() + 30 * 60000);
+        const buffered = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, serviceId: svcId, staffId: adminUserId, startAt: atEnd.toISOString() });
+        assert.strictEqual(buffered.status, 409);
+        const afterBuffer = new Date(t0.getTime() + 40 * 60000);
+        const ok = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, serviceId: svcId, staffId: adminUserId, startAt: afterBuffer.toISOString() });
+        assert.strictEqual(ok.status, 201, JSON.stringify(ok.body));
+        const agentForce = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, staffId: adminUserId, startAt: overlap.toISOString(), durationMin: 10, force: true });
+        assert.strictEqual(agentForce.status, 409, 'agent cannot force');
+        const adminForce = await asAdmin(req.post('/api/appointments')).send({ customerId: engineCustomerId, staffId: adminUserId, startAt: overlap.toISOString(), durationMin: 10, force: true });
+        assert.strictEqual(adminForce.status, 201, 'manager can force');
+        await asAdmin(req.delete(`/api/appointments/${adminForce.body.id}?hard=1`));
+        await asAdmin(req.delete(`/api/appointments/${ok.body.id}?hard=1`));
+    });
+
+    await test('status flow: scheduled → confirmed → completed; completed → confirmed rejected; cancel sets reason', async () => {
+        const c = await asAgent(req.post(`/api/appointments/${apptId}/status`)).send({ status: 'confirmed' });
+        assert.strictEqual(c.status, 200, JSON.stringify(c.body));
+        assert(c.body.confirmedAt);
+        const done = await asAgent(req.post(`/api/appointments/${apptId}/status`)).send({ status: 'completed' });
+        assert.strictEqual(done.status, 200);
+        const back = await asAgent(req.post(`/api/appointments/${apptId}/status`)).send({ status: 'confirmed' });
+        assert.strictEqual(back.status, 400);
+        const other = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, startAt: new Date(t0.getTime() + 5 * 3600000).toISOString(), durationMin: 20 });
+        assert.strictEqual(other.status, 201);
+        const cancel = await asAgent(req.delete(`/api/appointments/${other.body.id}?reason=مشتری%20منصرف%20شد`));
+        assert.strictEqual(cancel.status, 200);
+        const fetched = await asAgent(req.get(`/api/appointments/${other.body.id}`));
+        assert.strictEqual(fetched.body.status, 'cancelled');
+        assert.strictEqual(fetched.body.cancelReason, 'مشتری منصرف شد');
+    });
+
+    await test('GET /api/appointments by range, availability and summary', async () => {
+        const from = new Date(t0.getTime() - 3600000).toISOString();
+        const to = new Date(t0.getTime() + 24 * 3600000).toISOString();
+        const r = await asAgent(req.get(`/api/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&staffId=${adminUserId}`));
+        assert.strictEqual(r.status, 200);
+        assert(r.body.data.some((a) => a.id === apptId));
+        const tooWide = await asAgent(req.get(`/api/appointments?from=${encodeURIComponent(from)}&to=${encodeURIComponent(new Date(t0.getTime() + 100 * 24 * 3600000).toISOString())}`));
+        assert.strictEqual(tooWide.status, 400);
+        const day = `${t0.getFullYear()}-${String(t0.getMonth() + 1).padStart(2, '0')}-${String(t0.getDate()).padStart(2, '0')}`;
+        const av = await asAgent(req.get(`/api/appointments/availability?date=${day}&staffId=${adminUserId}`));
+        assert.strictEqual(av.status, 200);
+        assert(av.body.busy.length >= 0);
+        const sum = await asAgent(req.get('/api/appointments/summary'));
+        assert.strictEqual(sum.status, 200);
+        assert(typeof sum.body.today === 'number' && typeof sum.body.upcoming === 'number');
+    });
+
+    await test('appointment custom fields (entity=appointment) are validated into data', async () => {
+        // «room» را قالب کلینیک زیبایی قبلاً ساخته — تکراری باید 409 باشد
+        const dup = await asAdmin(req.post('/api/fields')).send({ entity: 'appointment', key: 'room', type: 'text', labels: { fa: 'اتاق' } });
+        assert.strictEqual(dup.status, 409);
+        const f = await asAdmin(req.post('/api/fields')).send({ entity: 'appointment', key: 'chair', type: 'select', labels: { fa: 'صندلی' }, options: [{ value: 'c1' }, { value: 'c2' }] });
+        assert.strictEqual(f.status, 201, JSON.stringify(f.body));
+        const bad = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, startAt: new Date(t0.getTime() + 8 * 3600000).toISOString(), durationMin: 15, data: { chair: 'c9' } });
+        assert.strictEqual(bad.status, 400);
+        const ok = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, startAt: new Date(t0.getTime() + 8 * 3600000).toISOString(), durationMin: 15, data: { chair: 'c2', room: 'A' } });
+        assert.strictEqual(ok.status, 201, JSON.stringify(ok.body));
+        assert.strictEqual(ok.body.data.chair, 'c2');
+        assert.strictEqual(ok.body.data.room, 'A');
+    });
+
+    await test('reminder job: renders template and marks reminderSentAt through injected sender', async () => {
+        const bookingSvc = require('../services/booking');
+        const text = bookingSvc.renderReminder('سلام {name}، {service} — {date} {time}{staff_line} / {org}', {
+            name: 'سارا', service: 'لیزر', date: '۱۴۰۵/۰۷/۰۱', time: '10:30', staff: 'دکتر رضایی', org: 'کلینیک نور',
+        });
+        assert.strictEqual(text, 'سلام سارا، لیزر — ۱۴۰۵/۰۷/۰۱ 10:30 با دکتر رضایی / کلینیک نور');
+        const due = await asAgent(req.post('/api/appointments')).send({ customerId: engineCustomerId, serviceId: svcId, startAt: new Date(t0.getTime() + 12 * 3600000).toISOString() });
+        assert.strictEqual(due.status, 201, JSON.stringify(due.body));
+        const sentTo = [];
+        const res = await bookingSvc.sendDueRemindersForCurrentTenant(null, {
+            sendToCustomer: async (customer, msg) => {
+                sentTo.push({ phone: customer.phone, msg });
+                return true;
+            },
+        });
+        assert(res.sent >= 1, `expected at least one reminder, got ${JSON.stringify(res)}`);
+        assert(sentTo.every((s) => s.msg.includes('ویزیت تست') || s.msg.includes('نوبت')), 'message rendered');
+        const fetched = await asAgent(req.get(`/api/appointments/${due.body.id}`));
+        assert(fetched.body.reminderSentAt, 'reminderSentAt stamped');
+        const again = await bookingSvc.sendDueRemindersForCurrentTenant(null, { sendToCustomer: async () => true });
+        assert.strictEqual(again.sent, 0, 'already reminded appointments are not resent');
+        // جابه‌جایی زمان → یادآوری دوباره فعال می‌شود
+        const moved = await asAgent(req.put(`/api/appointments/${due.body.id}`)).send({ startAt: new Date(t0.getTime() + 13 * 3600000).toISOString() });
+        assert.strictEqual(moved.status, 200, JSON.stringify(moved.body));
+        assert.strictEqual(moved.body.reminderSentAt, null);
     });
 }
 

@@ -124,7 +124,22 @@ app.get('/test', (req, res) => {
 
 // Uploads folder
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
-const upload = multer({ dest: path.join(UPLOADS_DIR, 'tmp') });
+const { isSafeMediaUrlResolved } = require('./mediaSafety');
+const UPLOAD_MAX_BYTES = Math.min(
+    32 * 1024 * 1024,
+    Math.max(1024 * 1024, parseInt(process.env.GATEWAY_UPLOAD_MAX_BYTES, 10) || 16 * 1024 * 1024)
+);
+const upload = multer({
+    dest: path.join(UPLOADS_DIR, 'tmp'),
+    limits: { fileSize: UPLOAD_MAX_BYTES, files: 1 },
+    fileFilter: (_req, file, cb) => {
+        const mime = String((file && file.mimetype) || '').toLowerCase();
+        const ok = /^(image\/|audio\/|video\/|application\/pdf|application\/octet-stream)/.test(
+            mime
+        );
+        cb(ok ? null : new Error('unsupported_media_type'), ok);
+    },
+});
 
 const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
 const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
@@ -803,6 +818,30 @@ redisClient
 let rabbitChannel = null;
 const INCOMING_QUEUE = process.env.RABBITMQ_INCOMING_QUEUE || 'whatsapp_messages';
 const OUTGOING_QUEUE = process.env.RABBITMQ_OUTGOING_QUEUE || 'outgoing_messages';
+/** هدر امضای HMAC-SHA256 که Backend (lib/outgoingQueue.js) روی هر پیام صف می‌گذارد */
+const OUTGOING_SIGNATURE_HEADER = 'x-kaya-signature';
+
+/**
+ * بدون GATEWAY_API_SECRET (فقط توسعه) پیام بی‌امضا پذیرفته می‌شود؛ با کلید، امضا الزامی است.
+ * @param {Buffer} content
+ * @param {string} signature
+ */
+function waRedisKey(name) {
+    const slug = String(process.env.GATEWAY_TENANT_SLUG || 'single')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '');
+    return 'whatsapp:' + (slug || 'single') + ':' + name;
+}
+
+function isOutgoingMessageSigned(content, signature) {
+    const secret = CONFIG.gatewayApiSecret;
+    if (!secret) return process.env.NODE_ENV !== 'production';
+    const expected = crypto.createHmac('sha256', secret).update(content).digest('hex');
+    const given = String(signature || '').trim();
+    if (given.length !== expected.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected));
+}
 
 async function connectRabbitMQ() {
     try {
@@ -824,9 +863,21 @@ async function connectRabbitMQ() {
 
         rabbitChannel.consume(OUTGOING_QUEUE, async (msg) => {
             if (!msg) return;
-            const retryCount =
-                (msg.properties.headers && msg.properties.headers['x-retry-count']) || 0;
+            const headers = (msg.properties && msg.properties.headers) || {};
+            const retryCount = headers['x-retry-count'] || 0;
             const MAX_RETRIES = 3;
+            // صف، احراز هویت HTTP را دور می‌زند؛ فقط پیام امضاشده با GATEWAY_API_SECRET ارسال می‌شود
+            if (!isOutgoingMessageSigned(msg.content, headers[OUTGOING_SIGNATURE_HEADER])) {
+                logger.warn(
+                    'Outgoing queue message rejected: missing/invalid signature — moved to DLQ'
+                );
+                rabbitChannel.sendToQueue(OUTGOING_DLQ, msg.content, {
+                    persistent: true,
+                    headers: { ...headers, 'x-reject-reason': 'bad_signature' },
+                });
+                rabbitChannel.ack(msg);
+                return;
+            }
             try {
                 await outboundSendLimiter.acquire();
                 const data = JSON.parse(msg.content.toString());
@@ -838,9 +889,10 @@ async function connectRabbitMQ() {
                     const delay = Math.pow(2, retryCount) * 2000;
                     setTimeout(() => {
                         try {
+                            // امضا را نگه دار — وگرنه تلاش بعدی به‌عنوان پیام بی‌امضا رد می‌شود
                             rabbitChannel.sendToQueue(OUTGOING_QUEUE, msg.content, {
                                 persistent: true,
-                                headers: { 'x-retry-count': retryCount + 1 },
+                                headers: { ...headers, 'x-retry-count': retryCount + 1 },
                             });
                         } catch (_) {}
                     }, delay);
@@ -915,7 +967,7 @@ async function tryRestoreWhatsAppReady() {
             lastReadyAt = Date.now();
             connectionPhase = 'ready';
             healthCheckFailCount = 0;
-            redisClient.set('whatsapp:status', 'ready').catch(() => {});
+            redisClient.set(waRedisKey('status'), 'ready').catch(() => {});
             logger.info('✅ WhatsApp ready restored via getState(CONNECTED)');
             return true;
         }
@@ -1071,8 +1123,8 @@ function attachClientEvents(c) {
             io.emit('qr', { qr: qrImage });
 
             // cache in redis
-            redisClient.set('whatsapp:qr', qrImage, { EX: 60 }).catch(() => {});
-            redisClient.set('whatsapp:status', 'qr').catch(() => {});
+            redisClient.set(waRedisKey('qr'), qrImage, { EX: 60 }).catch(() => {});
+            redisClient.set(waRedisKey('status'), 'qr').catch(() => {});
             connectionPhase = 'qr';
             // تا اسکن نشه، health/reconnect دوباره Chrome را بالا نیاورد
             isClientStarting = true;
@@ -1086,7 +1138,7 @@ function attachClientEvents(c) {
         connectionPhase = 'authenticated';
         logger.info('✅ WhatsApp Authenticated – syncing…');
         io.emit('authenticated', { status: 'success' });
-        redisClient.set('whatsapp:status', 'authenticated').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'authenticated').catch(() => {});
     });
 
     c.on('auth_failure', (msg) => {
@@ -1095,7 +1147,7 @@ function attachClientEvents(c) {
         logger.error('❌ WhatsApp Auth Failure', { message: lastAuthFailureMessage });
         isClientStarting = false;
         io.emit('auth_failure', { message: lastAuthFailureMessage });
-        redisClient.set('whatsapp:status', 'auth_failure').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'auth_failure').catch(() => {});
         redisClient
             .set('whatsapp:auth_failure_message', lastAuthFailureMessage, { EX: 300 })
             .catch(() => {});
@@ -1112,7 +1164,7 @@ function attachClientEvents(c) {
         logger.info('✅ WhatsApp Client Ready');
         io.emit('ready', { status: 'connected' });
 
-        redisClient.set('whatsapp:status', 'ready').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'ready').catch(() => {});
 
         try {
             const info = c.info;
@@ -1171,7 +1223,7 @@ function attachClientEvents(c) {
         client = null;
 
         io.emit('disconnected', { reason: reasonStr });
-        redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'disconnected').catch(() => {});
 
         // اطلاع به بکند برای ارسال هشدار ادمین
         notifyBackendStatus('disconnected', reasonStr).catch(() => {});
@@ -1551,9 +1603,21 @@ async function persistInboundMediaFile(media, type) {
     }
 }
 
+/** سازمان (tenant) این نشست واتساپ در Cloud — خالی = سکو/کایا */
+const GATEWAY_TENANT_SLUG = String(process.env.GATEWAY_TENANT_SLUG || '')
+    .trim()
+    .toLowerCase();
+
+function backendWebhookHeaders() {
+    const headers = {};
+    const webhookSecret = process.env.WEBHOOK_SECRET || '';
+    if (webhookSecret) headers['x-webhook-secret'] = webhookSecret;
+    if (GATEWAY_TENANT_SLUG) headers['x-tenant-slug'] = GATEWAY_TENANT_SLUG;
+    return headers;
+}
+
 async function sendToBackendWithRetry(messageData) {
     const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
-    const webhookSecret = process.env.WEBHOOK_SECRET || '';
     const maxRetries = CONFIG.backendWebhookRetries;
     const baseDelay = CONFIG.backendWebhookRetryDelayMs;
     for (let i = 0; i < maxRetries; i++) {
@@ -1564,7 +1628,7 @@ async function sendToBackendWithRetry(messageData) {
                 {
                     timeout: 30000,
                     validateStatus: () => true,
-                    headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
+                    headers: backendWebhookHeaders(),
                 }
             );
             if (res.status >= 200 && res.status < 300) return;
@@ -1597,7 +1661,11 @@ async function deliverIncomingMessage(messageData) {
     const via = String(process.env.INCOMING_VIA || 'http').toLowerCase();
     if (via === 'rabbit' && rabbitChannel) {
         try {
-            rabbitChannel.sendToQueue(INCOMING_QUEUE, Buffer.from(JSON.stringify(messageData)), {
+            // Backend سازمان را از همین فیلد می‌خواند (روی HTTP از هدر x-tenant-slug)
+            const payload = GATEWAY_TENANT_SLUG
+                ? { ...messageData, tenantSlug: GATEWAY_TENANT_SLUG }
+                : messageData;
+            rabbitChannel.sendToQueue(INCOMING_QUEUE, Buffer.from(JSON.stringify(payload)), {
                 persistent: true,
             });
             return;
@@ -1618,7 +1686,6 @@ function sleep(ms) {
 async function notifyBackendStatus(event, reason, extra = {}) {
     try {
         const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
-        const webhookSecret = process.env.WEBHOOK_SECRET || '';
         await axios.post(
             `${backendUrl}/api/webhook/gateway-status`,
             {
@@ -1631,7 +1698,7 @@ async function notifyBackendStatus(event, reason, extra = {}) {
             {
                 timeout: 5000,
                 validateStatus: () => true,
-                headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
+                headers: backendWebhookHeaders(),
             }
         );
     } catch (_) {}
@@ -1732,42 +1799,11 @@ async function resolveOutboundChatId(to) {
     return base;
 }
 
-// SSRF protection + optional whitelist
-function isSafeMediaUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    try {
-        const u = new URL(url.trim());
-        if (!['http:', 'https:'].includes(u.protocol)) return false;
-        const host = u.hostname.toLowerCase();
-
-        if (CONFIG.mediaUrlWhitelist.length > 0) {
-            const allowed = CONFIG.mediaUrlWhitelist.some(
-                (d) => host === d || host.endsWith('.' + d)
-            );
-            return allowed;
-        }
-
-        // localhost مجاز وقتی MEDIA_ALLOW_LOCALHOST=true یا در محیط توسعه (برای ارسال ویس و رسانه)
-        if (CONFIG.mediaAllowLocalhost && (host === 'localhost' || host === '127.0.0.1'))
-            return true;
-        if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return false;
-        if (
-            host.startsWith('10.') ||
-            host.startsWith('172.16.') ||
-            host.startsWith('172.17.') ||
-            host.startsWith('172.18.') ||
-            host.startsWith('172.19.') ||
-            host.startsWith('172.2') ||
-            host.startsWith('172.30.') ||
-            host.startsWith('172.31.') ||
-            host.startsWith('192.168.')
-        )
-            return false;
-        if (host === '0.0.0.0' || host === '::1') return false;
-        return true;
-    } catch (_) {
-        return false;
-    }
+function mediaSafetyOpts() {
+    return {
+        mediaAllowLocalhost: CONFIG.mediaAllowLocalhost,
+        mediaUrlWhitelist: CONFIG.mediaUrlWhitelist,
+    };
 }
 
 // ==================== WhatsApp Controls ====================
@@ -1810,7 +1846,7 @@ async function startWhatsApp() {
             client = buildClient();
         }
 
-        redisClient.set('whatsapp:status', 'starting').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'starting').catch(() => {});
         await Promise.resolve(client.initialize());
         return { ok: true, status: 'initializing' };
     } catch (e) {
@@ -1838,7 +1874,7 @@ async function stopWhatsApp() {
     client = null;
     lastQrImageDataUrl = null;
 
-    redisClient.set('whatsapp:status', 'stopping').catch(() => {});
+    redisClient.set(waRedisKey('status'), 'stopping').catch(() => {});
     io.emit('disconnected', { reason: 'stopped_by_api' });
 
     try {
@@ -1855,7 +1891,7 @@ async function stopWhatsApp() {
         });
     }
 
-    redisClient.set('whatsapp:status', 'stopped').catch(() => {});
+    redisClient.set(waRedisKey('status'), 'stopped').catch(() => {});
     return { ok: true, status: 'stopped' };
 }
 
@@ -1909,7 +1945,7 @@ app.get('/api/qr', async (req, res) => {
     if (redisClient?.isReady) {
         try {
             qr = await Promise.race([
-                redisClient.get('whatsapp:qr'),
+                redisClient.get(waRedisKey('qr')),
                 new Promise((_, rj) => setTimeout(() => rj(new Error('timeout')), 1500)),
             ]);
         } catch (_) {}
@@ -1951,8 +1987,8 @@ app.post('/api/logout', async (req, res) => {
             logger.info('Session folder deleted for fresh QR', { sessionPath });
         }
 
-        redisClient.set('whatsapp:status', 'logged_out').catch(() => {});
-        redisClient.del('whatsapp:qr').catch(() => {});
+        redisClient.set(waRedisKey('status'), 'logged_out').catch(() => {});
+        redisClient.del(waRedisKey('qr')).catch(() => {});
 
         lastQrImageDataUrl = null;
         connectionPhase = null;
@@ -2023,7 +2059,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                 return client.sendMessage(targetChatId, built.mediaObj, sendOpts);
             }
             if (media?.url) {
-                if (!isSafeMediaUrl(media.url)) {
+                if (!(await isSafeMediaUrlResolved(media.url, mediaSafetyOpts()))) {
                     const err = new Error('Invalid or unsafe media URL');
                     err.statusCode = 400;
                     throw err;
@@ -3563,19 +3599,11 @@ app.get('/api/chats/groups', async (req, res) => {
                 connectionPhase = 'ready';
                 restored = true;
             }
-            if (!restored) {
-                await startWhatsApp().catch(() => {});
-                const deadline = Date.now() + 20000;
-                while (Date.now() < deadline && !isWhatsAppUsable()) {
-                    await new Promise((r) => setTimeout(r, 1500));
-                    if (await tryRestoreWhatsAppReady()) break;
-                }
-            }
             if (!isWhatsAppUsable()) {
                 return res.status(503).json({
                     error: 'WhatsApp not ready',
                     phase: connectionPhase || (isClientStarting ? 'starting' : 'disconnected'),
-                    starting: !!isClientStarting,
+                    hint: 'start_via_post',
                 });
             }
         }
@@ -4067,24 +4095,16 @@ app.get('/api/chats', async (req, res) => {
     beginWaOps();
     try {
         if (!isWhatsAppUsable()) {
-            let restored = await tryRestoreWhatsAppReady();
+            const restored = await tryRestoreWhatsAppReady();
             if (!restored && client?.pupPage && lastReadyAt > 0) {
                 isClientReady = true;
                 connectionPhase = 'ready';
-                restored = true;
-            }
-            if (!restored) {
-                await startWhatsApp().catch(() => {});
-                const deadline = Date.now() + 20000;
-                while (Date.now() < deadline && !isWhatsAppUsable()) {
-                    await new Promise((r) => setTimeout(r, 1500));
-                    if (await tryRestoreWhatsAppReady()) break;
-                }
             }
             if (!isWhatsAppUsable()) {
                 return res.status(503).json({
                     error: 'WhatsApp not ready',
                     phase: connectionPhase || (isClientStarting ? 'starting' : 'disconnected'),
+                    hint: 'start_via_post',
                 });
             }
         }
@@ -4266,6 +4286,12 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 async function sendWhatsAppMessage(data) {
     if (!isWhatsAppUsable()) throw new Error('WhatsApp not ready');
 
+    const boundSlug = String(process.env.GATEWAY_TENANT_SLUG || '').trim();
+    const payloadSlug = data && data.tenantSlug ? String(data.tenantSlug).trim() : '';
+    if (boundSlug && payloadSlug && payloadSlug !== boundSlug) {
+        throw new Error('tenant_mismatch');
+    }
+
     const { to, message, media, replyTo } = data || {};
     if (!to) throw new Error('Missing "to"');
 
@@ -4300,7 +4326,9 @@ async function sendWhatsAppMessage(data) {
         }
 
         if (media?.url) {
-            if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
+            if (!(await isSafeMediaUrlResolved(media.url, mediaSafetyOpts()))) {
+                throw new Error('Invalid or unsafe media URL');
+            }
             const mediaObj = await MessageMedia.fromUrl(media.url);
             if (media.filename) mediaObj.filename = waSafeFilename(media.filename);
             applyOutboundMediaSendOpts(
@@ -4359,8 +4387,11 @@ function startServer() {
         }
     }
 
-    server.listen(PORT, () => {
-        logger.info(`🚀 WhatsApp Gateway running on port ${PORT}`, {
+    // Gateway فقط باید از Backend روی همان سرور قابل دسترس باشد؛ پیش‌فرض تاریخی همهٔ اینترفیس‌ها است
+    const BIND_HOST = String(process.env.GATEWAY_BIND_HOST || (isProd ? '127.0.0.1' : '')).trim();
+
+    const onListening = () => {
+        logger.info(`🚀 WhatsApp Gateway running on ${BIND_HOST || '0.0.0.0'}:${PORT}`, {
             autoReconnect: CONFIG.autoReconnect,
             maxRetries: CONFIG.reconnectMaxRetries,
             rateLimit: CONFIG.rateLimitMax,
@@ -4447,7 +4478,10 @@ function startServer() {
                 }
             }
         });
-    });
+    };
+
+    if (BIND_HOST) server.listen(PORT, BIND_HOST, onListening);
+    else server.listen(PORT, onListening);
 }
 
 startServer();
@@ -4460,7 +4494,7 @@ function resetClientState() {
     lastAuthFailureMessage = null;
     lastQrImageDataUrl = null;
     client = null;
-    redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
+    redisClient.set(waRedisKey('status'), 'disconnected').catch(() => {});
 }
 
 process.on('uncaughtException', (err) => {

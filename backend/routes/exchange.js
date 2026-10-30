@@ -13,8 +13,12 @@ const {
     denyIfWrongBranch,
     assignWriteBranchId
 } = require('../lib/exchangeBranchScope');
+const { idempotency } = require('../middleware/idempotency');
 
 router.use(requireFxModule);
+
+// POSTهای پول‌ساز: هدر Idempotency-Key اختیاری است؛ با آن، retry/دابل‌کلیک همان پاسخ اول را می‌گیرد
+const idempotentMoneyPost = idempotency();
 
 function scopeFail(res, scoped) {
     if (!scoped.ok) {
@@ -299,66 +303,134 @@ router.get('/transactions/:id', requireServices, async (req, res) => {
     }
 });
 
-// تابع به‌روزرسانی موجودی (فقط هنگام تایید) — همه عملیات در یک transaction انجام می‌شود
-async function applyTransactionBalance(tx) {
-    const t = await sequelize.transaction();
-    try {
-        const updateBalance = async (Model, id, delta) => {
-            if (!id) return;
-            const item = await Model.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
-            if (item) {
-                item.balance = safeDecimal(item.balance).plus(delta).toNumber();
-                await item.save({ transaction: t });
-            }
-        };
-        const amt = safeDecimal(tx.amount);
-        const type = tx.type;
-        const pos = amt.toNumber();
-        const neg = amt.negated().toNumber();
-        switch (type) {
-            case 'cash_in':
-                await updateBalance(CashBox, tx.toCashBoxId, pos);
-                break;
-            case 'cash_out':
-                await updateBalance(CashBox, tx.fromCashBoxId, neg);
-                break;
-            case 'transfer_box':
-                await updateBalance(CashBox, tx.fromCashBoxId, neg);
-                await updateBalance(CashBox, tx.toCashBoxId, pos);
-                break;
-            case 'bank_deposit':
-                await updateBalance(CashBox, tx.fromCashBoxId, neg);
-                await updateBalance(BankAccount, tx.toBankAccountId, pos);
-                break;
-            case 'bank_withdraw':
-                await updateBalance(BankAccount, tx.fromBankAccountId, neg);
-                await updateBalance(CashBox, tx.toCashBoxId, pos);
-                break;
-            case 'transfer_account':
-                await updateBalance(BankAccount, tx.fromBankAccountId, neg);
-                await updateBalance(BankAccount, tx.toBankAccountId, pos);
-                break;
-            case 'income':
-                await updateBalance(CashBox, tx.toCashBoxId, pos);
-                break;
-            case 'expense':
-                await updateBalance(CashBox, tx.fromCashBoxId, neg);
-                break;
-            case 'buy':
-                await updateBalance(CashBox, tx.fromCashBoxId, neg);
-                break;
-            case 'sell':
-                await updateBalance(CashBox, tx.toCashBoxId, pos);
-                break;
+// به‌روزرسانی موجودی (فقط هنگام تایید) — داخل transaction فراخوان اجرا می‌شود؛ commit/rollback با فراخوان است
+async function applyTransactionBalance(tx, t) {
+    const updateBalance = async (Model, id, delta) => {
+        if (!id) return;
+        const item = await Model.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
+        if (item) {
+            item.balance = safeDecimal(item.balance).plus(delta).toNumber();
+            await item.save({ transaction: t });
         }
-        await t.commit();
-    } catch (err) {
-        await t.rollback();
-        throw err;
+    };
+    const amt = safeDecimal(tx.amount);
+    const type = tx.type;
+    const pos = amt.toNumber();
+    const neg = amt.negated().toNumber();
+    switch (type) {
+        case 'cash_in':
+            await updateBalance(CashBox, tx.toCashBoxId, pos);
+            break;
+        case 'cash_out':
+            await updateBalance(CashBox, tx.fromCashBoxId, neg);
+            break;
+        case 'transfer_box':
+            await updateBalance(CashBox, tx.fromCashBoxId, neg);
+            await updateBalance(CashBox, tx.toCashBoxId, pos);
+            break;
+        case 'bank_deposit':
+            await updateBalance(CashBox, tx.fromCashBoxId, neg);
+            await updateBalance(BankAccount, tx.toBankAccountId, pos);
+            break;
+        case 'bank_withdraw':
+            await updateBalance(BankAccount, tx.fromBankAccountId, neg);
+            await updateBalance(CashBox, tx.toCashBoxId, pos);
+            break;
+        case 'transfer_account':
+            await updateBalance(BankAccount, tx.fromBankAccountId, neg);
+            await updateBalance(BankAccount, tx.toBankAccountId, pos);
+            break;
+        case 'income':
+            await updateBalance(CashBox, tx.toCashBoxId, pos);
+            break;
+        case 'expense':
+            await updateBalance(CashBox, tx.fromCashBoxId, neg);
+            break;
+        case 'buy':
+            await updateBalance(CashBox, tx.fromCashBoxId, neg);
+            break;
+        case 'sell':
+            await updateBalance(CashBox, tx.toCashBoxId, pos);
+            break;
     }
 }
 
-router.post('/transactions', requireServices, async (req, res) => {
+/** فقط تراکنش‌های در انتظار (یا legacy بدون وضعیت) قابل تصمیم‌گیری‌اند */
+const DECIDABLE_STATUS_WHERE = { [Op.or]: [{ status: 'pending' }, { status: null }] };
+
+/**
+ * صف تصمیم‌های مالی در همین پروسه.
+ * SQLite (پروداکشن کایا) دو transaction هم‌زمان را نمی‌پذیرد («cannot start a transaction within a transaction»)؛
+ * روی Postgres هم ترتیب‌دهی، رقابت approve/reject را حذف می‌کند. بار این مسیر کم است.
+ */
+let decisionQueue = Promise.resolve();
+function withDecisionLock(fn) {
+    const run = decisionQueue.then(fn, fn);
+    decisionQueue = run.catch(() => {});
+    return run;
+}
+
+async function safeRollback(t) {
+    if (!t || t.finished) return;
+    try {
+        await t.rollback();
+    } catch (_) {
+        /* already finished */
+    }
+}
+
+/**
+ * تایید اتمیک: تغییر وضعیت به‌صورت شرطی (فقط اگر هنوز pending باشد) و اعمال موجودی در یک transaction.
+ * دو approve هم‌زمان → فقط یکی موجودی را اعمال می‌کند؛ دیگری false می‌گیرد.
+ */
+function approveTransactionAtomically(tx, approverId) {
+    return withDecisionLock(async () => {
+        const t = await sequelize.transaction();
+        try {
+            const [count] = await Transaction.update(
+                {
+                    status: 'approved',
+                    approvedBy: approverId,
+                    approvedAt: new Date(),
+                    rejectedBy: null,
+                    rejectedAt: null
+                },
+                { where: { id: tx.id, ...DECIDABLE_STATUS_WHERE }, transaction: t }
+            );
+            if (count !== 1) {
+                await safeRollback(t);
+                return false;
+            }
+            await applyTransactionBalance(tx, t);
+            await t.commit();
+            return true;
+        } catch (err) {
+            await safeRollback(t);
+            throw err;
+        }
+    });
+}
+
+/** رد شرطی: تراکنشی که هم‌زمان تایید شده را نمی‌توان بازنویسی کرد (موجودی اعمال شده است) */
+function rejectTransactionAtomically(tx, rejecterId) {
+    return withDecisionLock(async () => {
+        const [count] = await Transaction.update(
+            {
+                status: 'rejected',
+                rejectedBy: rejecterId,
+                rejectedAt: new Date(),
+                approvedBy: null,
+                approvedAt: null
+            },
+            { where: { id: tx.id, ...DECIDABLE_STATUS_WHERE } }
+        );
+        return count === 1;
+    });
+}
+
+const CONCURRENT_DECISION_ERROR = 'این تراکنش هم‌زمان توسط کاربر دیگری پردازش شد؛ صفحه را تازه کنید';
+
+router.post('/transactions', requireServices, idempotentMoneyPost, async (req, res) => {
     try {
         const {
             type, amount, currency,
@@ -462,7 +534,7 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
     }
 });
 
-router.post('/transactions/:id/approve', requireServices, async (req, res) => {
+router.post('/transactions/:id/approve', requireServices, idempotentMoneyPost, async (req, res) => {
     try {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
@@ -472,13 +544,9 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
         if (tx.status === 'rejected') return res.status(400).json({ error: 'تراکنش رد شده قابل تایید نیست' });
         const role = req.user?.role || '';
         if (!['owner', 'admin', 'manager'].includes(role)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تراکنش را تایید کند' });
-        await applyTransactionBalance(tx);
-        tx.status = 'approved';
-        tx.approvedBy = req.user?.id || null;
-        tx.approvedAt = new Date();
-        tx.rejectedBy = null;
-        tx.rejectedAt = null;
-        await tx.save();
+        const approved = await approveTransactionAtomically(tx, req.user?.id || null);
+        if (!approved) return res.status(409).json({ error: CONCURRENT_DECISION_ERROR });
+        await tx.reload();
         logActivity({ userId: req.user?.id, branchId: req.user?.branchId, action: 'transaction_approved', entityType: 'transaction', entityId: tx.id, summary: `تراکنش تایید شد: ${tx.type} — ${tx.amount} ${tx.currency || ''}`, metadata: { amount: tx.amount, type: tx.type, currency: tx.currency } }).catch(() => {});
         res.json(tx);
     } catch (e) {
@@ -486,7 +554,7 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
     }
 });
 
-router.post('/transactions/:id/reject', requireServices, async (req, res) => {
+router.post('/transactions/:id/reject', requireServices, idempotentMoneyPost, async (req, res) => {
     try {
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
@@ -496,12 +564,9 @@ router.post('/transactions/:id/reject', requireServices, async (req, res) => {
         if (tx.status === 'rejected') return res.status(400).json({ error: 'این تراکنش قبلاً رد شده است' });
         const role = req.user?.role || '';
         if (!['owner', 'admin', 'manager'].includes(role)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تراکنش را رد کند' });
-        tx.status = 'rejected';
-        tx.rejectedBy = req.user?.id || null;
-        tx.rejectedAt = new Date();
-        tx.approvedBy = null;
-        tx.approvedAt = null;
-        await tx.save();
+        const rejected = await rejectTransactionAtomically(tx, req.user?.id || null);
+        if (!rejected) return res.status(409).json({ error: CONCURRENT_DECISION_ERROR });
+        await tx.reload();
         logActivity({ userId: req.user?.id, branchId: req.user?.branchId, action: 'transaction_rejected', entityType: 'transaction', entityId: tx.id, summary: `تراکنش رد شد: ${tx.type} — ${tx.amount} ${tx.currency || ''}`, metadata: { amount: tx.amount, type: tx.type, currency: tx.currency } }).catch(() => {});
         res.json(tx);
     } catch (e) {

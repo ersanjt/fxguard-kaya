@@ -446,6 +446,17 @@
                         <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="documents" data-i18n="customer_documents">فایل‌ها و پیوست‌ها</button>
+                        <button type="button" class="customer-detail-tab customer-detail-tab-engine" data-tab="records" data-i18n="eng_customer_records_tab">ماژول‌ها</button>
+                        <button type="button" class="customer-detail-tab customer-detail-tab-engine" data-tab="appointments" data-i18n="eng_customer_appointments_tab">نوبت‌ها</button>
+                    </div>
+                    <div id="customerRecordsPanel" class="customer-detail-panel">
+                        <div id="customerRecordsList" class="customer-records-list"></div>
+                    </div>
+                    <div id="customerAppointmentsPanel" class="customer-detail-panel">
+                        <div class="customer-transactions-header">
+                            <button type="button" class="btn-primary btn-sm" id="btnCustomerAddAppointment" data-i18n="bk_new">نوبت جدید</button>
+                        </div>
+                        <div id="customerAppointmentsList" class="customer-appointments-list"></div>
                     </div>
                     <div id="customerTimelinePanel" class="customer-detail-panel show">
                         <div id="customerTimelineList" class="customer-timeline-list"></div>
@@ -526,6 +537,364 @@
                                 <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel" data-i18n="btn_cancel">انصراف</button>
                                 <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave" data-i18n="btn_save">ذخیره</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- ========== موتور عمومی: رکوردهای ماژول‌های سازمان (chunk-07) ========== -->
+                <div id="pageRecords" class="page task-page engine-page">
+                    <div class="task-page-header">
+                        <div class="task-page-header-text">
+                            <h2 id="recordsPageTitle" data-i18n="nav_records">ماژول‌های سازمان</h2>
+                            <p class="task-page-desc" id="recordsPageDesc"></p>
+                        </div>
+                        <div class="engine-header-actions">
+                            <button type="button" class="btn-primary task-create-btn" id="btnRecordCreate" onclick="openRecordForm()" style="display:none;" data-i18n="eng_add_record">افزودن</button>
+                        </div>
+                    </div>
+                    <div id="recordsModuleTabs" class="engine-view-tabs engine-module-tabs"></div>
+                    <div id="recordsEmptyModules" class="empty engine-empty" style="display:none;"></div>
+                    <div id="recordsToolbar" class="task-filters-wrap engine-toolbar" style="display:none;">
+                        <div class="task-filters">
+                            <input type="search" id="recordsSearch" class="task-search-input" data-i18n-ph="eng_search_ph" placeholder="جستجو در رکوردها…" autocomplete="off">
+                            <select id="recordsFilterStatus"></select>
+                            <select id="recordsFilterAssignee" style="display:none;"></select>
+                        </div>
+                    </div>
+                    <div id="recordsStatusChips" class="engine-status-chips"></div>
+                    <div id="recordsList" class="engine-records-list"></div>
+                    <div id="recordsPager" class="engine-pager" style="display:none;"></div>
+                </div>
+                <div id="recordModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="recordModalTitle">
+                    <div class="modal-box engine-modal-box">
+                        <div class="modal-header">
+                            <h3 id="recordModalTitle" data-i18n="eng_add_record">افزودن</h3>
+                            <button type="button" class="modal-close" onclick="closeRecordForm()" aria-label="بستن" data-i18n-aria-label="btn_close">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="recordForm" class="engine-form" autocomplete="off" onsubmit="return submitRecordForm(event)">
+                                <div id="recordFormFields" class="task-form-grid engine-form-grid"></div>
+                                <div id="recordFormError" class="engine-form-error" role="alert" style="display:none;"></div>
+                                <div class="task-form-actions engine-form-actions">
+                                    <button type="button" class="btn-secondary" onclick="closeRecordForm()" data-i18n="btn_cancel">انصراف</button>
+                                    <button type="submit" class="btn-primary" id="recordFormSubmit" data-i18n="btn_save">ذخیره</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- ========== نوبت‌دهی و رزرو (chunk-07) ========== -->
+                <div id="pageAppointments" class="page task-page engine-page">
+                    <div class="task-page-header">
+                        <div class="task-page-header-text">
+                            <h2 data-i18n="bk_title">نوبت‌ها و رزرو</h2>
+                            <p class="task-page-desc" data-i18n="bk_intro">نوبت‌های امروز و هفته، تداخل خودکار و یادآوری واتساپ.</p>
+                        </div>
+                        <div class="engine-header-actions">
+                            <button type="button" class="btn-primary task-create-btn" id="btnApptCreate" onclick="openAppointmentForm()" data-i18n="bk_new">نوبت جدید</button>
+                        </div>
+                    </div>
+                    <div id="apptSummary" class="task-summary-cards engine-summary"></div>
+                    <div class="engine-view-tabs" id="apptViewTabs" role="tablist">
+                        <button type="button" class="task-tab active" data-view="day" onclick="setApptView('day')" data-i18n="bk_day">روز</button>
+                        <button type="button" class="task-tab" data-view="week" onclick="setApptView('week')" data-i18n="bk_week">هفته</button>
+                        <button type="button" class="task-tab" data-view="list" onclick="setApptView('list')" data-i18n="bk_list">لیست</button>
+                        <button type="button" class="task-tab engine-managers-only" data-view="services" onclick="setApptView('services')" data-i18n="bk_services">خدمات قابل رزرو</button>
+                    </div>
+                    <div id="apptToolbar" class="task-filters-wrap engine-toolbar">
+                        <div class="task-filters">
+                            <div class="engine-date-nav">
+                                <button type="button" class="btn-secondary btn-sm" onclick="shiftApptDate(-1)" aria-label="قبلی" data-i18n-aria-label="eng_prev">‹</button>
+                                <button type="button" class="btn-secondary btn-sm" onclick="goApptToday()" data-i18n="bk_today">امروز</button>
+                                <input type="date" id="apptDate">
+                                <button type="button" class="btn-secondary btn-sm" onclick="shiftApptDate(1)" aria-label="بعدی" data-i18n-aria-label="eng_next">›</button>
+                                <span id="apptRangeLabel" class="engine-range-label"></span>
+                            </div>
+                            <select id="apptFilterStaff"></select>
+                            <select id="apptFilterService"></select>
+                            <select id="apptFilterStatus"></select>
+                        </div>
+                    </div>
+                    <div id="apptCalendar" class="engine-calendar"></div>
+                    <div id="apptServicesPanel" class="engine-services-panel" style="display:none;">
+                        <div class="engine-panel-head">
+                            <h3 data-i18n="bk_services">خدمات قابل رزرو</h3>
+                            <button type="button" class="btn-primary btn-sm" onclick="openServiceForm()" data-i18n="bk_svc_new">خدمت جدید</button>
+                        </div>
+                        <div id="apptServicesList" class="engine-services-list"></div>
+                        <div class="form-box engine-reminder-box">
+                            <h4 data-i18n="bk_reminder_settings">یادآوری واتساپ</h4>
+                            <div class="task-form-grid">
+                                <div class="task-form-field">
+                                    <label for="bkReminderHours" data-i18n="bk_reminder_hours">چند ساعت قبل از نوبت (۰ = خاموش)</label>
+                                    <input type="number" id="bkReminderHours" min="0" max="168" step="1">
+                                </div>
+                                <div class="task-form-field task-form-field-wide">
+                                    <label for="bkReminderTemplate" data-i18n="bk_reminder_template">متن یادآوری</label>
+                                    <textarea id="bkReminderTemplate" rows="3" dir="auto"></textarea>
+                                </div>
+                            </div>
+                            <div class="task-form-actions">
+                                <button type="button" class="btn-primary btn-sm" onclick="saveBookingReminderSettings()" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="apptModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="apptModalTitle">
+                    <div class="modal-box engine-modal-box">
+                        <div class="modal-header">
+                            <h3 id="apptModalTitle" data-i18n="bk_new">نوبت جدید</h3>
+                            <button type="button" class="modal-close" onclick="closeAppointmentForm()" aria-label="بستن" data-i18n-aria-label="btn_close">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="apptForm" class="engine-form" autocomplete="off" onsubmit="return submitAppointmentForm(event)">
+                                <input type="hidden" id="apptId">
+                                <input type="hidden" id="apptConversationId">
+                                <div class="task-form-grid engine-form-grid">
+                                    <div class="task-form-field task-form-field-wide">
+                                        <label for="apptCustomerSearch"><span data-i18n="bk_customer">مشتری</span> <span class="engine-req">*</span></label>
+                                        <div class="engine-customer-picker">
+                                            <input type="hidden" id="apptCustomerId">
+                                            <input type="text" id="apptCustomerSearch" data-i18n-ph="eng_select_customer" placeholder="انتخاب مشتری…" autocomplete="off">
+                                            <div id="apptCustomerResults" class="engine-picker-results" style="display:none;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptService" data-i18n="bk_service">خدمت</label>
+                                        <select id="apptService"></select>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptStaff" data-i18n="bk_staff">کارمند / ارائه‌دهنده</label>
+                                        <select id="apptStaff"></select>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptStartDate"><span data-i18n="bk_date">تاریخ</span> <span class="engine-req">*</span></label>
+                                        <input type="date" id="apptStartDate" required>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptStartTime"><span data-i18n="bk_time">ساعت</span> <span class="engine-req">*</span></label>
+                                        <input type="time" id="apptStartTime" step="300" required>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptDuration" data-i18n="bk_duration">مدت (دقیقه)</label>
+                                        <input type="number" id="apptDuration" min="5" max="1440" step="5" value="30">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="apptBranch" data-i18n="th_branch">شعبه</label>
+                                        <select id="apptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                                    </div>
+                                    <div class="task-form-field task-form-field-wide">
+                                        <label for="apptNotes" data-i18n="bk_notes">یادداشت</label>
+                                        <textarea id="apptNotes" rows="2" dir="auto"></textarea>
+                                    </div>
+                                    <div id="apptExtraFields" class="engine-appt-extra task-form-field task-form-field-wide"></div>
+                                </div>
+                                <div id="apptBusyHint" class="engine-busy-hint" aria-live="polite"></div>
+                                <div id="apptFormError" class="engine-form-error" role="alert" style="display:none;"></div>
+                                <div class="task-form-actions engine-form-actions">
+                                    <button type="button" class="btn-secondary" onclick="closeAppointmentForm()" data-i18n="btn_cancel">انصراف</button>
+                                    <button type="submit" class="btn-primary" id="apptFormSubmit" data-i18n="btn_save">ذخیره</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div id="serviceModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="serviceModalTitle">
+                    <div class="modal-box engine-modal-box engine-modal-sm">
+                        <div class="modal-header">
+                            <h3 id="serviceModalTitle" data-i18n="bk_svc_new">خدمت جدید</h3>
+                            <button type="button" class="modal-close" onclick="closeServiceForm()" aria-label="بستن" data-i18n-aria-label="btn_close">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="serviceForm" class="engine-form" autocomplete="off" onsubmit="return submitServiceForm(event)">
+                                <input type="hidden" id="svcId">
+                                <div class="task-form-grid engine-form-grid">
+                                    <div class="task-form-field task-form-field-wide">
+                                        <label for="svcName"><span data-i18n="bk_svc_name">نام خدمت</span> <span class="engine-req">*</span></label>
+                                        <input type="text" id="svcName" required maxlength="120" dir="auto">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcDuration" data-i18n="bk_svc_duration">مدت پیش‌فرض (دقیقه)</label>
+                                        <input type="number" id="svcDuration" min="5" max="1440" step="5" value="30">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcBuffer" data-i18n="bk_svc_buffer">فاصله بعد از نوبت (دقیقه)</label>
+                                        <input type="number" id="svcBuffer" min="0" max="240" step="5" value="0">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcPrice" data-i18n="bk_svc_price">قیمت</label>
+                                        <input type="number" id="svcPrice" min="0" step="0.01" inputmode="decimal">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcCurrency" data-i18n="bk_svc_currency">ارز</label>
+                                        <input type="text" id="svcCurrency" maxlength="8" placeholder="IRR" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcColor" data-i18n="bk_svc_color">رنگ</label>
+                                        <input type="color" id="svcColor" value="#0ea5e9">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="svcBranch" data-i18n="th_branch">شعبه</label>
+                                        <select id="svcBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                                    </div>
+                                    <div class="task-form-field task-form-field-wide">
+                                        <label for="svcDescription" data-i18n="dept_desc">توضیحات (اختیاری)</label>
+                                        <textarea id="svcDescription" rows="2" dir="auto"></textarea>
+                                    </div>
+                                </div>
+                                <div id="serviceFormError" class="engine-form-error" role="alert" style="display:none;"></div>
+                                <div class="task-form-actions engine-form-actions">
+                                    <button type="button" class="btn-secondary" onclick="closeServiceForm()" data-i18n="btn_cancel">انصراف</button>
+                                    <button type="submit" class="btn-primary" data-i18n="btn_save">ذخیره</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- ========== ماژول‌ساز و قالب صنعت (chunk-07) ========== -->
+                <div id="pageModules" class="page task-page engine-page">
+                    <div class="task-page-header">
+                        <div class="task-page-header-text">
+                            <h2 data-i18n="mb_title">ماژول‌ساز و قالب صنعت</h2>
+                            <p class="task-page-desc" data-i18n="mb_intro">ساختار کسب‌وکار خودتان را بدون کد تعریف کنید.</p>
+                        </div>
+                        <div class="engine-header-actions">
+                            <button type="button" class="btn-primary task-create-btn" id="btnModuleCreate" onclick="openModuleForm()" data-i18n="mb_new_module">ماژول جدید</button>
+                        </div>
+                    </div>
+                    <div class="engine-view-tabs" id="mbTabs" role="tablist">
+                        <button type="button" class="task-tab active" data-tab="modules" onclick="setBuilderTab('modules')" data-i18n="mb_tab_modules">ماژول‌ها</button>
+                        <button type="button" class="task-tab" data-tab="customer" onclick="setBuilderTab('customer')" data-i18n="mb_tab_customer_fields">فیلدهای مشتری</button>
+                        <button type="button" class="task-tab" data-tab="appointment" onclick="setBuilderTab('appointment')" data-i18n="mb_tab_appointment_fields">فیلدهای نوبت</button>
+                        <button type="button" class="task-tab" data-tab="templates" onclick="setBuilderTab('templates')" data-i18n="mb_tab_templates">قالب‌های صنعت</button>
+                        <button type="button" class="task-tab" data-tab="vocab" onclick="setBuilderTab('vocab')" data-i18n="mb_tab_vocab">واژگان سازمان</button>
+                    </div>
+                    <div id="mbPanelModules" class="engine-builder-panel"></div>
+                    <div id="mbPanelCustomer" class="engine-builder-panel" style="display:none;"></div>
+                    <div id="mbPanelAppointment" class="engine-builder-panel" style="display:none;"></div>
+                    <div id="mbPanelTemplates" class="engine-builder-panel" style="display:none;"></div>
+                    <div id="mbPanelVocab" class="engine-builder-panel" style="display:none;"></div>
+                </div>
+                <div id="moduleModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="moduleModalTitle">
+                    <div class="modal-box engine-modal-box">
+                        <div class="modal-header">
+                            <h3 id="moduleModalTitle" data-i18n="mb_new_module">ماژول جدید</h3>
+                            <button type="button" class="modal-close" onclick="closeModuleForm()" aria-label="بستن" data-i18n-aria-label="btn_close">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="moduleForm" class="engine-form" autocomplete="off" onsubmit="return submitModuleForm(event)">
+                                <input type="hidden" id="mbObjId">
+                                <div class="task-form-grid engine-form-grid">
+                                    <div class="task-form-field">
+                                        <label for="mbObjKey"><span data-i18n="mb_module_key">کلید</span> <span class="engine-req">*</span></label>
+                                        <input type="text" id="mbObjKey" dir="ltr" pattern="[a-z][a-z0-9_]{0,47}" maxlength="48" required>
+                                        <small class="engine-hint" data-i18n="mb_module_key_hint">مثلاً treatments</small>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjIcon" data-i18n="mb_icon">آیکون</label>
+                                        <input type="text" id="mbObjIcon" maxlength="8" placeholder="📦">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjLabelFa"><span data-i18n="mb_label_fa">نام فارسی</span> <span class="engine-req">*</span></label>
+                                        <input type="text" id="mbObjLabelFa" maxlength="80" dir="auto" required>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjLabelEn" data-i18n="mb_label_en">نام انگلیسی</label>
+                                        <input type="text" id="mbObjLabelEn" maxlength="80" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjLabelTr" data-i18n="mb_label_tr">نام ترکی</label>
+                                        <input type="text" id="mbObjLabelTr" maxlength="80" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjSingularFa" data-i18n="mb_singular">نام مفرد</label>
+                                        <input type="text" id="mbObjSingularFa" maxlength="80" dir="auto">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbObjColor" data-i18n="mb_color">رنگ</label>
+                                        <input type="color" id="mbObjColor" value="#6366f1">
+                                    </div>
+                                    <div class="task-form-field engine-checks task-form-field-wide">
+                                        <label class="engine-check"><input type="checkbox" id="mbObjLinkCustomer" checked> <span data-i18n="mb_link_customer">رکوردها به مشتری وصل می‌شوند</span></label>
+                                        <label class="engine-check"><input type="checkbox" id="mbObjHasAssignee"> <span data-i18n="mb_has_assignee">رکوردها مسئول دارند</span></label>
+                                        <label class="engine-check"><input type="checkbox" id="mbObjShowInMenu" checked> <span data-i18n="mb_show_in_menu">نمایش در منو</span></label>
+                                    </div>
+                                    <div class="task-form-field task-form-field-wide">
+                                        <label for="mbObjStatuses" data-i18n="mb_statuses">وضعیت‌ها</label>
+                                        <textarea id="mbObjStatuses" rows="4" dir="ltr" placeholder="new|جدید|New|Yeni|#3b82f6"></textarea>
+                                        <small class="engine-hint" data-i18n="mb_statuses_hint">هر خط یک وضعیت</small>
+                                    </div>
+                                </div>
+                                <div id="moduleFormError" class="engine-form-error" role="alert" style="display:none;"></div>
+                                <div class="task-form-actions engine-form-actions">
+                                    <button type="button" class="btn-secondary" onclick="closeModuleForm()" data-i18n="btn_cancel">انصراف</button>
+                                    <button type="submit" class="btn-primary" data-i18n="btn_save">ذخیره</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <div id="fieldModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="fieldModalTitle">
+                    <div class="modal-box engine-modal-box">
+                        <div class="modal-header">
+                            <h3 id="fieldModalTitle" data-i18n="mb_add_field">فیلد جدید</h3>
+                            <button type="button" class="modal-close" onclick="closeFieldForm()" aria-label="بستن" data-i18n-aria-label="btn_close">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="fieldForm" class="engine-form" autocomplete="off" onsubmit="return submitFieldForm(event)">
+                                <input type="hidden" id="mbFieldId">
+                                <input type="hidden" id="mbFieldEntity">
+                                <input type="hidden" id="mbFieldObjectId">
+                                <div class="task-form-grid engine-form-grid">
+                                    <div class="task-form-field">
+                                        <label for="mbFieldKey"><span data-i18n="mb_field_key">کلید فیلد</span> <span class="engine-req">*</span></label>
+                                        <input type="text" id="mbFieldKey" dir="ltr" pattern="[a-z][a-z0-9_]{0,47}" maxlength="48" required>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbFieldType" data-i18n="mb_field_type">نوع</label>
+                                        <select id="mbFieldType"></select>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbFieldLabelFa"><span data-i18n="mb_label_fa">نام فارسی</span> <span class="engine-req">*</span></label>
+                                        <input type="text" id="mbFieldLabelFa" maxlength="80" dir="auto" required>
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbFieldLabelEn" data-i18n="mb_label_en">نام انگلیسی</label>
+                                        <input type="text" id="mbFieldLabelEn" maxlength="80" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbFieldLabelTr" data-i18n="mb_label_tr">نام ترکی</label>
+                                        <input type="text" id="mbFieldLabelTr" maxlength="80" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field">
+                                        <label for="mbFieldPlaceholder" data-i18n="mb_field_placeholder">راهنمای داخل فیلد</label>
+                                        <input type="text" id="mbFieldPlaceholder" maxlength="120" dir="auto">
+                                    </div>
+                                    <div class="task-form-field task-form-field-wide" id="mbFieldOptionsWrap" style="display:none;">
+                                        <label for="mbFieldOptions" data-i18n="mb_field_options">گزینه‌ها</label>
+                                        <textarea id="mbFieldOptions" rows="4" dir="ltr" placeholder="vip|ویژه|VIP|VIP"></textarea>
+                                        <small class="engine-hint" data-i18n="mb_field_options_hint">هر خط یک گزینه</small>
+                                    </div>
+                                    <div class="task-form-field" id="mbFieldMinWrap" style="display:none;">
+                                        <label for="mbFieldMin" data-i18n="mb_field_min">حداقل</label>
+                                        <input type="number" id="mbFieldMin" step="any" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field" id="mbFieldMaxWrap" style="display:none;">
+                                        <label for="mbFieldMax" data-i18n="mb_field_max">حداکثر</label>
+                                        <input type="number" id="mbFieldMax" step="any" dir="ltr">
+                                    </div>
+                                    <div class="task-form-field engine-checks task-form-field-wide">
+                                        <label class="engine-check"><input type="checkbox" id="mbFieldRequired"> <span data-i18n="mb_field_required">الزامی</span></label>
+                                        <label class="engine-check"><input type="checkbox" id="mbFieldShowInList" checked> <span data-i18n="mb_field_show_in_list">ستون جدول</span></label>
+                                        <label class="engine-check"><input type="checkbox" id="mbFieldSearchable"> <span data-i18n="mb_field_searchable">قابل جستجو</span></label>
+                                        <label class="engine-check" id="mbFieldIsTitleWrap"><input type="checkbox" id="mbFieldIsTitle"> <span data-i18n="mb_field_is_title">عنوان رکورد</span></label>
+                                    </div>
+                                </div>
+                                <div id="fieldFormError" class="engine-form-error" role="alert" style="display:none;"></div>
+                                <div class="task-form-actions engine-form-actions">
+                                    <button type="button" class="btn-secondary" onclick="closeFieldForm()" data-i18n="btn_cancel">انصراف</button>
+                                    <button type="submit" class="btn-primary" data-i18n="btn_save">ذخیره</button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

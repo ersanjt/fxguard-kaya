@@ -4,6 +4,7 @@
 const amqp = require('amqplib');
 const { processIncomingMessage } = require('../incomingMessage');
 const { setRabbitChannel } = require('../autoMessages');
+const { resolveInboundTenant, runInboundWithTenant } = require('../../lib/inboundTenant');
 
 let rabbitChannel = null;
 
@@ -47,13 +48,29 @@ async function connectRabbitMQ({ io, redisClient, logger }) {
                 rabbitChannel.nack(msg, false, false);
                 return;
             }
+            // سازمان مقصد از فیلد tenantSlug پیام (Gateway) یا env؛ slug ناشناخته → DLQ بدون retry
+            let inbound;
             try {
-                await processIncomingMessage(messageData, {
-                    io,
-                    rabbitChannel,
-                    redisClient,
-                    logger,
-                });
+                inbound = await resolveInboundTenant({ payloadSlug: messageData && messageData.tenantSlug });
+            } catch (resolveErr) {
+                logger.error('RabbitMQ: tenant resolve failed', { error: resolveErr?.message });
+                rabbitChannel.nack(msg, false, false);
+                return;
+            }
+            if (!inbound.ok) {
+                logger.warn('RabbitMQ: message for unknown tenant moved to DLQ', { slug: inbound.slug });
+                rabbitChannel.nack(msg, false, false);
+                return;
+            }
+            try {
+                await runInboundWithTenant(inbound.tenant, () =>
+                    processIncomingMessage(messageData, {
+                        io,
+                        rabbitChannel,
+                        redisClient,
+                        logger,
+                    })
+                );
                 rabbitChannel.ack(msg);
             } catch (err) {
                 logger.error('processIncomingMessage failed', {

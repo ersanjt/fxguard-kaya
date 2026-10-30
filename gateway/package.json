@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "test": "node test/media-safety.test.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --check \"src/**/*.js\"",

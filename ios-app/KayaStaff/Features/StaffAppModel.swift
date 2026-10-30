@@ -124,11 +124,28 @@ final class StaffAppModel: ObservableObject {
             authError = L10n.t(lang, "server_https")
             return false
         }
+        let previous = session.baseUrl
+        if normalized == previous {
+            serverUrl = normalized
+            if gate == .app { socket.connect() }
+            return true
+        }
+        if session.isLoggedIn {
+            // نشست به سرور قبلی تعلق دارد؛ JWT هرگز نباید به هاست جدید فرستاده شود.
+            // اول روی سرور قبلی خارج می‌شویم، بعد آدرس را عوض می‌کنیم و ورود دوباره می‌خواهیم.
+            Task {
+                socket.disconnect()
+                await api.logout()
+                session.baseUrl = normalized
+                serverUrl = normalized
+                resetToLogin()
+                authIsSuccess = false
+                authError = L10n.t(lang, "server_changed_relogin")
+            }
+            return true
+        }
         session.baseUrl = normalized
         serverUrl = normalized
-        if gate == .app {
-            socket.connect()
-        }
         return true
     }
 

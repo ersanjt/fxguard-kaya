@@ -55,6 +55,10 @@ const DEFAULT = {
     alanChandApiKey: null,
     ratesApiProvider: 'navasan',
     planTier: null,
+    industryKey: null,
+    labelOverrides: {},
+    bookingReminderHours: 24,
+    bookingReminderTemplate: null,
 };
 
 const MODE_TO_LANGUAGES = {
@@ -92,6 +96,31 @@ function parseHiddenSections(val) {
     } catch (_) {
         return [];
     }
+}
+
+/** واژگان سازمان: { i18nKey: { fa, en, tr } } — ورودی نامعتبر → {} */
+function parseLabelOverrides(val) {
+    if (val == null || val === '') return {};
+    let obj = val;
+    if (typeof val === 'string') {
+        try {
+            obj = JSON.parse(val);
+        } catch (_) {
+            return {};
+        }
+    }
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return {};
+    const out = {};
+    for (const k of Object.keys(obj)) {
+        const v = obj[k];
+        if (!v || typeof v !== 'object') continue;
+        const item = {};
+        for (const l of ['fa', 'en', 'tr']) {
+            if (v[l] != null && String(v[l]).trim()) item[l] = String(v[l]).trim().slice(0, 80);
+        }
+        if (Object.keys(item).length) out[String(k).slice(0, 64)] = item;
+    }
+    return out;
 }
 
 async function getPanelSettings() {
@@ -163,6 +192,12 @@ async function getPanelSettings() {
         alanChandApiKey: row.alanChandApiKey || null,
         ratesApiProvider: row.ratesApiProvider === 'alanchand' ? 'alanchand' : 'navasan',
         planTier: row.planTier || null,
+        industryKey: row.industryKey || null,
+        labelOverrides: parseLabelOverrides(row.labelOverrides),
+        bookingReminderHours: Number.isFinite(Number(row.bookingReminderHours)) && row.bookingReminderHours !== null
+            ? Math.max(0, Math.min(168, Number(row.bookingReminderHours)))
+            : DEFAULT.bookingReminderHours,
+        bookingReminderTemplate: row.bookingReminderTemplate || null,
     });
 }
 
@@ -252,4 +287,5 @@ module.exports = {
     getSupportedLanguagesFromMode,
     DEFAULT,
     parseHiddenSections,
+    parseLabelOverrides,
 };

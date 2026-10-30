@@ -7,6 +7,7 @@ const { getSendTarget } = require('../lib/phoneUtils');
 const { Message, Customer, Conversation, WhatsappConfig, User, Department } = require('../models');
 const logger = require('../config/logger');
 const { getPanelSettingsKey } = require('../lib/tenantContext');
+const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
 const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';
 const DEFAULT_EMPLOYEE_INTRO = '{{name}} از دپارتمان {{deptName}} الان به شما وصل شده و پاسخ می‌دهد.';
@@ -37,9 +38,9 @@ async function sendOutgoingAutoMessage(conversation, text) {
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel && !isCloudApiConfigured()) {
-            const sent = rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
+            const sent = publishOutgoingMessage(rabbitChannel, {
                 to: toPhone, message: text, conversationId: conversation.id
-            })), { persistent: true });
+            });
             if (sent === false) {
                 logger.warn('autoMessages: RabbitMQ queue full (backpressure), falling back to gateway', { conversationId: conversation.id });
                 await sendWhatsAppMessage({ to: toPhone, message: text }, { timeout: 10000 });
@@ -209,6 +210,7 @@ async function clearConversationEndedFlag(conversationId) {
 
 module.exports = {
     setRabbitChannel,
+    sendOutgoingAutoMessage,
     sendDeptAssignedMessage,
     maybeSendEmployeeIntro,
     sendConversationEndedMessage,

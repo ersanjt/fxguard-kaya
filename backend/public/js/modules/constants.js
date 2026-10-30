@@ -8,7 +8,9 @@
         'dashboard', 'conversations', 'customers', 'departments', 'users',
         'tickets', 'tasks', 'processes', 'whatsapp', 'message-templates',
         'branches', 'supervision', 'system-status', 'staff-activity', 'profile', 'announcements',
-        'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings'
+        'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings',
+        // موتور عمومی (ماژول‌های سازمان) و نوبت‌دهی
+        'records', 'appointments', 'modules'
     ];
 
     const PAGE_TO_SECTION = {
@@ -30,7 +32,10 @@
         customers: 'customers',
         processes: 'processes',
         announcements: 'announcements',
-        'message-templates': 'conversations'
+        'message-templates': 'conversations',
+        records: 'records',
+        appointments: 'appointments',
+        modules: 'records'
     };
 
     const PAGE_IDS = {
@@ -54,7 +59,10 @@
         rates: 'pageRates',
         'rates-charts': 'pageRatesCharts',
         services: 'pageServices',
-        'panel-settings': 'pagePanelSettings'
+        'panel-settings': 'pagePanelSettings',
+        records: 'pageRecords',
+        appointments: 'pageAppointments',
+        modules: 'pageModules'
     };
 
     const PAGE_TITLES = {
@@ -78,7 +86,10 @@
         rates: 'nav_rates',
         'rates-charts': 'nav_rates_charts',
         services: 'nav_services',
-        'panel-settings': 'nav_panel_settings'
+        'panel-settings': 'nav_panel_settings',
+        records: 'nav_records',
+        appointments: 'nav_appointments',
+        modules: 'nav_modules'
     };
 
     window.CRM = window.CRM || {};

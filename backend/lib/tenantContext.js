@@ -52,6 +52,36 @@ function runWithTenant(tenant, fn) {
     return tenantAls.run({ tenant: tenant || null }, fn);
 }
 
+function normalizeTenantId(value) {
+    if (value == null || value === '') return null;
+    return String(value);
+}
+
+/**
+ * null/undefined و شناسهٔ سازمان سکو هر دو «سکو» محسوب می‌شوند
+ * (ردیف‌های legacy قبل از backfill tenantId ندارند).
+ */
+function isPlatformTenantId(value) {
+    const v = normalizeTenantId(value);
+    if (v === null) return true;
+    const platform = getCachedPlatformTenant();
+    return !!(platform && platform.id && String(platform.id) === v);
+}
+
+/** آیا دو رکورد/کاربر به یک سازمان تعلق دارند؟ مرز سخت بین سازمان‌های self-serve. */
+function sameTenant(a, b) {
+    const x = normalizeTenantId(a);
+    const y = normalizeTenantId(b);
+    if (x === y) return true;
+    return isPlatformTenantId(x) && isPlatformTenantId(y);
+}
+
+/** نام room سوکت برای پخش رویدادهای سازمانی (به‌جای io.emit سراسری). */
+function tenantRoom(tenantId) {
+    const v = normalizeTenantId(tenantId);
+    return 'tenant_' + (isPlatformTenantId(v) ? 'platform' : v);
+}
+
 function bindSocketTenant(socket) {
     if (!socket || typeof socket.on !== 'function') return socket;
     const origOn = socket.on.bind(socket);
@@ -77,4 +107,8 @@ module.exports = {
     getCachedPlatformTenant,
     runWithTenant,
     bindSocketTenant,
+    normalizeTenantId,
+    isPlatformTenantId,
+    sameTenant,
+    tenantRoom,
 };

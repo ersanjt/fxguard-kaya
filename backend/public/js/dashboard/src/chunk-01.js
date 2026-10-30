@@ -1482,9 +1482,16 @@
             if (res.ok) { closeBankAccountModal(); toast(t('btn_save')); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; const res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
+        // یک کلید برای هر «ثبت تراکنش» جدید — retry شبکه یا دابل‌کلیک همان تراکنش را برمی‌گرداند، نه دومی
+        let txModalIdempotencyKey = '';
+        function newIdempotencyKey() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') return 'tx-' + window.crypto.randomUUID();
+            return 'tx-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 12) + Math.random().toString(36).slice(2, 12);
+        }
         function openTransactionModal(prefillCustomerId) {
             const m = document.getElementById('transactionModal'); if (!m) return;
             document.getElementById('txModalId').value = '';
+            txModalIdempotencyKey = newIdempotencyKey();
             const titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ثبت تراکنش' : 'Add transaction';
             const subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش مالی را وارد کنید' : 'Enter financial transaction details';
             m.style.display = 'flex';
@@ -1600,9 +1607,14 @@
             const date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
             if (!amount || amount <= 0) { toast(LANG === 'fa' ? 'مبلغ معتبر وارد کنید' : 'Enter valid amount', true); return; }
             const body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, customerId, description, reference, transactionDate: date };
-            const res = txId ? await apiFetch('/api/exchange/transactions/' + txId, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
+            if (!txId && !txModalIdempotencyKey) txModalIdempotencyKey = newIdempotencyKey();
+            const res = txId
+                ? await apiFetch('/api/exchange/transactions/' + txId, { method: 'PUT', body: JSON.stringify(body) })
+                : await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body), headers: { 'Idempotency-Key': txModalIdempotencyKey } });
             if (res.needLogin) return;
-            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ذخیره شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            // همان کلید با بدنهٔ تغییریافته (کاربر مبلغ را اصلاح کرد) → کلید تازه و تلاش دوباره
+            if (!txId && !res.ok && res.data && res.data.code === 'IDEMPOTENCY_KEY_REUSED') { txModalIdempotencyKey = newIdempotencyKey(); return saveTransactionFromModal(); }
+            if (res.ok) { if (!txId) txModalIdempotencyKey = ''; closeTransactionModal(); toast(LANG === 'fa' ? 'ذخیره شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadServices() {
             const list = document.getElementById('serviceList');
@@ -2198,6 +2210,9 @@
                         if (typeof logout === 'function') logout();
                     });
                     socket.on('staff_presence', handleStaffPresence);
+                    socket.on('appointment:changed', function(data) {
+                        if (typeof window.onAppointmentChangedSocket === 'function') window.onAppointmentChangedSocket(data);
+                    });
                     socket.on('user_status', function() {
                         const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') loadStaffActivity();

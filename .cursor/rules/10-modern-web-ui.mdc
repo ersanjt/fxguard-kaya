@@ -1,0 +1,17 @@
+﻿---
+description: Modern React, Next.js, Vite, Tailwind, and app UI standards
+globs: **/*.{tsx,jsx,ts,js,css,scss,mdx}
+alwaysApply: false
+---
+
+# Modern Web UI
+
+- Use React/Next/Vite conventions already present in the project. Do not migrate frameworks unless explicitly asked.
+- Inspect existing components, tokens, Tailwind setup, shadcn/Radix usage, icons, layouts, and copy style before adding UI.
+- Build the usable product screen first. Avoid generic landing-page filler when the user asks for an app, dashboard, tool, CRM, panel, or workflow.
+- Use semantic HTML, keyboard-accessible controls, visible focus states, labels, and correct loading/disabled/error states.
+- Keep responsive layout intentional. Verify that text, buttons, cards, tables, dialogs, and navigation do not overlap on mobile or desktop.
+- Prefer established UI primitives such as shadcn/ui, Radix UI, lucide-react, and the local design system when available.
+- For Tailwind v4 projects, use the existing CSS-first theme approach. For older Tailwind projects, preserve their current config style.
+- Use real assets or generated imagery for brand/product/place pages when visuals matter. Avoid generic gradients as the primary visual idea.
+- Keep cards for actual repeated items, panels, modals, or tools. Do not nest decorative cards inside cards.

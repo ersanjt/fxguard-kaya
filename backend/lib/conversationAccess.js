@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const { isMainAdmin, canViewHiddenConversations } = require('./permissions');
+const { sameTenant } = require('./tenantContext');
 const {
     getUserGrantSets,
     hasResourceGrant,
@@ -27,6 +28,8 @@ function isLiveInboxConversation(conversation) {
 /** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 function canAccessConversation(user, userId, conversation, grants = null) {
     if (!conversation || !user) return false;
+    // مرز سازمان قبل از هر نقشی — حتی ادمین سطح بالا مکالمهٔ سازمان دیگر را نمی‌بیند
+    if (!sameTenant(user.tenantId, conversation.tenantId)) return false;
     if (isMainAdmin(user) || canViewHiddenConversations(user)) return true;
 
     const granted =
@@ -54,6 +57,7 @@ function canAccessConversation(user, userId, conversation, grants = null) {
 
 async function canAccessConversationAsync(user, userId, conversation) {
     if (!conversation || !user) return false;
+    if (!sameTenant(user.tenantId, conversation.tenantId)) return false;
     if (isMainAdmin(user) || canViewHiddenConversations(user)) return true;
 
     let view = conversation;
@@ -68,6 +72,7 @@ async function canAccessConversationAsync(user, userId, conversation) {
         });
         view = {
             id: conversation.id,
+            tenantId: conversation.tenantId,
             customerId: conversation.customerId,
             assignedTo: conversation.assignedTo,
             departmentId: conversation.departmentId,

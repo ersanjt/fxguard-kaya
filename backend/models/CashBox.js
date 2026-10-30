@@ -10,6 +10,11 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'سازمان مالک — جداسازی داده در Cloud'
+        },
         name: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -48,6 +53,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'CashBoxes',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['branchId'] },
             { fields: ['isActive'] }
         ]

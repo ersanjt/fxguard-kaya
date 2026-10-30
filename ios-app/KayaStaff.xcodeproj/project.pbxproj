@@ -22,6 +22,7 @@
 		A10000000000000000000D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000D /* Assets.xcassets */; };
 		A10000000000000000000E /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B10000000000000000000F /* PrivacyInfo.xcprivacy */; };
 		A10000000000000000000F /* SocketService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000010 /* SocketService.swift */; };
+		A100000000000000000012 /* CertificatePinning.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000012 /* CertificatePinning.swift */; };
 		A100000000000000000010 /* StaffLocalPush.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000000000000000011 /* StaffLocalPush.swift */; };
 /* End PBXBuildFile section */
 
@@ -42,6 +43,7 @@
 		B10000000000000000000E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B10000000000000000000F /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		B100000000000000000010 /* SocketService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketService.swift; sourceTree = "<group>"; };
+		B100000000000000000012 /* CertificatePinning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CertificatePinning.swift; sourceTree = "<group>"; };
 		B100000000000000000011 /* StaffLocalPush.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffLocalPush.swift; sourceTree = "<group>"; };
 		C100000000000000000001 /* KayaStaff.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KayaStaff.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -86,6 +88,7 @@
 				B100000000000000000003 /* L10n.swift */,
 				B100000000000000000004 /* SessionStore.swift */,
 				B100000000000000000005 /* ApiClient.swift */,
+				B100000000000000000012 /* CertificatePinning.swift */,
 				B100000000000000000010 /* SocketService.swift */,
 				B100000000000000000011 /* StaffLocalPush.swift */,
 			);
@@ -238,6 +241,7 @@
 				A10000000000000000000B /* InboxView.swift in Sources */,
 				A10000000000000000000C /* ListViews.swift in Sources */,
 				A10000000000000000000F /* SocketService.swift in Sources */,
+				A100000000000000000012 /* CertificatePinning.swift in Sources */,
 				A100000000000000000010 /* StaffLocalPush.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

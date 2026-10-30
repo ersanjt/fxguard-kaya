@@ -1,0 +1,17 @@
+{
+  "key": "exchange",
+  "labels": { "fa": "صرافی و حواله", "en": "Exchange & remittance", "tr": "Döviz ve havale" },
+  "description": {
+    "fa": "پیکربندی پیش‌فرض کایا: نرخ ارز، خدمات صرافی، صندوق و تراکنش‌ها فعال می‌مانند.",
+    "en": "Kaya default: FX rates, exchange services, cash boxes and transactions stay enabled.",
+    "tr": "Kaya varsayılanı: kur, döviz hizmetleri, kasa ve işlemler açık kalır."
+  },
+  "icon": "banknote",
+  "hiddenSections": [],
+  "labelOverrides": {},
+  "booking": { "enabled": false, "reminderHours": 0 },
+  "customerFields": [],
+  "appointmentFields": [],
+  "bookableServices": [],
+  "objects": []
+}

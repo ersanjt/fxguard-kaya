@@ -13,10 +13,13 @@ async function emitNewMessageToAuthorized(io, conversation, payload) {
     }
     const { canAccessConversationAsync } = require('./conversationAccess');
     const { canAccess } = require('./permissions');
+    const { sameTenant } = require('./tenantContext');
     await Promise.all(
         sockets.map(async (s) => {
             if (!s.user || !s.userId) return;
             if (s.user.isActive === false) return;
+            // سوکت سازمان دیگر هرگز رویداد این مکالمه را نگیرد
+            if (!sameTenant(s.tenantId, conversation.tenantId)) return;
             try {
                 if (!canAccess(s.user, 'conversations')) return;
                 if (await canAccessConversationAsync(s.user, s.userId, conversation)) {

@@ -1,0 +1,121 @@
+{
+  "key": "retail",
+  "labels": { "fa": "فروشگاه کالا و پوشاک", "en": "Retail shop", "tr": "Perakende mağaza" },
+  "description": {
+    "fa": "سفارش‌های واتساپی، محصولات، پیگیری ارسال و مرجوعی؛ باشگاه مشتریان.",
+    "en": "WhatsApp orders, products, delivery and returns tracking; loyalty.",
+    "tr": "WhatsApp siparişleri, ürünler, teslimat ve iade takibi; sadakat."
+  },
+  "icon": "shopping-bag",
+  "hiddenSections": ["rates", "rates-charts", "services"],
+  "labelOverrides": {
+    "nav_customers": { "fa": "مشتریان", "en": "Customers", "tr": "Müşteriler" }
+  },
+  "booking": { "enabled": false, "reminderHours": 0 },
+  "customerFields": [
+    { "key": "size", "type": "select", "labels": { "fa": "سایز", "en": "Size", "tr": "Beden" },
+      "options": [{ "value": "XS" }, { "value": "S" }, { "value": "M" }, { "value": "L" }, { "value": "XL" }, { "value": "XXL" }] },
+    { "key": "favorite_categories", "type": "multiselect", "labels": { "fa": "دسته‌های مورد علاقه", "en": "Favourite categories", "tr": "Favori kategoriler" },
+      "options": [
+        { "value": "women", "labels": { "fa": "زنانه", "en": "Women", "tr": "Kadın" } },
+        { "value": "men", "labels": { "fa": "مردانه", "en": "Men", "tr": "Erkek" } },
+        { "value": "kids", "labels": { "fa": "بچگانه", "en": "Kids", "tr": "Çocuk" } },
+        { "value": "accessories", "labels": { "fa": "اکسسوری", "en": "Accessories", "tr": "Aksesuar" } },
+        { "value": "home", "labels": { "fa": "خانه", "en": "Home", "tr": "Ev" } }
+      ] },
+    { "key": "delivery_address", "type": "textarea", "labels": { "fa": "آدرس ارسال", "en": "Delivery address", "tr": "Teslimat adresi" }, "showInList": false }
+  ],
+  "appointmentFields": [],
+  "bookableServices": [],
+  "objects": [
+    {
+      "key": "orders",
+      "labels": { "fa": "سفارش‌ها", "en": "Orders", "tr": "Siparişler" },
+      "singularLabels": { "fa": "سفارش", "en": "Order", "tr": "Sipariş" },
+      "icon": "shopping-cart",
+      "color": "#f59e0b",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "new", "labels": { "fa": "جدید", "en": "New", "tr": "Yeni" }, "color": "#3b82f6" },
+        { "key": "awaiting_payment", "labels": { "fa": "در انتظار پرداخت", "en": "Awaiting payment", "tr": "Ödeme bekleniyor" }, "color": "#f59e0b" },
+        { "key": "paid", "labels": { "fa": "پرداخت شد", "en": "Paid", "tr": "Ödendi" }, "color": "#8b5cf6" },
+        { "key": "preparing", "labels": { "fa": "آماده‌سازی", "en": "Preparing", "tr": "Hazırlanıyor" }, "color": "#0ea5e9" },
+        { "key": "shipped", "labels": { "fa": "ارسال شد", "en": "Shipped", "tr": "Kargoda" }, "color": "#06b6d4" },
+        { "key": "delivered", "labels": { "fa": "تحویل شد", "en": "Delivered", "tr": "Teslim edildi" }, "color": "#22c55e", "isFinal": true },
+        { "key": "returned", "labels": { "fa": "مرجوع", "en": "Returned", "tr": "İade" }, "color": "#ef4444", "isFinal": true },
+        { "key": "cancelled", "labels": { "fa": "لغو", "en": "Cancelled", "tr": "İptal" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "order_no", "type": "text", "labels": { "fa": "شمارهٔ سفارش", "en": "Order no.", "tr": "Sipariş no" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "items", "type": "textarea", "labels": { "fa": "اقلام", "en": "Items", "tr": "Ürünler" }, "required": true, "searchable": true },
+        { "key": "total", "type": "money", "labels": { "fa": "مبلغ کل", "en": "Total", "tr": "Toplam" }, "required": true },
+        { "key": "payment_method", "type": "select", "labels": { "fa": "روش پرداخت", "en": "Payment", "tr": "Ödeme" },
+          "options": [
+            { "value": "card_to_card", "labels": { "fa": "کارت به کارت", "en": "Bank transfer", "tr": "Havale" } },
+            { "value": "online", "labels": { "fa": "درگاه آنلاین", "en": "Online", "tr": "Online" } },
+            { "value": "cod", "labels": { "fa": "پرداخت در محل", "en": "Cash on delivery", "tr": "Kapıda ödeme" } }
+          ] },
+        { "key": "shipping_method", "type": "select", "labels": { "fa": "روش ارسال", "en": "Shipping", "tr": "Kargo" },
+          "options": [
+            { "value": "post", "labels": { "fa": "پست", "en": "Post", "tr": "Posta" } },
+            { "value": "courier", "labels": { "fa": "پیک", "en": "Courier", "tr": "Kurye" } },
+            { "value": "pickup", "labels": { "fa": "تحویل حضوری", "en": "Pickup", "tr": "Mağazadan teslim" } }
+          ] },
+        { "key": "tracking_code", "type": "text", "labels": { "fa": "کد رهگیری", "en": "Tracking code", "tr": "Takip kodu" }, "searchable": true },
+        { "key": "notes", "type": "textarea", "labels": { "fa": "یادداشت", "en": "Notes", "tr": "Notlar" }, "showInList": false }
+      ]
+    },
+    {
+      "key": "products",
+      "labels": { "fa": "محصولات", "en": "Products", "tr": "Ürünler" },
+      "singularLabels": { "fa": "محصول", "en": "Product", "tr": "Ürün" },
+      "icon": "package",
+      "color": "#10b981",
+      "linkToCustomer": false,
+      "hasAssignee": false,
+      "statuses": [
+        { "key": "in_stock", "labels": { "fa": "موجود", "en": "In stock", "tr": "Stokta" }, "color": "#22c55e" },
+        { "key": "low", "labels": { "fa": "رو به اتمام", "en": "Low stock", "tr": "Az kaldı" }, "color": "#f59e0b" },
+        { "key": "out", "labels": { "fa": "ناموجود", "en": "Out of stock", "tr": "Tükendi" }, "color": "#ef4444" }
+      ],
+      "fields": [
+        { "key": "name", "type": "text", "labels": { "fa": "نام محصول", "en": "Product name", "tr": "Ürün adı" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "sku", "type": "text", "labels": { "fa": "کد کالا", "en": "SKU", "tr": "Stok kodu" }, "searchable": true },
+        { "key": "category", "type": "text", "labels": { "fa": "دسته", "en": "Category", "tr": "Kategori" } },
+        { "key": "price", "type": "money", "labels": { "fa": "قیمت", "en": "Price", "tr": "Fiyat" } },
+        { "key": "stock", "type": "number", "labels": { "fa": "موجودی", "en": "Stock", "tr": "Stok" }, "validation": { "min": 0 } },
+        { "key": "sizes", "type": "multiselect", "labels": { "fa": "سایزها", "en": "Sizes", "tr": "Bedenler" },
+          "options": [{ "value": "XS" }, { "value": "S" }, { "value": "M" }, { "value": "L" }, { "value": "XL" }, { "value": "XXL" }, { "value": "free" }] },
+        { "key": "image_url", "type": "url", "labels": { "fa": "لینک تصویر", "en": "Image URL", "tr": "Görsel URL" }, "showInList": false }
+      ]
+    },
+    {
+      "key": "returns",
+      "labels": { "fa": "مرجوعی‌ها", "en": "Returns", "tr": "İadeler" },
+      "singularLabels": { "fa": "مرجوعی", "en": "Return", "tr": "İade" },
+      "icon": "rotate-ccw",
+      "color": "#ef4444",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "requested", "labels": { "fa": "درخواست شده", "en": "Requested", "tr": "Talep edildi" }, "color": "#f59e0b" },
+        { "key": "received", "labels": { "fa": "دریافت شد", "en": "Received", "tr": "Alındı" }, "color": "#0ea5e9" },
+        { "key": "refunded", "labels": { "fa": "بازپرداخت شد", "en": "Refunded", "tr": "İade edildi" }, "color": "#22c55e", "isFinal": true },
+        { "key": "rejected", "labels": { "fa": "رد شد", "en": "Rejected", "tr": "Reddedildi" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "order_no", "type": "text", "labels": { "fa": "شمارهٔ سفارش", "en": "Order no.", "tr": "Sipariş no" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "reason", "type": "select", "labels": { "fa": "علت", "en": "Reason", "tr": "Neden" },
+          "options": [
+            { "value": "size", "labels": { "fa": "سایز نامناسب", "en": "Wrong size", "tr": "Yanlış beden" } },
+            { "value": "defect", "labels": { "fa": "ایراد کالا", "en": "Defect", "tr": "Kusur" } },
+            { "value": "changed_mind", "labels": { "fa": "انصراف", "en": "Changed mind", "tr": "Vazgeçti" } },
+            { "value": "other", "labels": { "fa": "سایر", "en": "Other", "tr": "Diğer" } }
+          ] },
+        { "key": "amount", "type": "money", "labels": { "fa": "مبلغ بازپرداخت", "en": "Refund amount", "tr": "İade tutarı" } },
+        { "key": "notes", "type": "textarea", "labels": { "fa": "توضیحات", "en": "Notes", "tr": "Notlar" }, "showInList": false }
+      ]
+    }
+  ]
+}

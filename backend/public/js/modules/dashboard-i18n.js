@@ -108,6 +108,44 @@ window.setLang = function (l) {
     if (typeof window.reapplyFxguardPublicBranding === 'function') window.reapplyFxguardPublicBranding();
 };
 
+/**
+ * واژگان سازمان (labelOverrides از panel_settings): مثلاً nav_customers → «بیماران».
+ * نسخهٔ پیش‌فرض هر کلید در window.__I18N_DEFAULTS نگه داشته می‌شود تا با حذف override برگردد.
+ * @param {Object<string,{fa?:string,en?:string,tr?:string}>} map
+ */
+window.applyLabelOverrides = function (map) {
+    var packs = { fa: window.__I18N_FA, en: window.__I18N_EN, tr: window.__I18N_TR };
+    var defaults = (window.__I18N_DEFAULTS = window.__I18N_DEFAULTS || { fa: {}, en: {}, tr: {} });
+    var prev = window.__engineLabelOverrides || {};
+    var next = map && typeof map === 'object' ? map : {};
+    var langs = ['fa', 'en', 'tr'];
+    var restore = function (lang, k) {
+        if (!packs[lang] || defaults[lang][k] === undefined) return;
+        packs[lang][k] = defaults[lang][k];
+        if (I18N[lang]) I18N[lang][k] = defaults[lang][k];
+    };
+    Object.keys(prev).forEach(function (k) {
+        langs.forEach(function (lang) { restore(lang, k); });
+    });
+    Object.keys(next).forEach(function (k) {
+        if (!/^[a-z0-9_]{1,64}$/i.test(k)) return;
+        var o = next[k] || {};
+        langs.forEach(function (lang) {
+            if (!packs[lang]) return;
+            var v = typeof o[lang] === 'string' ? o[lang].trim().slice(0, 80) : '';
+            if (defaults[lang][k] === undefined) defaults[lang][k] = packs[lang][k];
+            if (v) {
+                packs[lang][k] = v;
+                if (I18N[lang]) I18N[lang][k] = v;
+            } else {
+                restore(lang, k);
+            }
+        });
+    });
+    window.__engineLabelOverrides = next;
+    if (typeof window.applyTranslations === 'function') window.applyTranslations();
+};
+
 window.applyTranslations = function () {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
         if (el.getAttribute('data-branded') === '1') return;

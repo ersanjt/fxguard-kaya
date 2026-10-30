@@ -95,6 +95,27 @@ module.exports = (sequelize) => {
             allowNull: true,
             defaultValue: null,
             comment: 'پلن تجاری: خالی=legacy یا PLAN_TIER از env | start | business | multi | license | managed'
+        },
+        industryKey: {
+            type: DataTypes.STRING(48),
+            allowNull: true,
+            comment: 'قالب صنعت اعمال‌شده: exchange | beauty_clinic | hospital | tourism | health_tourism | retail | ...'
+        },
+        labelOverrides: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'واژگان سازمان (JSON): { i18nKey: { fa, en, tr } } — مثلاً «مشتریان» → «بیماران»'
+        },
+        bookingReminderHours: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            defaultValue: 24,
+            comment: 'چند ساعت قبل از نوبت یادآوری واتساپ ارسال شود (0 = خاموش)'
+        },
+        bookingReminderTemplate: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'متن یادآوری نوبت — متغیرها: {name} {service} {date} {time} {staff} {org}'
         }
     }, {
         timestamps: true,

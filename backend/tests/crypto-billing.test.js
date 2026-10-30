@@ -12,6 +12,8 @@ const {
     assertValidNetwork,
     confirmTokenForTenant,
     parseConfirmToken,
+    txIdFingerprint,
+    confirmTokenTtlMs,
     DEFAULT_WALLETS,
     AMOUNT_USDT,
 } = require('../lib/cryptoBilling');
@@ -53,7 +55,7 @@ async function run() {
         const cfg = publicCryptoBillingConfig({});
         assert.strictEqual(cfg.enabled, true);
         assert.ok(cfg.wallets.length >= 3);
-        assert.strictEqual(cfg.autoActivate, true);
+        assert.strictEqual(cfg.autoActivate, false);
     });
 
     await test('CRYPTO_PAY_DISABLED turns crypto off', () => {
@@ -73,9 +75,12 @@ async function run() {
         assert.strictEqual(resolveBillingMode({ STRIPE_SECRET_KEY: 'sk_test_abc' }), 'checkout');
     });
 
-    await test('auto activate can be disabled', () => {
+    await test('auto activate is opt-in (default off — TXID is not verified on-chain)', () => {
+        assert.strictEqual(cryptoAutoActivate({}), false);
+        assert.strictEqual(cryptoAutoActivate({ CRYPTO_PAY_AUTO_ACTIVATE: '' }), false);
         assert.strictEqual(cryptoAutoActivate({ CRYPTO_PAY_AUTO_ACTIVATE: 'false' }), false);
-        assert.strictEqual(cryptoAutoActivate({}), true);
+        assert.strictEqual(cryptoAutoActivate({ CRYPTO_PAY_AUTO_ACTIVATE: 'true' }), true);
+        assert.strictEqual(cryptoAutoActivate({ CRYPTO_PAY_AUTO_ACTIVATE: '1' }), true);
     });
 
     await test('txid validation per network', () => {
@@ -89,12 +94,40 @@ async function run() {
         assert.strictEqual(evm.ok, true);
     });
 
-    await test('confirm token round-trip', () => {
+    await test('confirm token round-trip is bound to tenant + TXID', () => {
         const secret = 'test-jwt-secret-for-crypto';
-        const token = confirmTokenForTenant('tenant-uuid-1', secret);
+        const token = confirmTokenForTenant('tenant-uuid-1', secret, { txId: 'a'.repeat(64) });
         assert.ok(token);
-        assert.strictEqual(parseConfirmToken(token, secret), 'tenant-uuid-1');
+        const parsed = parseConfirmToken(token, secret);
+        assert.ok(parsed);
+        assert.strictEqual(parsed.tenantId, 'tenant-uuid-1');
+        assert.strictEqual(parsed.txIdFingerprint, txIdFingerprint('A'.repeat(64)), 'fingerprint is case-insensitive');
+        assert.notStrictEqual(parsed.txIdFingerprint, txIdFingerprint('b'.repeat(64)));
+        assert.ok(parsed.expiresAt > Date.now());
         assert.strictEqual(parseConfirmToken(token, 'other'), null);
+    });
+
+    await test('confirm token expires and rejects tampering', () => {
+        const secret = 'test-jwt-secret-for-crypto';
+        const now = 1_800_000_000_000;
+        const token = confirmTokenForTenant('tenant-uuid-1', secret, { txId: 'x', now });
+        assert.ok(parseConfirmToken(token, secret, { now: now + 1000 }));
+        assert.strictEqual(
+            parseConfirmToken(token, secret, { now: now + confirmTokenTtlMs() + 1 }),
+            null,
+            'token past TTL must be rejected'
+        );
+        const raw = Buffer.from(token, 'base64url').toString('utf8').split('.');
+        raw[0] = 'tenant-uuid-2';
+        const forged = Buffer.from(raw.join('.')).toString('base64url');
+        assert.strictEqual(parseConfirmToken(forged, secret, { now }), null, 'tenant swap must fail');
+        raw[0] = 'tenant-uuid-1';
+        raw[1] = String(Number(raw[1]) + 999999999);
+        const extended = Buffer.from(raw.join('.')).toString('base64url');
+        assert.strictEqual(parseConfirmToken(extended, secret, { now }), null, 'expiry extension must fail');
+        // فرمت قدیمی (tenantId.sig) دیگر پذیرفته نمی‌شود
+        const legacy = Buffer.from('tenant-uuid-1.deadbeef').toString('base64url');
+        assert.strictEqual(parseConfirmToken(legacy, secret), null);
     });
 
     console.log(`\nResults: ${passed} passed, ${failed} failed`);

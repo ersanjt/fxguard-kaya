@@ -24,6 +24,7 @@
             login_signup:         '۷ روز رایگان — ساخت پنل',
             login_panel_lbl:      'شناسه پنل',
             login_panel_ph:       'مثلاً your-desk',
+            login_panel_active:   'پنل فعال:',
             login_panel_required: 'شناسه پنل را وارد کنید.',
             login_email_required: 'ایمیل یا نام کاربری را وارد کنید.',
             login_pass_required:  'رمز عبور را وارد کنید.',
@@ -72,7 +73,7 @@
             forgot_email_ph:      'email@example.com',
             reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
-            lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'ترکی',
+            lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkce',
             lang_label: 'انتخاب زبان',
         },
         en: {
@@ -86,6 +87,7 @@
             login_signup:         '7-day free trial — create your panel',
             login_panel_lbl:      'Panel ID',
             login_panel_ph:       'e.g. your-desk',
+            login_panel_active:   'Active panel:',
             login_panel_required: 'Enter your panel ID.',
             login_email_required: 'Please enter your email or username.',
             login_pass_required:  'Please enter your password.',
@@ -134,7 +136,7 @@
             forgot_email_ph:      'you@example.com',
             reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
-            lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkish',
+            lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
             lang_label: 'Language',
         },
         tr: {
@@ -146,9 +148,10 @@
             login_loading:        'Giriş yapılıyor...',
             login_forgot_password:'Şifremi unuttum',
             login_signup:         '7 gün ücretsiz — panel oluştur',
-            login_panel_lbl:      'Panel kimliği',
-            login_panel_ph:       'ör. your-desk',
-            login_panel_required: 'Panel kimliğini girin.',
+            login_panel_lbl:      'Panel ID',
+            login_panel_ph:       'örn. your-desk',
+            login_panel_active:   'Aktif panel:',
+            login_panel_required: 'Panel ID girin.',
             login_email_required: 'E-posta veya kullanıcı adınızı girin.',
             login_pass_required:  'Şifrenizi girin.',
             login_err_connect:    'Sunucuya bağlanılamadı. Lütfen tekrar deneyin.',
@@ -207,6 +210,7 @@
     function loginIsPublicRestricted() { return false; }
 
     var PANEL_SLUG_KEY = 'fxguard_panel_slug';
+    var LANG_NATIVE = { fa: 'فارسی', en: 'English', tr: 'Türkçe' };
     function lpIsAppApex() {
         return (location.hostname || '').toLowerCase() === 'app.fxguard.io';
     }
@@ -215,7 +219,10 @@
     }
     function lpRememberPanel(slug) {
         var s = lpNormalizePanel(slug);
-        if (!s) return;
+        if (!s) {
+            try { localStorage.removeItem(PANEL_SLUG_KEY); } catch (_) {}
+            return;
+        }
         try { localStorage.setItem(PANEL_SLUG_KEY, s); } catch (_) {}
     }
     function lpSavedPanel() {
@@ -223,16 +230,16 @@
     }
     function lpPanelSlug() {
         var el = document.getElementById('lpPanelSlug');
+        if (el && el.value) return lpNormalizePanel(el.value);
         try {
             var q = new URLSearchParams(window.location.search).get('panel');
             if (q) return lpNormalizePanel(q);
         } catch (_) {}
-        if (el && el.value) return lpNormalizePanel(el.value);
         return lpSavedPanel();
     }
     function lpWithPanel(url) {
+        if (!url) return url;
         var s = lpPanelSlug();
-        if (!s || !url) return url;
         var hash = '';
         var path = String(url);
         var hashIdx = path.indexOf('#');
@@ -240,8 +247,50 @@
             hash = path.slice(hashIdx);
             path = path.slice(0, hashIdx);
         }
-        if (/[?&]panel=/.test(path)) return path + hash;
-        return path + (path.indexOf('?') >= 0 ? '&' : '?') + 'panel=' + encodeURIComponent(s) + hash;
+        var qIdx = path.indexOf('?');
+        var base = qIdx >= 0 ? path.slice(0, qIdx) : path;
+        var params;
+        try {
+            params = new URLSearchParams(qIdx >= 0 ? path.slice(qIdx + 1) : '');
+        } catch (_) {
+            params = new URLSearchParams();
+        }
+        if (s) params.set('panel', s);
+        else params.delete('panel');
+        var qs = params.toString();
+        return base + (qs ? '?' + qs : '') + hash;
+    }
+    function lpUpdatePanelHint() {
+        var hint = document.getElementById('lpPanelHint');
+        if (!hint) return;
+        var s = lpPanelSlug();
+        if (!s) {
+            hint.hidden = true;
+            hint.textContent = '';
+            return;
+        }
+        hint.hidden = false;
+        hint.textContent = t('login_panel_active') + ' ' + s;
+    }
+    function lpWritePanelUrl(slug) {
+        try {
+            var u = new URL(window.location.href);
+            if (slug) u.searchParams.set('panel', slug);
+            else u.searchParams.delete('panel');
+            var next = u.pathname + u.search + u.hash;
+            if (next !== window.location.pathname + window.location.search + window.location.hash) {
+                window.history.replaceState(null, '', next);
+            }
+        } catch (_) {}
+    }
+    function lpCommitPanel(raw, opts) {
+        var s = lpNormalizePanel(raw);
+        var el = document.getElementById('lpPanelSlug');
+        if (el && el.value !== s) el.value = s;
+        lpRememberPanel(s);
+        lpWritePanelUrl(s);
+        lpUpdatePanelHint();
+        if (opts && opts.reload) loadPublicConfigAndBranding();
     }
     function lpShowApexPanelField() {
         if (!lpIsAppApex()) return;
@@ -253,6 +302,8 @@
             try { fromQuery = new URLSearchParams(window.location.search).get('panel') || ''; } catch (_) {}
             el.value = lpNormalizePanel(fromQuery) || lpSavedPanel();
         }
+        if (el && el.value) lpCommitPanel(el.value);
+        else lpUpdatePanelHint();
     }
 
     function t(k) {
@@ -290,9 +341,16 @@
             var isActive = code === l;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            var k = 'lang_' + code;
-            btn.textContent = t(k);
+            btn.setAttribute('lang', code);
+            btn.setAttribute('translate', 'no');
+            btn.classList.add('notranslate');
+            btn.textContent = (l === 'fa' && code === 'tr')
+                ? 'Turkce'
+                : (LANG_NATIVE[code] || t('lang_' + code));
         });
+        var langGroup = document.getElementById('lpLangSwitch');
+        if (langGroup) langGroup.setAttribute('translate', 'no');
+        lpUpdatePanelHint();
 
         /* data-i18n elements */
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
@@ -379,7 +437,10 @@
 
         if (!email) { setMsg('loginMsg', t('login_email_required')); return; }
         if (!pass)  { setMsg('loginMsg', t('login_pass_required'));  return; }
-        if (lpIsAppApex() && !lpPanelSlug()) { setMsg('loginMsg', t('login_panel_required')); return; }
+        if (lpIsAppApex()) {
+            lpCommitPanel(lpPanelSlug());
+            if (!lpPanelSlug()) { setMsg('loginMsg', t('login_panel_required')); return; }
+        }
 
         setBtnLoading('btnLogin', true, t('login_loading'));
 
@@ -820,6 +881,13 @@
                 applyLang(btn.getAttribute('data-lang'));
             });
         });
+
+        var panelEl = document.getElementById('lpPanelSlug');
+        if (panelEl) {
+            panelEl.addEventListener('change', function() {
+                lpCommitPanel(panelEl.value, { reload: true });
+            });
+        }
 
         /* Login form (native submit + autofill) */
         var loginForm = document.getElementById('lpLoginForm');

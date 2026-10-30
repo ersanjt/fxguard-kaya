@@ -23,6 +23,8 @@ const SECTION_KEYS = [
     'services',       // خدمات صرافی (سرویس‌های قابل ارائه)
     'processes',      // فرایندهای کسب‌وکار (BPM)
     'panel_settings', // ظاهر پنل (لوگو، فاویکون، نام سایت)
+    'records',        // ماژول‌های سفارشی سازمان (موتور عمومی — درمان‌ها، تورها، محصولات، ...)
+    'appointments',   // نوبت‌دهی / رزرو
 ];
 
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
@@ -45,30 +47,35 @@ const DEFAULT_BY_ROLE = {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true, system_status: true,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
+        records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: true,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
+        records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: false,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false, system_status: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        records: true, appointments: true,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false, system_status: false,
         staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
+        records: true, appointments: true,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
 };

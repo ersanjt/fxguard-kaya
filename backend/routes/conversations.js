@@ -709,8 +709,8 @@ router.get('/', async (req, res, next) => {
         if (priority) where.priority = priority;
         if (assignedTo) where.assignedTo = assignedTo;
         if (unassigned === '1' || unassigned === 'true') {
+            // «بدون مسئول» = بدون کارشناس؛ چتِ در صفِ دپارتمان هم هنوز مسئول ندارد و باید دیده شود
             where.assignedTo = null;
-            where.departmentId = null;
         }
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
         if (isGroup === '1' || isGroup === 'true') {

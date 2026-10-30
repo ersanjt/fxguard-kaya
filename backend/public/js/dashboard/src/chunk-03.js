@@ -2714,7 +2714,7 @@
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
                 var contextBanner = buildMessageContextBanner(m, isOut);
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + escapeAttr(m.id || '') + '" data-whatsapp-id="' + escapeAttr(m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position

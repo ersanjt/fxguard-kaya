@@ -26,6 +26,7 @@ const { startDailyRatesJob, stopDailyRatesJob } = require('./jobs/dailyRates');
 const { startScheduledBackupJob, stopScheduledBackupJob } = require('./jobs/scheduledBackup');
 const { startStaffPresenceJob, stopStaffPresenceJob } = require('./jobs/staffPresence');
 const { startWhatsappTrialJob, stopWhatsappTrialJob } = require('./jobs/whatsappTrial');
+const { startAppointmentRemindersJob, stopAppointmentRemindersJob } = require('./jobs/appointmentReminders');
 const { expireStalePresence } = require('./lib/staffPresence');
 const telegramBotService = require('./services/telegramBotService');
 const { getPanelSettings, getPanelAlertConfig } = require('./services/panelSettingsLoader');
@@ -110,6 +111,7 @@ async function startServer() {
         startScheduledBackupJob();
         startStaffPresenceJob(io);
         startWhatsappTrialJob();
+        startAppointmentRemindersJob();
 
         const PORT = process.env.PORT || 3002;
         await new Promise((resolve, reject) => {
@@ -153,6 +155,7 @@ async function gracefulShutdown(signal) {
     stopScheduledBackupJob();
     stopStaffPresenceJob();
     stopWhatsappTrialJob();
+    stopAppointmentRemindersJob();
 
     const forceExitTimer = setTimeout(() => {
         logger.warn('Graceful shutdown timed out — forcing exit');

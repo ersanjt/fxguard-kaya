@@ -78,7 +78,8 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
                         'https://cdnjs.cloudflare.com',
                         'https://cdn.jsdelivr.net',
                         'https://unpkg.com',
-                        'https://static.cloudflareinsights.com'
+                        'https://static.cloudflareinsights.com',
+                        'https://cdn.paddle.com'
                     ],
                     // داشبورد فعلی هنوز onclick روی HTML تزریق‌شده دارد؛ بدون این، CSP سطح ۳ رویدادهای inline را مسدود می‌کند
                     scriptSrcAttr: ["'unsafe-inline'"],
@@ -87,13 +88,15 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
                         "'unsafe-inline'",
                         'https://cdnjs.cloudflare.com',
                         'https://cdn.jsdelivr.net',
-                        'https://fonts.googleapis.com'
+                        'https://fonts.googleapis.com',
+                        'https://cdn.paddle.com'
                     ],
                     fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://cdnjs.cloudflare.com'],
                     imgSrc: ["'self'", 'data:', 'blob:', 'https:', 'https://cdn.jsdelivr.net', 'https://s3.iranserver.com'],
                     mediaSrc: ["'self'", 'blob:', 'data:'],
-                    connectSrc: ["'self'", 'wss:', 'ws:', 'https://cdn.jsdelivr.net', 'https://static.cloudflareinsights.com'],
-                    frameSrc: ["'none'"],
+                    connectSrc: ["'self'", 'wss:', 'ws:', 'https://cdn.jsdelivr.net', 'https://static.cloudflareinsights.com', 'https://*.paddle.com'],
+                    // فقط overlay پرداخت Paddle؛ iyzico با ریدایرکت کامل صفحه باز می‌شود
+                    frameSrc: ['https://buy.paddle.com', 'https://sandbox-buy.paddle.com'],
                     objectSrc: ["'none'"],
                     upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null
                 }

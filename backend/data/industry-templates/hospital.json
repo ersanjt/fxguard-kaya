@@ -1,0 +1,100 @@
+{
+  "key": "hospital",
+  "labels": { "fa": "بیمارستان / مرکز درمانی", "en": "Hospital / medical center", "tr": "Hastane / sağlık merkezi" },
+  "description": {
+    "fa": "CRM بیماران (نه پروندهٔ پزشکی): نوبت ویزیت، ارجاع، پیگیری و پاسخ‌گویی واتساپ به‌تفکیک بخش.",
+    "en": "Patient CRM (not a medical record): visits, referrals, follow-ups and WhatsApp per department.",
+    "tr": "Hasta CRM (tıbbi kayıt değil): randevu, sevk, takip ve bölüm bazlı WhatsApp."
+  },
+  "icon": "heart-pulse",
+  "hiddenSections": ["rates", "rates-charts", "services"],
+  "labelOverrides": {
+    "nav_customers": { "fa": "بیماران", "en": "Patients", "tr": "Hastalar" },
+    "dashboard_quick_new_customer": { "fa": "بیمار جدید", "en": "New patient", "tr": "Yeni hasta" },
+    "nav_departments": { "fa": "بخش‌ها", "en": "Wards & departments", "tr": "Bölümler" }
+  },
+  "booking": { "enabled": true, "reminderHours": 24 },
+  "customerFields": [
+    { "key": "patient_no", "type": "text", "labels": { "fa": "شمارهٔ پرونده", "en": "Patient no.", "tr": "Hasta no" }, "searchable": true },
+    { "key": "insurance", "type": "select", "labels": { "fa": "بیمه", "en": "Insurance", "tr": "Sigorta" },
+      "options": [
+        { "value": "none", "labels": { "fa": "آزاد", "en": "None", "tr": "Yok" } },
+        { "value": "basic", "labels": { "fa": "پایه", "en": "Basic", "tr": "Temel" } },
+        { "value": "supplementary", "labels": { "fa": "تکمیلی", "en": "Supplementary", "tr": "Tamamlayıcı" } },
+        { "value": "international", "labels": { "fa": "بین‌المللی", "en": "International", "tr": "Uluslararası" } }
+      ] },
+    { "key": "emergency_contact", "type": "phone", "labels": { "fa": "تماس اضطراری", "en": "Emergency contact", "tr": "Acil iletişim" }, "showInList": false },
+    { "key": "blood_group", "type": "select", "labels": { "fa": "گروه خونی", "en": "Blood group", "tr": "Kan grubu" }, "showInList": false,
+      "options": [
+        { "value": "A+" }, { "value": "A-" }, { "value": "B+" }, { "value": "B-" },
+        { "value": "AB+" }, { "value": "AB-" }, { "value": "O+" }, { "value": "O-" }
+      ] }
+  ],
+  "appointmentFields": [
+    { "key": "visit_type", "type": "select", "labels": { "fa": "نوع ویزیت", "en": "Visit type", "tr": "Ziyaret türü" },
+      "options": [
+        { "value": "first", "labels": { "fa": "اولین ویزیت", "en": "First visit", "tr": "İlk ziyaret" } },
+        { "value": "follow_up", "labels": { "fa": "پیگیری", "en": "Follow-up", "tr": "Kontrol" } },
+        { "value": "emergency", "labels": { "fa": "اورژانس", "en": "Emergency", "tr": "Acil" } }
+      ] },
+    { "key": "referral_code", "type": "text", "labels": { "fa": "کد ارجاع", "en": "Referral code", "tr": "Sevk kodu" } }
+  ],
+  "bookableServices": [
+    { "name": "ویزیت عمومی", "labels": { "fa": "ویزیت عمومی", "en": "General visit", "tr": "Genel muayene" }, "durationMin": 15, "color": "#3b82f6" },
+    { "name": "ویزیت تخصصی", "labels": { "fa": "ویزیت تخصصی", "en": "Specialist visit", "tr": "Uzman muayenesi" }, "durationMin": 20, "color": "#8b5cf6" },
+    { "name": "آزمایش", "labels": { "fa": "آزمایش", "en": "Lab test", "tr": "Laboratuvar" }, "durationMin": 15, "color": "#10b981" },
+    { "name": "تصویربرداری", "labels": { "fa": "تصویربرداری", "en": "Imaging", "tr": "Görüntüleme" }, "durationMin": 30, "color": "#f59e0b" }
+  ],
+  "objects": [
+    {
+      "key": "referrals",
+      "labels": { "fa": "ارجاع‌ها", "en": "Referrals", "tr": "Sevkler" },
+      "singularLabels": { "fa": "ارجاع", "en": "Referral", "tr": "Sevk" },
+      "icon": "share",
+      "color": "#3b82f6",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "new", "labels": { "fa": "جدید", "en": "New", "tr": "Yeni" }, "color": "#3b82f6" },
+        { "key": "scheduled", "labels": { "fa": "نوبت داده شد", "en": "Scheduled", "tr": "Planlandı" }, "color": "#f59e0b" },
+        { "key": "completed", "labels": { "fa": "انجام شد", "en": "Completed", "tr": "Tamamlandı" }, "color": "#22c55e", "isFinal": true },
+        { "key": "cancelled", "labels": { "fa": "لغو", "en": "Cancelled", "tr": "İptal" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "to_department", "type": "text", "labels": { "fa": "ارجاع به بخش", "en": "To department", "tr": "Bölüm" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "reason", "type": "textarea", "labels": { "fa": "علت ارجاع", "en": "Reason", "tr": "Neden" }, "showInList": false },
+        { "key": "priority", "type": "select", "labels": { "fa": "اولویت", "en": "Priority", "tr": "Öncelik" },
+          "options": [
+            { "value": "routine", "labels": { "fa": "عادی", "en": "Routine", "tr": "Rutin" } },
+            { "value": "urgent", "labels": { "fa": "فوری", "en": "Urgent", "tr": "Acil" } }
+          ], "defaultValue": "routine" },
+        { "key": "due_date", "type": "date", "labels": { "fa": "مهلت", "en": "Due", "tr": "Son tarih" } }
+      ]
+    },
+    {
+      "key": "feedback",
+      "labels": { "fa": "بازخورد و شکایات", "en": "Feedback & complaints", "tr": "Geri bildirim ve şikayet" },
+      "singularLabels": { "fa": "بازخورد", "en": "Feedback", "tr": "Geri bildirim" },
+      "icon": "message-square",
+      "color": "#f97316",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "open", "labels": { "fa": "باز", "en": "Open", "tr": "Açık" }, "color": "#ef4444" },
+        { "key": "reviewing", "labels": { "fa": "در حال بررسی", "en": "Reviewing", "tr": "İnceleniyor" }, "color": "#f59e0b" },
+        { "key": "resolved", "labels": { "fa": "حل شد", "en": "Resolved", "tr": "Çözüldü" }, "color": "#22c55e", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "subject", "type": "text", "labels": { "fa": "موضوع", "en": "Subject", "tr": "Konu" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "kind", "type": "select", "labels": { "fa": "نوع", "en": "Type", "tr": "Tür" },
+          "options": [
+            { "value": "complaint", "labels": { "fa": "شکایت", "en": "Complaint", "tr": "Şikayet" } },
+            { "value": "suggestion", "labels": { "fa": "پیشنهاد", "en": "Suggestion", "tr": "Öneri" } },
+            { "value": "praise", "labels": { "fa": "تشکر", "en": "Praise", "tr": "Teşekkür" } }
+          ] },
+        { "key": "details", "type": "textarea", "labels": { "fa": "شرح", "en": "Details", "tr": "Ayrıntı" }, "showInList": false },
+        { "key": "rating", "type": "number", "labels": { "fa": "امتیاز (۱ تا ۵)", "en": "Rating (1–5)", "tr": "Puan (1–5)" }, "validation": { "min": 1, "max": 5 } }
+      ]
+    }
+  ]
+}

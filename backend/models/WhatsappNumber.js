@@ -11,6 +11,7 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true,
         },
+        tenantId: { type: DataTypes.UUID, allowNull: true },
         slotKey: {
             type: DataTypes.STRING(32),
             allowNull: false,

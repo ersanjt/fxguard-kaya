@@ -5,6 +5,7 @@ const models = require('../models');
 const { sequelize, Conversation, Customer, User, Department, WhatsappConfig } = models;
 const { Op } = require('sequelize');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
+const { sameTenant, tenantRoom, normalizeTenantId } = require('../lib/tenantContext');
 
 let _cfgCache = null;
 let _cfgCacheAt = 0;
@@ -26,11 +27,18 @@ async function checkUnansweredConversations(io, logger) {
         const escalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
         const escalationDeptId = cfg.escalationDepartmentId;
 
-        let targetDeptCache = null;
-        if (escalationDeptId) {
-            targetDeptCache = await Department.findByPk(escalationDeptId);
-        }
-        if (!targetDeptCache) targetDeptCache = await Department.findOne({ where: { isDefault: true } });
+        // این job خارج از زمینهٔ سازمان اجرا می‌شود؛ دپارتمان مقصد باید هم‌سازمانِ مکالمه باشد
+        const configuredDept = escalationDeptId
+            ? await Department.findByPk(escalationDeptId, { skipTenantScope: true })
+            : null;
+        const defaultDepts = await Department.findAll({
+            where: { isDefault: true },
+            skipTenantScope: true,
+        });
+        const resolveEscalationDept = (conv) => {
+            if (configuredDept && sameTenant(configuredDept.tenantId, conv.tenantId)) return configuredDept;
+            return defaultDepts.find((d) => sameTenant(d.tenantId, conv.tenantId)) || null;
+        };
 
         const now = new Date();
         const alertThreshold = new Date(now.getTime() - alertMin * 60000);
@@ -70,19 +78,20 @@ async function checkUnansweredConversations(io, logger) {
             const minsWaiting = Math.floor((now - lastIn) / 60000);
 
             if (lastIn < escalateThreshold && (!conv.escalatedAt || new Date(conv.escalatedAt) < lastIn)) {
-                if (targetDeptCache) {
+                const targetDept = resolveEscalationDept(conv);
+                if (targetDept) {
                     await conv.update({
-                        departmentId: targetDeptCache.id,
+                        departmentId: targetDept.id,
                         assignedTo: null,
                         escalatedAt: now
                     });
-                    io.emit('conversation_escalated', {
+                    io.to(tenantRoom(normalizeTenantId(conv.tenantId))).emit('conversation_escalated', {
                         conversationId: conv.id,
                         customer: publicCustomerSocketPayload(conv.customer),
-                        department: targetDeptCache.name,
+                        department: targetDept.name,
                         minutesWaiting: minsWaiting
                     });
-                    logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDeptCache.name} (${minsWaiting} min unanswered)`);
+                    logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDept.name} (${minsWaiting} min unanswered)`);
                 }
             } else if (lastIn < alertThreshold && (!conv.unansweredAlertSentAt || new Date(conv.unansweredAlertSentAt) < lastIn)) {
                 const payload = {

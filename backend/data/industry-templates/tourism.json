@@ -1,0 +1,97 @@
+{
+  "key": "tourism",
+  "labels": { "fa": "آژانس گردشگری", "en": "Travel agency", "tr": "Seyahat acentesi" },
+  "description": {
+    "fa": "تورهای شهری و خارجی: درخواست‌ها، رزرو، مسافران، پرداخت‌ها و پیگیری در واتساپ.",
+    "en": "City and international tours: requests, bookings, travellers, payments and WhatsApp follow-up.",
+    "tr": "Şehir ve yurt dışı turlar: talepler, rezervasyon, yolcular, ödemeler ve WhatsApp takibi."
+  },
+  "icon": "plane",
+  "hiddenSections": ["services"],
+  "labelOverrides": {
+    "nav_customers": { "fa": "مسافران", "en": "Travellers", "tr": "Yolcular" },
+    "dashboard_quick_new_customer": { "fa": "مسافر جدید", "en": "New traveller", "tr": "Yeni yolcu" }
+  },
+  "booking": { "enabled": true, "reminderHours": 48 },
+  "customerFields": [
+    { "key": "passport_no", "type": "text", "labels": { "fa": "شمارهٔ پاسپورت", "en": "Passport no.", "tr": "Pasaport no" }, "showInList": false, "searchable": true },
+    { "key": "passport_expiry", "type": "date", "labels": { "fa": "انقضای پاسپورت", "en": "Passport expiry", "tr": "Pasaport bitiş" }, "showInList": false },
+    { "key": "preferred_destinations", "type": "multiselect", "labels": { "fa": "مقاصد مورد علاقه", "en": "Preferred destinations", "tr": "Tercih edilen yerler" },
+      "options": [
+        { "value": "turkey", "labels": { "fa": "ترکیه", "en": "Turkey", "tr": "Türkiye" } },
+        { "value": "uae", "labels": { "fa": "امارات", "en": "UAE", "tr": "BAE" } },
+        { "value": "europe", "labels": { "fa": "اروپا", "en": "Europe", "tr": "Avrupa" } },
+        { "value": "asia", "labels": { "fa": "شرق آسیا", "en": "East Asia", "tr": "Doğu Asya" } },
+        { "value": "domestic", "labels": { "fa": "داخلی", "en": "Domestic", "tr": "Yurt içi" } }
+      ] },
+    { "key": "travel_style", "type": "select", "labels": { "fa": "سبک سفر", "en": "Travel style", "tr": "Seyahat tarzı" },
+      "options": [
+        { "value": "budget", "labels": { "fa": "اقتصادی", "en": "Budget", "tr": "Ekonomik" } },
+        { "value": "standard", "labels": { "fa": "استاندارد", "en": "Standard", "tr": "Standart" } },
+        { "value": "luxury", "labels": { "fa": "لوکس", "en": "Luxury", "tr": "Lüks" } }
+      ] }
+  ],
+  "appointmentFields": [
+    { "key": "meeting_point", "type": "text", "labels": { "fa": "محل قرار", "en": "Meeting point", "tr": "Buluşma noktası" } }
+  ],
+  "bookableServices": [
+    { "name": "مشاوره سفر", "labels": { "fa": "مشاوره سفر", "en": "Travel consultation", "tr": "Seyahat danışmanlığı" }, "durationMin": 30, "color": "#3b82f6" },
+    { "name": "تور شهری نیم‌روزه", "labels": { "fa": "تور شهری نیم‌روزه", "en": "Half-day city tour", "tr": "Yarım gün şehir turu" }, "durationMin": 240, "color": "#10b981" },
+    { "name": "تور شهری تمام‌روز", "labels": { "fa": "تور شهری تمام‌روز", "en": "Full-day city tour", "tr": "Tam gün şehir turu" }, "durationMin": 480, "color": "#f59e0b" }
+  ],
+  "objects": [
+    {
+      "key": "tours",
+      "labels": { "fa": "تورها", "en": "Tours", "tr": "Turlar" },
+      "singularLabels": { "fa": "تور", "en": "Tour", "tr": "Tur" },
+      "icon": "map",
+      "color": "#10b981",
+      "linkToCustomer": false,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "draft", "labels": { "fa": "پیش‌نویس", "en": "Draft", "tr": "Taslak" }, "color": "#94a3b8" },
+        { "key": "open", "labels": { "fa": "در حال فروش", "en": "Open", "tr": "Satışta" }, "color": "#22c55e" },
+        { "key": "full", "labels": { "fa": "تکمیل ظرفیت", "en": "Full", "tr": "Dolu" }, "color": "#f59e0b" },
+        { "key": "finished", "labels": { "fa": "برگزار شد", "en": "Finished", "tr": "Tamamlandı" }, "color": "#3b82f6", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "title", "type": "text", "labels": { "fa": "عنوان تور", "en": "Tour title", "tr": "Tur adı" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "destination", "type": "text", "labels": { "fa": "مقصد", "en": "Destination", "tr": "Varış" }, "required": true, "searchable": true },
+        { "key": "start_date", "type": "date", "labels": { "fa": "تاریخ رفت", "en": "Start date", "tr": "Başlangıç" } },
+        { "key": "end_date", "type": "date", "labels": { "fa": "تاریخ برگشت", "en": "End date", "tr": "Bitiş" } },
+        { "key": "capacity", "type": "number", "labels": { "fa": "ظرفیت", "en": "Capacity", "tr": "Kapasite" }, "validation": { "min": 1 } },
+        { "key": "price", "type": "money", "labels": { "fa": "قیمت هر نفر", "en": "Price per person", "tr": "Kişi başı fiyat" } },
+        { "key": "currency", "type": "select", "labels": { "fa": "ارز", "en": "Currency", "tr": "Para birimi" },
+          "options": [{ "value": "IRR" }, { "value": "USD" }, { "value": "EUR" }, { "value": "TRY" }, { "value": "AED" }] },
+        { "key": "includes", "type": "textarea", "labels": { "fa": "خدمات شامل", "en": "Includes", "tr": "Dahil olanlar" }, "showInList": false }
+      ]
+    },
+    {
+      "key": "bookings",
+      "labels": { "fa": "رزروها", "en": "Bookings", "tr": "Rezervasyonlar" },
+      "singularLabels": { "fa": "رزرو", "en": "Booking", "tr": "Rezervasyon" },
+      "icon": "ticket",
+      "color": "#f59e0b",
+      "linkToCustomer": true,
+      "hasAssignee": true,
+      "statuses": [
+        { "key": "inquiry", "labels": { "fa": "درخواست", "en": "Inquiry", "tr": "Talep" }, "color": "#3b82f6" },
+        { "key": "quoted", "labels": { "fa": "پیش‌فاکتور", "en": "Quoted", "tr": "Teklif verildi" }, "color": "#8b5cf6" },
+        { "key": "deposit", "labels": { "fa": "بیعانه", "en": "Deposit paid", "tr": "Kapora" }, "color": "#f59e0b" },
+        { "key": "confirmed", "labels": { "fa": "قطعی", "en": "Confirmed", "tr": "Onaylandı" }, "color": "#22c55e" },
+        { "key": "travelled", "labels": { "fa": "سفر انجام شد", "en": "Travelled", "tr": "Seyahat edildi" }, "color": "#0ea5e9", "isFinal": true },
+        { "key": "cancelled", "labels": { "fa": "لغو", "en": "Cancelled", "tr": "İptal" }, "color": "#94a3b8", "isFinal": true }
+      ],
+      "fields": [
+        { "key": "tour_name", "type": "text", "labels": { "fa": "تور / مقصد", "en": "Tour / destination", "tr": "Tur / varış" }, "required": true, "isTitle": true, "searchable": true },
+        { "key": "travel_date", "type": "date", "labels": { "fa": "تاریخ سفر", "en": "Travel date", "tr": "Seyahat tarihi" } },
+        { "key": "pax", "type": "number", "labels": { "fa": "تعداد نفرات", "en": "Passengers", "tr": "Kişi sayısı" }, "validation": { "min": 1, "max": 200 }, "defaultValue": 1 },
+        { "key": "total", "type": "money", "labels": { "fa": "مبلغ کل", "en": "Total", "tr": "Toplam" } },
+        { "key": "paid", "type": "money", "labels": { "fa": "پرداخت‌شده", "en": "Paid", "tr": "Ödenen" } },
+        { "key": "hotel", "type": "text", "labels": { "fa": "هتل", "en": "Hotel", "tr": "Otel" } },
+        { "key": "visa_needed", "type": "boolean", "labels": { "fa": "نیاز به ویزا", "en": "Visa needed", "tr": "Vize gerekli" } },
+        { "key": "notes", "type": "textarea", "labels": { "fa": "یادداشت", "en": "Notes", "tr": "Notlar" }, "showInList": false }
+      ]
+    }
+  ]
+}

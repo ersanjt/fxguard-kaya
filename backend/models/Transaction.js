@@ -10,6 +10,11 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'سازمان مالک — جداسازی داده در Cloud'
+        },
         type: {
             type: DataTypes.STRING(30),
             allowNull: false,
@@ -117,6 +122,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'Transactions',
         indexes: [
+            { fields: ['tenantId'] },
             { fields: ['type'] },
             { fields: ['status'] },
             { fields: ['transactionDate'] },

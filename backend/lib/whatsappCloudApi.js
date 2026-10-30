@@ -362,6 +362,9 @@ function transformCloudWebhookToInternal(entry) {
                 id: m.id,
                 from: `${from}@c.us`,
                 to: value.metadata?.phone_number_id ? `${value.metadata.phone_number_id}` : null,
+                phoneNumberId: value.metadata?.phone_number_id
+                    ? String(value.metadata.phone_number_id)
+                    : null,
                 body,
                 timestamp: parseInt(m.timestamp || '0', 10),
                 hasMedia,

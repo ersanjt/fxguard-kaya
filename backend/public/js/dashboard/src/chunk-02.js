@@ -1541,7 +1541,7 @@
                 extraClass = ' is-tenant-lock';
                 title = t('tenant_paywall_title');
                 body = tenant && tenant.lockCode === 'TENANT_SUSPENDED' ? t('tenant_paywall_suspended') : t('tenant_paywall_body');
-                actions = '<button type="button" class="btn-primary btn-sm" id="btnDashTenantPay">' + escapeHtml(t('tenant_paywall_pay')) + '</button>';
+                actions = '<button type="button" class="btn-primary btn-sm" id="btnDashTenantPay">' + escapeHtml(t('tenant_pay_btn')) + '</button>';
             } else if (kind === 'trial_active') {
                 title = t('dash_trial_title');
                 body = t('whatsapp_trial_active').replace('{days}', String(trial.remainingDays != null ? trial.remainingDays : trial.days));
@@ -1702,19 +1702,203 @@
             try {
                 var res = await apiFetch('/api/billing/config');
                 var data = (res && res.data) ? res.data : null;
+                renderTenantCardGateways(data && data.gateways);
                 if (data && data.crypto && data.crypto.enabled) {
                     renderTenantCryptoPaywall(data.crypto);
-                    return;
-                }
-                if (data && data.mode === 'crypto') {
+                } else if (data && data.mode === 'crypto') {
                     renderTenantCryptoPaywall(data.crypto || data);
-                    return;
+                } else {
+                    renderTenantCryptoPaywall(null);
                 }
-                renderTenantCryptoPaywall(null);
             } catch (_) {
+                renderTenantCardGateways(null);
                 renderTenantCryptoPaywall(null);
             }
+            if (_tenantGatewayCfg) {
+                var legacyBtn = document.getElementById('btnTenantPaywallCheckout');
+                if (legacyBtn) legacyBtn.hidden = true;
+            }
         }
+
+        var _tenantGatewayCfg = null;
+        var _paddleReady = null;
+
+        function setTenantCardMsg(text, isError) {
+            var msg = document.getElementById('tenantPaywallCardMsg');
+            if (!msg) return;
+            msg.hidden = !text;
+            msg.textContent = text || '';
+            msg.classList.toggle('is-error', !!isError);
+        }
+
+        function renderTenantCardGateways(gw) {
+            var wrap = document.getElementById('tenantPaywallCard');
+            if (!wrap) return;
+            var iy = !!(gw && gw.iyzico && gw.iyzico.enabled);
+            var pd = !!(gw && gw.paddle && gw.paddle.enabled);
+            _tenantGatewayCfg = (iy || pd) ? gw : null;
+            wrap.hidden = !_tenantGatewayCfg;
+            var iyBtn = document.getElementById('btnTenantPayIyzico');
+            var pdBtn = document.getElementById('btnTenantPayPaddle');
+            if (iyBtn) iyBtn.hidden = !iy;
+            if (pdBtn) pdBtn.hidden = !pd;
+            var price = document.getElementById('tenantPayIyzicoPrice');
+            if (price) {
+                price.textContent = iy
+                    ? (gw.iyzico.amount + ' ' + gw.iyzico.currency + ' / ' + gw.iyzico.periodDays + ' ' + t('tenant_paywall_days'))
+                    : '';
+            }
+            setTenantCardMsg('', false);
+        }
+
+        function tenantPayConsentOk() {
+            var box = document.getElementById('tenantPaywallConsent');
+            if (box && box.checked) return true;
+            setTenantCardMsg(t('tenant_paywall_consent_required'), true);
+            if (box) box.focus();
+            return false;
+        }
+
+        function openTenantIyzicoForm() {
+            var form = document.getElementById('tenantPaywallBilling');
+            if (!form) return;
+            form.hidden = false;
+            var nameInput = form.querySelector('[name="fullName"]');
+            if (nameInput && !nameInput.value && typeof currentUser !== 'undefined' && currentUser && currentUser.name) {
+                nameInput.value = String(currentUser.name);
+            }
+            if (nameInput) nameInput.focus();
+        }
+
+        async function submitTenantIyzicoCheckout(form) {
+            if (!tenantPayConsentOk()) return;
+            var billing = {};
+            ['fullName', 'companyName', 'identityNumber', 'taxOffice', 'country', 'city', 'address', 'gsmNumber'].forEach(function (k) {
+                var el = form.querySelector('[name="' + k + '"]');
+                billing[k] = el ? String(el.value || '').trim() : '';
+            });
+            var btn = document.getElementById('btnTenantIyzicoContinue');
+            if (btn) btn.disabled = true;
+            setTenantCardMsg(t('tenant_paywall_redirecting'), false);
+            try {
+                var res = await apiFetch('/api/billing/iyzico/checkout', {
+                    method: 'POST',
+                    body: JSON.stringify({ billing: billing, acceptTerms: true, locale: typeof LANG !== 'undefined' ? LANG : 'en' })
+                });
+                var url = res && res.ok && res.data ? String(res.data.url || '') : '';
+                if (url.indexOf('https://') === 0) {
+                    window.location.href = url;
+                    return;
+                }
+                var field = res && res.data && res.data.field;
+                if (field) {
+                    var bad = form.querySelector('[name="' + field + '"]');
+                    if (bad) bad.focus();
+                    setTenantCardMsg(t('tenant_billing_invalid_' + field) || (res.data && res.data.error), true);
+                } else {
+                    setTenantCardMsg((res && res.data && res.data.error) || (res && res.error) || t('tenant_paywall_card_fail'), true);
+                }
+            } catch (err) {
+                setTenantCardMsg((err && err.message) || t('tenant_paywall_card_fail'), true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function loadPaddleJs() {
+            if (window.Paddle) return Promise.resolve(window.Paddle);
+            if (_paddleReady) return _paddleReady;
+            _paddleReady = new Promise(function (resolve, reject) {
+                var s = document.createElement('script');
+                s.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+                s.async = true;
+                s.onload = function () { window.Paddle ? resolve(window.Paddle) : reject(new Error('paddle_unavailable')); };
+                s.onerror = function () { _paddleReady = null; reject(new Error('paddle_unavailable')); };
+                document.head.appendChild(s);
+            });
+            return _paddleReady;
+        }
+
+        async function waitTenantActivation(attempt) {
+            var n = attempt || 0;
+            try {
+                var res = await apiFetch('/api/tenants/me');
+                var tenant = res && res.data && res.data.tenant;
+                if (tenant && !tenant.locked && tenant.status === 'active') {
+                    setTenantCardMsg(t('tenant_paywall_card_ok'), false);
+                    setTimeout(function () { hideTenantPaywall(); window.location.reload(); }, 900);
+                    return;
+                }
+            } catch (_) {}
+            if (n >= 20) {
+                setTenantCardMsg(t('tenant_paywall_card_pending'), false);
+                return;
+            }
+            setTimeout(function () { waitTenantActivation(n + 1); }, 3000);
+        }
+
+        async function startTenantPaddleCheckout() {
+            if (!tenantPayConsentOk()) return;
+            var btn = document.getElementById('btnTenantPayPaddle');
+            if (btn) btn.disabled = true;
+            setTenantCardMsg(t('tenant_paywall_opening'), false);
+            try {
+                var res = await apiFetch('/api/billing/paddle/transaction', {
+                    method: 'POST',
+                    body: JSON.stringify({ acceptTerms: true })
+                });
+                var d = res && res.ok ? res.data : null;
+                if (!d || !d.transactionId || !d.clientToken) {
+                    setTenantCardMsg((res && res.data && res.data.error) || t('tenant_paywall_card_fail'), true);
+                    return;
+                }
+                var Paddle = await loadPaddleJs();
+                if (!window.__fxgPaddleInit) {
+                    if (d.environment === 'sandbox' && Paddle.Environment) Paddle.Environment.set('sandbox');
+                    Paddle.Initialize({
+                        token: d.clientToken,
+                        eventCallback: function (ev) {
+                            if (ev && ev.name === 'checkout.completed') {
+                                setTenantCardMsg(t('tenant_paywall_card_activating'), false);
+                                waitTenantActivation(0);
+                            }
+                        }
+                    });
+                    window.__fxgPaddleInit = true;
+                }
+                setTenantCardMsg('', false);
+                Paddle.Checkout.open({
+                    transactionId: d.transactionId,
+                    settings: { displayMode: 'overlay', locale: (typeof LANG !== 'undefined' && LANG === 'tr') ? 'tr' : 'en' }
+                });
+            } catch (err) {
+                var failMsg = err && err.message && err.message !== 'paddle_unavailable' ? err.message : '';
+                setTenantCardMsg(failMsg || t('tenant_paywall_card_fail'), true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        document.addEventListener('submit', function (e) {
+            var form = e.target;
+            if (!form || form.id !== 'tenantPaywallBilling') return;
+            e.preventDefault();
+            submitTenantIyzicoCheckout(form);
+        });
+
+        (function announceGatewayReturn() {
+            var m = /[?&]billing=(success|received|review|failed|error)\b/.exec(window.location.search || '');
+            if (!m) return;
+            var key = 'tenant_billing_return_' + m[1];
+            try {
+                var u = new URL(window.location.href);
+                u.searchParams.delete('billing');
+                window.history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+            } catch (_) {}
+            setTimeout(function () {
+                if (typeof toast === 'function') toast(t(key), m[1] === 'failed' || m[1] === 'error');
+            }, 1200);
+        })();
 
         async function claimTenantCryptoPayment() {
             var claimBtn = document.getElementById('btnTenantPaywallClaim');
@@ -1768,9 +1952,9 @@
             if (dashBtn) dashBtn.disabled = true;
             try {
                 await ensureTenantCryptoPaywall();
-                if (_tenantCryptoCfg && _tenantCryptoCfg.enabled) {
+                if ((_tenantCryptoCfg && _tenantCryptoCfg.enabled) || _tenantGatewayCfg) {
                     showTenantPaywall({ code: 'TRIAL_EXPIRED' });
-                    if (typeof toast === 'function') toast(t('tenant_paywall_crypto_lead'));
+                    if (!_tenantGatewayCfg && typeof toast === 'function') toast(t('tenant_paywall_crypto_lead'));
                     return;
                 }
                 var email = (typeof currentUser !== 'undefined' && currentUser && currentUser.email) ? currentUser.email : '';
@@ -2669,6 +2853,18 @@
                     e.preventDefault();
                     e.stopPropagation();
                     startTenantCheckout();
+                    return;
+                }
+                if (target.closest('#btnTenantPayIyzico')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openTenantIyzicoForm();
+                    return;
+                }
+                if (target.closest('#btnTenantPayPaddle')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startTenantPaddleCheckout();
                     return;
                 }
                 if (target.closest('#btnTenantPaywallClaim')) {

@@ -89,6 +89,8 @@ router.get('/public/visibility', optionalAuthMiddleware, async (req, res, next) 
             hiddenSections: mergeFxHidden(s.hiddenSections, snap),
             fxEnabled: snap.fxEnabled !== false,
             planTier: snap.tier,
+            industryKey: s.industryKey || null,
+            labelOverrides: s.labelOverrides || {},
         });
     } catch (err) {
         next(err);
@@ -331,6 +333,19 @@ router.put('/', authMiddleware, async (req, res, next) => {
                 : hiddenSections === ''
                   ? null
                   : row.hiddenSections;
+        if (body.labelOverrides !== undefined) {
+            const { parseLabelOverrides } = require('../services/config/panelSettingsLoader');
+            const parsed = parseLabelOverrides(body.labelOverrides);
+            row.labelOverrides = Object.keys(parsed).length ? JSON.stringify(parsed) : null;
+        }
+        if (body.bookingReminderHours !== undefined) {
+            const n = Number(body.bookingReminderHours);
+            row.bookingReminderHours = Number.isFinite(n) ? Math.max(0, Math.min(168, Math.round(n))) : 24;
+        }
+        if (body.bookingReminderTemplate !== undefined) {
+            const t = String(body.bookingReminderTemplate || '').trim().slice(0, 1000);
+            row.bookingReminderTemplate = t || null;
+        }
         if (languageMode !== undefined) {
             const validLangModes = [
                 'single',

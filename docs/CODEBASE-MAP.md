@@ -52,7 +52,9 @@
 | تدارکات / خلاصه امنیت | `backend/public/procurement.html` (+ کپی `cpanel-landing/`) | `/procurement` | چاپ PDF برای فاکتور |
 | لندینگ **kaya.fxguard.io** | `cpanel-landing/` سپس همگام `backend/public/` | `/` `/pricing` `/whatsapp-crm` `/contact` | `LANDING-SYNC.md` — پنل کارکنان |
 | ویترین **fxguard.io** | `fxguard-io-landing/` | cPanel جدا (`public_html`) | آپلود روی fxguard.io؛ `.well-known/` سرور را نگه دارید. `cpanel-landing/` را اینجا نریزید |
+| متن‌های حقوقی فروشگاه fxguard.io | `fxguard-io-landing/js/legal-commerce.js` (متن tr/en/fa) · `js/legal.js` · `js/company.js` (مشخصات شرکت) · `css/legal.css` | `/about` `/distance-sales` `/refund-policy` `/privacy` `/cookie-policy` `/kvkk-application` | متن ترکی الزام‌آور است؛ فوتر مشترک در `partials/site-footer.html` → `node scripts/unify-footer.mjs`؛ فونت‌ها محلی (`node scripts/self-host-fonts.mjs --pages`)؛ چک‌لیست: `docs/legal/GO-LIVE-COMPLIANCE-FA.md` |
 | چک‌اوت Cloud Start | `backend/lib/cryptoBilling.js` · `billingCheckout.js` · `routes/billing.js` | `/api/billing/*` | **کریپتو اول** (USDT/BNB/BTC + ثبت TXID)؛ Stripe اختیاری |
+| درگاه کارت iyzico / Paddle | `lib/iyzicoCheckout.js` · `lib/paddleBilling.js` · `services/billingGateways.js` · `models/BillingPayment.js` | `/api/billing/iyzico/checkout` · `/api/billing/paddle/transaction` · `/api/webhook/iyzico[/callback]` · `/api/webhook/paddle` | iyzico = کارت ترکیه (پرداخت یک‌باره + `billingPaidUntil`)؛ Paddle = بین‌المللی (MoR، اشتراک با webhook)؛ دفتر idempotent؛ UI در paywall `chunk-02.js` |
 | ترجمه فارسی/انگلیسی/ترکی | `backend/public/js/i18n-fa.js` و … | — | bump `?v=` در html-part-06 |
 | ماژول‌های مشترک JS | `backend/public/js/modules/*.js` | — | bump `?v=` |
 
@@ -70,6 +72,9 @@
 | **chunk-04** | | مشتریان (رندر)، تسک، فرایند، **مسیریابی صفحات**، تنظیمات پنل | `showPage`, `applyHashRoute`, `loadPanelSettings`, `loadTickets` (شروع) |
 | **chunk-05** | | تیکت، کاربران، دپارتمان، شعب | `renderUserList`, تسک‌ها، فرایندها |
 | **chunk-06** | انتها | واتساپ، قالب پیام، نظارت، expose به `window`, **`runAfterAuthReady`** | `restoreSessionFromServer`, `loadWhatsappWelcomeConfig`, `runAfterAuthReady` |
+| **chunk-07** | بعد از 06 | **موتور عمومی**: رکوردهای داینامیک (`#records/<key>`), منوی پویا، نوبت‌ها (`#appointments`), ماژول‌ساز و قالب صنعت (`#modules`), فیلدهای schema مشتری در مودال مشتری، واژگان سازمان | `initRecordsPage`, `initAppointmentsPage`, `initModulesPage`, `engineBootstrapNav`, `openAppointmentForm`, `openAppointmentFromChat`, `applyIndustryTemplate`, `engineRenderCustomerSchemaFields` |
+
+ترجمه‌های موتور عمومی (`eng_*`, `mb_*`, `bk_*`, `nav_records/appointments/modules`) در `backend/public/js/i18n-engine.js` هستند و روی پک‌های `__I18N_*` merge می‌شوند؛ **واژگان سازمان** (`labelOverrides` در تنظیمات پنل) با `window.applyLabelOverrides` در `modules/dashboard-i18n.js` روی همان پک‌ها اعمال می‌شود.
 
 ### جدول سریع: «چه چیزی کجاست؟»
 
@@ -88,6 +93,10 @@
 | تنظیمات ظاهر پنل | `chunk-04.js` + `routes/panelSettings.js` | `#panel-settings` |
 | اتصال واتساپ QR | `chunk-06.js` + `gateway/src/index.js` | |
 | هدر / منو / سایدبار | `html-part-01/02` + `chunk-04.js` (`showPage`) | |
+| ماژول داینامیک / رکوردها | `chunk-07.js` + `html-part-05` (`#pageRecords`, `#recordModal`) + `routes/records.js` | لینک‌های پویا در `#navDynamicModules` (html-part-01)؛ تب‌ها با کلاس `engine-view-tabs` (نه `task-quick-tabs`) |
+| نوبت‌دهی / رزرو | `chunk-07.js` + `html-part-05` (`#pageAppointments`, `#apptModal`, `#serviceModal`) + `routes/appointments.js` | دکمهٔ «ثبت نوبت» در هدر چت: `#waChatBookBtn` (html-part-01) |
+| ماژول‌ساز / قالب صنعت / واژگان | `chunk-07.js` + `html-part-05` (`#pageModules`, `#moduleModal`, `#fieldModal`) | فقط owner/admin/manager؛ زیرمنوی «ماژول‌ساز» زیر تنظیمات |
+| فیلدهای سفارشی مشتری (schema) | `chunk-04.js` (`renderCustomerModalCustomFields`) + `chunk-07.js` (`engineRenderCustomerSchemaFields`) + `lib/customerFields.js` | فیلدهای تعریف‌شده تایپ‌دار رندر می‌شوند؛ کلیدهای آزاد همان ردیف کلید/مقدار |
 
 جزئیات chunk: `backend/public/js/dashboard/README.md`  
 جزئیات HTML: `backend/public/partials/dashboard/README.md`
@@ -135,8 +144,16 @@ backend/
 | `/api/tenants/*` | `routes/tenants.js` | ثبت‌نام خودخدمت، ساب‌دامین، دامنهٔ اختصاصی · `services/tenantProvision.js` |
 | `/api/gateway/*` | `routes/gateway.js` | پروکسی به gateway |
 | `/api/supervision/*` | `routes/supervision.js` | آنلاین زنده: `lib/staffPresence.js` |
-| Webhook واتساپ Cloud | `routes/api.js` | `services/incomingMessage.js` |
+| `/api/objects/*` | `routes/customObjects.js` | تعریف ماژول (شیء) سازمان — مدل `CustomObject` |
+| `/api/fields/*` | `routes/fieldDefinitions.js` | تعریف فیلد برای `record` / `customer` / `appointment` — `lib/fieldSchema.js` (اعتبارسنجی طبق نوع) |
+| `/api/records/*` | `routes/records.js` | رکوردهای داینامیک هر ماژول (`/:objectKey`, `/by-customer/:id`) |
+| `/api/industry-templates/*` | `routes/industryTemplates.js` | `lib/industryTemplates.js` + JSON در `backend/data/industry-templates/` (`beauty_clinic`, `hospital`, `tourism`, `health_tourism`, `retail`, `exchange`) — اعمال قالب idempotent است |
+| `/api/appointments/*` | `routes/appointments.js` | `services/booking.js` (تداخل → `409 APPOINTMENT_CONFLICT`، `force` فقط مدیر، ماشین وضعیت) · یادآوری واتساپ: `jobs/appointmentReminders.js` |
+| `/api/bookable-services/*` | `routes/bookableServices.js` | خدمات قابل رزرو (مدت، بافر، قیمت) |
+| Webhook واتساپ (Gateway/Cloud) | `routes/api.js` | `lib/inboundTenant.js` سازمان را از `x-tenant-slug` / `tenantSlug` / env تعیین می‌کند، بعد `services/incomingMessage.js` داخل زمینهٔ همان سازمان اجرا می‌شود |
+| صف خروجی RabbitMQ | `lib/outgoingQueue.js` | `publishOutgoingMessage` با HMAC `x-kaya-signature` (کلید `GATEWAY_API_SECRET`)؛ gateway پیام بی‌امضا را به DLQ می‌فرستد |
 | Webhook Stripe | `routes/billing.js` | `POST /api/webhook/stripe` — سرنخ paid + فعال‌سازی tenant اگر `metadata.tenantId` باشد |
+| Webhook iyzico / Paddle | `routes/billing.js` | `POST /api/webhook/iyzico/callback` (بازگشت مرورگر، retrieve سرور) · `POST /api/webhook/iyzico` · `POST /api/webhook/paddle` (امضای `Paddle-Signature`) |
 | کریپتو claim/confirm | `routes/billing.js` | `POST /api/billing/crypto/claim` (مالک پنل) · `GET/POST .../confirm` (ادمین اصلی / لینک توکن) |
 
 ### ۴.۲ مدل‌های دادهٔ مهم
@@ -152,12 +169,19 @@ backend/
 | توکن پوش دستگاه | `models/DevicePushToken.js` | FCM برای اپ کارکنان |
 | نظرسنجی تناسب | `models/ProductFitSurvey.js` | Sean Ellis: very / somewhat / not |
 | سرنخ لندینگ | `models/ContactLead.js` | purpose فرم تماس |
+| ماژول سازمان (موتور عمومی) | `models/CustomObject.js` | `key`, `labels{fa,en,tr}`, `statuses[]`, `linkToCustomer`, `hasAssignee`, `allowedRoles`, `showInMenu`, `isActive`, `templateKey` |
+| تعریف فیلد | `models/FieldDefinition.js` | `entity` (record/customer/appointment), `objectId`, `key`, `type`, `options`, `validation`, `required`, `showInList`, `isTitle` |
+| رکورد داینامیک | `models/CustomRecord.js` | `objectId`, `customerId`, `assignedTo`, `status`, `title`, `data` (JSON طبق schema) |
+| خدمت قابل رزرو | `models/BookableService.js` | `durationMin`, `bufferMin`, `price`, `currency`, `color`, `branchId` |
+| نوبت | `models/Appointment.js` | `customerId`, `serviceId`, `staffId`, `branchId`, `conversationId`, `startAt`, `endAt`, `status` (scheduled/confirmed/arrived/completed/cancelled/no_show), `source`, `cancelReason`, `reminderSentAt`, `data` |
+| تنظیمات پنل (موتور) | `models/PanelSetting.js` | `industryKey`, `labelOverrides`, `bookingReminderHours`, `bookingReminderTemplate` |
 
 ### ۴.۳ جریان پیام واتساپ
 
 ```
-مشتری → gateway (whatsapp-web.js)
-      → RabbitMQ یا webhook → backend/services/incomingMessage.js
+مشتری → gateway (whatsapp-web.js)  [GATEWAY_TENANT_SLUG → هدر x-tenant-slug / فیلد tenantSlug]
+      → RabbitMQ یا webhook → lib/inboundTenant.js (تعیین سازمان)
+      → backend/services/incomingMessage.js (داخل runWithTenant)
       → DB + Socket.IO → dashboard (chunk-03)
 
 کارمند ارسال → POST /api/conversations/:id/send
@@ -196,6 +220,7 @@ gateway/
 | CORS + محافظ Origin کوکی | `backend/config/cors.js`, `backend/lib/cookieOriginGuard.js` |
 | JWT فقط برای اپ موبایل | `backend/lib/staffAppClient.js` + `X-Kaya-Client: staff-app` |
 | محدودهٔ شعبهٔ صرافی | `backend/lib/exchangeBranchScope.js` + `routes/exchange.js` |
+| Idempotency-Key مالی | `backend/middleware/idempotency.js` + `models/IdempotencyKey.js` — روی `POST /api/exchange/transactions` و `.../approve` `.../reject`؛ replay با هدر `Idempotent-Replayed: true`، بدنهٔ متفاوت → 422، هم‌زمان → 409. کلاینت: `chunk-01.js` (`txModalIdempotencyKey`) |
 | دسترسی نقش/بخش | `backend/lib/permissions.js` |
 | دسترسی مکالمه | `backend/lib/conversationAccess.js` |
 | CSP / هدرها | `backend/app/configureExpress.js` |
@@ -220,7 +245,7 @@ gateway/
 | بخش | مسیر |
 |-----|------|
 | تشخیص Host / slug | `lib/tenantHost.js` · `middleware/tenantContext.js` |
-| جداسازی داده | `lib/tenantScope.js` (User/Customer/Conversation/Message/Ticket/Task/Branch/Department) |
+| جداسازی داده | `lib/tenantScope.js` (User/Customer/Conversation/Message/Ticket/Task/Branch/Department/CashBox/BankAccount/Transaction) · مرز سازمان در دسترسی مکالمه و سوکت: `sameTenant` / `tenantRoom` در `lib/tenantContext.js` |
 | آزمایش ۷روزه | `lib/tenantTrial.js` · `middleware/tenantTrialGate.js` — بعد از انقضا API به‌جز auth/billing قفل `402`؛ خرید با کریپتو در paywall داشبورد |
 | ساخت پنل | `POST /api/tenants/signup` · صفحه `/signup` |
 | دامنهٔ اختصاصی | `POST /api/tenants/custom-domain` · `GET /api/tenants/me` · UI تب پلن ظاهر پنل — DNS/HTTPS: nginx `*.app.fxguard.io` |

@@ -39,7 +39,6 @@ import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
-import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
@@ -56,11 +55,8 @@ class ApiClient(private val session: SessionStore) {
     @Volatile var onSessionExpired: (() -> Unit)? = null
 
     private val jsonType = "application/json; charset=utf-8".toMediaType()
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(20, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
+    /** پین‌شده برای *.fxguard.io — یک TLS جعلی نمی‌تواند JWT را بگیرد */
+    private val http = PinnedHttp.baseClient()
     private val uploadHttp = http.newBuilder()
         .readTimeout(90, TimeUnit.SECONDS)
         .writeTimeout(90, TimeUnit.SECONDS)

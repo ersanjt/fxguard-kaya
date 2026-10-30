@@ -25,6 +25,12 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                 ['cryptoNetwork', { type: DataTypes.STRING(32), allowNull: true }],
                 ['cryptoPaymentStatus', { type: DataTypes.STRING(32), allowNull: true }],
                 ['cryptoPaidAt', { type: DataTypes.DATE, allowNull: true }],
+                ['cryptoConfirmJti', { type: DataTypes.STRING(64), allowNull: true }],
+                ['billingProvider', { type: DataTypes.STRING(16), allowNull: true }],
+                ['billingCustomerId', { type: DataTypes.STRING(64), allowNull: true }],
+                ['billingSubscriptionId', { type: DataTypes.STRING(64), allowNull: true }],
+                ['billingPaidUntil', { type: DataTypes.DATE, allowNull: true }],
+                ['billingEventAt', { type: DataTypes.DATE, allowNull: true }],
             ];
             for (const [name, def] of tenantCols) {
                 if (tenantDesc[name] !== undefined) continue;
@@ -133,6 +139,11 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['alanChandApiKey', { type: DataTypes.TEXT, allowNull: true }],
             ['ratesApiProvider', { type: DataTypes.STRING(16), allowNull: true }],
             ['planTier', { type: DataTypes.STRING(32), allowNull: true }],
+            // موتور عمومی / نوبت‌دهی
+            ['industryKey', { type: DataTypes.STRING(48), allowNull: true }],
+            ['labelOverrides', { type: DataTypes.TEXT, allowNull: true }],
+            ['bookingReminderHours', { type: DataTypes.INTEGER, allowNull: true, defaultValue: 24 }],
+            ['bookingReminderTemplate', { type: DataTypes.TEXT, allowNull: true }],
         ];
         for (const [name, def] of newThemeCols) {
             if (desc && desc[name] === undefined) {
