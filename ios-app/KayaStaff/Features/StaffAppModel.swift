@@ -421,8 +421,12 @@ final class StaffAppModel: ObservableObject {
                 customersError = nil
                 openConversation(opened)
             } catch {
+                let startError = error
                 do {
-                    let conv = try await api.openCustomerConversation(customerId: row.id, fallbackName: row.name)
+                    guard let conv = try await api.openCustomerConversation(customerId: row.id, fallbackName: row.name) else {
+                        customersError = errMsg(startError)
+                        return
+                    }
                     closeCustomerProfile()
                     customersError = nil
                     openConversation(conv)
