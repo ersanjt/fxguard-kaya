@@ -922,7 +922,7 @@
   <li><strong>Strict data residency:</strong> <a href="/self-hosted">Self-hosted License</a></li>
   <li><strong>Hands-off ops:</strong> <a href="/managed-hosting">Managed Dedicated</a></li>
 </ul>
-<div class="blog-callout">Regional landing pages: <a href="/tr/" data-i18n="mkt_tr">Turkey</a> · <a href="/ae/" data-i18n="mkt_ae">UAE</a> · <a href="/ir/" data-i18n="mkt_ir">Iran</a> · <a href="/eu/" data-i18n="mkt_eu">Europe</a> — then purchase on WhatsApp.</div>
+<div class="blog-callout">Regional landing pages: <a href="/tr/" data-i18n="mkt_tr">Turkey</a> · <a href="/ae/" data-i18n="mkt_ae">UAE</a> · <a href="/eu/" data-i18n="mkt_eu">Europe</a> — then purchase on WhatsApp.</div>
 
 <h2 id="faq">FAQ</h2>
 <h3>Can we try it with exchange workflows first?</h3>
@@ -966,7 +966,7 @@
   <li><strong>اگر محل نگهداری داده حساس است:</strong> <a href="/self-hosted">لایسنس خودمیزبان</a></li>
   <li><strong>اگر نمی‌خواهید درگیر عملیات فنی شوید:</strong> <a href="/managed-hosting">اختصاصی مدیریت‌شده</a></li>
 </ul>
-<div class="blog-callout">صفحات ویژه هر منطقه: <a href="/tr/" data-i18n="mkt_tr">ترکیه</a> · <a href="/ae/" data-i18n="mkt_ae">امارات</a> · <a href="/ir/" data-i18n="mkt_ir">ایران</a> · <a href="/eu/" data-i18n="mkt_eu">اروپا</a>؛ بعد خرید را در واتساپ نهایی کنید.</div>
+<div class="blog-callout">صفحات ویژه هر منطقه: <a href="/tr/" data-i18n="mkt_tr">ترکیه</a> · <a href="/ae/" data-i18n="mkt_ae">امارات</a> · <a href="/eu/" data-i18n="mkt_eu">اروپا</a>؛ بعد خرید را در واتساپ نهایی کنید.</div>
 
 <h2 id="faq">سوالات متداول</h2>
 <h3>می‌شود اول با گردش‌کار واقعی صرافی امتحانش کنیم؟</h3>
@@ -1010,7 +1010,7 @@
   <li><strong>Veri yerleşimi katıysa:</strong> <a href="/self-hosted">Self-hosted Lisans</a></li>
   <li><strong>Operasyona hiç girmek istemiyorsanız:</strong> <a href="/managed-hosting">Managed Dedicated</a></li>
 </ul>
-<div class="blog-callout">Bölgesel sayfalar: <a href="/tr/" data-i18n="mkt_tr">Türkiye</a> · <a href="/ae/" data-i18n="mkt_ae">BAE</a> · <a href="/ir/" data-i18n="mkt_ir">İran</a> · <a href="/eu/" data-i18n="mkt_eu">Avrupa</a>; satın almayı WhatsApp'tan tamamlayın.</div>
+<div class="blog-callout">Bölgesel sayfalar: <a href="/tr/" data-i18n="mkt_tr">Türkiye</a> · <a href="/ae/" data-i18n="mkt_ae">BAE</a> · <a href="/eu/" data-i18n="mkt_eu">Avrupa</a>; satın almayı WhatsApp'tan tamamlayın.</div>
 
 <h2 id="faq">Sık sorulan sorular</h2>
 <h3>Önce gerçek döviz akışlarıyla deneyebilir miyiz?</h3>
@@ -1054,7 +1054,7 @@
   <li><strong>إذا كانت إقامة البيانات صارمة:</strong> <a href="/self-hosted">الترخيص ذاتي الاستضافة</a></li>
   <li><strong>إذا كنت تريد صفر تدخل تشغيلي:</strong> <a href="/managed-hosting">المخصص المُدار</a></li>
 </ul>
-<div class="blog-callout">صفحات مخصصة لكل منطقة: <a href="/tr/" data-i18n="mkt_tr">تركيا</a> · <a href="/ae/" data-i18n="mkt_ae">الإمارات</a> · <a href="/ir/" data-i18n="mkt_ir">إيران</a> · <a href="/eu/" data-i18n="mkt_eu">أوروبا</a>؛ ثم أكمل الشراء عبر واتساب.</div>
+<div class="blog-callout">صفحات مخصصة لكل منطقة: <a href="/tr/" data-i18n="mkt_tr">تركيا</a> · <a href="/ae/" data-i18n="mkt_ae">الإمارات</a> · <a href="/eu/" data-i18n="mkt_eu">أوروبا</a>؛ ثم أكمل الشراء عبر واتساب.</div>
 
 <h2 id="faq">الأسئلة الشائعة</h2>
 <h3>هل يمكن تجربته أولًا مع سير عمل صرافة حقيقي؟</h3>
@@ -1098,7 +1098,7 @@
   <li><strong>При строгих требованиях к хранению данных:</strong> <a href="/self-hosted">Self-hosted License</a></li>
   <li><strong>Если не хотите вникать в операционку вообще:</strong> <a href="/managed-hosting">Managed Dedicated</a></li>
 </ul>
-<div class="blog-callout">Региональные страницы: <a href="/tr/" data-i18n="mkt_tr">Турция</a> · <a href="/ae/" data-i18n="mkt_ae">ОАЭ</a> · <a href="/ir/" data-i18n="mkt_ir">Иран</a> · <a href="/eu/" data-i18n="mkt_eu">Европа</a> — а затем оформите покупку в WhatsApp.</div>
+<div class="blog-callout">Региональные страницы: <a href="/tr/" data-i18n="mkt_tr">Турция</a> · <a href="/ae/" data-i18n="mkt_ae">ОАЭ</a> · <a href="/eu/" data-i18n="mkt_eu">Европа</a> — а затем оформите покупку в WhatsApp.</div>
 
 <h2 id="faq">Часто задаваемые вопросы</h2>
 <h3>Можно сначала протестировать на реальных сценариях обменника?</h3>

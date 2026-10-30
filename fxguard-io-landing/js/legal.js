@@ -1,15 +1,16 @@
 /**
- * FXGuard storefront — legal pages i18n (privacy / terms / account-deletion)
+ * FXGuard storefront — legal pages i18n (privacy / terms / account-deletion,
+ * plus about / distance-sales / refund-policy from legal-commerce.js)
  */
 (function () {
     var SUPPORTED = ['en', 'fa', 'tr', 'ar', 'ru'];
 
     var FOOT = {
-        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
-        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
-        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' },
-        ar: { skip: 'تخطّوا إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'تواصلوا معنا', home: 'الرئيسية' },
-        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', home: 'Главная' }
+        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', foot_about: 'About us', foot_sales: 'Distance sales agreement', foot_refund: 'Delivery & refunds', foot_cookies: 'Cookie policy', foot_kvkk: 'KVKK application', home: 'Home' },
+        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', foot_about: 'درباره ما', foot_sales: 'قرارداد فروش از راه دور', foot_refund: 'تحویل و بازپرداخت', foot_cookies: 'سیاست کوکی', foot_kvkk: 'درخواست KVKK', home: 'خانه' },
+        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', foot_about: 'Hakkımızda', foot_sales: 'Mesafeli satış sözleşmesi', foot_refund: 'Teslimat ve iade', foot_cookies: 'Çerez politikası', foot_kvkk: 'KVKK başvurusu', home: 'Ana sayfa' },
+        ar: { skip: 'تخطّوا إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'تواصلوا معنا', foot_about: 'من نحن', foot_sales: 'عقد البيع عن بعد', foot_refund: 'التسليم والاسترداد', foot_cookies: 'سياسة ملفات الارتباط', foot_kvkk: 'طلب KVKK', home: 'الرئيسية' },
+        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', foot_about: 'О компании', foot_sales: 'Договор дистанционной продажи', foot_refund: 'Доставка и возврат', foot_cookies: 'Политика cookie', foot_kvkk: 'Запрос по KVKK', home: 'Главная' }
     };
 
     var T = {
@@ -316,6 +317,27 @@
         }
     };
 
+    var TITLES = {
+        privacy: { en: 'Privacy Policy | FXGuard', fa: 'سیاست حریم خصوصی | FXGuard', tr: 'Gizlilik Politikası | FXGuard', ar: 'سياسة الخصوصية | FXGuard', ru: 'Политика конфиденциальности | FXGuard' },
+        terms: { en: 'Terms of Use | FXGuard', fa: 'شرایط استفاده | FXGuard', tr: 'Kullanım Koşulları | FXGuard', ar: 'شروط الاستخدام | FXGuard', ru: 'Условия | FXGuard' },
+        deletion: { en: 'Account deletion | FXGuard', fa: 'حذف حساب | FXGuard', tr: 'Hesap silme | FXGuard', ar: 'حذف الحساب | FXGuard', ru: 'Удаление аккаунта | FXGuard' }
+    };
+    var PATHS = { privacy: 'privacy', terms: 'terms', deletion: 'account-deletion' };
+
+    var EXTRA = window.FXG_LEGAL_EXTRA;
+    if (EXTRA) {
+        Object.keys(EXTRA.pages || {}).forEach(function (p) {
+            T[p] = T[p] || {};
+            Object.keys(EXTRA.pages[p]).forEach(function (l) {
+                T[p][l] = Object.assign({}, T[p][l], EXTRA.pages[p][l]);
+            });
+        });
+        Object.keys(EXTRA.titles || {}).forEach(function (p) {
+            TITLES[p] = Object.assign({}, TITLES[p], EXTRA.titles[p]);
+        });
+        Object.assign(PATHS, EXTRA.paths || {});
+    }
+
     var page = 'privacy';
     if (document.body && document.body.getAttribute('data-legal-page')) {
         page = document.body.getAttribute('data-legal-page');
@@ -327,11 +349,8 @@
 
     function apply(lang) {
         if (SUPPORTED.indexOf(lang) === -1) lang = 'en';
-        var dict = Object.assign(
-            {},
-            FOOT[lang] || FOOT.en,
-            (T[page] && T[page][lang]) || (T[page] && T[page].en) || {}
-        );
+        var pageT = T[page] || {};
+        var dict = Object.assign({}, FOOT.en, FOOT[lang], pageT.en, pageT[lang]);
         document.documentElement.lang = lang;
         document.documentElement.dir = (lang === 'fa' || lang === 'ar') ? 'rtl' : 'ltr';
         document.querySelectorAll('[data-i18n]').forEach(function (el) {
@@ -342,15 +361,11 @@
             btn.setAttribute('aria-current', btn.getAttribute('data-lang') === lang ? 'true' : 'false');
         });
         try { localStorage.setItem('fxg_legal_lang', lang); } catch (e) { /* ignore */ }
-        var titles = {
-            privacy: { en: 'Privacy Policy | FXGuard', fa: 'سیاست حریم خصوصی | FXGuard', tr: 'Gizlilik Politikası | FXGuard', ar: 'سياسة الخصوصية | FXGuard', ru: 'Политика конфиденциальности | FXGuard' },
-            terms: { en: 'Terms of Use | FXGuard', fa: 'شرایط استفاده | FXGuard', tr: 'Kullanım Koşulları | FXGuard', ar: 'شروط الاستخدام | FXGuard', ru: 'Условия | FXGuard' },
-            deletion: { en: 'Account deletion | FXGuard', fa: 'حذف حساب | FXGuard', tr: 'Hesap silme | FXGuard', ar: 'حذف الحساب | FXGuard', ru: 'Удаление аккаунта | FXGuard' }
-        };
-        if (titles[page] && titles[page][lang]) document.title = titles[page][lang];
+        var titles = TITLES[page] || {};
+        if (titles[lang] || titles.en) document.title = titles[lang] || titles.en;
         var canon = document.querySelector('link[rel="canonical"]');
         if (canon) {
-            var base = 'https://fxguard.io/' + (page === 'deletion' ? 'account-deletion' : page);
+            var base = 'https://fxguard.io/' + (PATHS[page] || page);
             canon.setAttribute('href', lang === 'en' ? base : base + '?lang=' + lang);
         }
     }

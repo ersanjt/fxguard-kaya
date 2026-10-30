@@ -212,7 +212,7 @@
     <xhtml:link rel="alternate" hreflang="ar" href="https://fxguard.io/privacy?lang=ar"/>
     <xhtml:link rel="alternate" hreflang="ru" href="https://fxguard.io/privacy?lang=ru"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/privacy"/>
-    <lastmod>2026-08-26</lastmod>
+    <lastmod>2026-10-30</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -359,5 +359,55 @@
     <lastmod>2026-08-26</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fxguard.io/about</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/about"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/about?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/about?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/about"/>
+    <lastmod>2026-10-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://fxguard.io/distance-sales</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/distance-sales"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/distance-sales?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/distance-sales?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/distance-sales"/>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://fxguard.io/refund-policy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/refund-policy"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/refund-policy?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/refund-policy?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/refund-policy"/>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://fxguard.io/cookie-policy</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/cookie-policy"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/cookie-policy?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/cookie-policy?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/cookie-policy"/>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://fxguard.io/kvkk-application</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/kvkk-application"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/kvkk-application?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/kvkk-application?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/kvkk-application"/>
+    <lastmod>2026-10-30</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
   </url>
 </urlset>

@@ -7,7 +7,11 @@ const partial = fs.readFileSync(path.join(root, 'partials/site-footer.html'), 'u
 const match = partial.match(/<footer class="site-footer"[\s\S]*?<\/footer>/);
 if (!match) throw new Error('no footer in partial');
 const footer = match[0];
-const skip = new Set(['privacy.html', 'terms.html', 'account-deletion.html', 'procurement.html']);
+const skip = new Set([
+  'privacy.html', 'terms.html', 'account-deletion.html', 'procurement.html',
+  'about.html', 'distance-sales.html', 'refund-policy.html',
+  'cookie-policy.html', 'kvkk-application.html',
+]);
 
 function walk(dir, acc = []) {
   for (const name of fs.readdirSync(dir)) {

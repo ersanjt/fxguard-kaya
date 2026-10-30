@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800;900&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+@import url('/css/fonts.css?v=20261030a');
 
 /* ─── TOKENS ─── */
 :root {
@@ -452,6 +452,7 @@ footer{padding:48px 0 32px;border-top:1px solid var(--border);position:relative;
 .footer-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding-top:24px;border-top:1px solid var(--border);font-size:.78rem;color:var(--txt3)}
 .footer-bottom a{color:var(--wa);transition:color .2s}
 .footer-bottom a:hover{color:var(--wa-dark)}
+.footer-ids{margin-top:10px;font-size:.74rem;line-height:1.6;color:var(--txt3);overflow-wrap:anywhere}
 
 /* ═══ WA FLOAT ═══ */
 .wa-bubble{position:fixed;bottom:28px;right:28px;z-index:150;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--wa),var(--wa-dark));display:flex;align-items:center;justify-content:center;box-shadow:0 8px 28px var(--wa-glow);transition:all .3s var(--ease)}

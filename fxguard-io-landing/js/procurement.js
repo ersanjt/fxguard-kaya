@@ -156,11 +156,11 @@
 
     var SUPPORTED = ['en', 'fa', 'tr', 'ar', 'ru'];
     var FOOT = {
-        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_contact: 'Contact', home: 'Home' },
-        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_contact: 'تماس', home: 'خانه' },
-        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_contact: 'İletişim', home: 'Ana sayfa' },
-        ar: { skip: 'تخطّ إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_contact: 'اتصل', home: 'الرئيسية' },
-        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_contact: 'Контакты', home: 'Главная' }
+        en: { skip: 'Skip to content', foot_privacy: 'Privacy', foot_terms: 'Terms', foot_delete: 'Account deletion', foot_cookies: 'Cookie policy', foot_kvkk: 'KVKK application', foot_contact: 'Contact', home: 'Home' },
+        fa: { skip: 'رفتن به محتوا', foot_privacy: 'حریم خصوصی', foot_terms: 'شرایط استفاده', foot_delete: 'حذف حساب', foot_cookies: 'سیاست کوکی', foot_kvkk: 'درخواست KVKK', foot_contact: 'تماس', home: 'خانه' },
+        tr: { skip: 'İçeriğe geç', foot_privacy: 'Gizlilik', foot_terms: 'Koşullar', foot_delete: 'Hesap silme', foot_cookies: 'Çerez politikası', foot_kvkk: 'KVKK başvurusu', foot_contact: 'İletişim', home: 'Ana sayfa' },
+        ar: { skip: 'تخطّ إلى المحتوى', foot_privacy: 'الخصوصية', foot_terms: 'الشروط', foot_delete: 'حذف الحساب', foot_cookies: 'سياسة ملفات الارتباط', foot_kvkk: 'طلب KVKK', foot_contact: 'اتصل', home: 'الرئيسية' },
+        ru: { skip: 'К содержимому', foot_privacy: 'Конфиденциальность', foot_terms: 'Условия', foot_delete: 'Удаление аккаунта', foot_cookies: 'Политика cookie', foot_kvkk: 'Запрос по KVKK', foot_contact: 'Контакты', home: 'Главная' }
     };
 
     function apply(lang) {

@@ -57,6 +57,11 @@ Options -Indexes -MultiViews
   RewriteRule ^privacy/?$ privacy.html [L,QSA]
   RewriteRule ^terms/?$ terms.html [L,QSA]
   RewriteRule ^account-deletion/?$ account-deletion.html [L,QSA]
+  RewriteRule ^about/?$ about.html [L,QSA]
+  RewriteRule ^distance-sales/?$ distance-sales.html [L,QSA]
+  RewriteRule ^refund-policy/?$ refund-policy.html [L,QSA]
+  RewriteRule ^cookie-policy/?$ cookie-policy.html [L,QSA]
+  RewriteRule ^kvkk-application/?$ kvkk-application.html [L,QSA]
   RewriteRule ^blog/?$ blog.html [L,QSA]
   RewriteRule ^blog/([a-z0-9-]+)/?$ blog/$1.html [L,QSA]
 </IfModule>

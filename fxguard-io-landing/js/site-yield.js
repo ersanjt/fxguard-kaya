@@ -1,27 +1,31 @@
 /**
  * FXGuard site yield system — performance + conversion helpers.
- * Privacy-friendly: stores UTMs locally, optional dataLayer push (no third-party by default).
+ * Privacy: campaign tags live in sessionStorage only (cleared when the tab closes), no click IDs,
+ * no persistent event log, no third parties — keeps the site within the KVKK cookie guide's
+ * "strictly necessary" scope so no consent banner is required (see /cookie-policy).
  */
 (function (w, d) {
   'use strict';
 
   var STORAGE_UTM = 'fxg_utm';
-  var STORAGE_EVENTS = 'fxg_events';
-  var MAX_EVENTS = 40;
+  var LEGACY_KEYS = ['fxg_utm', 'fxg_events'];
 
   function qs(sel, root) { return (root || d).querySelector(sel); }
   function qsa(sel, root) { return Array.prototype.slice.call((root || d).querySelectorAll(sel)); }
 
   function safeGet(key) {
-    try { return localStorage.getItem(key); } catch (e) { return null; }
+    try { return sessionStorage.getItem(key); } catch (e) { return null; }
   }
   function safeSet(key, val) {
-    try { localStorage.setItem(key, val); } catch (e) {}
+    try { sessionStorage.setItem(key, val); } catch (e) {}
+  }
+  function purgeLegacy() {
+    try { LEGACY_KEYS.forEach(function (k) { localStorage.removeItem(k); }); } catch (e) {}
   }
 
   function parseUtms() {
     var params = new URLSearchParams(w.location.search);
-    var keys = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'gclid', 'fbclid'];
+    var keys = ['utm_source', 'utm_medium', 'utm_campaign'];
     var found = {};
     var hit = false;
     keys.forEach(function (k) {
@@ -41,13 +45,6 @@
     var row = Object.assign({ name: name, path: w.location.pathname, ts: Date.now() }, payload || {});
     w.dataLayer = w.dataLayer || [];
     w.dataLayer.push(Object.assign({ event: 'fxg_' + name }, row));
-    try {
-      var list = JSON.parse(safeGet(STORAGE_EVENTS) || '[]');
-      if (!Array.isArray(list)) list = [];
-      list.push(row);
-      if (list.length > MAX_EVENTS) list = list.slice(-MAX_EVENTS);
-      safeSet(STORAGE_EVENTS, JSON.stringify(list));
-    } catch (e) {}
   }
 
   function utmSuffix(utm) {
@@ -176,6 +173,7 @@
   }
 
   function boot() {
+    purgeLegacy();
     var utm = parseUtms();
     pushEvent('page_view', { utm_source: utm.utm_source || null, lang: d.documentElement.getAttribute('data-lang') || d.documentElement.lang });
     enhanceWhatsAppLinks(utm);
@@ -196,7 +194,6 @@
     setTimeout(function () { reapplyWa(); fillLeadFields(); }, 800);
     w.FXG_YIELD = {
       getUtm: function () { try { return JSON.parse(safeGet(STORAGE_UTM) || '{}'); } catch (e) { return {}; } },
-      getEvents: function () { try { return JSON.parse(safeGet(STORAGE_EVENTS) || '[]'); } catch (e) { return []; } },
       track: pushEvent,
       reapplyWa: reapplyWa,
       fillLeadFields: fillLeadFields

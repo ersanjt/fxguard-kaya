@@ -1787,6 +1787,46 @@ a.cred-value:hover { color: var(--accent); }
 .footer-bottom a { color: var(--text-muted); text-decoration: none; }
 .footer-bottom a:hover { color: var(--accent); }
 .footer-logo { margin-bottom: 4px; }
+.footer-payments { flex-basis: 100%; margin: 4px 0 0; }
+.footer-payments img { display: block; max-width: 100%; height: auto; }
+.footer-ids { flex-basis: 100%; margin: 0; font-size: 0.78rem; line-height: 1.6; opacity: 0.85; overflow-wrap: anywhere; text-align: start; }
+[dir="rtl"] .footer-ids { text-align: end; }
+.footer-trust-row {
+    flex-basis: 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 20px;
+    padding-top: 12px; border-top: 1px dashed var(--border);
+}
+.footer-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin: 0;
+    padding: 4px 10px; border: 1px solid var(--border); border-radius: 999px; white-space: nowrap;
+}
+.footer-badge svg { color: var(--accent); flex-shrink: 0; }
+.footer-secure-pay { flex: 1 1 320px; margin: 0; font-size: 0.8rem; line-height: 1.55; }
+.form-kvkk-note { margin: 4px 0 12px; font-size: 0.8rem; line-height: 1.55; color: var(--text-muted); }
+.form-kvkk-note a { color: var(--accent); }
+@media (min-width: 900px) {
+    .site-footer .footer-bottom { padding-bottom: 88px; }
+}
+
+.company-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 8px 24px 20px;
+    margin: 32px 0;
+}
+.company-dl {
+    display: grid;
+    grid-template-columns: minmax(10rem, max-content) 1fr;
+    gap: 8px 24px;
+    font-size: 0.95rem;
+}
+.company-dl dt { font-weight: 600; }
+.company-dl dd { margin: 0; color: var(--text-muted); overflow-wrap: anywhere; }
+.company-missing { opacity: 0.6; }
+@media (max-width: 560px) {
+    .company-dl { grid-template-columns: 1fr; gap: 2px; }
+    .company-dl dd { margin-bottom: 10px; }
+}
 
 /* ============================================
    UX polish — header, hero, cards, forms, chrome
