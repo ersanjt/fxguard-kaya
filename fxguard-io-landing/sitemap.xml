@@ -267,13 +267,13 @@
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://fxguard.io/blog</loc>
-    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/blog"/>
-    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/blog?lang=fa"/>
-    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/blog?lang=tr"/>
-    <xhtml:link rel="alternate" hreflang="ar" href="https://fxguard.io/blog?lang=ar"/>
-    <xhtml:link rel="alternate" hreflang="ru" href="https://fxguard.io/blog?lang=ru"/>
-    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/blog"/>
+    <loc>https://fxguard.io/blog/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://fxguard.io/blog/"/>
+    <xhtml:link rel="alternate" hreflang="fa" href="https://fxguard.io/blog/?lang=fa"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://fxguard.io/blog/?lang=tr"/>
+    <xhtml:link rel="alternate" hreflang="ar" href="https://fxguard.io/blog/?lang=ar"/>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://fxguard.io/blog/?lang=ru"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://fxguard.io/blog/"/>
     <lastmod>2026-08-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
