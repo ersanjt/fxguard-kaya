@@ -6,7 +6,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { authMiddleware, optionalAuthMiddleware, requireSection } = require('../middleware/auth');
-const { createWebhookAuth } = require('../middleware/webhookAuth');
+const { createWebhookAuth, gatewayTenantIdFromHeaders } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
 const { resolveInboundTenant, runInboundWithTenant, pickHeaderSlug } = require('../lib/inboundTenant');
 const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
@@ -280,19 +280,24 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             return res.status(400).json({ error: 'Invalid payload: from must be string' });
         }
         // سازمان مقصد قبل از هر persist — پیام هرگز در سازمان اشتباه ذخیره نشود
+        const gatewayTenantId = gatewayTenantIdFromHeaders(req);
+        if (gatewayTenantId && (!req.tenant || String(req.tenant.id || '') !== gatewayTenantId)) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
         let inbound;
         try {
             inbound = await resolveInboundTenant({
                 headerSlug: pickHeaderSlug(req.headers),
                 payloadSlug: body.tenantSlug,
                 reqTenant: req.tenant,
+                gatewayTenant: gatewayTenantId ? req.tenant : null,
             });
         } catch (err) {
             logger.error('Webhook tenant resolve error:', err);
             return res.status(500).json({ error: 'Internal server error' });
         }
         if (!inbound.ok) {
-            logger.warn('Webhook rejected: unknown tenant slug', { slug: inbound.slug });
+            logger.warn('Webhook rejected: tenant not resolvable', { reason: inbound.error, slug: inbound.slug });
             return res.status(400).json({ error: 'Unknown tenant' });
         }
         const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;

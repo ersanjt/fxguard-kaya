@@ -29,6 +29,8 @@ function pickHeaderSlug(headers) {
  * @param {string} [opts.headerSlug]  مقدار هدر x-tenant-slug
  * @param {string} [opts.payloadSlug] فیلد tenantSlug داخل پیام (صف)
  * @param {object} [opts.reqTenant]   req.tenant که middleware از Host ساخته
+ * @param {object} [opts.gatewayTenant] سازمانِ Gateway اختصاصی که با secret مشتق‌شده احراز شده؛
+ *   بر هر slug اعلامی و env مقدم است و slug مغایر رد می‌شود
  * @returns {Promise<{ok:true,tenant:object}|{ok:false,error:string,slug:string}>}
  */
 async function findTenantByCloudPhoneNumberId(phoneNumberId) {
@@ -62,6 +64,13 @@ async function resolveInboundTenant(opts = {}) {
         if (many) {
             return { ok: false, error: 'unknown_phone_number', slug: String(opts.phoneNumberId) };
         }
+    }
+    if (opts.gatewayTenant) {
+        const claimed = normalizeSlug(opts.headerSlug || opts.payloadSlug || '');
+        if (claimed && claimed !== normalizeSlug(opts.gatewayTenant.slug || '')) {
+            return { ok: false, error: 'tenant_mismatch', slug: claimed };
+        }
+        return { ok: true, tenant: opts.gatewayTenant };
     }
     const explicit = normalizeSlug(
         opts.headerSlug || opts.payloadSlug || process.env.WHATSAPP_GATEWAY_TENANT_SLUG || ''

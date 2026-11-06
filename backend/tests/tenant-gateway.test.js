@@ -193,6 +193,39 @@ async function main() {
             assert.strictEqual(customers[0].tenantId, tenantA.id);
         });
 
+        await test('authenticated company gateway cannot claim another company slug', async () => {
+            const phone = '4915100000777';
+            const payload = {
+                id: 'tgw-in-2',
+                from: phone + '@c.us',
+                body: 'spoofed slug',
+                timestamp: Math.floor(Date.now() / 1000),
+                fromMe: false,
+                type: 'chat',
+                contact: { number: phone, name: 'Spoof' },
+                chat: { id: phone + '@c.us', isGroup: false },
+            };
+            const spoof = await req.post('/api/webhook/incoming-message')
+                .set('Host', '127.0.0.1')
+                .set(GATEWAY_TENANT_HEADER, tenantA.id)
+                .set('x-webhook-secret', tenantWebhookSecret(tenantA.id))
+                .set('x-tenant-slug', tenantB.slug)
+                .send(payload);
+            assert.strictEqual(spoof.status, 400, JSON.stringify(spoof.body));
+            const inB = await models.Customer.count({ where: { phone, tenantId: tenantB.id }, skipTenantScope: true });
+            assert.strictEqual(inB, 0);
+
+            const ownSlug = await req.post('/api/webhook/incoming-message')
+                .set('Host', '127.0.0.1')
+                .set(GATEWAY_TENANT_HEADER, tenantA.id)
+                .set('x-webhook-secret', tenantWebhookSecret(tenantA.id))
+                .send({ ...payload, id: 'tgw-in-3', tenantSlug: tenantA.slug });
+            assert.strictEqual(ownSlug.status, 200, JSON.stringify(ownSlug.body));
+            const customers = await models.Customer.findAll({ where: { phone }, skipTenantScope: true });
+            assert.strictEqual(customers.length, 1);
+            assert.strictEqual(customers[0].tenantId, tenantA.id);
+        });
+
         await test('WhatsApp numbers (primary slot) are separate per company', async () => {
             const { runWithTenant } = require('../lib/tenantContext');
             const numbers = require('../services/whatsappNumbers');
