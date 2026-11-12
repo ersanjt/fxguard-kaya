@@ -80,7 +80,7 @@
         const d = new Date(v);
         if (isNaN(d.getTime())) return '—';
         try {
-            return d.toLocaleDateString('fa-IR');
+            return d.toLocaleDateString('fa');
         } catch (_) {
             return d.toISOString().slice(0, 10);
         }
@@ -91,7 +91,7 @@
         const d = new Date(v);
         if (isNaN(d.getTime())) return '—';
         try {
-            return d.toLocaleString('fa-IR', { dateStyle: 'medium', timeStyle: 'short' });
+            return d.toLocaleString('fa', { dateStyle: 'medium', timeStyle: 'short' });
         } catch (_) {
             return d.toISOString().slice(0, 16).replace('T', ' ');
         }
@@ -99,7 +99,7 @@
 
     function fmtNum(n) {
         const v = Number(n) || 0;
-        try { return v.toLocaleString('fa-IR'); } catch (_) { return String(v); }
+        try { return v.toLocaleString('fa'); } catch (_) { return String(v); }
     }
 
     function setStat(id, n) {

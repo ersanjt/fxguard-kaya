@@ -26,7 +26,7 @@ module.exports = (sequelize) => {
         },
         currency: {
             type: DataTypes.STRING(10),
-            defaultValue: 'IRR',
+            defaultValue: 'USD',
             comment: 'واحد پول'
         },
         fromCashBoxId: {

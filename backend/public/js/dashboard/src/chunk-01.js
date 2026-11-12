@@ -271,13 +271,13 @@
             if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago');
             return fmtTZ(d, 'date');
         }
-        // فارسی: وقت تهران ایران و تاریخ شمسی. انگلیسی: وقت امارات و تقویم میلادی. ترکی: وقت استانبول ترکیه و تقویم میلادی.
+        // فارسی و ترکی: استانبول. روسی: مسکو. انگلیسی و عربی: دبی.
         function fmtTZ(d, opts) {
             if (!d) return '';
             const date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            const tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
-            const locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
+            const tz = (LANG === 'fa' || LANG === 'tr' ? 'Europe/Istanbul' : LANG === 'ru' ? 'Europe/Moscow' : 'Asia/Dubai');
+            const locale = (LANG === 'fa' ? 'fa' : LANG === 'tr' ? 'tr-TR' : LANG === 'ru' ? 'ru-RU' : 'en-GB');
             const base = { timeZone: tz };
             if (typeof opts === 'string') {
                 if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
@@ -335,21 +335,14 @@
         function formatTickerDateTime(_updatedAtStr, _timestampSec) {
             const d = new Date();
             const opts = { hour: '2-digit', minute: '2-digit', hour12: false };
-            const iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
+            const russia = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Moscow' })).format(d);
             const turkey = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
             const uae = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
-            let shamsi = '';
+            let russiaDate = '';
             try {
-                const pf = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' });
-                const parts = pf.formatToParts(d);
-                const y = (parts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
-                const m = (parts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
-                const day = (parts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
-                const yearNum = parseInt(y, 10);
-                if (yearNum >= 1300 && yearNum <= 1500) shamsi = y + '/' + m + '/' + day;
-                else shamsi = pf.format(d);
+                russiaDate = new Intl.DateTimeFormat('ru-RU', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             } catch (e) {
-                shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                russiaDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Moscow', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
             let miladi = '';
             try {
@@ -374,14 +367,14 @@
                 } catch (e2) { hijri = '—'; }
             }
             return {
-                iran: iran,
+                russia: russia,
                 turkey: turkey,
                 uae: uae,
-                shamsi: shamsi,
+                russiaDate: russiaDate,
                 miladi: miladi,
                 hijri: hijri,
                 label: t('ticker_current_time') || 'ساعت فعلی',
-                iranLabel: t('ticker_iran') || 'ایران',
+                russiaLabel: t('ticker_russia') || 'Россия',
                 turkeyLabel: t('ticker_turkey') || 'ترکیه',
                 uaeLabel: t('ticker_uae') || 'امارات'
             };
@@ -389,8 +382,8 @@
         function formatRatesLastUpdated(updatedAtStr, timestampSec) {
             const d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
             if (isNaN(d.getTime())) return '';
-            const locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
-            const tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
+            const locale = LANG === 'fa' ? 'fa' : LANG === 'tr' ? 'tr-TR' : LANG === 'ru' ? 'ru-RU' : 'en-GB';
+            const tz = LANG === 'fa' || LANG === 'tr' ? 'Europe/Istanbul' : LANG === 'ru' ? 'Europe/Moscow' : 'Asia/Dubai';
             return new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'short', timeStyle: 'short' }).format(d);
         }
         async function fetchRates(showRefreshSpinner) {
@@ -512,7 +505,7 @@
         window.setRatesChartPeriod = setRatesChartPeriod;
         let ratesChartsLoadSeq = 0;
         function ratesChartsYAxisLocale() {
-            if (LANG === 'fa') return 'fa-IR';
+            if (LANG === 'fa') return 'fa';
             if (LANG === 'tr') return 'tr-TR';
             return 'en-US';
         }
@@ -807,7 +800,7 @@
             if (!timesEl || timesEl.style.display === 'none') return;
             const fmt = formatTickerDateTime();
             timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
-                '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.shamsi) + '</span></span>' +
+                '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.russiaLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.russia) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.russiaDate) + '</span></span>' +
                 '<span class="ticker-sep">·</span>' +
                 '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.miladi) + '</span></span>' +
                 '<span class="ticker-sep">·</span>' +
@@ -1229,12 +1222,12 @@
         }
         function numberLocale() {
             const lang = uiLang();
-            if (lang === 'fa') return 'fa-IR';
+            if (lang === 'fa') return 'fa';
             if (lang === 'tr') return 'tr-TR';
             return 'en-US';
         }
         function currencyLabel(curr) {
-            const c = String(curr || 'IRR').toUpperCase();
+            const c = String(curr || 'USD').toUpperCase();
             if (c === 'IRR' || c === 'TMN') return t('currency_unit_toman') || (uiLang() === 'fa' ? 'تومان' : 'Toman');
             const lang = uiLang();
             const symbols = {
@@ -1423,12 +1416,12 @@
             document.getElementById('cashBoxModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش صندوق' : 'Edit cash box') : t('cashbox_add');
             document.getElementById('cashBoxModalName').value = '';
             document.getElementById('cashBoxModalBranch').value = '';
-            document.getElementById('cashBoxModalCurrency').value = 'IRR';
+            document.getElementById('cashBoxModalCurrency').value = 'USD';
             document.getElementById('cashBoxModalBalance').value = '0';
             document.getElementById('cashBoxModalDescription').value = '';
             document.getElementById('cashBoxModalActive').checked = true;
             loadBranchesForSelect(['cashBoxModalBranch']);
-            if (id) apiFetch('/api/exchange/cash-boxes').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('cashBoxModalName').value = b.name || ''; document.getElementById('cashBoxModalBranch').value = b.branchId || ''; document.getElementById('cashBoxModalCurrency').value = b.currency || 'IRR'; document.getElementById('cashBoxModalBalance').value = b.balance || 0; document.getElementById('cashBoxModalDescription').value = b.description || ''; document.getElementById('cashBoxModalActive').checked = b.isActive !== false; } });
+            if (id) apiFetch('/api/exchange/cash-boxes').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('cashBoxModalName').value = b.name || ''; document.getElementById('cashBoxModalBranch').value = b.branchId || ''; document.getElementById('cashBoxModalCurrency').value = b.currency || 'USD'; document.getElementById('cashBoxModalBalance').value = b.balance || 0; document.getElementById('cashBoxModalDescription').value = b.description || ''; document.getElementById('cashBoxModalActive').checked = b.isActive !== false; } });
         }
         function closeCashBoxModal() { const m = document.getElementById('cashBoxModal'); if (m) m.style.display = 'none'; }
         async function saveCashBoxFromModal() {
@@ -1456,12 +1449,12 @@
             document.getElementById('bankAccountModalAccountNumber').value = '';
             document.getElementById('bankAccountModalIban').value = '';
             document.getElementById('bankAccountModalBranch').value = '';
-            document.getElementById('bankAccountModalCurrency').value = 'IRR';
+            document.getElementById('bankAccountModalCurrency').value = 'USD';
             document.getElementById('bankAccountModalBalance').value = '0';
             document.getElementById('bankAccountModalDescription').value = '';
             document.getElementById('bankAccountModalActive').checked = true;
             loadBranchesForSelect(['bankAccountModalBranch']);
-            if (id) apiFetch('/api/exchange/bank-accounts').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('bankAccountModalName').value = b.name || ''; document.getElementById('bankAccountModalBankName').value = b.bankName || ''; document.getElementById('bankAccountModalAccountNumber').value = b.accountNumber || ''; document.getElementById('bankAccountModalIban').value = b.iban || ''; document.getElementById('bankAccountModalBranch').value = b.branchId || ''; document.getElementById('bankAccountModalCurrency').value = b.currency || 'IRR'; document.getElementById('bankAccountModalBalance').value = b.balance || 0; document.getElementById('bankAccountModalDescription').value = b.description || ''; document.getElementById('bankAccountModalActive').checked = b.isActive !== false; } });
+            if (id) apiFetch('/api/exchange/bank-accounts').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('bankAccountModalName').value = b.name || ''; document.getElementById('bankAccountModalBankName').value = b.bankName || ''; document.getElementById('bankAccountModalAccountNumber').value = b.accountNumber || ''; document.getElementById('bankAccountModalIban').value = b.iban || ''; document.getElementById('bankAccountModalBranch').value = b.branchId || ''; document.getElementById('bankAccountModalCurrency').value = b.currency || 'USD'; document.getElementById('bankAccountModalBalance').value = b.balance || 0; document.getElementById('bankAccountModalDescription').value = b.description || ''; document.getElementById('bankAccountModalActive').checked = b.isActive !== false; } });
         }
         function closeBankAccountModal() { const m = document.getElementById('bankAccountModal'); if (m) m.style.display = 'none'; }
         async function saveBankAccountFromModal() {
@@ -1497,7 +1490,7 @@
             m.style.display = 'flex';
             document.getElementById('txModalType').value = 'cash_in';
             document.getElementById('txModalAmount').value = '';
-            document.getElementById('txModalCurrency').value = 'IRR';
+            document.getElementById('txModalCurrency').value = 'USD';
             document.getElementById('txModalFromCashBox').value = '';
             document.getElementById('txModalToCashBox').value = '';
             document.getElementById('txModalFromBankAccount').value = '';
@@ -1522,7 +1515,7 @@
             m.style.display = 'flex';
             document.getElementById('txModalType').value = tx.type || 'cash_in';
             document.getElementById('txModalAmount').value = tx.amount || '';
-            document.getElementById('txModalCurrency').value = tx.currency || 'IRR';
+            document.getElementById('txModalCurrency').value = tx.currency || 'USD';
             document.getElementById('txModalFromCashBox').value = tx.fromCashBoxId || '';
             document.getElementById('txModalToCashBox').value = tx.toCashBoxId || '';
             document.getElementById('txModalFromBankAccount').value = tx.fromBankAccountId || '';

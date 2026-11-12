@@ -218,7 +218,7 @@
                             <label for="cashBoxModalBranch" data-i18n="branch">شعبه</label>
                             <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
                             <label for="cashBoxModalCurrency" data-i18n="currency">واحد پول</label>
-                            <select id="cashBoxModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
+                            <select id="cashBoxModalCurrency"><option value="USD" selected>دلار (USD)</option><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
                             <label for="cashBoxModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
                             <label for="cashBoxModalDescription" data-i18n="description">توضیح</label>
@@ -247,7 +247,7 @@
                             <label for="bankAccountModalBranch" data-i18n="branch">شعبه</label>
                             <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
                             <label for="bankAccountModalCurrency" data-i18n="currency">واحد پول</label>
-                            <select id="bankAccountModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
+                            <select id="bankAccountModalCurrency"><option value="USD" selected>دلار (USD)</option><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
                             <label for="bankAccountModalBalance" data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
                             <label for="bankAccountModalDescription" data-i18n="description">توضیح</label>
@@ -299,9 +299,9 @@
                                     <div class="tx-modal-field">
                                         <label data-i18n="currency">واحد پول</label>
                                         <select id="txModalCurrency">
+                                            <option value="USD" selected>دلار (USD)</option>
                                             <option value="IRR">تومان (IRR)</option>
                                             <option value="TMN">تومان (TMN)</option>
-                                            <option value="USD">دلار (USD)</option>
                                             <option value="EUR">یورو (EUR)</option>
                                             <option value="GBP">پوند (GBP)</option>
                                             <option value="DHS">درهم (DHS)</option>
@@ -726,7 +726,7 @@
                                     </div>
                                     <div class="task-form-field">
                                         <label for="svcCurrency" data-i18n="bk_svc_currency">ارز</label>
-                                        <input type="text" id="svcCurrency" maxlength="8" placeholder="IRR" dir="ltr">
+                                        <input type="text" id="svcCurrency" maxlength="8" placeholder="USD" dir="ltr">
                                     </div>
                                     <div class="task-form-field">
                                         <label for="svcColor" data-i18n="bk_svc_color">رنگ</label>
@@ -951,7 +951,7 @@
                                     </div>
                                     <div class="customer-modal-field">
                                         <label for="customerModalNationality" data-i18n="customer_nationality">ملیت</label>
-                                        <input type="text" id="customerModalNationality" data-i18n-ph="customer_nationality_ph" placeholder="مثال: ایرانی">
+                                        <input type="text" id="customerModalNationality" data-i18n-ph="customer_nationality_ph" placeholder="مثال: ترکی">
                                     </div>
                                     <div class="customer-modal-field">
                                         <label for="customerModalGender" data-i18n="customer_gender">جنسیت</label>

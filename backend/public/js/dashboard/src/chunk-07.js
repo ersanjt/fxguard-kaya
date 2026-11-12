@@ -50,12 +50,12 @@
         function engIsoDate(d) { return d.getFullYear() + '-' + engPad(d.getMonth() + 1) + '-' + engPad(d.getDate()); }
         function engIsoTime(d) { return engPad(d.getHours()) + ':' + engPad(d.getMinutes()); }
         function engParseIsoDate(s) { var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3]) : null; }
-        function engFmtNum(n) { var v = Number(n); if (!isFinite(v)) return ''; try { return new Intl.NumberFormat(engLang() === 'fa' ? 'fa-IR' : engLang() === 'tr' ? 'tr-TR' : 'en-US', { maximumFractionDigits: 2 }).format(v); } catch (_) { return String(v); } }
+        function engFmtNum(n) { var v = Number(n); if (!isFinite(v)) return ''; try { return new Intl.NumberFormat(engLang() === 'fa' ? 'fa' : engLang() === 'tr' ? 'tr-TR' : 'en-US', { maximumFractionDigits: 2 }).format(v); } catch (_) { return String(v); } }
         function engFmtDateOnly(d) { return typeof fmtTZ === 'function' ? fmtTZ(d, 'date') : String(d); }
         function engFmtDateTime(d) { return typeof fmtTZ === 'function' ? fmtTZ(d, 'datetime') : String(d); }
         function engFmtTime(d) { return typeof fmtTZ === 'function' ? fmtTZ(d, 'time') : String(d); }
-        function engWeekdayName(d) { try { return new Intl.DateTimeFormat(engLang() === 'fa' ? 'fa-IR' : engLang() === 'tr' ? 'tr-TR' : 'en-GB', { weekday: 'short' }).format(d); } catch (_) { return ''; } }
-        function engDayLabel(d) { try { return new Intl.DateTimeFormat(engLang() === 'fa' ? 'fa-IR' : engLang() === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short' }).format(d); } catch (_) { return engIsoDate(d); } }
+        function engWeekdayName(d) { try { return new Intl.DateTimeFormat(engLang() === 'fa' ? 'fa' : engLang() === 'tr' ? 'tr-TR' : 'en-GB', { weekday: 'short' }).format(d); } catch (_) { return ''; } }
+        function engDayLabel(d) { try { return new Intl.DateTimeFormat(engLang() === 'fa' ? 'fa' : engLang() === 'tr' ? 'tr-TR' : 'en-GB', { day: 'numeric', month: 'short' }).format(d); } catch (_) { return engIsoDate(d); } }
         async function engUsers(force) {
             if (ENG.users && !force) return ENG.users;
             var res = await apiFetch('/api/users');

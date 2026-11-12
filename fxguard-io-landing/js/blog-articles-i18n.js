@@ -680,7 +680,7 @@
           [`#section-1`, `Structure that scales`],
           [`#section-2`, `Deploy the way your risk team requires`]
         ],
-        body: `<p>FX and remittance teams in Turkey, UAE, Europe and Iran often run several counters and desks. Customers still expect one brand conversation. Staff need local speed. Owners need oversight.</p>
+        body: `<p>FX and remittance teams in Turkey, the UAE and Europe often run several counters and desks. Customers still expect one brand conversation. Staff need local speed. Owners need oversight.</p>
 <h2 id="section-1">Structure that scales</h2>
 <ul>
   <li><strong>Branches &amp; departments</strong> — organize staff without mixing every chat into one chaotic list.</li>
@@ -699,7 +699,7 @@
           [`#section-1`, `ساختاری که با رشد شما جلو می‌آید`],
           [`#section-2`, `استقرار مطابق نیاز تیم ریسک`]
         ],
-        body: `<p>تیم‌های ارز و حواله در ترکیه، امارات، اروپا و ایران معمولاً چند باجه و میز کار همزمان دارند؛ اما مشتری همچنان انتظار یک گفتگوی یکپارچه با برند را دارد. کارکنان به سرعت محلی نیاز دارند، مالکان به نظارت کامل.</p>
+        body: `<p>تیم‌های ارز و حواله در ترکیه، امارات و اروپا معمولاً چند باجه و میز کار همزمان دارند؛ اما مشتری همچنان انتظار یک گفتگوی یکپارچه با برند را دارد. کارکنان به سرعت محلی نیاز دارند، مالکان به نظارت کامل.</p>
 <h2 id="section-1">ساختاری که با رشد شما جلو می‌آید</h2>
 <ul>
   <li><strong>شعب و دپارتمان‌ها</strong>؛ کارکنان را سازمان‌دهی کنید بدون اینکه همه چت‌ها در یک لیست شلوغ قاطی شوند.</li>
@@ -718,7 +718,7 @@
           [`#section-1`, `Büyüdükçe işleyen bir yapı`],
           [`#section-2`, `Risk ekibinizin istediği şekilde kurun`]
         ],
-        body: `<p>Türkiye, BAE, Avrupa ve İran'daki döviz ve havale ekipleri çoğunlukla birden fazla gişe işletir; ama müşteri yine de tek bir marka ile konuştuğunu hisseder. Personelin hıza, sahiplerin de gözetime ihtiyacı vardır.</p>
+        body: `<p>Türkiye, BAE ve Avrupa'daki döviz ve havale ekipleri çoğunlukla birden fazla gişe işletir; ama müşteri yine de tek bir marka ile konuştuğunu hisseder. Personelin hıza, sahiplerin de gözetime ihtiyacı vardır.</p>
 <h2 id="section-1">Büyüdükçe işleyen bir yapı</h2>
 <ul>
   <li><strong>Şubeler ve departmanlar</strong>: tüm sohbetleri tek karmaşık listeye yığmadan personeli düzenleyin.</li>
@@ -737,7 +737,7 @@
           [`#section-1`, `بنية تكبر معك بلا فوضى`],
           [`#section-2`, `انشر النظام بالطريقة التي يفرضها فريق المخاطر`]
         ],
-        body: `<p>غالبًا ما تدير فرق الصرافة والحوالات في تركيا والإمارات وأوروبا وإيران أكثر من مكتب وأكثر من ميز عمل في وقت واحد، بينما يظل العميل يتوقع محادثة واحدة موحّدة مع العلامة التجارية. الموظف يحتاج سرعة محلية، والمالك يحتاج رقابة شاملة.</p>
+        body: `<p>غالبًا ما تدير فرق الصرافة والحوالات في تركيا والإمارات وأوروبا أكثر من مكتب وأكثر من ميز عمل في وقت واحد، بينما يظل العميل يتوقع محادثة واحدة موحّدة مع العلامة التجارية. الموظف يحتاج سرعة محلية، والمالك يحتاج رقابة شاملة.</p>
 <h2 id="section-1">بنية تكبر معك بلا فوضى</h2>
 <ul>
   <li><strong>الفروع والأقسام:</strong> نظّم الموظفين دون أن تختلط كل المحادثات في قائمة واحدة فوضوية.</li>
@@ -756,7 +756,7 @@
           [`#section-1`, `Структура, которая растёт вместе с вами`],
           [`#section-2`, `Разверните так, как требует ваша риск-команда`]
         ],
-        body: `<p>Обменные и платёжные команды в Турции, ОАЭ, Европе и Иране часто ведут сразу несколько касс и точек, при этом клиент по-прежнему ожидает единый диалог с брендом. Сотрудникам нужна скорость на месте, а владельцу — полный контроль.</p>
+        body: `<p>Обменные и платёжные команды в Турции, ОАЭ и Европе часто ведут сразу несколько касс и точек, при этом клиент по-прежнему ожидает единый диалог с брендом. Сотрудникам нужна скорость на месте, а владельцу — полный контроль.</p>
 <h2 id="section-1">Структура, которая растёт вместе с вами</h2>
 <ul>
   <li><strong>Филиалы и отделы</strong> — организуйте сотрудников, не сваливая все переписки в один хаотичный список.</li>

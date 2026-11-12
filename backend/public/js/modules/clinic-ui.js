@@ -51,7 +51,7 @@
     }
     function locale() {
         const l = window.LANG || 'fa';
-        return l === 'fa' ? 'fa-IR' : l === 'tr' ? 'tr-TR' : 'en-GB';
+        return l === 'fa' ? 'fa' : l === 'tr' ? 'tr-TR' : 'en-GB';
     }
 
     async function api(url, opts) {

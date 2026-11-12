@@ -14,7 +14,7 @@ module.exports = (sequelize) => {
         name: {
             type: DataTypes.STRING,
             allowNull: false,
-            comment: 'نام شعبه مثلاً دفتر تبریز'
+            comment: 'نام شعبه مثلاً دفتر استانبول'
         },
         city: {
             type: DataTypes.STRING,

@@ -7,7 +7,6 @@
 const defaultKnowledge = {
     ceo: 'علی رسول زاده',
     offices: {
-        iran: ['تهران', 'تبریز', 'جلفا'],
         turkey: {
             istanbul: {
                 main: 'دفتر اصلی استانبول برای دریافت و تحویل ارز',
@@ -60,7 +59,6 @@ function formatKnowledgeForPrompt(knowledge) {
     const parts = [];
     parts.push(`مدیرعامل: ${knowledge.ceo}`);
     parts.push('دفاتر:');
-    if (knowledge.offices.iran?.length) parts.push(`  - ایران: ${knowledge.offices.iran.join('، ')}`);
     if (knowledge.offices.turkey) {
         const t = knowledge.offices.turkey;
         if (t.istanbul) {

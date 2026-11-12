@@ -947,16 +947,37 @@
     }
 
     function langFromGeoPath() {
-        var p = String(location.pathname || '').toLowerCase().replace(/\/+$/, '') || '/';
-        if (p === '/ir' || p === '/fa') return 'fa';
-        if (p === '/tr') return 'tr';
-        if (p === '/ae' || p === '/ar') return 'ar';
-        if (p === '/eu') return 'en';
-        if (p === '/ru') return 'ru';
+        var p = String(location.pathname || '').toLowerCase();
+        if (/^\/(ir|fa)(\/|$)/.test(p)) return 'fa';
+        if (/^\/tr(\/|$)/.test(p)) return 'tr';
+        if (/^\/(ae|ar)(\/|$)/.test(p)) return 'ar';
+        if (/^\/eu(\/|$)/.test(p)) return 'en';
+        if (/^\/ru(\/|$)/.test(p)) return 'ru';
         return null;
     }
 
-    var LANG_HOME = { en: '/', fa: '/ir/', tr: '/tr/', ar: '/ae/', ru: '/ru/' };
+    /* Crawlable language URLs. Query-string copies stay for languages without a static page. */
+    var LOCALIZED_PAGES = {
+        '/pricing': { fa: '/fa/pricing/', tr: '/tr/pricing/', ar: '/ae/pricing/', ru: '/ru/pricing/' },
+        '/whatsapp-crm': { fa: '/fa/whatsapp-crm/', tr: '/tr/whatsapp-crm/', ar: '/ae/whatsapp-crm/', ru: '/ru/whatsapp-crm/' }
+    };
+
+    function commercialKey(pathname) {
+        var bare = String(pathname || '').replace(/\/+$/, '') || '/';
+        if (LOCALIZED_PAGES[bare]) return bare;
+        var nested = bare.match(/^\/(?:fa|ir|tr|ae|ru)\/(pricing|whatsapp-crm)$/);
+        return nested ? '/' + nested[1] : null;
+    }
+
+    function localizedPath(pathname, lang) {
+        var key = commercialKey(pathname);
+        if (!key) return null;
+        if (!lang || lang === 'en') return key;
+        if (LOCALIZED_PAGES[key][lang]) return LOCALIZED_PAGES[key][lang];
+        return key + '?lang=' + encodeURIComponent(lang);
+    }
+
+    var LANG_HOME = { en: '/', fa: '/fa/', tr: '/tr/', ar: '/ae/', ru: '/ru/' };
 
     function isLangHomePath() {
         var p = String(location.pathname || '').replace(/\/+$/, '') || '/';
@@ -988,7 +1009,7 @@
         var twUrl = document.querySelector('meta[name="twitter:url"]');
         if (twUrl) twUrl.setAttribute('content', url);
         var ogLocale = document.querySelector('meta[property="og:locale"]');
-        var locales = { en: 'en_US', fa: 'fa_IR', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
+        var locales = { en: 'en_US', fa: 'fa', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
         if (ogLocale && locales[lang]) ogLocale.setAttribute('content', locales[lang]);
     }
 
@@ -1032,6 +1053,7 @@
     }
 
     function updatePageSeoMeta(lang) {
+        if (isGeoPath()) return;
         var pageMeta = (typeof window !== 'undefined' && window.FXG_PAGE_META) ? window.FXG_PAGE_META : null;
         if (!pageMeta || !document.body) return;
         var pageId = document.body.getAttribute('data-page');
@@ -1042,7 +1064,7 @@
         applyMetaTags(meta);
         syncDiscoveryTags(lang);
         var ogLocale = document.querySelector('meta[property="og:locale"]');
-        var locales = { en: 'en_US', fa: 'fa_IR', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
+        var locales = { en: 'en_US', fa: 'fa', tr: 'tr_TR', ar: 'ar_AE', ru: 'ru_RU' };
         if (ogLocale && locales[lang]) ogLocale.setAttribute('content', locales[lang]);
     }
 
@@ -1056,11 +1078,14 @@
             try {
                 var url = new URL(href, location.origin);
                 if (url.origin !== location.origin) return;
-                if (/^\/(ir|tr|ae|eu|ru|fa|ar)(\/)?$/i.test(url.pathname.replace(/\/+$/, '') + '/') || url.pathname === '/') {
-                    if (/^\/(ir|tr|ae|eu|ru|fa|ar)(\/|$)/i.test(url.pathname)) {
-                        a.setAttribute('href', url.pathname.replace(/\/?$/, '/') + url.hash);
-                        return;
-                    }
+                var loc = localizedPath(url.pathname, lang);
+                if (loc) {
+                    a.setAttribute('href', loc + url.hash);
+                    return;
+                }
+                if (/^\/(ir|tr|ae|eu|ru|fa|ar)(\/|$)/i.test(url.pathname)) {
+                    a.setAttribute('href', url.pathname.replace(/\/?$/, '/') + url.hash);
+                    return;
                 }
                 if (lang === 'en') url.searchParams.delete('lang');
                 else url.searchParams.set('lang', lang);
@@ -1083,7 +1108,7 @@
         /* English speakers / regions stay English */
         if (primary === 'en') return 'en';
         /* Country hints when browser reports only a region-heavy tag */
-        if (region === 'IR' || region === 'AF' || region === 'TJ') return 'fa';
+        if (region === 'AF' || region === 'TJ') return 'fa';
         if (region === 'TR') return 'tr';
         if (['AE','SA','QA','KW','BH','OM','EG','JO','LB','IQ','SY','MA','DZ','TN','LY','YE','SD','PS'].indexOf(region) !== -1) return 'ar';
         if (region === 'RU') return 'ru';
@@ -1094,7 +1119,7 @@
         var tz = '';
         try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return null; }
         var map = {
-            'Asia/Tehran': 'fa', 'Asia/Kabul': 'fa', 'Asia/Dushanbe': 'fa',
+            'Asia/Kabul': 'fa', 'Asia/Dushanbe': 'fa',
             'Europe/Istanbul': 'tr',
             'Asia/Dubai': 'ar', 'Asia/Muscat': 'ar', 'Asia/Qatar': 'ar', 'Asia/Bahrain': 'ar',
             'Asia/Kuwait': 'ar', 'Asia/Riyadh': 'ar', 'Asia/Baghdad': 'ar', 'Asia/Amman': 'ar',
@@ -1160,7 +1185,7 @@
     }
 
     function localizeDates(lang) {
-        var localeMap = { en: 'en-GB', fa: 'fa-IR', tr: 'tr-TR', ar: 'ar-AE', ru: 'ru-RU' };
+        var localeMap = { en: 'en-GB', fa: 'fa', tr: 'tr-TR', ar: 'ar-AE', ru: 'ru-RU' };
         var locale = localeMap[lang] || 'en-GB';
         document.querySelectorAll('time[data-i18n-date][datetime]').forEach(function(el) {
             var raw = el.getAttribute('datetime');
@@ -1189,7 +1214,8 @@
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var key = el.getAttribute('data-i18n');
             var val = t[key] || ct[key];
-            if (val != null) el.innerHTML = val;
+            /* Rewriting identical markup forces a repaint that Chrome counts as a late LCP */
+            if (val != null && el.innerHTML !== val) el.innerHTML = val;
         });
         document.querySelectorAll('[data-i18n-placeholder]').forEach(function(el) {
             var key = el.getAttribute('data-i18n-placeholder');
@@ -1379,6 +1405,16 @@
             if (isLangHomePath()) {
                 window.location.href = LANG_HOME[lang] || '/';
                 return;
+            }
+            var commercialDest = localizedPath(location.pathname, lang);
+            if (commercialDest) {
+                var here = (location.pathname.replace(/\/+$/, '') || '/') + location.search;
+                var destUrl = new URL(commercialDest, location.origin);
+                var there = (destUrl.pathname.replace(/\/+$/, '') || '/') + destUrl.search;
+                if (here !== there) {
+                    window.location.href = commercialDest;
+                    return;
+                }
             }
             applyLang(lang);
             var url = new URL(window.location.href);

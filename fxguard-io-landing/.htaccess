@@ -22,7 +22,7 @@ Options -Indexes -MultiViews
 
   # Homepage ?lang= → stable language paths (inner pages keep ?lang=)
   RewriteCond %{QUERY_STRING} (^|&)lang=fa(&|$) [NC]
-  RewriteRule ^(index\.html)?$ /ir/? [R=301,L]
+  RewriteRule ^(index\.html)?$ /fa/? [R=301,L]
   RewriteCond %{QUERY_STRING} (^|&)lang=tr(&|$) [NC]
   RewriteRule ^(index\.html)?$ /tr/? [R=301,L]
   RewriteCond %{QUERY_STRING} (^|&)lang=ar(&|$) [NC]
@@ -32,8 +32,9 @@ Options -Indexes -MultiViews
   RewriteCond %{QUERY_STRING} (^|&)lang=en(&|$) [NC]
   RewriteRule ^(index\.html)?$ /? [R=301,L]
 
-  # Language-code aliases
-  RewriteRule ^fa/?$ /ir/ [R=301,L]
+  # Old Iran-country path redirects to the Persian language path.
+  RewriteRule ^ir/?$ /fa/ [R=301,L]
+  RewriteRule ^ir/(.+)$ /fa/$1 [R=301,L]
   RewriteRule ^ar/?$ /ae/ [R=301,L]
 
   # Canonical: strip .html from browser requests (keep internal rewrites)
