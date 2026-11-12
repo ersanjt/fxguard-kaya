@@ -1,7 +1,7 @@
-const axios = require('axios');
 const logger = require('../config/logger');
 const { getCompanyKnowledge, formatKnowledgeForPrompt } = require('../config/companyKnowledge');
-const { getOpenAIApiKey } = require('../lib/getOpenAIApiKey');
+const { completeChat } = require('../lib/aiChat');
+const { resolveActiveAi } = require('../lib/aiProviders');
 
 /**
  * سرویس پاسخ‌دهی هوش مصنوعی با OpenAI
@@ -212,7 +212,7 @@ function buildMessages(customerName, messageHistory, incomingMessage) {
 }
 
 /**
- * تولید پاسخ هوشمند با استفاده از OpenAI
+ * تولید پاسخ هوشمند با سرویس انتخاب‌شده (ChatGPT، Claude، Gemini و بقیه)
  * @param {Object} options
  * @param {Object} options.conversation - مکالمه
  * @param {Object} options.customer - مشتری
@@ -222,11 +222,6 @@ function buildMessages(customerName, messageHistory, incomingMessage) {
  * @returns {Promise<string|null>} متن پاسخ یا null در صورت خطا
  */
 async function generateAIResponse({ conversation: _conversation, customer, incomingMessage, messageHistory = [], department = null }) {
-    const apiKey = await getOpenAIApiKey();
-    if (!apiKey) {
-        if (process.env.NODE_ENV !== 'test') logger.warn('AI: کلید OpenAI تنظیم نشده. از پنل واتساپ یا OPENAI_API_KEY در .env استفاده کنید.');
-        return null;
-    }
     const text = (incomingMessage || '').trim();
     if (!text) return null;
 
@@ -240,60 +235,28 @@ async function generateAIResponse({ conversation: _conversation, customer, incom
     const systemPrompt = buildSystemPrompt(deptInfo, companyText, { customerName });
     const chatMessages = buildMessages((customer && customer.name) || 'مشتری', messageHistory, text);
 
-    const payload = {
-        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-        messages: [
-            { role: 'system', content: systemPrompt },
-            ...chatMessages.map(m => ({ role: m.role, content: m.content }))
-        ],
+    const result = await completeChat({
+        system: systemPrompt,
+        messages: chatMessages,
         temperature: AI_TEMPERATURE,
-        max_tokens: MAX_RESPONSE_TOKENS
-    };
-
-    const doRequest = () => axios.post('https://api.openai.com/v1/chat/completions', payload, {
-        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        timeout: REQUEST_TIMEOUT_MS
+        maxTokens: MAX_RESPONSE_TOKENS,
+        timeoutMs: REQUEST_TIMEOUT_MS,
     });
-
-    try {
-        let response;
-        try {
-            response = await doRequest();
-        } catch (err) {
-            const retryable = err?.code === 'ECONNABORTED' || err?.response?.status >= 500;
-            if (retryable && process.env.NODE_ENV !== 'test') {
-                logger.info('AI request failed, retrying once...', { code: err?.code, status: err?.response?.status });
-                response = await doRequest();
-            } else throw err;
-        }
-
-        const choice = response.data?.choices?.[0];
-        const content = choice?.message?.content?.trim();
-        if (!content) {
-            if (choice?.finish_reason === 'content_filter' && process.env.NODE_ENV !== 'test') {
-                logger.info('AI response filtered by OpenAI');
-            }
-            return null;
-        }
-
-        const cleaned = sanitizeResponse(content);
-        if (!cleaned || cleaned.length < 5) return null;
-
-        if (hasForbiddenContent(cleaned)) {
-            if (process.env.NODE_ENV !== 'test') logger.info('AI response rejected: forbidden content', { preview: cleaned.slice(0, 80) });
-            return getSafeFallback(text);
-        }
-        return cleaned;
-    } catch (err) {
-        if (process.env.NODE_ENV !== 'test') {
-            const errMsg = err?.response?.data?.error?.message || err?.message;
-            const errCode = err?.response?.data?.error?.code || err?.code;
-            const status = err?.response?.status;
-            const hint = errCode === 'insufficient_quota' ? ' → سقف اعتبار OpenAI تمام شده. به https://platform.openai.com/account/billing مراجعه کنید.' : '';
-            logger.warn('AI response generation failed: ' + errMsg + hint, { code: errCode, status });
+    if (!result || !result.text) {
+        if (result && result.reason === 'no_key' && process.env.NODE_ENV !== 'test') {
+            logger.warn('AI: هیچ کلیدی برای سرویس انتخاب‌شده تنظیم نشده. از پنل واتساپ یا متغیر محیطی همان سرویس استفاده کنید.');
         }
         return null;
     }
+
+    const cleaned = sanitizeResponse(result.text);
+    if (!cleaned || cleaned.length < 5) return null;
+
+    if (hasForbiddenContent(cleaned)) {
+        if (process.env.NODE_ENV !== 'test') logger.info('AI response rejected: forbidden content', { provider: result.provider, preview: cleaned.slice(0, 80) });
+        return getSafeFallback(text);
+    }
+    return cleaned;
 }
 
 /**
@@ -301,8 +264,8 @@ async function generateAIResponse({ conversation: _conversation, customer, incom
  * @returns {Promise<boolean>}
  */
 async function isAIAnswerEnabled() {
-    const apiKey = await getOpenAIApiKey();
-    if (!apiKey) return false;
+    const active = await resolveActiveAi();
+    if (!active || !active.apiKey) return false;
     const enabled = process.env.AI_ANSWER_ENABLED;
     return enabled === undefined || enabled === '' || enabled === 'true' || enabled === '1';
 }

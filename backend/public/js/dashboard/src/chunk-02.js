@@ -1111,6 +1111,52 @@
                 el.textContent = t('page_dashboard') || tt('داشبورد', 'Dashboard', 'Kontrol Paneli');
             }
         }
+        var _dashWaStatus = null;
+        function dashCloudRulesApply(st) {
+            return !!(st && (st.cloudReady || st.cloudApi));
+        }
+        function dashQueueIsGroup(c) {
+            var meta = c && c.metadata;
+            if (typeof meta === 'string') {
+                try { meta = JSON.parse(meta); } catch (_e) { meta = {}; }
+            }
+            meta = meta || {};
+            var phone = (c && c.customer && c.customer.phone) || '';
+            return !!(meta.isGroup) || /@g\.us$/i.test(phone);
+        }
+        function dashWindowState(c) {
+            var at = c && c.lastIncomingMessageAt;
+            if (!at) return { state: 'closed', remainMin: 0 };
+            var age = Date.now() - new Date(at).getTime();
+            var limit = 24 * 60 * 60 * 1000;
+            if (!isFinite(age) || age < 0 || age >= limit) return { state: 'closed', remainMin: 0 };
+            return { state: 'open', remainMin: Math.max(1, Math.ceil((limit - age) / 60000)) };
+        }
+        function dashWindowRemainLabel(mins) {
+            var minL = t('dashboard_min') || tt('دقیقه', 'min', 'dk');
+            var hourL = t('dashboard_hour') || tt('ساعت', 'h', 'sa');
+            if (mins < 60) return dashFormatNum(mins) + ' ' + minL;
+            return dashFormatNum(Math.ceil(mins / 60)) + ' ' + hourL;
+        }
+        function dashWaChipModel(st) {
+            if (!st) {
+                var header = document.getElementById('headerWhatsappStatus');
+                var on = !!(header && header.classList.contains('connected'));
+                return {
+                    cls: on ? 'is-on' : 'is-off',
+                    text: on
+                        ? (t('dashboard_wa_on') || tt('واتساپ متصل', 'WhatsApp connected', 'WhatsApp bağlı'))
+                        : (t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı'))
+                };
+            }
+            var cloud = !!(st.cloudReady || st.cloudApi);
+            var qr = !!st.gatewayReady || (!!st.whatsapp && !st.cloudApi);
+            if (cloud && qr) return { cls: 'is-on', text: t('dashboard_wa_both') || tt('Cloud و QR متصل', 'Cloud and QR connected', 'Cloud ve QR bağlı') };
+            if (st.cloudApi || (cloud && st.connectionMode === 'cloud')) return { cls: 'is-on', text: t('dashboard_wa_cloud') || tt('Cloud API متصل', 'Cloud API connected', 'Cloud API bağlı') };
+            if (cloud) return { cls: 'is-partial', text: t('dashboard_wa_partial') || tt('Cloud آماده · QR قطع', 'Cloud ready · QR offline', 'Cloud hazır · QR kapalı') };
+            if (qr || st.whatsapp) return { cls: 'is-on', text: t('dashboard_wa_qr') || tt('QR متصل', 'QR connected', 'QR bağlı') };
+            return { cls: 'is-off', text: t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı') };
+        }
         function syncDashboardWaChip() {
             var chip = document.getElementById('dashboardWaChip');
             if (!chip) return;
@@ -1120,13 +1166,42 @@
                 chip.textContent = '';
                 return;
             }
-            var header = document.getElementById('headerWhatsappStatus');
-            var on = !!(header && header.classList.contains('connected'));
+            var model = dashWaChipModel(_dashWaStatus);
             chip.hidden = false;
-            chip.className = 'dash-wa-chip' + (on ? ' is-on' : ' is-off');
-            chip.textContent = on
-                ? (t('dashboard_wa_on') || tt('واتساپ متصل', 'WhatsApp connected', 'WhatsApp bağlı'))
-                : (t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı'));
+            chip.className = 'dash-wa-chip ' + model.cls;
+            chip.textContent = model.text;
+        }
+        function paintDashboardWaPolicy() {
+            var el = document.getElementById('dashboardQueuePolicy');
+            if (!el) return;
+            var st = _dashWaStatus;
+            if (!st) { el.hidden = true; el.textContent = ''; return; }
+            var cloud = dashCloudRulesApply(st);
+            var qr = !!st.gatewayReady || (!!st.whatsapp && !st.cloudApi);
+            var key = 'dashboard_wa_policy_off';
+            if (cloud && qr) key = 'dashboard_wa_policy_both';
+            else if (st.cloudApi || (cloud && st.connectionMode === 'cloud')) key = 'dashboard_wa_policy_cloud';
+            else if (cloud) key = 'dashboard_wa_policy_partial';
+            else if (qr || st.whatsapp) key = 'dashboard_wa_policy_qr';
+            el.hidden = false;
+            el.textContent = t(key) || '';
+        }
+        async function refreshDashboardWaStatus() {
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (!currentUser || perms.whatsapp === false || typeof apiFetch !== 'function') {
+                syncDashboardWaChip();
+                paintDashboardWaPolicy();
+                return;
+            }
+            try {
+                var res = await apiFetch('/api/gateway/status', { timeoutMs: 10000 });
+                var data = res && res.data;
+                if (data && (res.ok || data.connectionMode || data.cloudReady != null || data.whatsapp != null)) {
+                    _dashWaStatus = data;
+                }
+            } catch (_e) { /* keep the previous status */ }
+            syncDashboardWaChip();
+            paintDashboardWaPolicy();
         }
         function dashConvLooksLikeJid(s) {
             if (!s) return true;
@@ -1233,7 +1308,14 @@
                 if (countEl) { countEl.hidden = true; countEl.textContent = ''; }
                 return;
             }
-            var rows = (result && result.rows) || [];
+            var rows = ((result && result.rows) || []).slice();
+            if (dashCloudRulesApply(_dashWaStatus)) {
+                rows.sort(function(a, b) {
+                    var ao = (!dashQueueIsGroup(a) && dashWindowState(a).state !== 'open') ? 1 : 0;
+                    var bo = (!dashQueueIsGroup(b) && dashWindowState(b).state !== 'open') ? 1 : 0;
+                    return ao - bo;
+                });
+            }
             if (allLink) {
                 var tab = result && result.kind === 'unread' ? 'unread' : (result && result.kind === 'open' ? 'open' : 'unanswered');
                 allLink.setAttribute('data-conv-tab', tab);
@@ -1259,12 +1341,22 @@
                 var tally = unread > 99 ? '99+' : String(unread);
                 var preview = info.preview || '';
                 var wait = dashQueueWaitLabel(c);
+                var windowHtml = '';
+                var windowCls = '';
+                if (dashCloudRulesApply(_dashWaStatus) && !dashQueueIsGroup(c)) {
+                    var win = dashWindowState(c);
+                    windowCls = win.state === 'open' ? ' is-window-open' : ' is-window-closed';
+                    var winText = win.state === 'open'
+                        ? (t('dashboard_wa_window_open') || tt('پنجره باز · {time}', 'Window open · {time}', 'Pencere açık · {time}')).replace('{time}', dashWindowRemainLabel(win.remainMin))
+                        : (t('dashboard_wa_window_closed') || tt('فقط قالب', 'Template only', 'Yalnızca şablon'));
+                    windowHtml = '<span class="dash-queue-window is-' + win.state + '">' + escapeHtml(winText) + '</span>';
+                }
                 var tallyHtml = unread
                     ? '<span class="dash-queue-tally">' + escapeHtml(tally) + '</span>'
                     : '<span class="dash-queue-tally is-zero"></span>';
                 var waitHtml = wait ? '<span class="dash-queue-wait">' + escapeHtml((t('dashboard_queue_waiting') || tt('منتظر {time}', 'Waiting {time}', '{time} bekliyor')).replace('{time}', wait)) + '</span>' : '';
                 var timeHtml = wait ? '' : (timeStr ? '<time class="dash-queue-time">' + escapeHtml(timeStr) + '</time>' : '');
-                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + waitHtml + timeHtml + tallyHtml + '</div></a>';
+                return '<a href="#conversations" class="dash-queue-row' + windowCls + '" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + windowHtml + waitHtml + timeHtml + tallyHtml + '</div></a>';
             }).join('');
         }
         function refreshDashboardUiAfterLang() {
@@ -1331,6 +1423,7 @@
                     const perms = (currentUser && currentUser.permissions) || {};
                     return perms[key] === true;
                 };
+            var waStatusPromise = refreshDashboardWaStatus();
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             const CARD_DEFS = [
                 { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', statKey: 'unreadConversations', statAltKey: 'openConversations', statSuffix: t('dashboard_stat_unread'), statAltSuffix: t('filter_open'), badgeWarn: true },
@@ -1359,12 +1452,13 @@
                 { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings' }
             ];
             const CARD_GROUPS = [
-                { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
+                { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets'] },
+                { key: 'whatsapp', titleKey: 'dashboard_group_whatsapp', pages: ['whatsapp', 'message-templates'] },
                 { key: 'clinic', titleKey: 'nav_clinic', pages: ['clinic-appointments', 'clinic-patients', 'clinic-doctors', 'clinic-packages'] },
                 { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
                 { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
-                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity', 'announcements'] },
-                { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'panel-settings'] }
+                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity'] },
+                { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'internal-chat', 'announcements', 'panel-settings'] }
             ];
             function cardStatText(c, stats) {
                 stats = stats || {};
@@ -1496,6 +1590,8 @@
                 try { queueResult = await fetchDashboardQueue(true, stats); } catch (_qErr) { queueResult = { rows: [], kind: 'none' }; }
                 if (seq !== _loadDashboardSeq) return;
             }
+            try { await waStatusPromise; } catch (_waErr) { /* status chip keeps the last known state */ }
+            if (seq !== _loadDashboardSeq) return;
             renderDashboardQueue(queueEl, queueWrapEl, queueAllLink, queueResult, can('conversations'));
             if (quickEl) {
                 const quickBtns = [];
@@ -2941,7 +3037,7 @@
                 // ذخیره تنظیمات واتساپ
                 if (target.closest('#btnSaveWhatsappWelcome') && typeof saveWhatsappWelcomeConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappWelcomeConfig(); return; }
                 if (target.closest('#btnSaveWhatsappAI') && typeof saveWhatsappAIConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAIConfig(); return; }
-                if (target.closest('#whatsappOpenAIClearKey') && typeof clearWhatsappOpenAIKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappOpenAIKey(); return; }
+                if (target.closest('#whatsappAiClearKey') && typeof clearWhatsappAiKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappAiKey(); return; }
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }

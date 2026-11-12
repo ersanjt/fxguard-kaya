@@ -681,11 +681,11 @@
                                         <svg viewBox="0 0 48 48" fill="none"><path d="M24 6.5 29.8 18l12.2 1.2-9.2 8.2 2.8 12.1L24 33.2 12.4 39.5l2.8-12.1-9.2-8.2L18.2 18 24 6.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="23" r="3.2" fill="currentColor"/><circle cx="14" cy="12" r="2" fill="currentColor" opacity=".45"/><circle cx="36" cy="13" r="2" fill="currentColor" opacity=".45"/><circle cx="10" cy="30" r="2" fill="currentColor" opacity=".45"/><path d="M14 12c3.2 2.2 6.2 3.4 10 3.4M36 13c-3 2-6.2 3.2-9.5 3.5M10 30c4-.2 8.2-2 11.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55"/></svg>
                                     </span>
                                     <div class="wa-card-head-text">
-                                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
+                                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی</h3>
                                         <span class="wa-ai-badge" data-i18n="whatsapp_ai_badge">هستهٔ هوشمند</span>
                                     </div>
                                 </div>
-                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون کلیدواژه جواب ندهد، سرویس انتخاب‌شده پاسخ می‌دهد و مکالمه را به دپارتمان مناسب می‌فرستد. ChatGPT، Claude، Gemini، Grok، Mistral، Groq و DeepSeek.</p>
                                 <ul class="wa-ai-feats" aria-label="AI features">
                                     <li>
                                         <span class="wa-ai-feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h10M14 12l-3-3M14 12l-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="5.5" r="1.4" fill="currentColor"/></svg></span>
@@ -701,12 +701,23 @@
                                     </li>
                                 </ul>
                                 <div class="whatsapp-openai-key-row">
-                                    <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
+                                    <label for="whatsappAiProvider" data-i18n="whatsapp_ai_provider">سرویس هوش مصنوعی</label>
+                                    <select id="whatsappAiProvider" class="whatsapp-input whatsapp-ai-provider">
+                                        <option value="openai">ChatGPT / OpenAI</option>
+                                        <option value="anthropic">Claude</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="xai">Grok</option>
+                                        <option value="mistral">Mistral</option>
+                                        <option value="groq">Groq</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                    </select>
+                                    <label for="whatsappAiApiKey" data-i18n="whatsapp_ai_key_label">کلید API سرویس انتخاب‌شده</label>
                                     <div class="whatsapp-openai-key-wrap">
-                                        <input type="password" id="whatsappOpenAIApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_openai_key_ph" placeholder="sk-... از platform.openai.com" autocomplete="off">
-                                        <a href="#" id="whatsappOpenAIClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_openai_clear_key">پاک کردن کلید</a>
+                                        <input type="password" id="whatsappAiApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_ai_key_ph" placeholder="کلید را از پنل همان سرویس وارد کنید" autocomplete="off">
+                                        <a href="#" id="whatsappAiClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_ai_clear_key">پاک کردن کلید این سرویس</a>
                                     </div>
-                                    <span id="whatsappOpenAIKeyStatus" class="whatsapp-key-status"></span>
+                                    <span id="whatsappAiKeyStatus" class="whatsapp-key-status"></span>
+                                    <p id="whatsappAiSaved" class="whatsapp-ai-saved text-muted"></p>
                                 </div>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>

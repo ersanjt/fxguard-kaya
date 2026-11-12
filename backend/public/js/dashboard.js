@@ -1245,6 +1245,20 @@
         function formatMoney(n, curr) {
             return formatMoneyAmount(n) + ' ' + currencyLabel(curr);
         }
+        function moneyLinesByCurrency(map) {
+            const keys = Object.keys(map || {}).filter(function(c) {
+                return Math.abs(parseFloat(map[c]) || 0) > 0;
+            }).sort();
+            if (!keys.length) return formatMoney(0, 'USD');
+            return keys.map(function(c) { return formatMoney(map[c], c); }).join('\n');
+        }
+        function positionFieldMap(position, field) {
+            const out = {};
+            Object.keys(position || {}).forEach(function(c) {
+                out[c] = parseFloat(position[c] && position[c][field]) || 0;
+            });
+            return out;
+        }
         function formatMoneyEn(n) {
             return formatMoneyAmount(n);
         }
@@ -1286,13 +1300,11 @@
             const cp = cpRes.data || {};
             const cashBoxes = cp.cashBoxes || [];
             const bankAccounts = cp.bankAccounts || [];
-            const totalCash = cp.totalCash != null ? cp.totalCash : cashBoxes.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
-            const totalBank = cp.totalBank != null ? cp.totalBank : bankAccounts.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
-            const total = cp.total != null ? cp.total : (totalCash + totalBank);
+            const position = cp.currencyPosition || {};
 
-            if (totalCashEl) totalCashEl.textContent = formatMoney(totalCash, 'IRR');
-            if (totalBankEl) totalBankEl.textContent = formatMoney(totalBank, 'IRR');
-            if (totalEl) totalEl.textContent = formatMoney(total, 'IRR');
+            if (totalCashEl) totalCashEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'cashBoxes'));
+            if (totalBankEl) totalBankEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'bankAccounts'));
+            if (totalEl) totalEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'total'));
 
             const cb = document.getElementById('summaryCashBoxes');
             const ba = document.getElementById('summaryBankAccounts');
@@ -1319,10 +1331,14 @@
             const obEl = document.getElementById('summaryOutstandingBalance');
             if (obEl) {
                 const obs = cp.outstandingBalance || [];
-                const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                const obByCurrency = {};
+                obs.forEach(function(o) {
+                    const c = String(o.currency || 'USD').toUpperCase();
+                    obByCurrency[c] = (obByCurrency[c] || 0) + (parseFloat(o.balance) || 0);
+                });
                 obEl.innerHTML = obs.length ? obs.map(function(o) {
                     return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoney(o.balance, o.currency) + '</span></div>';
-                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + formatMoneyAmount(totalOB) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + escapeHtml(moneyLinesByCurrency(obByCurrency).replace(/\n/g, ' · ')) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
             }
             const piEl = document.getElementById('summaryPendingInward');
             if (piEl) {
@@ -2070,7 +2086,13 @@
             const d = res.data || {};
             const rows = d.rows || [];
             if (rows.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هزینه‌ای ثبت نشده' : 'No expenses recorded') + '</div>'; return; }
-            el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + formatMoneyEn(d.totalAmount) + '</div>' +
+            const expenseByCurrency = {};
+            rows.forEach(function(r) {
+                const c = String(r.currency || 'USD').toUpperCase();
+                expenseByCurrency[c] = (expenseByCurrency[c] || 0) + (parseFloat(r.amount) || 0);
+            });
+            const expenseTotalLabel = moneyLinesByCurrency(expenseByCurrency).replace(/\n/g, ' · ');
+            el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + escapeHtml(expenseTotalLabel) + '</div>' +
                 '<table class="report-table"><thead><tr>' +
                 '<th>' + (LANG === 'fa' ? 'تاریخ' : 'Date') + '</th>' +
                 '<th>' + (LANG === 'fa' ? 'نوع' : 'Type') + '</th>' +
@@ -2092,7 +2114,7 @@
                         '<td>' + (r.user ? escapeHtml(r.user.name) : '-') + '</td></tr>';
                 }).join('') +
                 '<tr class="stmt-row-total"><td colspan="3"><strong>' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</strong></td>' +
-                '<td class="stmt-num"><strong style="color:var(--danger);">' + formatMoneyEn(d.totalAmount) + '</strong></td>' +
+                '<td class="stmt-num"><strong style="color:var(--danger);">' + escapeHtml(expenseTotalLabel) + '</strong></td>' +
                 '<td colspan="4"></td></tr></tbody></table>';
         }
 
@@ -3495,6 +3517,52 @@
                 el.textContent = t('page_dashboard') || tt('داشبورد', 'Dashboard', 'Kontrol Paneli');
             }
         }
+        var _dashWaStatus = null;
+        function dashCloudRulesApply(st) {
+            return !!(st && (st.cloudReady || st.cloudApi));
+        }
+        function dashQueueIsGroup(c) {
+            var meta = c && c.metadata;
+            if (typeof meta === 'string') {
+                try { meta = JSON.parse(meta); } catch (_e) { meta = {}; }
+            }
+            meta = meta || {};
+            var phone = (c && c.customer && c.customer.phone) || '';
+            return !!(meta.isGroup) || /@g\.us$/i.test(phone);
+        }
+        function dashWindowState(c) {
+            var at = c && c.lastIncomingMessageAt;
+            if (!at) return { state: 'closed', remainMin: 0 };
+            var age = Date.now() - new Date(at).getTime();
+            var limit = 24 * 60 * 60 * 1000;
+            if (!isFinite(age) || age < 0 || age >= limit) return { state: 'closed', remainMin: 0 };
+            return { state: 'open', remainMin: Math.max(1, Math.ceil((limit - age) / 60000)) };
+        }
+        function dashWindowRemainLabel(mins) {
+            var minL = t('dashboard_min') || tt('دقیقه', 'min', 'dk');
+            var hourL = t('dashboard_hour') || tt('ساعت', 'h', 'sa');
+            if (mins < 60) return dashFormatNum(mins) + ' ' + minL;
+            return dashFormatNum(Math.ceil(mins / 60)) + ' ' + hourL;
+        }
+        function dashWaChipModel(st) {
+            if (!st) {
+                var header = document.getElementById('headerWhatsappStatus');
+                var on = !!(header && header.classList.contains('connected'));
+                return {
+                    cls: on ? 'is-on' : 'is-off',
+                    text: on
+                        ? (t('dashboard_wa_on') || tt('واتساپ متصل', 'WhatsApp connected', 'WhatsApp bağlı'))
+                        : (t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı'))
+                };
+            }
+            var cloud = !!(st.cloudReady || st.cloudApi);
+            var qr = !!st.gatewayReady || (!!st.whatsapp && !st.cloudApi);
+            if (cloud && qr) return { cls: 'is-on', text: t('dashboard_wa_both') || tt('Cloud و QR متصل', 'Cloud and QR connected', 'Cloud ve QR bağlı') };
+            if (st.cloudApi || (cloud && st.connectionMode === 'cloud')) return { cls: 'is-on', text: t('dashboard_wa_cloud') || tt('Cloud API متصل', 'Cloud API connected', 'Cloud API bağlı') };
+            if (cloud) return { cls: 'is-partial', text: t('dashboard_wa_partial') || tt('Cloud آماده · QR قطع', 'Cloud ready · QR offline', 'Cloud hazır · QR kapalı') };
+            if (qr || st.whatsapp) return { cls: 'is-on', text: t('dashboard_wa_qr') || tt('QR متصل', 'QR connected', 'QR bağlı') };
+            return { cls: 'is-off', text: t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı') };
+        }
         function syncDashboardWaChip() {
             var chip = document.getElementById('dashboardWaChip');
             if (!chip) return;
@@ -3504,13 +3572,42 @@
                 chip.textContent = '';
                 return;
             }
-            var header = document.getElementById('headerWhatsappStatus');
-            var on = !!(header && header.classList.contains('connected'));
+            var model = dashWaChipModel(_dashWaStatus);
             chip.hidden = false;
-            chip.className = 'dash-wa-chip' + (on ? ' is-on' : ' is-off');
-            chip.textContent = on
-                ? (t('dashboard_wa_on') || tt('واتساپ متصل', 'WhatsApp connected', 'WhatsApp bağlı'))
-                : (t('dashboard_wa_off') || tt('واتساپ قطع', 'WhatsApp offline', 'WhatsApp kapalı'));
+            chip.className = 'dash-wa-chip ' + model.cls;
+            chip.textContent = model.text;
+        }
+        function paintDashboardWaPolicy() {
+            var el = document.getElementById('dashboardQueuePolicy');
+            if (!el) return;
+            var st = _dashWaStatus;
+            if (!st) { el.hidden = true; el.textContent = ''; return; }
+            var cloud = dashCloudRulesApply(st);
+            var qr = !!st.gatewayReady || (!!st.whatsapp && !st.cloudApi);
+            var key = 'dashboard_wa_policy_off';
+            if (cloud && qr) key = 'dashboard_wa_policy_both';
+            else if (st.cloudApi || (cloud && st.connectionMode === 'cloud')) key = 'dashboard_wa_policy_cloud';
+            else if (cloud) key = 'dashboard_wa_policy_partial';
+            else if (qr || st.whatsapp) key = 'dashboard_wa_policy_qr';
+            el.hidden = false;
+            el.textContent = t(key) || '';
+        }
+        async function refreshDashboardWaStatus() {
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (!currentUser || perms.whatsapp === false || typeof apiFetch !== 'function') {
+                syncDashboardWaChip();
+                paintDashboardWaPolicy();
+                return;
+            }
+            try {
+                var res = await apiFetch('/api/gateway/status', { timeoutMs: 10000 });
+                var data = res && res.data;
+                if (data && (res.ok || data.connectionMode || data.cloudReady != null || data.whatsapp != null)) {
+                    _dashWaStatus = data;
+                }
+            } catch (_e) { /* keep the previous status */ }
+            syncDashboardWaChip();
+            paintDashboardWaPolicy();
         }
         function dashConvLooksLikeJid(s) {
             if (!s) return true;
@@ -3617,7 +3714,14 @@
                 if (countEl) { countEl.hidden = true; countEl.textContent = ''; }
                 return;
             }
-            var rows = (result && result.rows) || [];
+            var rows = ((result && result.rows) || []).slice();
+            if (dashCloudRulesApply(_dashWaStatus)) {
+                rows.sort(function(a, b) {
+                    var ao = (!dashQueueIsGroup(a) && dashWindowState(a).state !== 'open') ? 1 : 0;
+                    var bo = (!dashQueueIsGroup(b) && dashWindowState(b).state !== 'open') ? 1 : 0;
+                    return ao - bo;
+                });
+            }
             if (allLink) {
                 var tab = result && result.kind === 'unread' ? 'unread' : (result && result.kind === 'open' ? 'open' : 'unanswered');
                 allLink.setAttribute('data-conv-tab', tab);
@@ -3643,12 +3747,22 @@
                 var tally = unread > 99 ? '99+' : String(unread);
                 var preview = info.preview || '';
                 var wait = dashQueueWaitLabel(c);
+                var windowHtml = '';
+                var windowCls = '';
+                if (dashCloudRulesApply(_dashWaStatus) && !dashQueueIsGroup(c)) {
+                    var win = dashWindowState(c);
+                    windowCls = win.state === 'open' ? ' is-window-open' : ' is-window-closed';
+                    var winText = win.state === 'open'
+                        ? (t('dashboard_wa_window_open') || tt('پنجره باز · {time}', 'Window open · {time}', 'Pencere açık · {time}')).replace('{time}', dashWindowRemainLabel(win.remainMin))
+                        : (t('dashboard_wa_window_closed') || tt('فقط قالب', 'Template only', 'Yalnızca şablon'));
+                    windowHtml = '<span class="dash-queue-window is-' + win.state + '">' + escapeHtml(winText) + '</span>';
+                }
                 var tallyHtml = unread
                     ? '<span class="dash-queue-tally">' + escapeHtml(tally) + '</span>'
                     : '<span class="dash-queue-tally is-zero"></span>';
                 var waitHtml = wait ? '<span class="dash-queue-wait">' + escapeHtml((t('dashboard_queue_waiting') || tt('منتظر {time}', 'Waiting {time}', '{time} bekliyor')).replace('{time}', wait)) + '</span>' : '';
                 var timeHtml = wait ? '' : (timeStr ? '<time class="dash-queue-time">' + escapeHtml(timeStr) + '</time>' : '');
-                return '<a href="#conversations" class="dash-queue-row" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + waitHtml + timeHtml + tallyHtml + '</div></a>';
+                return '<a href="#conversations" class="dash-queue-row' + windowCls + '" data-id="' + escapeHtml(String(c.id || '')) + '" data-name="' + escapeHtml(info.name || '') + '" data-phone="' + escapeHtml(info.phone || '') + '" data-profile-pic="' + escapeHtml(info.profilePic || '') + '" data-is-group="' + (info.isGroup ? '1' : '0') + '" data-customer-id="' + escapeHtml(String(info.customerId || '')) + '">' + dashQueueAvatarHtml(info) + '<div class="dash-queue-main"><span class="dash-queue-name">' + escapeHtml(info.name) + '</span>' + (preview ? '<span class="dash-queue-preview">' + escapeHtml(preview.slice(0, 90)) + '</span>' : '') + '</div><div class="dash-queue-meta">' + windowHtml + waitHtml + timeHtml + tallyHtml + '</div></a>';
             }).join('');
         }
         function refreshDashboardUiAfterLang() {
@@ -3715,6 +3829,7 @@
                     const perms = (currentUser && currentUser.permissions) || {};
                     return perms[key] === true;
                 };
+            var waStatusPromise = refreshDashboardWaStatus();
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             const CARD_DEFS = [
                 { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', statKey: 'unreadConversations', statAltKey: 'openConversations', statSuffix: t('dashboard_stat_unread'), statAltSuffix: t('filter_open'), badgeWarn: true },
@@ -3743,12 +3858,13 @@
                 { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings' }
             ];
             const CARD_GROUPS = [
-                { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
+                { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets'] },
+                { key: 'whatsapp', titleKey: 'dashboard_group_whatsapp', pages: ['whatsapp', 'message-templates'] },
                 { key: 'clinic', titleKey: 'nav_clinic', pages: ['clinic-appointments', 'clinic-patients', 'clinic-doctors', 'clinic-packages'] },
                 { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
                 { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
-                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity', 'announcements'] },
-                { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'panel-settings'] }
+                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'system-status', 'staff-activity'] },
+                { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'internal-chat', 'announcements', 'panel-settings'] }
             ];
             function cardStatText(c, stats) {
                 stats = stats || {};
@@ -3880,6 +3996,8 @@
                 try { queueResult = await fetchDashboardQueue(true, stats); } catch (_qErr) { queueResult = { rows: [], kind: 'none' }; }
                 if (seq !== _loadDashboardSeq) return;
             }
+            try { await waStatusPromise; } catch (_waErr) { /* status chip keeps the last known state */ }
+            if (seq !== _loadDashboardSeq) return;
             renderDashboardQueue(queueEl, queueWrapEl, queueAllLink, queueResult, can('conversations'));
             if (quickEl) {
                 const quickBtns = [];
@@ -5325,7 +5443,7 @@
                 // ذخیره تنظیمات واتساپ
                 if (target.closest('#btnSaveWhatsappWelcome') && typeof saveWhatsappWelcomeConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappWelcomeConfig(); return; }
                 if (target.closest('#btnSaveWhatsappAI') && typeof saveWhatsappAIConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAIConfig(); return; }
-                if (target.closest('#whatsappOpenAIClearKey') && typeof clearWhatsappOpenAIKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappOpenAIKey(); return; }
+                if (target.closest('#whatsappAiClearKey') && typeof clearWhatsappAiKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappAiKey(); return; }
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }
@@ -10449,12 +10567,17 @@
             const statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
             const canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
             const inTypes = ['cash_in','transfer_box','bank_withdraw','income','sell','buy'];
-            let totalIn = 0; let totalOut = 0;
+            const totalIn = {};
+            const totalOut = {};
             rows.forEach(function(tx) {
                 const amt = parseFloat(tx.amount) || 0;
-                if (inTypes.indexOf(tx.type) >= 0) totalIn += amt; else totalOut += amt;
+                const c = String(tx.currency || 'USD').toUpperCase();
+                const bucket = inTypes.indexOf(tx.type) >= 0 ? totalIn : totalOut;
+                bucket[c] = (bucket[c] || 0) + amt;
             });
-            const summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + (LANG === 'fa' ? 'جمع ورودی: ' : 'Total in: ') + '<strong class="tx-amount positive">' + formatMoney(totalIn, 'IRR') + '</strong></span><span class="customer-transactions-summary-out">' + (LANG === 'fa' ? 'جمع خروجی: ' : 'Total out: ') + '<strong class="tx-amount negative">' + formatMoney(totalOut, 'IRR') + '</strong></span></div>';
+            const inLabel = LANG === 'fa' ? 'جمع ورودی: ' : (LANG === 'tr' ? 'Giriş: ' : 'Total in: ');
+            const outLabel = LANG === 'fa' ? 'جمع خروجی: ' : (LANG === 'tr' ? 'Çıkış: ' : 'Total out: ');
+            const summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + inLabel + '<strong class="tx-amount positive">' + escapeHtml(moneyLinesByCurrency(totalIn).replace(/\n/g, ' · ')) + '</strong></span><span class="customer-transactions-summary-out">' + outLabel + '<strong class="tx-amount negative">' + escapeHtml(moneyLinesByCurrency(totalOut).replace(/\n/g, ' · ')) + '</strong></span></div>';
             list.innerHTML = summaryHtml + rows.map(function(tx) {
                 const isIn = inTypes.indexOf(tx.type) >= 0;
                 const amt = parseFloat(tx.amount) || 0;
@@ -15927,11 +16050,13 @@
                 if (ta) ta.value = res.data.welcomeMessage || '';
                 if (cb) cb.checked = res.data.welcomeEnabled !== false;
                 if (aiCb) aiCb.checked = res.data.aiAnswerEnabled !== false;
-                const openaiInput = document.getElementById('whatsappOpenAIApiKey');
-                const openaiStatus = document.getElementById('whatsappOpenAIKeyStatus');
-                if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
-                if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
-                const clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
+                window._waAiConfig = res.data;
+                paintWhatsappAiKeyStatus();
+                var aiProviderSel = document.getElementById('whatsappAiProvider');
+                if (aiProviderSel && !aiProviderSel._waBound) {
+                    aiProviderSel._waBound = true;
+                    aiProviderSel.addEventListener('change', paintWhatsappAiKeyStatus);
+                }
                 if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
@@ -15991,33 +16116,77 @@
                 else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(btn, false); }
         }
-        async function clearWhatsappOpenAIKey() {
-            const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
+        function paintWhatsappAiKeyStatus() {
+            var data = window._waAiConfig || {};
+            var sel = document.getElementById('whatsappAiProvider');
+            var list = Array.isArray(data.aiKeyStatus) ? data.aiKeyStatus : [];
+            if (sel && data.aiProvider && sel.value !== data.aiProvider && document.activeElement !== sel) sel.value = data.aiProvider;
+            var id = sel ? sel.value : (data.aiProvider || 'openai');
+            var cur = null;
+            for (var i = 0; i < list.length; i++) if (list[i].id === id) cur = list[i];
+            var input = document.getElementById('whatsappAiApiKey');
+            var status = document.getElementById('whatsappAiKeyStatus');
+            var clearLink = document.getElementById('whatsappAiClearKey');
+            var saved = document.getElementById('whatsappAiSaved');
+            var keySet = !!(cur && cur.keySet);
+            if (input) {
+                input.value = '';
+                input.placeholder = keySet
+                    ? (t('whatsapp_ai_key_saved_ph') || (LANG === 'fa' ? 'کلید ذخیره شده — برای تغییر، کلید جدید وارد کنید' : 'Key saved — enter a new key to replace it'))
+                    : (t('whatsapp_ai_key_ph') || (LANG === 'fa' ? 'کلید را از پنل همان سرویس وارد کنید' : 'Paste the key from that provider'));
+            }
+            if (status) {
+                var statusText = '';
+                if (keySet && cur.keySource === 'env') statusText = t('whatsapp_ai_key_env') || (LANG === 'fa' ? 'کلید از تنظیمات سرور خوانده می‌شود' : 'Key comes from the server environment');
+                else if (keySet) statusText = t('whatsapp_ai_key_set') || (LANG === 'fa' ? 'کلید این سرویس ذخیره شده است' : 'Key saved for this provider');
+                status.textContent = statusText;
+                status.classList.toggle('set', keySet);
+            }
+            if (clearLink) clearLink.style.display = keySet && cur && cur.keySource === 'panel' ? 'inline' : 'none';
+            if (saved) {
+                var names = [];
+                for (var j = 0; j < list.length; j++) if (list[j].keySet) names.push(list[j].label);
+                saved.textContent = names.length
+                    ? ((t('whatsapp_ai_connected') || (LANG === 'fa' ? 'وصل:' : 'Connected:')) + ' ' + names.join(' · '))
+                    : '';
+            }
+        }
+        async function clearWhatsappAiKey() {
+            var sel = document.getElementById('whatsappAiProvider');
+            var id = (sel && sel.value) || 'openai';
+            var aiKeys = {};
+            aiKeys[id] = '';
+            var body = { aiKeys: aiKeys };
+            if (id === 'openai') body.openaiApiKey = '';
+            const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { loadWhatsappWelcomeConfig(); toast(t('done_msg')); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function saveWhatsappAIConfig() {
             const aiCb = document.getElementById('whatsappAIEnabled');
-            const openaiInput = document.getElementById('whatsappOpenAIApiKey');
+            const sel = document.getElementById('whatsappAiProvider');
+            const keyInput = document.getElementById('whatsappAiApiKey');
             const btn = document.getElementById('btnSaveWhatsappAI');
             if (!aiCb) return;
             waBtnLoading(btn, true);
             try {
-                const body = { aiAnswerEnabled: aiCb.checked };
-                if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
+                var providerId = (sel && sel.value) || 'openai';
+                const body = { aiAnswerEnabled: aiCb.checked, aiProvider: providerId };
+                if (keyInput && keyInput.value.trim()) {
+                    body.aiKeys = {};
+                    body.aiKeys[providerId] = keyInput.value.trim();
+                    if (providerId === 'openai') body.openaiApiKey = keyInput.value.trim();
+                }
                 const res = await apiFetch('/api/whatsapp/config', {
                     method: 'PUT',
                     body: JSON.stringify(body)
                 });
                 if (res.needLogin) return;
-                if (res.ok && openaiInput && openaiInput.value.trim()) {
-                    openaiInput.value = '';
-                    openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change';
-                    const st = document.getElementById('whatsappOpenAIKeyStatus');
-                    if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); }
-                }
-                if (res.ok) toast(t('done_msg'));
-                else toast((res.data && res.data.error) || t('err_generic'), true);
+                if (res.ok) {
+                    if (res.data) window._waAiConfig = res.data;
+                    paintWhatsappAiKeyStatus();
+                    toast(t('done_msg'));
+                } else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(btn, false); }
         }
         async function saveWhatsappAutoMessagesConfig() {

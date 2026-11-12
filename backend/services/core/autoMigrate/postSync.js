@@ -133,6 +133,8 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['conversationEndedMessage', { type: DataTypes.TEXT, allowNull: true }],
             ['callIntroMessage', { type: DataTypes.TEXT, allowNull: true }],
             ['autoAssignmentMessagesEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+            ['aiProvider', { type: DataTypes.STRING(32), allowNull: true }],
+            ['aiProviderKeys', { type: DataTypes.TEXT, allowNull: true }],
         ];
         for (const [name, def] of waMsgCols) {
             if (waDesc && waDesc[name] === undefined) {

@@ -1,6 +1,6 @@
-const axios = require('axios');
 const logger = require('../config/logger');
-const { getOpenAIApiKey } = require('../lib/getOpenAIApiKey');
+const { completeChat } = require('../lib/aiChat');
+const { resolveActiveAi } = require('../lib/aiProviders');
 
 /**
  * سرویس هوشمند مسیریابی به دپارتمان
@@ -156,11 +156,11 @@ function scoreDepartment(dept, messageText) {
 }
 
 /**
- * با استفاده از OpenAI (در صورت وجود کلید) فهم معنایی انجام می‌دهد
+ * با سرویس انتخاب‌شده (در صورت وجود کلید) فهم معنایی انجام می‌دهد
  */
 async function detectDepartmentWithAI(messageText, departments) {
-    const apiKey = await getOpenAIApiKey();
-    if (!apiKey || !messageText || !departments?.length) return null;
+    const active = await resolveActiveAi();
+    if (!active || !active.apiKey || !messageText || !departments?.length) return null;
 
     const deptList = departments.map(d => ({
         id: d.id,
@@ -170,7 +170,6 @@ async function detectDepartmentWithAI(messageText, departments) {
     }));
 
     const timeout = parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) || 12000;
-    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
     const systemPrompt = `شما دستیار مسیریابی CRM صرافی هستید. بر اساس پیام مشتری، فقط ID دپارتمان مناسب را برگردانید.
 دپارتمان‌ها:
 ${JSON.stringify(deptList, null, 2)}
@@ -178,27 +177,14 @@ ${JSON.stringify(deptList, null, 2)}
 فقط یک JSON برگردانید. مثال: {"departmentId": "uuid"} یا {"departmentId": null} اگر هیچکدام مناسب نبود. هیچ متن دیگری ننویسید.`;
 
     try {
-        const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-                model,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: messageText }
-                ],
-                temperature: 0.1,
-                max_tokens: 120
-            },
-            {
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                timeout
-            }
-        );
-
-        const content = response.data?.choices?.[0]?.message?.content?.trim();
+        const result = await completeChat({
+            system: systemPrompt,
+            messages: [{ role: 'user', content: messageText }],
+            temperature: 0.1,
+            maxTokens: 120,
+            timeoutMs: timeout,
+        });
+        const content = result && result.text;
         if (!content) return null;
 
         // پارس departmentId از خروجی مدل
@@ -231,8 +217,8 @@ ${JSON.stringify(deptList, null, 2)}
  * @returns {Promise<{ department: Object|null, method: string, confidence: number }>}
  */
 async function selectBestDepartment(departments, messageContent, options = {}) {
-    const apiKey = await getOpenAIApiKey();
-    const useAI = options.useAI !== false && !!apiKey;
+    const active = await resolveActiveAi();
+    const useAI = options.useAI !== false && !!(active && active.apiKey);
     const text = (messageContent || '').trim();
     if (!text) {
         return { department: null, method: 'empty', confidence: 0 };

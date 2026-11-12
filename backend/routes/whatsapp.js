@@ -6,6 +6,7 @@ const { getPanelSettingsKey, isPlatformTenant } = require('../lib/tenantContext'
 const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
+const { publicAiStatus, applyAiConfigUpdate, clearAiProviderCache } = require('../lib/aiProviders');
 const { buildWhatsappOverview } = require('../lib/whatsappOverview');
 
 router.get('/config', async (req, res, next) => {
@@ -15,6 +16,7 @@ router.get('/config', async (req, res, next) => {
             where: { id: getPanelSettingsKey() },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
         });
+        const aiStatus = publicAiStatus(cfg);
         res.json({
             welcomeMessage: cfg.welcomeMessage || '',
             welcomeEnabled: cfg.welcomeEnabled !== false,
@@ -22,7 +24,9 @@ router.get('/config', async (req, res, next) => {
             escalateUnansweredAfterMinutes: cfg.escalateUnansweredAfterMinutes ?? 15,
             escalationDepartmentId: cfg.escalationDepartmentId || null,
             aiAnswerEnabled: cfg.aiAnswerEnabled !== false,
-            openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
+            openaiApiKeySet: !!(aiStatus.aiKeyStatus.find((row) => row.id === 'openai') || {}).keySet,
+            aiProvider: aiStatus.aiProvider,
+            aiKeyStatus: aiStatus.aiKeyStatus,
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? '',
             conversationEndedMessage: cfg.conversationEndedMessage ?? '',
@@ -39,6 +43,8 @@ router.get('/config', async (req, res, next) => {
                 escalationDepartmentId: null,
                 aiAnswerEnabled: true,
                 openaiApiKeySet: false,
+                aiProvider: 'openai',
+                aiKeyStatus: [],
                 deptAssignedMessage: '',
                 employeeIntroMessage: '',
                 conversationEndedMessage: '',
@@ -52,7 +58,7 @@ router.get('/config', async (req, res, next) => {
 router.put('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
-        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage, conversationEndedMessage, callIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
+        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, aiProvider, aiKeys, deptAssignedMessage, employeeIntroMessage, conversationEndedMessage, callIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
         const [cfg] = await WhatsappConfig.findOrCreate({
             where: { id: getPanelSettingsKey() },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
@@ -70,14 +76,11 @@ router.put('/config', async (req, res, next) => {
             cfg.escalationDepartmentId = escalationDepartmentId || null;
         }
         if (aiAnswerEnabled !== undefined) cfg.aiAnswerEnabled = !!aiAnswerEnabled;
-        if (openaiApiKey !== undefined) {
-            const key = String(openaiApiKey || '').trim();
-            if (key === '') {
-                cfg.openaiApiKey = null;
-            } else if (key.length >= 20 && (key.startsWith('sk-') || key.startsWith('sk_proj-'))) {
-                cfg.openaiApiKey = key;
-            }
+        if (aiProvider !== undefined || aiKeys !== undefined || openaiApiKey !== undefined) {
+            const aiError = applyAiConfigUpdate(cfg, { aiProvider, aiKeys, openaiApiKey });
+            if (aiError) return res.status(400).json(aiError);
             clearOpenAIApiKeyCache();
+            clearAiProviderCache();
         }
         if (deptAssignedMessage !== undefined) {
             const msg = String(deptAssignedMessage || '').trim();
@@ -101,6 +104,7 @@ router.put('/config', async (req, res, next) => {
         }
         if (autoAssignmentMessagesEnabled !== undefined) cfg.autoAssignmentMessagesEnabled = !!autoAssignmentMessagesEnabled;
         await cfg.save();
+        const savedAi = publicAiStatus(cfg);
         res.json({
             welcomeMessage: cfg.welcomeMessage || '',
             welcomeEnabled: cfg.welcomeEnabled,
@@ -108,7 +112,9 @@ router.put('/config', async (req, res, next) => {
             escalateUnansweredAfterMinutes: cfg.escalateUnansweredAfterMinutes,
             escalationDepartmentId: cfg.escalationDepartmentId,
             aiAnswerEnabled: cfg.aiAnswerEnabled !== false,
-            openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
+            openaiApiKeySet: !!(savedAi.aiKeyStatus.find((row) => row.id === 'openai') || {}).keySet,
+            aiProvider: savedAi.aiProvider,
+            aiKeyStatus: savedAi.aiKeyStatus,
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? '',
             conversationEndedMessage: cfg.conversationEndedMessage ?? '',

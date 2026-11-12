@@ -29,8 +29,9 @@
 .hero-copy .hero-kicker {
   animation: fxFadeUp 0.55s ease both;
 }
+/* LCP element: opacity:0 frames are not counted as painted, so slide only */
 .hero-copy h1 {
-  animation: fxFadeUp 0.6s ease 0.06s both;
+  animation: fxSlideUp 0.6s ease 0.06s both;
 }
 .hero-copy .hero-desc {
   animation: fxFadeUp 0.6s ease 0.12s both;
@@ -48,6 +49,11 @@
 @keyframes fxFadeUp {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fxSlideUp {
+  from { transform: translateY(18px); }
+  to { transform: translateY(0); }
 }
 
 @keyframes fxFloat {

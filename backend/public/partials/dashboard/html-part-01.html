@@ -394,10 +394,10 @@
                         <div class="dash-masthead-copy">
                             <p class="dash-kicker" data-i18n="dashboard_kicker">میز کار امروز</p>
                             <h2 id="dashboardGreeting">داشبورد</h2>
-                            <p class="dashboard-sub" data-i18n="dashboard_welcome">مکالمات منتظر پاسخ، آمار روز و میانبر همه بخش‌ها</p>
+                            <p class="dashboard-sub" data-i18n="dashboard_welcome">صف پاسخ طبق پنجرهٔ ۲۴ ساعت واتساپ، آمار روز و میانبر بخش‌ها</p>
                         </div>
                         <div class="dash-masthead-meta">
-                            <span id="dashboardWaChip" class="dash-wa-chip" hidden></span>
+                            <a href="#whatsapp" id="dashboardWaChip" class="dash-wa-chip" hidden></a>
                             <span id="dashboardLastUpdated" class="dashboard-last-updated text-muted" aria-live="polite"></span>
                             <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
                         </div>
@@ -412,6 +412,7 @@
                                 <h3 class="dash-panel-title"><span data-i18n="dashboard_queue_title">نیاز به پاسخ</span><span id="dashboardQueueCount" class="dash-queue-count is-zero" hidden></span></h3>
                                 <a href="#conversations" class="dash-panel-link" data-dashboard-page="conversations" data-conv-tab="unanswered" data-i18n="dashboard_queue_all">مشاهده همه</a>
                             </header>
+                            <p id="dashboardQueuePolicy" class="dash-queue-policy" hidden></p>
                             <div id="dashboardQueue" class="dash-queue" aria-live="polite"></div>
                         </section>
                         <aside class="dash-aside">

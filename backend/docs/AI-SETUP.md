@@ -9,14 +9,23 @@
 
 ### ۱. کلید API
 
-1. به [platform.openai.com/api-keys](https://platform.openai.com/api-keys) بروید.
-2. یک کلید API بسازید.
-3. در فایل `backend/.env` اضافه کنید:
+1. سرویس را در پنل واتساپ → اتوماسیون انتخاب کنید: ChatGPT / OpenAI، Claude، Gemini، Grok، Mistral، Groq یا DeepSeek.
+2. کلید همان سرویس را در کارت «پاسخ خودکار هوش مصنوعی» ذخیره کنید. کلید در پاسخ API برنمی‌گردد.
+3. یا در `backend/.env` یکی از این‌ها را بگذارید. اگر سرویس انتخاب‌شده کلید نداشته باشد، اولین کلید موجود استفاده می‌شود.
 
 ```
-OPENAI_API_KEY=sk-your-api-key-here
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=AIza...
+XAI_API_KEY=...
+MISTRAL_API_KEY=...
+GROQ_API_KEY=gsk_...
+DEEPSEEK_API_KEY=...
+AI_PROVIDER=openai
 AI_ANSWER_ENABLED=true
 ```
+
+مدل هر سرویس با `OPENAI_MODEL`، `ANTHROPIC_MODEL`، `GEMINI_MODEL`، `XAI_MODEL`، `MISTRAL_MODEL`، `GROQ_MODEL` یا `DEEPSEEK_MODEL` عوض می‌شود.
 
 ### ۲. Gateway (برای ارسال پاسخ به واتساپ)
 

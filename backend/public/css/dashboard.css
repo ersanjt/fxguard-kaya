@@ -381,7 +381,7 @@
         .sidebar-overlay { display: none; position: fixed; top: var(--mobile-header-height, 0); left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
         .dashboard-sub { color: var(--text-secondary); font-size: 0.95rem; margin: -4px 0 24px; line-height: 1.5; }
-        .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-width: 100%; }
+        .dashboard-cards { display: flex; flex-direction: column; gap: 20px; max-width: 100%; }
         .dashboard-card { display: block; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s; }
         .dashboard-card:hover { border-color: var(--accent); background: var(--bg-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
         .dashboard-card .card-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
@@ -625,6 +625,7 @@
             border-radius: var(--radius-sm);
             background: var(--bg-card);
             color: var(--text-muted);
+            text-decoration: none;
         }
         #pageDashboard.dash-desk .dash-wa-chip::before {
             content: '';
@@ -635,7 +636,15 @@
         }
         #pageDashboard.dash-desk .dash-wa-chip.is-on { color: var(--accent); border-color: rgba(16, 185, 129, 0.35); }
         #pageDashboard.dash-desk .dash-wa-chip.is-on::before { background: var(--accent); }
+        #pageDashboard.dash-desk .dash-wa-chip.is-partial { color: var(--warning); border-color: rgba(245, 158, 11, 0.45); }
+        #pageDashboard.dash-desk .dash-wa-chip.is-partial::before { background: var(--warning); }
         #pageDashboard.dash-desk .dash-wa-chip.is-off { color: var(--text-muted); }
+        #pageDashboard.dash-desk .dash-queue-policy {
+            margin: 0 0 8px;
+            font-size: 0.78rem;
+            line-height: 1.55;
+            color: var(--text-secondary);
+        }
         #pageDashboard.dash-desk .dashboard-refresh-btn {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -804,6 +813,17 @@
             color: var(--warning);
             white-space: nowrap;
         }
+        #pageDashboard.dash-desk .dash-queue-window {
+            font-size: 0.68rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        #pageDashboard.dash-desk .dash-queue-window.is-open { color: var(--accent); }
+        #pageDashboard.dash-desk .dash-queue-window.is-closed { color: var(--warning); }
+        #pageDashboard.dash-desk .dash-queue-row.is-window-open,
+        #pageDashboard.dash-desk .dash-queue-row.is-window-closed { border-inline-start: 3px solid transparent; }
+        #pageDashboard.dash-desk .dash-queue-row.is-window-open { border-inline-start-color: var(--accent); }
+        #pageDashboard.dash-desk .dash-queue-row.is-window-closed { border-inline-start-color: var(--warning); }
         #pageDashboard.dash-desk .dash-queue-empty-cta {
             display: inline-flex;
             margin-top: 10px;
@@ -4500,6 +4520,8 @@
         .whatsapp-openai-key-row .whatsapp-input:focus { outline: none; border-color: var(--accent); }
         .whatsapp-openai-key-wrap { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
         .whatsapp-openai-key-wrap .whatsapp-input { flex: 1; min-width: 200px; }
+        .whatsapp-ai-provider { margin-bottom: 12px; }
+        .whatsapp-ai-saved { margin: 8px 0 0; font-size: 0.82rem; }
         .whatsapp-clear-key { font-size: 0.8rem; color: var(--text-muted); text-decoration: none; }
         .whatsapp-clear-key:hover { color: var(--danger); }
         .whatsapp-key-status { display: block; font-size: 0.8rem; margin-top: 6px; color: var(--text-muted); }
@@ -6852,7 +6874,7 @@
         .exchange-summary-card.is-loading .value { opacity: 0.45; }
         .exchange-summary-card { background: var(--bg-card); padding: 16px 18px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 0; }
         .exchange-summary-card .label { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
-        .exchange-summary-card .value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; word-break: break-word; line-height: 1.3; }
+        .exchange-summary-card .value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; word-break: break-word; line-height: 1.3; white-space: pre-line; }
         .exchange-summary-card.accent { border-color: rgba(16,185,129,0.4); box-shadow: inset 0 0 0 1px rgba(16,185,129,0.12); }
         .exchange-summary-card.accent .value { color: var(--accent); }
         .exchange-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; min-width: 0; }

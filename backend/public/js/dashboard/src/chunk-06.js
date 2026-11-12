@@ -657,11 +657,13 @@
                 if (ta) ta.value = res.data.welcomeMessage || '';
                 if (cb) cb.checked = res.data.welcomeEnabled !== false;
                 if (aiCb) aiCb.checked = res.data.aiAnswerEnabled !== false;
-                const openaiInput = document.getElementById('whatsappOpenAIApiKey');
-                const openaiStatus = document.getElementById('whatsappOpenAIKeyStatus');
-                if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
-                if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
-                const clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
+                window._waAiConfig = res.data;
+                paintWhatsappAiKeyStatus();
+                var aiProviderSel = document.getElementById('whatsappAiProvider');
+                if (aiProviderSel && !aiProviderSel._waBound) {
+                    aiProviderSel._waBound = true;
+                    aiProviderSel.addEventListener('change', paintWhatsappAiKeyStatus);
+                }
                 if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
@@ -721,33 +723,77 @@
                 else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(btn, false); }
         }
-        async function clearWhatsappOpenAIKey() {
-            const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
+        function paintWhatsappAiKeyStatus() {
+            var data = window._waAiConfig || {};
+            var sel = document.getElementById('whatsappAiProvider');
+            var list = Array.isArray(data.aiKeyStatus) ? data.aiKeyStatus : [];
+            if (sel && data.aiProvider && sel.value !== data.aiProvider && document.activeElement !== sel) sel.value = data.aiProvider;
+            var id = sel ? sel.value : (data.aiProvider || 'openai');
+            var cur = null;
+            for (var i = 0; i < list.length; i++) if (list[i].id === id) cur = list[i];
+            var input = document.getElementById('whatsappAiApiKey');
+            var status = document.getElementById('whatsappAiKeyStatus');
+            var clearLink = document.getElementById('whatsappAiClearKey');
+            var saved = document.getElementById('whatsappAiSaved');
+            var keySet = !!(cur && cur.keySet);
+            if (input) {
+                input.value = '';
+                input.placeholder = keySet
+                    ? (t('whatsapp_ai_key_saved_ph') || (LANG === 'fa' ? 'کلید ذخیره شده — برای تغییر، کلید جدید وارد کنید' : 'Key saved — enter a new key to replace it'))
+                    : (t('whatsapp_ai_key_ph') || (LANG === 'fa' ? 'کلید را از پنل همان سرویس وارد کنید' : 'Paste the key from that provider'));
+            }
+            if (status) {
+                var statusText = '';
+                if (keySet && cur.keySource === 'env') statusText = t('whatsapp_ai_key_env') || (LANG === 'fa' ? 'کلید از تنظیمات سرور خوانده می‌شود' : 'Key comes from the server environment');
+                else if (keySet) statusText = t('whatsapp_ai_key_set') || (LANG === 'fa' ? 'کلید این سرویس ذخیره شده است' : 'Key saved for this provider');
+                status.textContent = statusText;
+                status.classList.toggle('set', keySet);
+            }
+            if (clearLink) clearLink.style.display = keySet && cur && cur.keySource === 'panel' ? 'inline' : 'none';
+            if (saved) {
+                var names = [];
+                for (var j = 0; j < list.length; j++) if (list[j].keySet) names.push(list[j].label);
+                saved.textContent = names.length
+                    ? ((t('whatsapp_ai_connected') || (LANG === 'fa' ? 'وصل:' : 'Connected:')) + ' ' + names.join(' · '))
+                    : '';
+            }
+        }
+        async function clearWhatsappAiKey() {
+            var sel = document.getElementById('whatsappAiProvider');
+            var id = (sel && sel.value) || 'openai';
+            var aiKeys = {};
+            aiKeys[id] = '';
+            var body = { aiKeys: aiKeys };
+            if (id === 'openai') body.openaiApiKey = '';
+            const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { loadWhatsappWelcomeConfig(); toast(t('done_msg')); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function saveWhatsappAIConfig() {
             const aiCb = document.getElementById('whatsappAIEnabled');
-            const openaiInput = document.getElementById('whatsappOpenAIApiKey');
+            const sel = document.getElementById('whatsappAiProvider');
+            const keyInput = document.getElementById('whatsappAiApiKey');
             const btn = document.getElementById('btnSaveWhatsappAI');
             if (!aiCb) return;
             waBtnLoading(btn, true);
             try {
-                const body = { aiAnswerEnabled: aiCb.checked };
-                if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
+                var providerId = (sel && sel.value) || 'openai';
+                const body = { aiAnswerEnabled: aiCb.checked, aiProvider: providerId };
+                if (keyInput && keyInput.value.trim()) {
+                    body.aiKeys = {};
+                    body.aiKeys[providerId] = keyInput.value.trim();
+                    if (providerId === 'openai') body.openaiApiKey = keyInput.value.trim();
+                }
                 const res = await apiFetch('/api/whatsapp/config', {
                     method: 'PUT',
                     body: JSON.stringify(body)
                 });
                 if (res.needLogin) return;
-                if (res.ok && openaiInput && openaiInput.value.trim()) {
-                    openaiInput.value = '';
-                    openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change';
-                    const st = document.getElementById('whatsappOpenAIKeyStatus');
-                    if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); }
-                }
-                if (res.ok) toast(t('done_msg'));
-                else toast((res.data && res.data.error) || t('err_generic'), true);
+                if (res.ok) {
+                    if (res.data) window._waAiConfig = res.data;
+                    paintWhatsappAiKeyStatus();
+                    toast(t('done_msg'));
+                } else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(btn, false); }
         }
         async function saveWhatsappAutoMessagesConfig() {

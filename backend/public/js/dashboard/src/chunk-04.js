@@ -347,12 +347,17 @@
             const statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
             const canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
             const inTypes = ['cash_in','transfer_box','bank_withdraw','income','sell','buy'];
-            let totalIn = 0; let totalOut = 0;
+            const totalIn = {};
+            const totalOut = {};
             rows.forEach(function(tx) {
                 const amt = parseFloat(tx.amount) || 0;
-                if (inTypes.indexOf(tx.type) >= 0) totalIn += amt; else totalOut += amt;
+                const c = String(tx.currency || 'USD').toUpperCase();
+                const bucket = inTypes.indexOf(tx.type) >= 0 ? totalIn : totalOut;
+                bucket[c] = (bucket[c] || 0) + amt;
             });
-            const summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + (LANG === 'fa' ? 'جمع ورودی: ' : 'Total in: ') + '<strong class="tx-amount positive">' + formatMoney(totalIn, 'IRR') + '</strong></span><span class="customer-transactions-summary-out">' + (LANG === 'fa' ? 'جمع خروجی: ' : 'Total out: ') + '<strong class="tx-amount negative">' + formatMoney(totalOut, 'IRR') + '</strong></span></div>';
+            const inLabel = LANG === 'fa' ? 'جمع ورودی: ' : (LANG === 'tr' ? 'Giriş: ' : 'Total in: ');
+            const outLabel = LANG === 'fa' ? 'جمع خروجی: ' : (LANG === 'tr' ? 'Çıkış: ' : 'Total out: ');
+            const summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + inLabel + '<strong class="tx-amount positive">' + escapeHtml(moneyLinesByCurrency(totalIn).replace(/\n/g, ' · ')) + '</strong></span><span class="customer-transactions-summary-out">' + outLabel + '<strong class="tx-amount negative">' + escapeHtml(moneyLinesByCurrency(totalOut).replace(/\n/g, ' · ')) + '</strong></span></div>';
             list.innerHTML = summaryHtml + rows.map(function(tx) {
                 const isIn = inTypes.indexOf(tx.type) >= 0;
                 const amt = parseFloat(tx.amount) || 0;

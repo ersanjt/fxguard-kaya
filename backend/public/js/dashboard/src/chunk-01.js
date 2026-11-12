@@ -1245,6 +1245,20 @@
         function formatMoney(n, curr) {
             return formatMoneyAmount(n) + ' ' + currencyLabel(curr);
         }
+        function moneyLinesByCurrency(map) {
+            const keys = Object.keys(map || {}).filter(function(c) {
+                return Math.abs(parseFloat(map[c]) || 0) > 0;
+            }).sort();
+            if (!keys.length) return formatMoney(0, 'USD');
+            return keys.map(function(c) { return formatMoney(map[c], c); }).join('\n');
+        }
+        function positionFieldMap(position, field) {
+            const out = {};
+            Object.keys(position || {}).forEach(function(c) {
+                out[c] = parseFloat(position[c] && position[c][field]) || 0;
+            });
+            return out;
+        }
         function formatMoneyEn(n) {
             return formatMoneyAmount(n);
         }
@@ -1286,13 +1300,11 @@
             const cp = cpRes.data || {};
             const cashBoxes = cp.cashBoxes || [];
             const bankAccounts = cp.bankAccounts || [];
-            const totalCash = cp.totalCash != null ? cp.totalCash : cashBoxes.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
-            const totalBank = cp.totalBank != null ? cp.totalBank : bankAccounts.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
-            const total = cp.total != null ? cp.total : (totalCash + totalBank);
+            const position = cp.currencyPosition || {};
 
-            if (totalCashEl) totalCashEl.textContent = formatMoney(totalCash, 'IRR');
-            if (totalBankEl) totalBankEl.textContent = formatMoney(totalBank, 'IRR');
-            if (totalEl) totalEl.textContent = formatMoney(total, 'IRR');
+            if (totalCashEl) totalCashEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'cashBoxes'));
+            if (totalBankEl) totalBankEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'bankAccounts'));
+            if (totalEl) totalEl.textContent = moneyLinesByCurrency(positionFieldMap(position, 'total'));
 
             const cb = document.getElementById('summaryCashBoxes');
             const ba = document.getElementById('summaryBankAccounts');
@@ -1319,10 +1331,14 @@
             const obEl = document.getElementById('summaryOutstandingBalance');
             if (obEl) {
                 const obs = cp.outstandingBalance || [];
-                const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                const obByCurrency = {};
+                obs.forEach(function(o) {
+                    const c = String(o.currency || 'USD').toUpperCase();
+                    obByCurrency[c] = (obByCurrency[c] || 0) + (parseFloat(o.balance) || 0);
+                });
                 obEl.innerHTML = obs.length ? obs.map(function(o) {
                     return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoney(o.balance, o.currency) + '</span></div>';
-                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + formatMoneyAmount(totalOB) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + escapeHtml(moneyLinesByCurrency(obByCurrency).replace(/\n/g, ' · ')) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
             }
             const piEl = document.getElementById('summaryPendingInward');
             if (piEl) {
@@ -2070,7 +2086,13 @@
             const d = res.data || {};
             const rows = d.rows || [];
             if (rows.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هزینه‌ای ثبت نشده' : 'No expenses recorded') + '</div>'; return; }
-            el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + formatMoneyEn(d.totalAmount) + '</div>' +
+            const expenseByCurrency = {};
+            rows.forEach(function(r) {
+                const c = String(r.currency || 'USD').toUpperCase();
+                expenseByCurrency[c] = (expenseByCurrency[c] || 0) + (parseFloat(r.amount) || 0);
+            });
+            const expenseTotalLabel = moneyLinesByCurrency(expenseByCurrency).replace(/\n/g, ' · ');
+            el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + escapeHtml(expenseTotalLabel) + '</div>' +
                 '<table class="report-table"><thead><tr>' +
                 '<th>' + (LANG === 'fa' ? 'تاریخ' : 'Date') + '</th>' +
                 '<th>' + (LANG === 'fa' ? 'نوع' : 'Type') + '</th>' +
@@ -2092,7 +2114,7 @@
                         '<td>' + (r.user ? escapeHtml(r.user.name) : '-') + '</td></tr>';
                 }).join('') +
                 '<tr class="stmt-row-total"><td colspan="3"><strong>' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</strong></td>' +
-                '<td class="stmt-num"><strong style="color:var(--danger);">' + formatMoneyEn(d.totalAmount) + '</strong></td>' +
+                '<td class="stmt-num"><strong style="color:var(--danger);">' + escapeHtml(expenseTotalLabel) + '</strong></td>' +
                 '<td colspan="4"></td></tr></tbody></table>';
         }
 

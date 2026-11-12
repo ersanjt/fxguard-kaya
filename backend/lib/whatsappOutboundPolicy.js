@@ -70,7 +70,7 @@ function isMetaReengagementError(err) {
 function outsideSessionErrorMessage(cfg) {
     const tpl = getOutboundTemplateName(cfg);
     if (tpl) return null;
-    return 'مشتری بیش از ۲۴ ساعت پیام نداده — ارسال متن آزاد ممکن نیست. در #whatsapp نام قالب Meta (ارسال انبوه) را تنظیم کنید یا منتظر پیام مشتری بمانید.';
+    return 'مشتری بیش از ۲۴ ساعت پیام نداده. روی Cloud API متن آزاد مجاز نیست و فقط قالب تأییدشدهٔ متا (بازاریابی، کاربردی یا احراز هویت) ارسال می‌شود. نام قالب را در #whatsapp بگذارید یا منتظر پیام مشتری بمانید.';
 }
 
 module.exports = {

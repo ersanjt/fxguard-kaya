@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="1712c2527731">
+    <meta name="crm-build" content="26644e1bea56">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=1712c2527731">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=1712c2527731" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=26644e1bea56">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=26644e1bea56" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -394,10 +394,10 @@
                         <div class="dash-masthead-copy">
                             <p class="dash-kicker" data-i18n="dashboard_kicker">میز کار امروز</p>
                             <h2 id="dashboardGreeting">داشبورد</h2>
-                            <p class="dashboard-sub" data-i18n="dashboard_welcome">مکالمات منتظر پاسخ، آمار روز و میانبر همه بخش‌ها</p>
+                            <p class="dashboard-sub" data-i18n="dashboard_welcome">صف پاسخ طبق پنجرهٔ ۲۴ ساعت واتساپ، آمار روز و میانبر بخش‌ها</p>
                         </div>
                         <div class="dash-masthead-meta">
-                            <span id="dashboardWaChip" class="dash-wa-chip" hidden></span>
+                            <a href="#whatsapp" id="dashboardWaChip" class="dash-wa-chip" hidden></a>
                             <span id="dashboardLastUpdated" class="dashboard-last-updated text-muted" aria-live="polite"></span>
                             <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
                         </div>
@@ -412,6 +412,7 @@
                                 <h3 class="dash-panel-title"><span data-i18n="dashboard_queue_title">نیاز به پاسخ</span><span id="dashboardQueueCount" class="dash-queue-count is-zero" hidden></span></h3>
                                 <a href="#conversations" class="dash-panel-link" data-dashboard-page="conversations" data-conv-tab="unanswered" data-i18n="dashboard_queue_all">مشاهده همه</a>
                             </header>
+                            <p id="dashboardQueuePolicy" class="dash-queue-policy" hidden></p>
                             <div id="dashboardQueue" class="dash-queue" aria-live="polite"></div>
                         </section>
                         <aside class="dash-aside">
@@ -2047,11 +2048,11 @@
                                         <svg viewBox="0 0 48 48" fill="none"><path d="M24 6.5 29.8 18l12.2 1.2-9.2 8.2 2.8 12.1L24 33.2 12.4 39.5l2.8-12.1-9.2-8.2L18.2 18 24 6.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="23" r="3.2" fill="currentColor"/><circle cx="14" cy="12" r="2" fill="currentColor" opacity=".45"/><circle cx="36" cy="13" r="2" fill="currentColor" opacity=".45"/><circle cx="10" cy="30" r="2" fill="currentColor" opacity=".45"/><path d="M14 12c3.2 2.2 6.2 3.4 10 3.4M36 13c-3 2-6.2 3.2-9.5 3.5M10 30c4-.2 8.2-2 11.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55"/></svg>
                                     </span>
                                     <div class="wa-card-head-text">
-                                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
+                                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی</h3>
                                         <span class="wa-ai-badge" data-i18n="whatsapp_ai_badge">هستهٔ هوشمند</span>
                                     </div>
                                 </div>
-                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون کلیدواژه جواب ندهد، سرویس انتخاب‌شده پاسخ می‌دهد و مکالمه را به دپارتمان مناسب می‌فرستد. ChatGPT، Claude، Gemini، Grok، Mistral، Groq و DeepSeek.</p>
                                 <ul class="wa-ai-feats" aria-label="AI features">
                                     <li>
                                         <span class="wa-ai-feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h10M14 12l-3-3M14 12l-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="5.5" r="1.4" fill="currentColor"/></svg></span>
@@ -2067,12 +2068,23 @@
                                     </li>
                                 </ul>
                                 <div class="whatsapp-openai-key-row">
-                                    <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
+                                    <label for="whatsappAiProvider" data-i18n="whatsapp_ai_provider">سرویس هوش مصنوعی</label>
+                                    <select id="whatsappAiProvider" class="whatsapp-input whatsapp-ai-provider">
+                                        <option value="openai">ChatGPT / OpenAI</option>
+                                        <option value="anthropic">Claude</option>
+                                        <option value="gemini">Gemini</option>
+                                        <option value="xai">Grok</option>
+                                        <option value="mistral">Mistral</option>
+                                        <option value="groq">Groq</option>
+                                        <option value="deepseek">DeepSeek</option>
+                                    </select>
+                                    <label for="whatsappAiApiKey" data-i18n="whatsapp_ai_key_label">کلید API سرویس انتخاب‌شده</label>
                                     <div class="whatsapp-openai-key-wrap">
-                                        <input type="password" id="whatsappOpenAIApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_openai_key_ph" placeholder="sk-... از platform.openai.com" autocomplete="off">
-                                        <a href="#" id="whatsappOpenAIClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_openai_clear_key">پاک کردن کلید</a>
+                                        <input type="password" id="whatsappAiApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_ai_key_ph" placeholder="کلید را از پنل همان سرویس وارد کنید" autocomplete="off">
+                                        <a href="#" id="whatsappAiClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_ai_clear_key">پاک کردن کلید این سرویس</a>
                                     </div>
-                                    <span id="whatsappOpenAIKeyStatus" class="whatsapp-key-status"></span>
+                                    <span id="whatsappAiKeyStatus" class="whatsapp-key-status"></span>
+                                    <p id="whatsappAiSaved" class="whatsapp-ai-saved text-muted"></p>
                                 </div>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
@@ -4762,11 +4774,11 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/modules/clinic-ui.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=1712c2527731" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/modules/clinic-ui.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=26644e1bea56" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4793,11 +4805,11 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/i18n-engine.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=1712c2527731" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=1712c2527731" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/i18n-engine.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=26644e1bea56" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=26644e1bea56" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

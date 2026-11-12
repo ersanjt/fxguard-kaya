@@ -1,37 +1,15 @@
 /**
- * دریافت کلید API اوپن‌ای‌آی
- * اول از WhatsappConfig (تنظیمات پنل) و در صورت نبود از متغیر محیطی OPENAI_API_KEY
+ * کلید OpenAI: اول از پنل سازمان، بعد OPENAI_API_KEY.
+ * کش با بقیهٔ سرویس‌ها یکی است.
  */
-const { WhatsappConfig } = require('../models');
-
-let _cache = null;
-let _cacheAt = 0;
-const CACHE_TTL_MS = 30 * 1000;
+const { getConfiguredKey, clearAiProviderCache } = require('./aiProviders');
 
 async function getOpenAIApiKey() {
-    const now = Date.now();
-    if (_cache !== undefined && (now - _cacheAt) < CACHE_TTL_MS) {
-        return _cache;
-    }
-    try {
-        const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: 'default' },
-            defaults: {}
-        });
-        const key = (cfg.openaiApiKey && String(cfg.openaiApiKey).trim()) || process.env.OPENAI_API_KEY || '';
-        _cache = key || null;
-        _cacheAt = now;
-        return _cache;
-    } catch (err) {
-        _cache = process.env.OPENAI_API_KEY || null;
-        _cacheAt = now;
-        return _cache;
-    }
+    return getConfiguredKey('openai');
 }
 
 function clearOpenAIApiKeyCache() {
-    _cache = undefined;
-    _cacheAt = 0;
+    clearAiProviderCache();
 }
 
 module.exports = { getOpenAIApiKey, clearOpenAIApiKeyCache };

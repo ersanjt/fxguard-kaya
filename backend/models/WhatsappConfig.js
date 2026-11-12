@@ -44,6 +44,17 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'کلید API اوپن‌ای‌آی — از پنل وارد می‌شود یا از OPENAI_API_KEY در .env'
         },
+        aiProvider: {
+            type: DataTypes.STRING(32),
+            allowNull: true,
+            defaultValue: 'openai',
+            comment: 'سرویس فعال: openai, anthropic, gemini, xai, mistral, groq, deepseek'
+        },
+        aiProviderKeys: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'JSON کلیدهای سرویس‌های غیر OpenAI. خود کلید OpenAI در openaiApiKey می‌ماند'
+        },
         deptAssignedMessage: {
             type: DataTypes.TEXT,
             allowNull: true,
