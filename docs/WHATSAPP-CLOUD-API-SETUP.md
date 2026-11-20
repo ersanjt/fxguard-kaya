@@ -17,6 +17,8 @@ WHATSAPP_CLOUD_ACCESS_TOKEN=توکن_دسترسی_شما
 WHATSAPP_CLOUD_PHONE_NUMBER_ID=شماره_آیدی_شماره_تان
 WHATSAPP_CLOUD_VERIFY_TOKEN=یک_رشته_تصادفی_برای_تأیید_وب‌هوک
 WHATSAPP_CLOUD_APP_SECRET=App_Secret_از_Meta_App_Settings_Basic
+# اختیاری؛ پیش‌فرض نسخه پشتیبانی‌شده v26.0 است
+WHATSAPP_CLOUD_GRAPH_API_VERSION=v26.0
 ```
 
 - **WHATSAPP_CLOUD_ACCESS_TOKEN**: توکن دسترسی دائمی (یا بلندمدت) از Meta
@@ -32,8 +34,10 @@ WHATSAPP_CLOUD_APP_SECRET=App_Secret_از_Meta_App_Settings_Basic
 
 ```env
 WHATSAPP_CLOUD_BULK_TEMPLATE_NAME=hello_world
-WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE=fa
+WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE=en_US
 ```
+
+**توجه:** `hello_world` فقط قالب نمونه انگلیسی (`en_US`) است. برای پیام فارسی و ارسال تجاری، یک قالب تأییدشده با زبان `fa` در Meta ایجاد و در پنل وارد کنید.
 
 یا در پنل **#whatsapp** فیلدهای «قالب Meta (ارسال انبوه)» را پر کنید. در مودال **ارسال انبوه** گزینه «ارسال با قالب Meta» را فعال بگذارید.
 
