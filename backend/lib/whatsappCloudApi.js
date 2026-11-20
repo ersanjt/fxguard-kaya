@@ -10,7 +10,10 @@ const fs = require('fs').promises;
 const FormData = require('form-data');
 const { getWhatsappConnectionConfig, isCloudApiConfigured: isCloudConfigured } = require('./whatsappConnectionLoader');
 
-const API_BASE = 'https://graph.facebook.com/v18.0';
+// Meta Graph API v18.0 expired in January 2026. Keep the version configurable for future upgrades.
+const requestedGraphVersion = String(process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || '').trim();
+const graphVersion = /^v\d+\.\d+$/.test(requestedGraphVersion) ? requestedGraphVersion : 'v26.0';
+const API_BASE = `https://graph.facebook.com/${graphVersion}`;
 
 /** sync — برای سازگاری؛ فقط env چک می‌کند */
 function isConfiguredSync() {
