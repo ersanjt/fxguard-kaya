@@ -74,6 +74,5 @@ jobs:
               echo "== logs after wipe =="
               pm2 logs crm-gateway-kaya --nostream --lines 80 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer|disconnect' | tail -n 40 | mask
             else
-              pm2 restart crm-gateway-kaya --update-env
-              sleep 10
+              echo "== no wipe: leave gateway running (do not restart mid-scan) =="
             fi
