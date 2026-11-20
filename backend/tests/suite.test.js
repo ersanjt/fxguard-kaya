@@ -23,6 +23,11 @@ delete process.env.GOOGLE_APPLICATION_CREDENTIALS;
 const assert = require('assert');
 const supertest = require('supertest');
 
+// این سوئیت موتور رزرو را روی سازمان سکو تمرین می‌کند. در محصول، کایا آن مهارت را ندارد؛
+// فقط همین فرایند تست آن را به مهارت‌های قدیمی همین اجرا اضافه می‌کند.
+const { LEGACY_SKILLS } = require('../lib/tenantSkills');
+if (LEGACY_SKILLS.indexOf('booking') < 0) LEGACY_SKILLS.push('booking');
+
 // ─── Test runner ─────────────────────────────────────────────────────────────
 
 let passed = 0,
