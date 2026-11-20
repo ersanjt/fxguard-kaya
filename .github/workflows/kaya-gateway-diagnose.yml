@@ -45,6 +45,11 @@ jobs:
             find gateway/sessions -maxdepth 4 \( -name 'Singleton*' -o -name 'Default*' -o -name 'session*' \) 2>/dev/null | sed 's|/var/www/kayaCRM-kaya/||' | head -n 40 | mask
             echo "== recent logs =="
             pm2 logs crm-gateway-kaya --nostream --lines 120 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer|disconnect|logout|conflict|timeout|browser' | tail -n 60 | mask
+            echo "== ensure QR env =="
+            node backend/scripts/upsert-dotenv.js gateway/.env WHATSAPP_WEB_VERSION_CACHE none
+            node backend/scripts/upsert-dotenv.js gateway/.env WHATSAPP_AUTH_TIMEOUT_MS 300000
+            node backend/scripts/upsert-dotenv.js gateway/.env WHATSAPP_SESSION_PATH ./sessions
+            grep -E '^(PORT|WHATSAPP_|NODE_ENV)=' gateway/.env | sed -E 's/(SECRET|TOKEN|PASS)=.*/\1=<redacted>/' | mask
             if [ "$WIPE" = "yes" ]; then
               echo "== wipe session =="
               pm2 stop crm-gateway-kaya || true
@@ -56,8 +61,9 @@ jobs:
                 rm -rf gateway/sessions
               fi
               mkdir -p gateway/sessions
+              find gateway -maxdepth 3 -name '.wwebjs_cache' -type d -exec rm -rf {} + 2>/dev/null || true
               pm2 start crm-gateway-kaya --update-env
-              sleep 15
+              sleep 18
               for i in 1 2 3 4 5 6 7 8 9 10; do
                 BODY=$(curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" || true)
                 PHASE=$(printf '%s' "$BODY" | sed -n 's/.*"phase":"\([^"]*\)".*/\1/p')
@@ -67,4 +73,7 @@ jobs:
               done
               echo "== logs after wipe =="
               pm2 logs crm-gateway-kaya --nostream --lines 80 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer|disconnect' | tail -n 40 | mask
+            else
+              pm2 restart crm-gateway-kaya --update-env
+              sleep 10
             fi
