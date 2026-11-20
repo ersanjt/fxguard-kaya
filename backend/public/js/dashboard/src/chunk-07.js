@@ -281,11 +281,13 @@
                 sub.style.display = showBuilder ? '' : 'none';
                 var bl = sub.querySelector('.nav-link'); if (bl) bl.style.display = showBuilder ? '' : 'none';
             }
+            var bookingOn = engCan('appointments') && hiddenNav.indexOf('appointments') < 0;
             var bookBtn = document.getElementById('waChatBookBtn');
-            if (bookBtn) bookBtn.style.display = engCan('appointments') ? '' : 'none';
+            if (bookBtn) bookBtn.style.display = bookingOn ? '' : 'none';
             document.querySelectorAll('.customer-detail-tab-engine').forEach(function(b) {
                 var tab = b.getAttribute('data-tab');
-                b.style.display = engCan(tab === 'records' ? 'records' : 'appointments') ? '' : 'none';
+                var on = tab === 'records' ? (engCan('records') && hiddenNav.indexOf('records') < 0) : bookingOn;
+                b.style.display = on ? '' : 'none';
             });
         }
         function engineSyncActiveNav(page) {
@@ -375,7 +377,7 @@
             ENG.key = key; window.__engineRecordsKey = key; ENG.page = 1; ENG.status = ''; ENG.q = ''; ENG.assignee = '';
             var q = document.getElementById('recordsSearch'); if (q) q.value = '';
             var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-            try { window.history.replaceState(null, '', base + '#records/' + key); } catch (_) {}
+            try { window.history.replaceState(null, '', base + (window.location.search || '') + '#records/' + key); } catch (_) {}
             initRecordsPage();
         }
         window.switchRecordsModule = switchRecordsModule;
@@ -600,6 +602,8 @@
             bind('mbFieldType', 'change', onFieldTypeChange);
         }
         async function initAppointmentsPage() {
+            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             bkBindStaticHandlers();
             if (!BK.date) BK.date = new Date();
             var dateInp = document.getElementById('apptDate'); if (dateInp) dateInp.value = engIsoDate(BK.date);
@@ -616,9 +620,12 @@
             BK.view = view;
             document.querySelectorAll('#apptViewTabs .task-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-view') === view); });
             var isSvc = view === 'services';
-            document.getElementById('apptToolbar').style.display = isSvc ? 'none' : '';
-            document.getElementById('apptCalendar').style.display = isSvc ? 'none' : '';
-            document.getElementById('apptServicesPanel').style.display = isSvc ? '' : 'none';
+            var apptToolbar = document.getElementById('apptToolbar');
+            var apptCalendar = document.getElementById('apptCalendar');
+            var apptServicesPanel = document.getElementById('apptServicesPanel');
+            if (apptToolbar) apptToolbar.style.display = isSvc ? 'none' : '';
+            if (apptCalendar) apptCalendar.style.display = isSvc ? 'none' : '';
+            if (apptServicesPanel) apptServicesPanel.style.display = isSvc ? '' : 'none';
             if (isSvc) { loadServicesPanel(); return; }
             loadAppointments();
         }
@@ -812,6 +819,8 @@
             return false;
         }
         function openAppointmentFromChat() {
+            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             var p = (typeof openChatCustomerPreview !== 'undefined') ? openChatCustomerPreview : null;
             if (!p || !p.id) { toast(t('bk_customer_required'), true); return; }
             openAppointmentForm({ customerId: p.id, customerName: p.name || p.phone || '', conversationId: (typeof currentConvId !== 'undefined' && currentConvId) ? currentConvId : null });

@@ -1295,6 +1295,10 @@
                 if (totalCashEl) totalCashEl.textContent = '—';
                 if (totalBankEl) totalBankEl.textContent = '—';
                 if (totalEl) totalEl.textContent = '—';
+                var lockedCode = cpRes.data && cpRes.data.code;
+                var lockedMsg = (cpRes.data && cpRes.data.error) || ((lockedCode === 'PLAN_FX_LOCKED' || lockedCode === 'SKILL_DISABLED') ? t('dash_fx_locked_body') : t('err_generic'));
+                var lockedBox = document.getElementById('summaryCashBoxes');
+                if (lockedBox && lockedMsg) lockedBox.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(lockedMsg) + '</p></div>';
                 return;
             }
             const cp = cpRes.data || {};

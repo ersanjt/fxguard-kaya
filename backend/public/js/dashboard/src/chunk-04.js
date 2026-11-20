@@ -1052,7 +1052,24 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
+            document.querySelectorAll('.dashboard-card[data-page], [data-dashboard-page]').forEach(function(el) {
+                var shortcutPage = el.getAttribute('data-page') || el.getAttribute('data-dashboard-page');
+                var shortcutHidden = HIDDEN_SECTIONS.indexOf(shortcutPage) >= 0 || (shortcutPage === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
+                if (shortcutHidden) {
+                    el.style.display = 'none';
+                    el.setAttribute('data-plan-hidden', '1');
+                } else if (el.getAttribute('data-plan-hidden') === '1') {
+                    el.style.display = '';
+                    el.removeAttribute('data-plan-hidden');
+                }
+            });
             if (typeof window.engineSyncNavVisibility === 'function') window.engineSyncNavVisibility();
+            var activeHidden = activePage && activePage !== 'dashboard' && (HIDDEN_SECTIONS.indexOf(activePage) >= 0 || (activePage === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0));
+            if (activeHidden && !applyHiddenSections._redirecting && typeof showPage === 'function') {
+                applyHiddenSections._redirecting = true;
+                try { showPage(activePage); } finally { applyHiddenSections._redirecting = false; }
+                return;
+            }
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         var INDUSTRY_TERM_ORIGINALS = {};
@@ -1558,6 +1575,7 @@
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
             { section: 'communications', labelKey: 'nav_communications' },
+            { section: 'modules', labelKey: 'nav_modules' },
             { section: 'clinic', labelKey: 'nav_clinic' },
             { section: 'organization', labelKey: 'nav_organization' },
             { section: 'settings', labelKey: 'nav_settings' }
@@ -2349,12 +2367,12 @@
             const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
             if (!page || page === 'more' || !ids[page]) page = 'dashboard';
             const section = pageToSection[page];
-            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + (window.location.search || '') + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) {
                 var fxLockedNav = window.__kayaPlanLimits && window.__kayaPlanLimits.fxEnabled === false && (page === 'rates' || page === 'rates-charts' || page === 'services');
                 page = 'dashboard';
                 var baseHidden = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-                try { window.history.replaceState(null, '', baseHidden + '#dashboard'); } catch (e) {}
+                try { window.history.replaceState(null, '', baseHidden + (window.location.search || '') + '#dashboard'); } catch (e) {}
                 if (fxLockedNav && typeof toast === 'function') toast(t('dash_fx_locked_body'));
             }
             var prevActiveLink = document.querySelector('.nav-link.active');
@@ -2362,7 +2380,7 @@
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             var hashTarget = (page === 'records' && window.__engineRecordsKey) ? 'records/' + window.__engineRecordsKey : page;
-            if (page && window.location.hash !== '#' + hashTarget) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + hashTarget); } catch (e) {} }
+            if (page && window.location.hash !== '#' + hashTarget) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + (window.location.search || '') + '#' + hashTarget); } catch (e) {} }
             try { sessionStorage.setItem('crm_last_page', page); } catch (_) {}
             const navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });

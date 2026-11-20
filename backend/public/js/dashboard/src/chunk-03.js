@@ -4241,7 +4241,7 @@
             currentCustomerId = custId;
             try { sessionStorage.setItem('crm_customer_detail_id', String(custId)); } catch (_) {}
             var detailBase = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-            try { window.history.replaceState(null, '', detailBase + '#customer-detail/' + encodeURIComponent(custId)); } catch (_) {}
+            try { window.history.replaceState(null, '', detailBase + (window.location.search || '') + '#customer-detail/' + encodeURIComponent(custId)); } catch (_) {}
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const detailPage = document.getElementById('pageCustomerDetail');
             if (detailPage) detailPage.classList.add('show');

@@ -13,6 +13,7 @@
 const logger = require('../config/logger');
 const { runWithTenant } = require('../lib/tenantContext');
 const { PLATFORM_SLUG } = require('../lib/tenantHost');
+const { isSkillEnabled } = require('../lib/tenantSkills');
 
 const CHECK_INTERVAL_MS = 5 * 60 * 1000;
 let _intervalId = null;
@@ -40,6 +41,7 @@ async function runOnce() {
     try {
         const tenants = await listTenantsForJob();
         for (const t of tenants) {
+            if (!isSkillEnabled(t, 'booking')) continue;
             try {
                 const r = await runWithTenant(t, () => sendDueRemindersForCurrentTenant(logger));
                 totals.tenants += 1;

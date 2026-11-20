@@ -98,9 +98,26 @@ test('a clinic can add an exchange module as an extra', () => {
 
 test('exchange desks get FX modules; clinics do not', () => {
     assert.ok(defaultSkillsFor('exchange').indexOf('fx_rates') >= 0);
+    assert.ok(defaultSkillsFor('exchange').indexOf('booking') < 0);
     assert.ok(defaultSkillsFor('health').indexOf('fx_rates') < 0);
     assert.ok(defaultSkillsFor('health').indexOf('appointments') >= 0);
+    assert.ok(defaultSkillsFor('health').indexOf('booking') < 0);
     assert.deepStrictEqual(defaultSkillsFor('bogus'), defaultSkillsFor('general'));
+});
+
+test('generic booking stays off until a panel owner turns the add-on on', () => {
+    const exchange = { id: 't', isPlatform: false, industry: 'exchange', enabledSkills: defaultSkillsFor('exchange') };
+    assert.ok(hiddenPagesForTenant(exchange).indexOf('appointments') >= 0);
+    assert.strictEqual(disabledSkillForPath(exchange, '/api/appointments/summary').id, 'booking');
+    const optedIn = {
+        id: 't',
+        isPlatform: false,
+        industry: 'exchange',
+        enabledSkills: defaultSkillsFor('exchange').concat(['booking']),
+    };
+    assert.ok(hiddenPagesForTenant(optedIn).indexOf('appointments') < 0);
+    assert.strictEqual(disabledSkillForPath(optedIn, '/api/appointments'), null);
+    assert.strictEqual(disabledSkillForPath(optedIn, '/api/bookable-services'), null);
 });
 
 test('legacy tenants and platform keep their exchange set, without new industry modules', () => {
@@ -110,9 +127,14 @@ test('legacy tenants and platform keep their exchange set, without new industry 
         const hidden = hiddenPagesForTenant(t);
         ['rates', 'rates-charts', 'services', 'processes', 'branches'].forEach((p) => assert.ok(hidden.indexOf(p) < 0, p));
         assert.ok(hidden.indexOf('clinic-patients') >= 0);
+        assert.ok(hidden.indexOf('appointments') >= 0);
         assert.strictEqual(disabledSkillForPath(t, '/api/rates'), null);
         assert.strictEqual(disabledSkillForPath(t, '/api/clinic/patients').id, 'patients');
+        assert.strictEqual(disabledSkillForPath(t, '/api/appointments').id, 'booking');
+        assert.strictEqual(disabledSkillForPath(t, '/api/bookable-services/1').id, 'booking');
+        assert.strictEqual(disabledSkillForPath(t, '/api/clinic/appointments').id, 'appointments');
         assert.strictEqual(isSkillEnabled(t, 'fx_rates'), true);
+        assert.strictEqual(isSkillEnabled(t, 'booking'), false);
     });
 });
 

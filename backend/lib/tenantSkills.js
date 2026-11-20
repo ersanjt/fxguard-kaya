@@ -30,6 +30,8 @@ const SKILLS = [
 
     { id: 'processes', tier: 'addon', pages: ['processes'], label: { fa: 'فرایندهای کسب‌وکار', en: 'Business processes', tr: 'İş süreçleri' } },
     { id: 'branches', tier: 'addon', pages: ['branches'], label: { fa: 'چندشعبه', en: 'Multiple branches', tr: 'Çoklu şube' } },
+    // رزرو عمومی (سالن/خدمات) — پیش‌فرض هیچ حوزه‌ای نیست. پنل کایا و صرافی آن را نمی‌بینند مگر مالک پنل خودخدمت روشن کند.
+    { id: 'booking', tier: 'addon', pages: ['appointments'], apiPrefixes: ['/api/appointments', '/api/bookable-services'], label: { fa: 'نوبت‌ها و رزرو', en: 'Appointments & bookings', tr: 'Randevu ve rezervasyon' } },
     { id: 'invoicing', tier: 'addon', comingSoon: true, pages: [], label: { fa: 'پیش‌فاکتور و فاکتور', en: 'Quotes & invoices', tr: 'Teklif ve fatura' } },
     { id: 'contracts', tier: 'addon', comingSoon: true, pages: [], label: { fa: 'قراردادها و امضای دیجیتال', en: 'Contracts & e-signature', tr: 'Sözleşmeler ve e-imza' } },
 

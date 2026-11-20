@@ -1295,6 +1295,10 @@
                 if (totalCashEl) totalCashEl.textContent = '—';
                 if (totalBankEl) totalBankEl.textContent = '—';
                 if (totalEl) totalEl.textContent = '—';
+                var lockedCode = cpRes.data && cpRes.data.code;
+                var lockedMsg = (cpRes.data && cpRes.data.error) || ((lockedCode === 'PLAN_FX_LOCKED' || lockedCode === 'SKILL_DISABLED') ? t('dash_fx_locked_body') : t('err_generic'));
+                var lockedBox = document.getElementById('summaryCashBoxes');
+                if (lockedBox && lockedMsg) lockedBox.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(lockedMsg) + '</p></div>';
                 return;
             }
             const cp = cpRes.data || {};
@@ -10163,7 +10167,7 @@
             currentCustomerId = custId;
             try { sessionStorage.setItem('crm_customer_detail_id', String(custId)); } catch (_) {}
             var detailBase = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-            try { window.history.replaceState(null, '', detailBase + '#customer-detail/' + encodeURIComponent(custId)); } catch (_) {}
+            try { window.history.replaceState(null, '', detailBase + (window.location.search || '') + '#customer-detail/' + encodeURIComponent(custId)); } catch (_) {}
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const detailPage = document.getElementById('pageCustomerDetail');
             if (detailPage) detailPage.classList.add('show');
@@ -11272,7 +11276,24 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
+            document.querySelectorAll('.dashboard-card[data-page], [data-dashboard-page]').forEach(function(el) {
+                var shortcutPage = el.getAttribute('data-page') || el.getAttribute('data-dashboard-page');
+                var shortcutHidden = HIDDEN_SECTIONS.indexOf(shortcutPage) >= 0 || (shortcutPage === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
+                if (shortcutHidden) {
+                    el.style.display = 'none';
+                    el.setAttribute('data-plan-hidden', '1');
+                } else if (el.getAttribute('data-plan-hidden') === '1') {
+                    el.style.display = '';
+                    el.removeAttribute('data-plan-hidden');
+                }
+            });
             if (typeof window.engineSyncNavVisibility === 'function') window.engineSyncNavVisibility();
+            var activeHidden = activePage && activePage !== 'dashboard' && (HIDDEN_SECTIONS.indexOf(activePage) >= 0 || (activePage === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0));
+            if (activeHidden && !applyHiddenSections._redirecting && typeof showPage === 'function') {
+                applyHiddenSections._redirecting = true;
+                try { showPage(activePage); } finally { applyHiddenSections._redirecting = false; }
+                return;
+            }
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         var INDUSTRY_TERM_ORIGINALS = {};
@@ -11778,6 +11799,7 @@
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
             { section: 'communications', labelKey: 'nav_communications' },
+            { section: 'modules', labelKey: 'nav_modules' },
             { section: 'clinic', labelKey: 'nav_clinic' },
             { section: 'organization', labelKey: 'nav_organization' },
             { section: 'settings', labelKey: 'nav_settings' }
@@ -12569,12 +12591,12 @@
             const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
             if (!page || page === 'more' || !ids[page]) page = 'dashboard';
             const section = pageToSection[page];
-            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + (window.location.search || '') + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) {
                 var fxLockedNav = window.__kayaPlanLimits && window.__kayaPlanLimits.fxEnabled === false && (page === 'rates' || page === 'rates-charts' || page === 'services');
                 page = 'dashboard';
                 var baseHidden = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-                try { window.history.replaceState(null, '', baseHidden + '#dashboard'); } catch (e) {}
+                try { window.history.replaceState(null, '', baseHidden + (window.location.search || '') + '#dashboard'); } catch (e) {}
                 if (fxLockedNav && typeof toast === 'function') toast(t('dash_fx_locked_body'));
             }
             var prevActiveLink = document.querySelector('.nav-link.active');
@@ -12582,7 +12604,7 @@
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             var hashTarget = (page === 'records' && window.__engineRecordsKey) ? 'records/' + window.__engineRecordsKey : page;
-            if (page && window.location.hash !== '#' + hashTarget) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + hashTarget); } catch (e) {} }
+            if (page && window.location.hash !== '#' + hashTarget) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + (window.location.search || '') + '#' + hashTarget); } catch (e) {} }
             try { sessionStorage.setItem('crm_last_page', page); } catch (_) {}
             const navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });
@@ -18979,11 +19001,13 @@
                 sub.style.display = showBuilder ? '' : 'none';
                 var bl = sub.querySelector('.nav-link'); if (bl) bl.style.display = showBuilder ? '' : 'none';
             }
+            var bookingOn = engCan('appointments') && hiddenNav.indexOf('appointments') < 0;
             var bookBtn = document.getElementById('waChatBookBtn');
-            if (bookBtn) bookBtn.style.display = engCan('appointments') ? '' : 'none';
+            if (bookBtn) bookBtn.style.display = bookingOn ? '' : 'none';
             document.querySelectorAll('.customer-detail-tab-engine').forEach(function(b) {
                 var tab = b.getAttribute('data-tab');
-                b.style.display = engCan(tab === 'records' ? 'records' : 'appointments') ? '' : 'none';
+                var on = tab === 'records' ? (engCan('records') && hiddenNav.indexOf('records') < 0) : bookingOn;
+                b.style.display = on ? '' : 'none';
             });
         }
         function engineSyncActiveNav(page) {
@@ -19073,7 +19097,7 @@
             ENG.key = key; window.__engineRecordsKey = key; ENG.page = 1; ENG.status = ''; ENG.q = ''; ENG.assignee = '';
             var q = document.getElementById('recordsSearch'); if (q) q.value = '';
             var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/';
-            try { window.history.replaceState(null, '', base + '#records/' + key); } catch (_) {}
+            try { window.history.replaceState(null, '', base + (window.location.search || '') + '#records/' + key); } catch (_) {}
             initRecordsPage();
         }
         window.switchRecordsModule = switchRecordsModule;
@@ -19298,6 +19322,8 @@
             bind('mbFieldType', 'change', onFieldTypeChange);
         }
         async function initAppointmentsPage() {
+            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             bkBindStaticHandlers();
             if (!BK.date) BK.date = new Date();
             var dateInp = document.getElementById('apptDate'); if (dateInp) dateInp.value = engIsoDate(BK.date);
@@ -19314,9 +19340,12 @@
             BK.view = view;
             document.querySelectorAll('#apptViewTabs .task-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-view') === view); });
             var isSvc = view === 'services';
-            document.getElementById('apptToolbar').style.display = isSvc ? 'none' : '';
-            document.getElementById('apptCalendar').style.display = isSvc ? 'none' : '';
-            document.getElementById('apptServicesPanel').style.display = isSvc ? '' : 'none';
+            var apptToolbar = document.getElementById('apptToolbar');
+            var apptCalendar = document.getElementById('apptCalendar');
+            var apptServicesPanel = document.getElementById('apptServicesPanel');
+            if (apptToolbar) apptToolbar.style.display = isSvc ? 'none' : '';
+            if (apptCalendar) apptCalendar.style.display = isSvc ? 'none' : '';
+            if (apptServicesPanel) apptServicesPanel.style.display = isSvc ? '' : 'none';
             if (isSvc) { loadServicesPanel(); return; }
             loadAppointments();
         }
@@ -19510,6 +19539,8 @@
             return false;
         }
         function openAppointmentFromChat() {
+            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             var p = (typeof openChatCustomerPreview !== 'undefined') ? openChatCustomerPreview : null;
             if (!p || !p.id) { toast(t('bk_customer_required'), true); return; }
             openAppointmentForm({ customerId: p.id, customerName: p.name || p.phone || '', conversationId: (typeof currentConvId !== 'undefined' && currentConvId) ? currentConvId : null });
