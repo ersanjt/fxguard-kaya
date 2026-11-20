@@ -31,14 +31,12 @@ jobs:
             echo ""
             echo "== stop =="
             pm2 stop crm-gateway-kaya || true
-            sleep 2
-            # فقط Chromium سشن کایا — از pkill روی مسیر gateway پرهیز کن (اسکریپت SSH را هم می‌کشد)
-            pkill -9 -f -- '--user-data-dir=.*/kayaCRM-kaya/gateway/sessions' 2>/dev/null || true
-            sleep 1
-            find gateway/sessions -maxdepth 4 -name 'Singleton*' -type f -delete 2>/dev/null || true
+            sleep 3
+            # فقط فایل قفل Chrome؛ هرگز pkill -f اینجا نزن (متن اسکریپت SSH را هم مچ می‌کند)
+            find /var/www/kayaCRM-kaya/gateway/sessions -maxdepth 5 -name 'Singleton*' \( -type f -o -type l \) -delete 2>/dev/null || true
             echo "== start =="
             pm2 start crm-gateway-kaya --update-env
-            sleep 10
+            sleep 12
             echo "== after =="
             pm2 describe crm-gateway-kaya | grep -E 'status|uptime|restarts|pid' || true
             for i in 1 2 3 4 5 6 7 8; do
