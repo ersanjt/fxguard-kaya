@@ -1,0 +1,51 @@
+name: Restart Kaya WhatsApp gateway
+
+# ری‌استارت تمیز crm-gateway-kaya برای QR تازه (Singleton + Chrome نیمه‌مرده)
+on:
+  workflow_dispatch:
+
+jobs:
+  restart:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Clean restart gateway
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 5m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya
+            echo "== before =="
+            pm2 describe crm-gateway-kaya | grep -E 'status|uptime|restarts|pid' || true
+            SECRET=$(grep '^GATEWAY_API_SECRET=' gateway/.env | cut -d= -f2-)
+            GW_PORT=$(grep '^PORT=' gateway/.env | cut -d= -f2- | tr -d ' "')
+            GW_PORT=${GW_PORT:-3201}
+            curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" || true
+            echo ""
+            echo "== stop =="
+            pm2 stop crm-gateway-kaya || true
+            sleep 2
+            pkill -9 -f 'kayaCRM-kaya/gateway' 2>/dev/null || true
+            sleep 1
+            # قفل Chrome روی سشن نیمه‌مرده — بدون پاک کردن کل سشن (مگر Singleton)
+            find gateway/sessions -maxdepth 4 -name 'Singleton*' -type f -delete 2>/dev/null || true
+            echo "== start =="
+            pm2 start crm-gateway-kaya --update-env
+            sleep 8
+            echo "== after =="
+            pm2 describe crm-gateway-kaya | grep -E 'status|uptime|restarts|pid' || true
+            for i in 1 2 3 4 5 6; do
+              BODY=$(curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" || true)
+              echo "poll $i: $BODY"
+              echo "$BODY" | grep -Eq '"phase":"(qr|ready|authenticated)"' && break
+              sleep 5
+            done
+            echo "== recent gateway logs =="
+            pm2 logs crm-gateway-kaya --nostream --lines 40 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer' | tail -n 30 || true
