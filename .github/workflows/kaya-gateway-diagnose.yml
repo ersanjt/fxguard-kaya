@@ -1,0 +1,70 @@
+name: Diagnose Kaya WhatsApp gateway
+
+on:
+  workflow_dispatch:
+    inputs:
+      wipe_session:
+        description: Wipe WhatsApp session and force a brand-new QR (yes/no)
+        required: true
+        default: 'no'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - name: Inspect and optionally wipe session
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          WIPE: ${{ github.event.inputs.wipe_session }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: WIPE
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-kaya
+            mask() { sed -E 's/[0-9]{6,}/<num>/g; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/<email>/g' | cut -c1-280; }
+            SECRET=$(grep '^GATEWAY_API_SECRET=' gateway/.env | cut -d= -f2-)
+            GW_PORT=$(grep '^PORT=' gateway/.env | cut -d= -f2- | tr -d ' "')
+            GW_PORT=${GW_PORT:-3201}
+            echo "== pm2 =="
+            pm2 describe crm-gateway-kaya | grep -E 'status|uptime|restarts|pid|script path|exec cwd' | mask
+            echo "== status api =="
+            curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" | mask | head -c 500
+            echo ""
+            echo "== env flags =="
+            grep -E '^(PORT|WHATSAPP_|PUPPETEER_|NODE_ENV)=' gateway/.env | sed -E 's/(SECRET|TOKEN|PASS)=.*/\1=<redacted>/' | mask
+            echo "== session tree =="
+            ls -la gateway/sessions 2>/dev/null | mask
+            find gateway/sessions -maxdepth 4 \( -name 'Singleton*' -o -name 'Default*' -o -name 'session*' \) 2>/dev/null | sed 's|/var/www/kayaCRM-kaya/||' | head -n 40 | mask
+            echo "== recent logs =="
+            pm2 logs crm-gateway-kaya --nostream --lines 120 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer|disconnect|logout|conflict|timeout|browser' | tail -n 60 | mask
+            if [ "$WIPE" = "yes" ]; then
+              echo "== wipe session =="
+              pm2 stop crm-gateway-kaya || true
+              sleep 3
+              TS=$(date -u +%Y%m%dT%H%M%SZ)
+              mkdir -p /var/www/kayaCRM-kaya/backups
+              if [ -d gateway/sessions ]; then
+                tar -czf "/var/www/kayaCRM-kaya/backups/wa-session-${TS}.tgz" -C gateway sessions 2>/dev/null || true
+                rm -rf gateway/sessions
+              fi
+              mkdir -p gateway/sessions
+              pm2 start crm-gateway-kaya --update-env
+              sleep 15
+              for i in 1 2 3 4 5 6 7 8 9 10; do
+                BODY=$(curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" || true)
+                PHASE=$(printf '%s' "$BODY" | sed -n 's/.*"phase":"\([^"]*\)".*/\1/p')
+                echo "poll $i: phase=${PHASE:-?} usable=$(printf '%s' "$BODY" | sed -n 's/.*"usable":\(true\|false\).*/\1/p')"
+                printf '%s' "$BODY" | grep -Eq '"phase":"(qr|ready|authenticated)"' && break
+                sleep 5
+              done
+              echo "== logs after wipe =="
+              pm2 logs crm-gateway-kaya --nostream --lines 80 2>/dev/null | grep -iE 'QR|Ready|Auth|error|fail|start|initiali|Chromium|Puppeteer|disconnect' | tail -n 40 | mask
+            fi
