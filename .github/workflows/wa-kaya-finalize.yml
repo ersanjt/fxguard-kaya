@@ -81,8 +81,9 @@ jobs:
                 chosen = fallback;
                 reason = 'fallback_ok';
               } else {
-                chosen = prefer;
-                reason = 'prefer_forced_no_graph';
+                // Never overwrite a LIVE bind when Graph rejects both IDs.
+                chosen = row.cloudPhoneNumberId || fallback;
+                reason = 'keep_existing_graph_failed';
               }
 
               const prev = {

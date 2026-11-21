@@ -1,0 +1,129 @@
+name: Recover Kaya WhatsApp LIVE token
+
+# Restores System User token from .env if DB was overwritten with App Token,
+# rebinds Phone Number ID 1007665702430638 (LIVE), probes Graph.
+on:
+  workflow_dispatch:
+
+jobs:
+  recover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Restore env token and LIVE phone id
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            node <<'NODE'
+            require('dotenv').config();
+            const axios = require('axios');
+            const { WhatsappConnection, WhatsappNumber, sequelize } = require('./models');
+
+            async function probe(token, phoneId, ver) {
+              const r = await axios.get(
+                'https://graph.facebook.com/' + ver + '/' + phoneId +
+                  '?fields=id,display_phone_number,verified_name,account_mode,quality_rating',
+                { headers: { Authorization: 'Bearer ' + token }, timeout: 15000, validateStatus: () => true }
+              );
+              return { status: r.status, data: r.data };
+            }
+
+            function looksLikeAppToken(t) {
+              return !t || t.length < 80 || /^\d+\|/.test(t);
+            }
+
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              if (!row) throw new Error('no connection');
+              const ver = process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || 'v26.0';
+              const envToken = (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim();
+              const dbToken = (row.cloudAccessToken || '').trim();
+              const liveId = '1007665702430638';
+              const preferId = '1402168889654134';
+
+              const candidates = [];
+              if (envToken) candidates.push({ source: 'env', token: envToken });
+              if (dbToken && dbToken !== envToken) candidates.push({ source: 'db', token: dbToken });
+
+              const probes = {};
+              let best = null;
+              for (const c of candidates) {
+                probes[c.source] = {
+                  len: c.token.length,
+                  isAppTokenShape: looksLikeAppToken(c.token),
+                  live: await probe(c.token, liveId, ver),
+                  prefer: await probe(c.token, preferId, ver),
+                };
+                const liveOk = probes[c.source].live.status === 200;
+                const preferOk = probes[c.source].prefer.status === 200;
+                if (liveOk || preferOk) {
+                  best = {
+                    source: c.source,
+                    token: c.token,
+                    phoneId: preferOk ? preferId : liveId,
+                    reason: preferOk ? 'prefer_ok' : 'live_ok',
+                  };
+                  break;
+                }
+              }
+
+              const before = {
+                phoneId: row.cloudPhoneNumberId,
+                tokenLen: dbToken.length,
+                isAppTokenShape: looksLikeAppToken(dbToken),
+              };
+
+              if (best) {
+                row.cloudAccessToken = best.token;
+                row.cloudPhoneNumberId = best.phoneId;
+                row.cloudEnabled = true;
+                row.gatewayEnabled = false;
+                row.connectionMode = 'cloud';
+                await row.save({ skipTenantScope: true });
+                try {
+                  const [num] = await WhatsappNumber.findOrCreate({
+                    where: { slotKey: 'primary' },
+                    defaults: {
+                      slotKey: 'primary', role: 'primary', priority: 0, enabled: true,
+                      displayPhone: '+905339470868', cloudPhoneNumberId: best.phoneId, tenantId: row.tenantId,
+                    },
+                    skipTenantScope: true,
+                  });
+                  num.displayPhone = '+905339470868';
+                  num.cloudPhoneNumberId = best.phoneId;
+                  num.enabled = true;
+                  await num.save({ skipTenantScope: true });
+                } catch (e) { console.log('slot', e.message); }
+                try { require('./lib/whatsappConnectionLoader').invalidateCache(); } catch (_) {}
+              }
+
+              console.log(JSON.stringify({
+                before,
+                recovered: !!best,
+                chosen: best ? { source: best.source, phoneId: best.phoneId, reason: best.reason, tokenLen: best.token.length } : null,
+                hasAppSecret: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET),
+                verifyTokenSet: !!process.env.WHATSAPP_CLOUD_VERIFY_TOKEN,
+                probes: Object.fromEntries(Object.entries(probes).map(([k, v]) => [k, {
+                  len: v.len,
+                  isAppTokenShape: v.isAppTokenShape,
+                  liveStatus: v.live.status,
+                  preferStatus: v.prefer.status,
+                  live: v.live.status === 200 ? v.live.data : v.live.data,
+                  prefer: v.prefer.status === 200 ? v.prefer.data : (v.prefer.data && v.prefer.data.error ? { code: v.prefer.data.error.code, message: v.prefer.data.error.message, subcode: v.prefer.data.error.error_subcode } : v.prefer.data),
+                }])),
+              }, null, 2));
+              await sequelize.close();
+              if (!best) process.exit(2);
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+            pm2 reload crm-backend-kaya --update-env
+            echo DONE
