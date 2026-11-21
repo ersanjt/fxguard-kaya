@@ -50,7 +50,7 @@
     };
     const ROLE_LABEL = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر بخش', supervisor: 'ناظر', agent: 'کارشناس' };
     const SOURCE_LABEL = { whatsapp: 'واتساپ', web: 'وب', manual: 'دستی' };
-    const COLS = 10;
+    const COLS = 5;
 
     const detailDlg = document.getElementById('taDetail');
     const detailBody = document.getElementById('taDetailBody');
@@ -111,8 +111,51 @@
         if (el) el.textContent = typeof n === 'number' ? fmtNum(n) : String(n);
     }
 
-    function sumUsage(key) {
-        return allTenants.reduce(function (acc, t) { return acc + ((t.usage && t.usage[key]) || 0); }, 0);
+    function sumUsage(key, list) {
+        return (list || allTenants).reduce(function (acc, t) { return acc + ((t.usage && t.usage[key]) || 0); }, 0);
+    }
+
+    function filterActive() {
+        return !!(statusEl.value || gatewayEl.value || (searchEl.value || '').trim());
+    }
+
+    function paintUsage(rows) {
+        const visible = rows || allTenants;
+        setStat('taStatUsers', sumUsage('users', visible));
+        setStat('taStatCustomers', sumUsage('customers', visible));
+        setStat('taStatConvos', sumUsage('conversations', visible));
+        setStat('taStatMessages', sumUsage('messages', visible));
+        const note = document.getElementById('taUsageNote');
+        const breakdown = document.getElementById('taBreakdown');
+        if (note) {
+            const scope = filterActive()
+                ? 'فقط ' + fmtNum(visible.length) + ' سازمان همین فیلتر. '
+                : 'جمع هر ' + fmtNum(allTenants.length) + ' سازمان خودخدمت روی این سکو. ';
+            const totalBit = filterActive()
+                ? ' جمع کل، شامل سازمان‌هایی که الان در جدول نیستند: ' +
+                    fmtNum(sumUsage('customers')) + ' مشتری و ' + fmtNum(sumUsage('messages')) + ' پیام.'
+                : '';
+            note.textContent = scope +
+                'مشتری = مخاطبی که در CRM آن سازمان ذخیره شده. پیام = هر پیام ورودی یا خروجی که در چت مانده. پنل کایا در این اعداد نیست.' +
+                totalBit;
+        }
+        if (!breakdown) return;
+        if (!allTenants.length) {
+            breakdown.hidden = true;
+            breakdown.innerHTML = '';
+            return;
+        }
+        const visibleIds = {};
+        visible.forEach(function (t) { visibleIds[t.id] = true; });
+        breakdown.hidden = false;
+        breakdown.innerHTML = allTenants.map(function (t) {
+            const u = t.usage || {};
+            const dim = filterActive() && !visibleIds[t.id] ? ' is-dim' : '';
+            return '<li class="' + dim + '"><strong>' + esc(t.name || t.slug || '—') + '</strong>' +
+                '<span>' + fmtNum(u.customers) + ' مشتری</span>' +
+                '<span>' + fmtNum(u.conversations) + ' گفتگو</span>' +
+                '<span>' + fmtNum(u.messages) + ' پیام</span></li>';
+        }).join('');
     }
 
     /** یک کوکی ورود برای کل app.fxguard.io است؛ ورود به پنل یک سازمان در همین مرورگر نشست مدیر سکو را جایگزین می‌کند. */
@@ -191,7 +234,7 @@
     }
 
     function whatsappCell(t) {
-        if (!t.gateway || !t.gateway.running) return '—';
+        if (!t.gateway || !t.gateway.running) return '';
         const st = t.gateway.status || 'unknown';
         const cls = t.gateway.whatsapp ? 'ok' : 'warn';
         const num = t.gateway.number ? ' <span class="ta-ltr">' + esc(t.gateway.number) + '</span>' : '';
@@ -242,9 +285,7 @@
         setStat('taStatLocked', allTenants.filter(isLocked).length);
         setStat('taStatGw', allTenants.filter(function (t) { return t.gatewayEnabled; }).length);
         setStat('taStatWa', allTenants.filter(function (t) { return t.gateway && t.gateway.whatsapp; }).length);
-        setStat('taStatUsers', sumUsage('users'));
-        setStat('taStatCustomers', sumUsage('customers'));
-        setStat('taStatMessages', sumUsage('messages'));
+        paintUsage(allTenants);
     }
 
     function usageCell(t) {
@@ -259,6 +300,7 @@
     function render() {
         if (!loaded) return;
         const rows = allTenants.filter(matches);
+        paintUsage(rows);
         countEl.textContent = rows.length + ' از ' + allTenants.length;
         if (!allTenants.length) {
             body.innerHTML = '<tr><td colspan="' + COLS + '" class="ta-empty">هنوز سازمانی ثبت‌نام نکرده است.</td></tr>';
@@ -291,23 +333,29 @@
                 : '';
             const login = t.loginUrl
                 ? '<a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener" title="برای ورود به پنل سازمان از پنجرهٔ ناشناس استفاده کنید تا نشست مدیر سکو عوض نشود">' + esc(t.loginUrl.replace(/^https?:\/\//, '')) + '</a>'
-                : '—';
+                : '';
             const industry = INDUSTRY_LABEL[t.industry] || t.industry || '';
             const plan = PLAN_LABEL[t.planTier] || t.planTier || '';
             const statusCls = t.status === 'active' ? 'ok' : (t.status === 'suspended' || t.status === 'cancelled' ? 'err' : 'warn');
             const lockBadge = isLocked(t) ? ' <span class="ta-badge err">قفل</span>' : '';
+            const org = '<div class="ta-org"><strong>' + esc(t.name || '—') + '</strong>' +
+                '<span class="ta-sub">' + esc(industry) + (industry && plan ? ' · ' : '') + esc(plan) + '</span>' +
+                '<span class="ta-sub ta-ltr">' + esc(t.slug) + (t.ownerEmail ? ' · ' + esc(t.ownerEmail) : '') + '</span>' +
+                login + '</div>';
+            const trialLine = t.status === 'trial'
+                ? '<span class="ta-sub">پایان آزمایش: ' + trialBadge(t) + '</span>'
+                : '';
+            const status = '<div class="ta-stack"><span class="ta-badge ' + statusCls + '">' +
+                esc(STATUS_LABEL[t.status] || t.status || '—') + '</span>' + lockBadge +
+                trialLine +
+                paymentCell(t) + '</div>';
+            const wa = '<div class="ta-stack">' + gatewayCell(t) + whatsappCell(t) + '</div>';
             return '<tr>' +
-                '<td><div class="ta-org"><strong>' + esc(t.name || '—') + '</strong>' +
-                '<span class="ta-sub">' + esc(industry) + (industry && plan ? ' · ' : '') + esc(plan) + '</span></div></td>' +
-                '<td><div class="ta-org"><span class="ta-ltr">' + esc(t.slug) + '</span>' + login + '</div></td>' +
-                '<td class="ta-ltr ta-hide-sm">' + esc(t.ownerEmail || '—') + '</td>' +
-                '<td><span class="ta-badge ' + statusCls + '">' + esc(STATUS_LABEL[t.status] || t.status || '—') + '</span>' + lockBadge + '</td>' +
-                '<td class="ta-hide-sm">' + trialBadge(t) + '</td>' +
-                '<td>' + paymentCell(t) + '</td>' +
-                '<td>' + usageCell(t) + '</td>' +
-                '<td>' + gatewayCell(t) + '</td>' +
-                '<td class="ta-hide-sm">' + whatsappCell(t) + '</td>' +
-                '<td><div class="ta-row-actions">' + details + confirmPay + suspend + extend + toggle + restart + wipe + reset + '</div></td>' +
+                '<td data-label="سازمان">' + org + '</td>' +
+                '<td data-label="وضعیت">' + status + '</td>' +
+                '<td data-label="داده">' + usageCell(t) + '</td>' +
+                '<td data-label="واتساپ">' + wa + '</td>' +
+                '<td data-label="عملیات"><div class="ta-row-actions">' + details + confirmPay + suspend + extend + toggle + restart + wipe + reset + '</div></td>' +
                 '</tr>';
         }).join('');
         paintStatFilters();
