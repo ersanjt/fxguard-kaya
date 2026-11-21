@@ -1,0 +1,87 @@
+name: Diagnose WhatsApp line 0880
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Inspect Kaya WhatsApp cloud config for +905339470880
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-kaya/backend
+            echo "== host =="; hostname; date -u
+            echo "== pm2 =="; pm2 describe crm-backend-kaya | grep -E 'status|uptime|pid|script path|exec cwd' | head -n 20
+            echo "== env cloud keys (redacted) =="
+            grep -E '^(WHATSAPP_CLOUD_|WHATSAPP_PHONE|META_|FRONTEND_URL|PORT)=' .env 2>/dev/null | sed -E 's/(TOKEN|SECRET|PASS|KEY)=.*/\1=<redacted>/I' || true
+            echo "== DB whatsapp_connections (no secrets) =="
+            node -e "
+              require('dotenv').config();
+              const { WhatsappConnection, WhatsappNumber, sequelize } = require('./models');
+              (async () => {
+                const rows = await WhatsappConnection.findAll({ raw: true, skipTenantScope: true });
+                for (const r of rows) {
+                  console.log(JSON.stringify({
+                    id: r.id,
+                    tenantId: r.tenantId || null,
+                    mode: r.connectionMode,
+                    cloudEnabled: r.cloudEnabled,
+                    gatewayEnabled: r.gatewayEnabled,
+                    phoneNumberId: r.cloudPhoneNumberId || null,
+                    wabaId: r.cloudWabaId || null,
+                    hasToken: !!(r.cloudAccessToken && String(r.cloudAccessToken).length > 8),
+                    tokenLen: r.cloudAccessToken ? String(r.cloudAccessToken).length : 0,
+                    embeddedAt: r.embeddedSignupAt || null,
+                    updatedAt: r.updatedAt
+                  }));
+                }
+                if (WhatsappNumber) {
+                  const nums = await WhatsappNumber.findAll({
+                    attributes: ['id','slotKey','label','phoneE164','phoneNumberId','isActive','tenantId'],
+                    raw: true,
+                    skipTenantScope: true
+                  });
+                  console.log('numbers', JSON.stringify(nums));
+                }
+                await sequelize.close();
+              })().catch(e => { console.error(e.message); process.exit(1); });
+            "
+            echo "== local verify against Graph (if token+phone id) =="
+            node -e "
+              require('dotenv').config();
+              const cloud = require('./lib/whatsappCloudApi');
+              (async () => {
+                try {
+                  if (typeof cloud.verifyCloudConnection === 'function') {
+                    const r = await cloud.verifyCloudConnection();
+                    console.log(JSON.stringify(r, null, 2));
+                  } else if (typeof cloud.getCloudConfig === 'function') {
+                    const cfg = await cloud.getCloudConfig();
+                    console.log(JSON.stringify({
+                      enabled: !!(cfg && cfg.enabled),
+                      phoneNumberId: cfg && cfg.phoneNumberId,
+                      hasToken: !!(cfg && cfg.accessToken),
+                      apiVersion: cfg && cfg.apiVersion
+                    }));
+                  } else {
+                    console.log('no verify helper');
+                  }
+                } catch (e) {
+                  console.log('VERIFY_ERR', e.message);
+                }
+              })();
+            "
+            echo "== recent cloud/coexistence logs =="
+            pm2 logs crm-backend-kaya --nostream --lines 120 2>/dev/null | grep -iE 'cloud|coexist|meta|graph|0880|1382387304965587|token|webhook' | tail -n 40
+            echo "== done =="
