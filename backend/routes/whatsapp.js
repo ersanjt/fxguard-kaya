@@ -174,7 +174,7 @@ router.get('/connection', async (req, res, next) => {
             cloudVerifyTokenSet: !!(row.cloudVerifyToken && String(row.cloudVerifyToken).trim().length > 0),
             cloudBulkTemplateName: row.cloudBulkTemplateName || '',
             cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
-            cloudAppSecretSet: !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim(),
+            cloudAppSecretSet: require('../lib/cloudAppSecret').isCloudAppSecretConfigured(),
             embeddedSignup: (() => {
                 try {
                     return require('../lib/metaEmbeddedSignup').getPublicEmbeddedSignupConfig();
@@ -504,7 +504,7 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
         const { getCloudWebhookUrl } = require('../lib/whatsappOverview');
         const webhookUrl = getCloudWebhookUrl(req);
         const verifyTokenSet = !!String(cfg.cloudVerifyToken || '').trim();
-        const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
+        const appSecretSet = require('../lib/cloudAppSecret').isCloudAppSecretConfigured();
         const meta = await whatsappCloud.verifyCredentials();
 
         res.json({

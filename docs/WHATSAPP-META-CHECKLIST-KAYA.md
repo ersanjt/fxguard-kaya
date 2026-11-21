@@ -14,7 +14,11 @@
 
 > جزئیات پورت‌ها و deploy: [DEPLOY-KAYA-SERVER.md](DEPLOY-KAYA-SERVER.md)
 
-> **اولویت:** برای حفظ شماره و ارسال انبوه امن، **Meta Cloud** را کامل کنید. Gateway (QR) فقط fallback یا توسعه است — هر دو روی یک شماره همزمان کار نمی‌کنند.
+> **اولویت:** برای حفظ شماره و ارسال انبوه امن، **Meta Cloud** را کامل کنید. Gateway (QR) فقط fallback یا توسعه است و با نشست Web نباید روی همان شماره موازی باشد.
+>
+> **وضعیت فعلی شماره مشتری `+90 533 947 08 80`:** در WABA `1395714801963738` ثبت شد — **Phone Number ID:** `1382387304965587` (هنوز Doğrulanmamış / نیاز به OTP). شماره اشتباه قبلی `+90 533 947 80 08` هنوز در لیست است. مسیر درست **Meta Coexistence + اتصال CRM** است؛ توکن/WABA این مشتری را با مشتری دیگر FXGuard یکی نکنید.
+>
+> **کد:** نسخه Graph در `whatsappCloudApi.js` پیش‌فرض `v26.0`؛ webhook فیلدهای Coexistence را digest می‌کند؛ sync از `POST /api/whatsapp/cloud/coexistence/sync`. Runbook: [WHATSAPP-COEXISTENCE-RUNBOOK.md](./WHATSAPP-COEXISTENCE-RUNBOOK.md). PR مرتبط: [#3](https://github.com/ersanjt/fxguard-kaya/pull/3) — تا deploy روی سرور کایا، تست عملی روی production معلق است.
 
 ---
 
@@ -48,10 +52,11 @@ WHATSAPP_CLOUD_ACCESS_TOKEN=
 WHATSAPP_CLOUD_PHONE_NUMBER_ID=
 WHATSAPP_CLOUD_VERIFY_TOKEN=
 WHATSAPP_CLOUD_APP_SECRET=
+WHATSAPP_CLOUD_GRAPH_API_VERSION=v26.0
 
-# قالب برای bulk و پیام بعد از ۲۴h
+# قالب برای bulk و پیام بعد از ۲۴h — hello_world فقط en_US؛ برای فارسی قالب تأییدشده fa بسازید
 WHATSAPP_CLOUD_BULK_TEMPLATE_NAME=
-WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE=fa
+WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE=en_US
 ```
 
 بعد از ویرایش:
@@ -187,17 +192,25 @@ curl "https://kaya.fxguard.io/api/webhook/whatsapp-cloud?hub.mode=subscribe&hub.
 # → 12345
 ```
 
-### گام ۲.۴ — Subscribe به messages
+### گام ۲.۴ — Subscribe به messages (+ Coexistence)
 
-در همان صفحه Webhook، فیلد **messages** را Subscribe کنید:
+در همان صفحه Webhook، این فیلدها را Subscribe کنید:
 
 ```
 ┌──────────────────────────────────────────┐
 │  Webhook fields                          │
 │  ☑ messages                               │
+│  ☑ smb_message_echoes   (پاسخ از اپ موبایل)│
+│  ☑ history              (بعد از sync)     │
+│  ☑ smb_app_state_sync   (مخاطبین)         │
+│  ☑ account_update                         │
 │  ☐ message_template_status_update (اختیاری)│
 └──────────────────────────────────────────┘
 ```
+
+بعد از Embedded Signup موفق (حداکثر ۲۴h): از پنل با JWT ادمین
+
+`POST /api/whatsapp/cloud/coexistence/sync` → `{ "syncType": "both" }`
 
 ---
 
@@ -210,7 +223,7 @@ curl "https://kaya.fxguard.io/api/webhook/whatsapp-cloud?hub.mode=subscribe&hub.
 │  #whatsapp > Connection > Cloud API      │
 │  ☑ Cloud فعال                            │
 │  Access Token: [••••••••] ✓               │
-│  Phone Number ID: 1007665702430638       │
+│  Phone Number ID: 1382387304965587       │
 │  Verify Token: kaya_verify_...           │
 │  قالب Meta: hello_world                  │
 │  زبان قالب: fa                           │

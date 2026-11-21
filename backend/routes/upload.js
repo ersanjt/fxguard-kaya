@@ -5,16 +5,13 @@ const fs = require('fs');
 const multer = require('multer');
 const logger = require('../config/logger');
 const { requireSection } = require('../middleware/auth');
+const { ensureTenantUploadDir, tenantUploadUrl, currentPanelKey } = require('../lib/tenantUploads');
 
 const ALLOWED_MIME_TYPES = new Set([
-    // تصاویر
     'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
     'image/x-icon', 'image/vnd.microsoft.icon',
-    // ویدیو
     'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
-    // صوت
     'audio/mpeg', 'audio/ogg', 'audio/wav', 'audio/webm', 'audio/aac', 'audio/mp4',
-    // اسناد
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -23,7 +20,6 @@ const ALLOWED_MIME_TYPES = new Set([
     'application/vnd.ms-powerpoint',
     'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'text/plain', 'text/csv',
-    // فشرده
     'application/zip',
     'application/x-zip-compressed',
     'application/x-rar-compressed',
@@ -49,18 +45,10 @@ const BLOCKED_EXTENSIONS = new Set([
     '.htaccess', '.htpasswd',
 ]);
 
-const uploadDir = path.join(__dirname, '..', 'uploads');
-try {
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-} catch (e) {
-    logger.error('Upload dir creation failed', { error: e.message });
-}
-
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try {
-            if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-            cb(null, uploadDir);
+            cb(null, ensureTenantUploadDir());
         } catch (e) {
             cb(e);
         }
@@ -78,7 +66,6 @@ const upload = multer({
         if (BLOCKED_EXTENSIONS.has(ext)) {
             return cb(new Error(`نوع فایل مجاز نیست: ${ext}`));
         }
-        // MIME type can include codec params like "audio/webm;codecs=opus" — check base type
         const baseMime = (file.mimetype || '').split(';')[0].trim().toLowerCase();
         const mimeOk =
             ALLOWED_MIME_TYPES.has(baseMime) || ALLOWED_MIME_TYPES.has(file.mimetype);
@@ -96,6 +83,9 @@ const upload = multer({
 
 function handleUploadError(err, req, res, next) {
     if (!err) return next();
+    if (err.code === 'TENANT_UPLOAD_CONTEXT') {
+        return res.status(400).json({ error: err.message, code: err.code });
+    }
     if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'حجم فایل بیش از ۶۴ مگابایت است' });
     if (err.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'تعداد فایل‌ها بیش از حد مجاز است' });
     next(err);
@@ -104,7 +94,8 @@ function handleUploadError(err, req, res, next) {
 router.post('/', upload.single('file'), handleUploadError, (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
-        const url = '/uploads/' + req.file.filename;
+        const url = tenantUploadUrl(req.file.filename);
+        if (!url) return res.status(400).json({ error: 'سازمان پنل برای آپلود مشخص نیست' });
         res.json({ url, name: req.file.originalname || req.file.filename, size: req.file.size });
     } catch (err) {
         next(err);
@@ -114,21 +105,32 @@ router.post('/', upload.single('file'), handleUploadError, (req, res, next) => {
 router.post('/multiple', upload.array('files', 5), handleUploadError, (req, res, next) => {
     try {
         if (!req.files || !req.files.length) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
-        const files = req.files.map(f => ({ url: '/uploads/' + f.filename, name: f.originalname || f.filename, size: f.size }));
+        const files = req.files.map((f) => {
+            const url = tenantUploadUrl(f.filename);
+            return { url, name: f.originalname || f.filename, size: f.size };
+        });
+        if (files.some((f) => !f.url)) {
+            return res.status(400).json({ error: 'سازمان پنل برای آپلود مشخص نیست' });
+        }
         res.json({ files });
     } catch (err) {
         next(err);
     }
 });
 
-/** APK / IPA برای لینک مستقیم نصب (فقط مدیر «ظاهر پنل»). سقف بزرگ‌تر از آپلود عمومی. */
+/** APK / IPA — فقط روی پنل سکو در مسیر مشترک releases؛ سازمان‌ها در پوشهٔ خودشان. */
 const MOBILE_BUILD_MAX = parseInt(process.env.MOBILE_BUILD_UPLOAD_MAX_MB || '200', 10) * 1024 * 1024;
-const mobileBuildDir = path.join(uploadDir, 'mobile-builds');
 const mobileStorage = multer.diskStorage({
     destination: (req, file, cb) => {
         try {
-            if (!fs.existsSync(mobileBuildDir)) fs.mkdirSync(mobileBuildDir, { recursive: true });
-            cb(null, mobileBuildDir);
+            const key = currentPanelKey();
+            if (!key) return cb(new Error('سازمان پنل برای آپلود مشخص نیست'));
+            if (key === 'default') {
+                const dir = path.join(__dirname, '..', 'uploads', 'mobile-builds');
+                if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+                return cb(null, dir);
+            }
+            cb(null, ensureTenantUploadDir('mobile-builds'));
         } catch (e) {
             cb(e);
         }
@@ -153,6 +155,9 @@ const mobileUpload = multer({
 });
 function handleMobileUploadError(err, req, res, next) {
     if (!err) return next();
+    if (err.code === 'TENANT_UPLOAD_CONTEXT' || (err.message && err.message.includes('سازمان'))) {
+        return res.status(400).json({ error: err.message, code: 'TENANT_UPLOAD_CONTEXT' });
+    }
     if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(400).json({ error: 'حجم فایل بیش از حد مجاز است (' + (MOBILE_BUILD_MAX / (1024 * 1024)) + ' مگابایت)' });
     }
@@ -162,7 +167,11 @@ function handleMobileUploadError(err, req, res, next) {
 router.post('/mobile-build', requireSection('panel_settings'), mobileUpload.single('file'), handleMobileUploadError, (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
-        const rel = '/uploads/mobile-builds/' + req.file.filename;
+        const key = currentPanelKey();
+        const rel = key === 'default'
+            ? '/uploads/mobile-builds/' + req.file.filename
+            : tenantUploadUrl(req.file.filename, 'mobile-builds');
+        if (!rel) return res.status(400).json({ error: 'سازمان پنل برای آپلود مشخص نیست' });
         res.json({ url: rel, name: req.file.originalname || req.file.filename, size: req.file.size });
     } catch (err) {
         next(err);

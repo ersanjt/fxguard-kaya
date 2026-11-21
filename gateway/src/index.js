@@ -818,6 +818,9 @@ function requireGatewaySecret(req, res, next) {
         logger.warn('Gateway API: unauthorized request', { ip: req.ip });
         return res.status(401).json({ error: 'Unauthorized' });
     }
+    const { claimedFromHeaders, tenantBindError } = require('./tenantBind');
+    const mismatch = tenantBindError(claimedFromHeaders(req.headers));
+    if (mismatch) return res.status(403).json({ error: mismatch });
     next();
 }
 
@@ -4407,10 +4410,12 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 async function sendWhatsAppMessage(data) {
     if (!isWhatsAppUsable()) throw new Error('WhatsApp not ready');
 
-    const boundSlug = String(process.env.GATEWAY_TENANT_SLUG || '').trim();
-    const payloadSlug = data && data.tenantSlug ? String(data.tenantSlug).trim() : '';
-    if (boundSlug && payloadSlug && payloadSlug !== boundSlug) {
-        throw new Error('tenant_mismatch');
+    const { tenantBindError } = require('./tenantBind');
+    const mismatch = tenantBindError(data && data.tenantSlug);
+    if (mismatch) {
+        const err = new Error(mismatch);
+        err.statusCode = 403;
+        throw err;
     }
 
     const { to, message, media, replyTo } = data || {};

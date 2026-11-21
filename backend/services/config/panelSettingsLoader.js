@@ -123,19 +123,39 @@ function parseLabelOverrides(val) {
     return out;
 }
 
+function emptyTenantFallback(tenant) {
+    const name = (tenant && tenant.name) || 'پنل';
+    return {
+        ...DEFAULT,
+        siteName: name,
+        loginTitle: name,
+        pageTitle: name,
+        footerText: name,
+        // هرگز SMTP/تلگرام/کلید API سکو را به سازمان بدون ردیف نده
+        smtpHost: null,
+        smtpPort: null,
+        smtpUser: null,
+        smtpPass: null,
+        smtpFrom: null,
+        smtpFromName: null,
+        telegramBotToken: null,
+        telegramChatIds: null,
+        navasanApiKey: null,
+        alanChandApiKey: null,
+    };
+}
+
 async function getPanelSettings() {
     const key = getPanelSettingsKey();
+    const t = getCurrentTenant();
+    if (!key) {
+        if (t && !t.isPlatform) return applyStaffAppUrlFallbacks(emptyTenantFallback(t));
+        return applyStaffAppUrlFallbacks({ ...DEFAULT });
+    }
     const row = await PanelSetting.findByPk(key);
     if (!row) {
-        const t = getCurrentTenant();
-        const fallback = { ...DEFAULT };
-        if (t && !t.isPlatform && t.name) {
-            fallback.siteName = t.name;
-            fallback.loginTitle = t.name;
-            fallback.pageTitle = t.name;
-            fallback.footerText = t.name;
-        }
-        return applyStaffAppUrlFallbacks(fallback);
+        if (t && !t.isPlatform) return applyStaffAppUrlFallbacks(emptyTenantFallback(t));
+        return applyStaffAppUrlFallbacks({ ...DEFAULT });
     }
     return applyStaffAppUrlFallbacks({
         siteName: row.siteName != null ? row.siteName : DEFAULT.siteName,

@@ -5,7 +5,8 @@ const { COOKIE_NAME } = require('../lib/authCookie');
 const { resolveTenantFromRequest } = require('./tenantContext');
 const { assertUserMatchesRequestTenant } = require('./auth');
 
-function tokenFromCookieHeader(cookieHeader) {
+function parseCookieHeader(cookieHeader) {
+    const out = {};
     const raw = String(cookieHeader || '');
     const parts = raw.split(';');
     for (let i = 0; i < parts.length; i++) {
@@ -13,14 +14,19 @@ function tokenFromCookieHeader(cookieHeader) {
         const idx = part.indexOf('=');
         if (idx < 0) continue;
         const name = part.slice(0, idx).trim();
-        if (name !== COOKIE_NAME) continue;
+        if (!name) continue;
         let val = part.slice(idx + 1).trim();
         try {
             val = decodeURIComponent(val);
         } catch (_) { /* keep raw */ }
-        return val;
+        out[name] = val;
     }
-    return '';
+    return out;
+}
+
+function tokenFromCookieHeader(cookieHeader) {
+    const cookies = parseCookieHeader(cookieHeader);
+    return cookies[COOKIE_NAME] || '';
 }
 
 function collectHandshakeTokens(socket) {
@@ -66,10 +72,11 @@ module.exports = async (socket, next) => {
                     lastErr = new Error('نشست باطل شده است');
                     continue;
                 }
+                const handshake = socket.handshake || {};
                 const tenant = await resolveTenantFromRequest({
-                    headers: (socket.handshake && socket.handshake.headers) || {},
-                    cookies: {},
-                    query: {},
+                    headers: handshake.headers || {},
+                    cookies: parseCookieHeader(handshake.headers && handshake.headers.cookie),
+                    query: handshake.query || {},
                     originalUrl: '/socket.io/',
                 });
                 try {

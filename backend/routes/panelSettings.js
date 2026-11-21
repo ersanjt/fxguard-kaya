@@ -259,8 +259,15 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (telegramChatIds && String(telegramChatIds).trim().length > 1000) {
             return res.status(400).json({ error: 'لیست Chat ID تلگرام بیش از حد طولانی است' });
         }
+        const { requirePanelSettingsKey } = require('../lib/tenantContext');
+        let panelKey;
+        try {
+            panelKey = requirePanelSettingsKey();
+        } catch (e) {
+            return res.status(400).json({ error: e.message, code: e.code || 'PANEL_KEY_REQUIRED' });
+        }
         const [row] = await PanelSetting.findOrCreate({
-            where: { id: getPanelSettingsKey() },
+            where: { id: panelKey },
             defaults: {},
         });
         const telegramTokenBeforeSave =
@@ -430,6 +437,9 @@ router.put('/', authMiddleware, async (req, res, next) => {
             }
         }
         await row.save();
+        try {
+            require('../middleware/protectedUploads').invalidatePublicBrandingCache();
+        } catch (_) {}
         invalidatePlanCache();
         const telegramTokenAfterSave =
             row.telegramBotToken && String(row.telegramBotToken).trim()

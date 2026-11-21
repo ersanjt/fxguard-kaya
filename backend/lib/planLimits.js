@@ -83,10 +83,25 @@ function remainingSlots(used, limit) {
     return Math.max(0, limit - (Number(used) || 0));
 }
 
+function explicitSkillOn(tenant, skillId) {
+    if (!tenant || tenant.isPlatform || !Array.isArray(tenant.enabledSkills)) return false;
+    return tenant.enabledSkills.indexOf(skillId) >= 0;
+}
+
 function mergeFxHidden(hiddenSections, snap) {
     const hidden = Array.isArray(hiddenSections) ? hiddenSections.slice() : [];
     if (snap && snap.fxEnabled === false) {
+        let tenant = null;
+        try {
+            tenant = require('./tenantContext').getCurrentTenant();
+        } catch (_) {
+            tenant = null;
+        }
+        const ratesOn = explicitSkillOn(tenant, 'fx_rates');
+        const servicesOn = explicitSkillOn(tenant, 'exchange_services');
         FX_NAV_PAGES.forEach((page) => {
+            if (ratesOn && (page === 'rates' || page === 'rates-charts')) return;
+            if (servicesOn && page === 'services') return;
             if (hidden.indexOf(page) < 0) hidden.push(page);
         });
     }
@@ -113,7 +128,9 @@ function planErrorPayload(err) {
 async function loadStoredPlanTier() {
     const { PanelSetting } = require('../models');
     const { getPanelSettingsKey } = require('./tenantContext');
-    const row = await PanelSetting.findByPk(getPanelSettingsKey());
+    const key = getPanelSettingsKey();
+    if (!key) return null;
+    const row = await PanelSetting.findByPk(key);
     return row && row.planTier != null ? row.planTier : null;
 }
 
@@ -224,6 +241,11 @@ async function assertCanAddBranch() {
 
 async function requireFxModule(req, res, next) {
     try {
+        const { getCurrentTenant } = require('./tenantContext');
+        const { disabledSkillForPath } = require('./tenantSkills');
+        const path = req.originalUrl || req.path || '';
+        // سوئیچ داشبورد (مهارت) بر قفل پلن مقدم است: سازمانی که نرخ را روشن کرده دادهٔ خودش را دارد
+        if (!disabledSkillForPath(getCurrentTenant(), path)) return next();
         const ok = await isFxModuleEnabled();
         if (!ok) {
             return res.status(403).json({

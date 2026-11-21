@@ -29,9 +29,27 @@ function getCurrentTenantId() {
 }
 
 function getPanelSettingsKey() {
-    const t = getCurrentTenant();
-    if (t && t.panelKey) return String(t.panelKey);
+    const store = getStore();
+    if (store) {
+        const t = store.tenant;
+        if (t && t.panelKey) return String(t.panelKey);
+        if (t && isPlatformTenant(t)) return 'default';
+        // زمینهٔ درخواست بدون سازمان نباید به ردیف سکو (رمز SMTP و توکن‌ها) بیفتد
+        return null;
+    }
     return 'default';
+}
+
+/** کلید پنل سازمان جاری؛ اگر نامشخص باشد خطا می‌دهد تا هیچ‌وقت به default سکو نیفتد. */
+function requirePanelSettingsKey() {
+    const key = getPanelSettingsKey();
+    if (!key) {
+        const err = new Error('سازمان پنل مشخص نیست');
+        err.code = 'PANEL_KEY_REQUIRED';
+        err.status = 400;
+        throw err;
+    }
+    return key;
 }
 
 function isPlatformTenant(tenant) {
@@ -82,6 +100,13 @@ function tenantRoom(tenantId) {
     return 'tenant_' + (isPlatformTenantId(v) ? 'platform' : v);
 }
 
+/** room دپارتمان با پیشوند سازمان تا رویداد یک شرکت به دپارتمان شرکت دیگر نرود. */
+function departmentRoom(tenantId, departmentId) {
+    if (!departmentId) return null;
+    const tenantPart = isPlatformTenantId(tenantId) ? 'platform' : normalizeTenantId(tenantId) || 'platform';
+    return 'department_' + tenantPart + '_' + String(departmentId);
+}
+
 function bindSocketTenant(socket) {
     if (!socket || typeof socket.on !== 'function') return socket;
     const origOn = socket.on.bind(socket);
@@ -102,6 +127,7 @@ module.exports = {
     getCurrentTenant,
     getCurrentTenantId,
     getPanelSettingsKey,
+    requirePanelSettingsKey,
     isPlatformTenant,
     setPlatformTenantCache,
     getCachedPlatformTenant,
@@ -111,4 +137,5 @@ module.exports = {
     isPlatformTenantId,
     sameTenant,
     tenantRoom,
+    departmentRoom,
 };

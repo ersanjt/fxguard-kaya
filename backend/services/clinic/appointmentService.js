@@ -96,10 +96,20 @@ async function listAppointments(ctx, query) {
     if (from) where.endsAt = { [Op.gt]: from };
     const doctorId = optionalUuid(src.doctorId, 'پزشک');
     const patientId = optionalUuid(src.patientId, 'بیمار');
+    const customerId = optionalUuid(src.customerId, 'مشتری');
     const status = optionalEnum(src.status, APPOINTMENT_STATUSES, 'وضعیت');
     if (doctorId) where.doctorId = doctorId;
     if (patientId) where.patientId = patientId;
     if (status) where.status = status;
+    if (customerId && !patientId) {
+        const { ClinicPatient } = require('../../models');
+        const patient = await ClinicPatient.findOne({
+            where: { tenantId, customerId },
+            attributes: ['id'],
+        });
+        if (!patient) return { items: [], total: 0, page, limit };
+        where.patientId = patient.id;
+    }
 
     const { rows, count } = await ClinicAppointment.findAndCountAll({
         where,

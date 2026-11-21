@@ -28,9 +28,10 @@ async function startWaConversationCall(req, conversation, callType) {
     }
 
     const senderDept = (senderUser && senderUser.department) || conversation.department || null;
+    const panelKey = getPanelSettingsKey();
     const [panelSettings, waCfg] = await Promise.all([
         getPanelSettings(),
-        WhatsappConfig.findByPk(getPanelSettingsKey()),
+        panelKey ? WhatsappConfig.findByPk(panelKey) : Promise.resolve(null),
     ]);
     const introText = buildCallIntroText(
         senderUser,

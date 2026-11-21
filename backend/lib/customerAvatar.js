@@ -4,6 +4,21 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { ensureTenantUploadDir, tenantUploadUrl } = require('./tenantUploads');
+
+function customerAvatarDir(customerId) {
+    return ensureTenantUploadDir(path.join('customers', String(customerId)));
+}
+
+function customerAvatarUrl(customerId, filename) {
+    const url = tenantUploadUrl(filename, path.join('customers', String(customerId)));
+    if (!url) {
+        const err = new Error('سازمان پنل برای آواتار مشخص نیست');
+        err.code = 'TENANT_UPLOAD_CONTEXT';
+        throw err;
+    }
+    return url;
+}
 
 /** شمارهٔ فقط رقمی برای API گیت‌وی (بدون +، فاصله، پسوند @c.us) */
 function digitsOnlyChatPhone(raw) {
@@ -102,8 +117,7 @@ async function downloadAvatarToUploads(customerId, sourceUrl) {
         if (buf.length < 32 || buf.length > 5 * 1024 * 1024) return null;
 
         const ext = extFromContentType(ct);
-        const dir = path.join(__dirname, '..', 'uploads', 'customers', customerId);
-        fs.mkdirSync(dir, { recursive: true });
+        const dir = customerAvatarDir(customerId);
         const filename = 'avatar' + ext;
         const fullPath = path.join(dir, filename);
         try {
@@ -117,7 +131,7 @@ async function downloadAvatarToUploads(customerId, sourceUrl) {
             }
         } catch (_) {}
         fs.writeFileSync(fullPath, buf);
-        return '/uploads/customers/' + customerId + '/' + filename;
+        return customerAvatarUrl(customerId, filename);
     } catch {
         return null;
     }
@@ -131,8 +145,7 @@ function saveDataUrlToUploads(customerId, dataUrl) {
         const buf = Buffer.from(m[2].replace(/\s/g, ''), 'base64');
         if (buf.length < 32 || buf.length > 5 * 1024 * 1024) return null;
         const ext = extFromContentType(m[1]);
-        const dir = path.join(__dirname, '..', 'uploads', 'customers', customerId);
-        fs.mkdirSync(dir, { recursive: true });
+        const dir = customerAvatarDir(customerId);
         const filename = 'avatar' + ext;
         const fullPath = path.join(dir, filename);
         try {
@@ -146,7 +159,7 @@ function saveDataUrlToUploads(customerId, dataUrl) {
             }
         } catch (_) {}
         fs.writeFileSync(fullPath, buf);
-        return '/uploads/customers/' + customerId + '/' + filename;
+        return customerAvatarUrl(customerId, filename);
     } catch {
         return null;
     }

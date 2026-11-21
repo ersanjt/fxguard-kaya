@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 
 const { SendRateLimiter, createSendRateLimiter } = require('../src/sendRateLimiter');
+const { tenantBindError } = require('../src/tenantBind');
 const { decryptWhatsAppEnc, downloadAndDecryptWhatsAppMedia } = require('../src/waMediaDecrypt');
 const { startOutgoingCall } = require('../src/waCalls');
 
@@ -31,6 +32,15 @@ test('media download fails closed when no media key is supplied', async () => {
     assert.deepEqual(await downloadAndDecryptWhatsAppMedia({ url: 'https://example.test/file' }), {
         error: 'no_media_key',
     });
+});
+
+test('a bound gateway rejects a different or missing company slug', () => {
+    const env = { GATEWAY_TENANT_SLUG: 'acme' };
+    assert.equal(tenantBindError('acme', env), null);
+    assert.equal(tenantBindError('ACME', env), null);
+    assert.equal(tenantBindError('other', env), 'tenant_mismatch');
+    assert.equal(tenantBindError('', env), 'tenant_mismatch');
+    assert.equal(tenantBindError('other', {}), null);
 });
 
 test('outgoing calls reject an empty recipient without touching WhatsApp', async () => {

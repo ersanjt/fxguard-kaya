@@ -4,7 +4,8 @@ const axios = require('axios');
 const { RateAdjustment, RateCurrency, TickerConfig, PanelSetting } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
-const { isPlatformTenant } = require('../lib/tenantContext');
+const { getPanelSettingsKey } = require('../lib/tenantContext');
+const { ensureTenantCurrencies, loadTickerConfig } = require('../lib/tenantRates');
 const { getNavasanApiKey, navasanLatestUrl, normalizeNavasanApiKey, navasanUsageUrl, navasanApiErrorMessage } = require('../lib/navasanApiKey');
 const {
     getRatesApiCredentials,
@@ -23,17 +24,9 @@ const { requireFxModule } = require('../lib/planLimits');
 
 router.use(requireFxModule);
 
-/** لیست ارزها از DB؛ اگر خالی بود از پیش‌فرض برمی‌گرداند */
+/** ارزهای همین سازمان؛ بار اول از قالب پیش‌فرض کپی می‌شود و بعداً مستقل می‌ماند */
 async function getRatesKeys() {
-    const rows = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
-    if (rows && rows.length > 0) {
-        return rows.map(r => ({
-            key: r.key,
-            label: r.label || r.key,
-            apiKeys: Array.isArray(r.apiKeys) ? r.apiKeys : (r.apiKeys ? [r.apiKeys] : [])
-        }));
-    }
-    return defaultRateCurrencies.map(({ key, label, apiKeys }) => ({ key, label, apiKeys }));
+    return ensureTenantCurrencies(RateCurrency);
 }
 
 // GET /api/rates/config-status — وضعیت توکن‌ها (نوسان / الان چند)
@@ -59,31 +52,19 @@ function ratesTestCooldownCheck(map, userId, ms) {
     return null;
 }
 
-/**
- * کلید API، ارزها، حاشیه و تیکر هنوز بین همهٔ سازمان‌های یک سرور مشترک‌اند؛
- * تا جداسازی آن‌ها، فقط پنل سکو تغییرشان می‌دهد و بقیه نرخ را فقط می‌خوانند.
- */
-function requirePlatformPanel(req, res, next) {
-    if (req.tenant && !isPlatformTenant(req.tenant)) {
-        return res.status(403).json({
-            error: 'تنظیمات نرخ در این پنل فقط‌خواندنی است',
-            code: 'RATES_SETTINGS_READ_ONLY',
-        });
-    }
-    next();
-}
-
 const ratesTestNavasanCooldown = new Map();
 const ratesTestAlanChandCooldown = new Map();
 const RATES_TEST_COOLDOWN_MS = 30000;
 
 // PUT /api/rates/api-keys — ذخیره توکن نوسان / الان چند و منبع فعال
-router.put('/api-keys', requirePlatformPanel, async (req, res, next) => {
+router.put('/api-keys', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
         const [row] = await PanelSetting.findOrCreate({
-            where: { id: 'default' },
-            defaults: { id: 'default' }
+            where: { id: panelKey },
+            defaults: { id: panelKey }
         });
         applyRatesApiKeyUpdates(row, req.body || {});
         await row.save();
@@ -95,7 +76,7 @@ router.put('/api-keys', requirePlatformPanel, async (req, res, next) => {
     }
 });
 
-router.post('/test-navasan', requirePlatformPanel, async (req, res, next) => {
+router.post('/test-navasan', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const userId = req.user && req.user.id;
@@ -130,7 +111,7 @@ router.post('/test-navasan', requirePlatformPanel, async (req, res, next) => {
     }
 });
 
-router.post('/test-alanchand', requirePlatformPanel, async (req, res, next) => {
+router.post('/test-alanchand', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const userId = req.user && req.user.id;
@@ -179,7 +160,7 @@ router.get('/', async (req, res, _next) => {
 
         let visibleKeys = null;
         try {
-            const cfg = await TickerConfig.findByPk('default');
+            const cfg = await loadTickerConfig(TickerConfig);
             if (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys) && cfg.visibleKeys.length > 0) {
                 visibleKeys = cfg.visibleKeys;
             }
@@ -261,7 +242,10 @@ function toJalaliDate(d) {
 const historyCache = new Map();
 const HISTORY_CACHE_TTL = 10 * 60 * 1000;
 
-function getHistoryCacheKey(key, days) { return `${key}_${days}`; }
+function getHistoryCacheKey(key, days) {
+    const { getCurrentTenantId } = require('../lib/tenantContext');
+    return `${getCurrentTenantId() || 'platform'}_${key}_${days}`;
+}
 
 /** استخراج آرایه سطرها از پاسخ نوسان (آرایه خام یا { data } یا خطا) */
 function normalizeNavasanRows(body) {
@@ -450,7 +434,7 @@ router.get('/adjustments', async (req, res, next) => {
 });
 
 // PUT /api/rates/adjustments — ذخیره تعدیلات
-router.put('/adjustments', requirePlatformPanel, async (req, res, next) => {
+router.put('/adjustments', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -483,7 +467,7 @@ router.put('/adjustments', requirePlatformPanel, async (req, res, next) => {
 router.get('/ticker-config', async (req, res, next) => {
     try {
         const RATES_KEYS = await getRatesKeys();
-        const cfg = await TickerConfig.findByPk('default');
+        const cfg = await loadTickerConfig(TickerConfig);
         const visibleKeys = (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys)) ? cfg.visibleKeys : RATES_KEYS.map(r => r.key);
         res.json({ visibleKeys, availableKeys: RATES_KEYS.map(r => ({ key: r.key, label: r.label })) });
     } catch (err) {
@@ -492,7 +476,7 @@ router.get('/ticker-config', async (req, res, next) => {
 });
 
 // PUT /api/rates/ticker-config — ذخیره ارزهای قابل نمایش (فقط با دسترسی rates)
-router.put('/ticker-config', requirePlatformPanel, async (req, res, next) => {
+router.put('/ticker-config', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -500,7 +484,8 @@ router.put('/ticker-config', requirePlatformPanel, async (req, res, next) => {
         if (!Array.isArray(visibleKeys)) return res.status(400).json({ error: 'visibleKeys باید آرایه باشد' });
         const allowed = RATES_KEYS.map(r => r.key);
         const valid = visibleKeys.filter(k => allowed.includes(String(k).toLowerCase()));
-        const [cfg] = await TickerConfig.findOrCreate({ where: { id: 'default' }, defaults: { visibleKeys: null } });
+        const cfg = await loadTickerConfig(TickerConfig);
+        if (!cfg) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
         await cfg.update({ visibleKeys: valid.length > 0 ? valid : null });
         res.json({ visibleKeys: valid.length > 0 ? valid : RATES_KEYS.map(r => r.key) });
     } catch (err) {
@@ -514,10 +499,7 @@ router.put('/ticker-config', requirePlatformPanel, async (req, res, next) => {
 router.get('/currencies', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
-        const list = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
-        const data = (list && list.length > 0)
-            ? list.map(r => ({ key: r.key, label: r.label || '', apiKeys: Array.isArray(r.apiKeys) ? r.apiKeys : [], sortOrder: r.sortOrder != null ? r.sortOrder : 0 }))
-            : defaultRateCurrencies.map(({ key, label, apiKeys, sortOrder }) => ({ key, label, apiKeys: apiKeys || [], sortOrder: sortOrder != null ? sortOrder : 0 }));
+        const data = await getRatesKeys();
         res.json({ data });
     } catch (err) {
         next(err);
@@ -525,7 +507,7 @@ router.get('/currencies', async (req, res, next) => {
 });
 
 // POST /api/rates/currencies — افزودن ارز
-router.post('/currencies', requirePlatformPanel, async (req, res, next) => {
+router.post('/currencies', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.body.key || '').trim().toLowerCase();
@@ -534,7 +516,7 @@ router.post('/currencies', requirePlatformPanel, async (req, res, next) => {
         if (typeof apiKeys === 'string') apiKeys = apiKeys.split(/[\s,،]+/).map(s => s.trim()).filter(Boolean);
         if (!Array.isArray(apiKeys)) apiKeys = [key + '_sell', key + '_buy'];
         if (!key) return res.status(400).json({ error: 'کلید ارز الزامی است' });
-        const exists = await RateCurrency.findByPk(key);
+        const exists = await RateCurrency.findOne({ where: { key } });
         if (exists) return res.status(400).json({ error: 'این ارز قبلاً ثبت شده است' });
         const maxOrder = await RateCurrency.max('sortOrder');
         await RateCurrency.create({ key, label, apiKeys, sortOrder: (maxOrder != null ? maxOrder : 0) + 1 });
@@ -546,12 +528,12 @@ router.post('/currencies', requirePlatformPanel, async (req, res, next) => {
 });
 
 // PUT /api/rates/currencies/:key — ویرایش ارز
-router.put('/currencies/:key', requirePlatformPanel, async (req, res, next) => {
+router.put('/currencies/:key', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();
         if (!key) return res.status(400).json({ error: 'کلید ارز الزامی است' });
-        const rec = await RateCurrency.findByPk(key);
+        const rec = await RateCurrency.findOne({ where: { key } });
         if (!rec) return res.status(404).json({ error: 'ارز یافت نشد' });
         const updates = {};
         if (req.body.label !== undefined) updates.label = String(req.body.label).trim() || rec.label;
@@ -570,16 +552,16 @@ router.put('/currencies/:key', requirePlatformPanel, async (req, res, next) => {
 });
 
 // DELETE /api/rates/currencies/:key — حذف ارز
-router.delete('/currencies/:key', requirePlatformPanel, async (req, res, next) => {
+router.delete('/currencies/:key', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();
         if (!key) return res.status(400).json({ error: 'کلید ارز الزامی است' });
-        const rec = await RateCurrency.findByPk(key);
+        const rec = await RateCurrency.findOne({ where: { key } });
         if (!rec) return res.status(404).json({ error: 'ارز یافت نشد' });
         await rec.destroy();
         await RateAdjustment.destroy({ where: { currencyKey: key } });
-        const cfg = await TickerConfig.findByPk('default');
+        const cfg = await loadTickerConfig(TickerConfig);
         if (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys)) {
             const visibleKeys = cfg.visibleKeys.filter(k => k !== key);
             await cfg.update({ visibleKeys: visibleKeys.length > 0 ? visibleKeys : null });

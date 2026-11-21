@@ -173,7 +173,18 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     let mediaData = null;
     if (media && (media.url || media.filename)) {
         hasMedia = true;
-        const relPath = media.url || ('/uploads/' + media.filename);
+        const { tenantUploadUrl } = require('./tenantUploads');
+        const relPath =
+            media.url ||
+            tenantUploadUrl(media.filename) ||
+            null;
+        if (!relPath) {
+            return {
+                msg: null,
+                error: 'سازمان پنل برای پیوست مشخص نیست',
+                status: 400,
+            };
+        }
         if (relPath.startsWith('http')) {
             mediaUrl = relPath;
         } else {
@@ -288,7 +299,11 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         msgType === 'audio' || media?.sendAsVoice === true || media?.type === 'audio';
     const payload = { to: toPhone, message: waCaption };
     if (hasMedia && media && (media.url || media.filename)) {
-        const relPath = media.url || ('/uploads/' + media.filename);
+        const relPath = (mediaData && mediaData.url) || media.url || null;
+        if (!relPath) {
+            await msg.update({ status: 'failed' });
+            return { msg, error: 'سازمان پنل برای پیوست مشخص نیست', status: 400 };
+        }
         const uploadsDir = path.join(__dirname, '..', 'uploads');
         const relUnderUploads = String(relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').replace(/^\/+/, '');
         let readPath = resolveUploadFilePath(uploadsDir, relUnderUploads);
@@ -312,7 +327,10 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                             status: DELIVERY_FAILED_STATUS,
                         };
                     }
-                    const playbackRel = '/uploads/' + path.basename(readPath);
+                    const { publicUrlFromAbsolutePath } = require('./tenantUploads');
+                    const playbackRel =
+                        publicUrlFromAbsolutePath(readPath) ||
+                        '/uploads/' + path.basename(readPath);
                     const playbackMedia = {
                         url: playbackRel,
                         filename: converted.filename,

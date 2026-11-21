@@ -47,7 +47,12 @@ const SYMBOL_BUY_KEYS = {
 
 const GOLD_SYMBOLS_SET = new Set(['18ayar', 'geram18', '18', 'gold18', 'gold']);
 
-let alanChandCache = { at: 0, raw: null };
+const crypto = require('crypto');
+const alanChandCaches = new Map();
+
+function alanCacheId(apiKey) {
+    return crypto.createHash('sha256').update(String(apiKey || '')).digest('hex').slice(0, 16);
+}
 
 function normalizeAlanChandApiKey(raw) {
     if (raw == null) return '';
@@ -212,19 +217,22 @@ function alanChandApiErrorMessage(status, body) {
     return detail || 'اتصال به API الان چند ناموفق بود.';
 }
 
-function getAlanChandCache() {
-    if (alanChandCache.raw && Date.now() - alanChandCache.at < ALANCHAND_CACHE_TTL_MS) {
-        return alanChandCache.raw;
-    }
+function getAlanChandCache(apiKey) {
+    const slot = alanChandCaches.get(alanCacheId(apiKey));
+    if (slot && slot.raw && Date.now() - slot.at < ALANCHAND_CACHE_TTL_MS) return slot.raw;
     return null;
 }
 
-function setAlanChandCache(raw) {
-    alanChandCache = { at: Date.now(), raw: raw && typeof raw === 'object' ? raw : null };
+function setAlanChandCache(raw, apiKey) {
+    alanChandCaches.set(alanCacheId(apiKey), {
+        at: Date.now(),
+        raw: raw && typeof raw === 'object' ? raw : null,
+    });
 }
 
-function clearAlanChandCache() {
-    alanChandCache = { at: 0, raw: null };
+function clearAlanChandCache(apiKey) {
+    if (apiKey) alanChandCaches.delete(alanCacheId(apiKey));
+    else alanChandCaches.clear();
 }
 
 async function fetchAlanChandLatest(apiKey, opts) {
@@ -240,7 +248,7 @@ async function fetchAlanChandLatest(apiKey, opts) {
 }
 
 async function fetchRawAlanChand(apiKey) {
-    const cached = getAlanChandCache();
+    const cached = getAlanChandCache(apiKey);
     if (cached) return { raw: cached, fromCache: true, ok: true };
 
     const key = normalizeAlanChandApiKey(apiKey);
@@ -258,7 +266,7 @@ async function fetchRawAlanChand(apiKey) {
     }
 
     if (Object.keys(merged).length > 0) {
-        setAlanChandCache(merged);
+        setAlanChandCache(merged, key);
         return { raw: merged, fromCache: false, ok: true, status: 200 };
     }
 

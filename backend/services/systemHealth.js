@@ -6,6 +6,7 @@ const path = require('path');
 const { sequelize, Conversation, Message, Customer, User } = require('../models');
 const { Op } = require('sequelize');
 const { gatewayGet, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+const { isCloudAppSecretConfigured } = require('../lib/cloudAppSecret');
 
 const startedAt = Date.now();
 
@@ -67,73 +68,131 @@ function checkRabbit(getRabbitChannel) {
     };
 }
 
+function missingAppSecretResult(gateway) {
+    return {
+        status: 'degraded',
+        channel: 'cloud',
+        whatsapp: false,
+        usable: false,
+        detail: 'WHATSAPP_CLOUD_APP_SECRET is not configured',
+        error: null,
+        phase: gateway && gateway.phase ? gateway.phase : null,
+        number: gateway && gateway.number ? gateway.number : null,
+        pushname: gateway && gateway.pushname ? gateway.pushname : null,
+    };
+}
+
+/**
+ * کانال مؤثر واتساپ برای /health.
+ * Cloud آماده (توکن + Phone ID + App Secret) در حالت cloud و cloud_first کافی است
+ * و QR بودن Gateway پشتیبان، کل سیستم را خراب نمی‌کند.
+ * اگر Cloud تنظیم شده ولی App Secret نیست و Gateway هم وصل نیست، علت همان Secret است.
+ * @returns {object|null} null یعنی باید وضعیت Gateway پرسیده شود
+ */
+function resolveWhatsappChannel({ mode, cloudConfigured, appSecretSet, gateway }) {
+    const m = mode || 'cloud_first';
+    const cloudReady = !!(cloudConfigured && appSecretSet);
+    if ((m === 'cloud' || m === 'cloud_first') && cloudReady) {
+        return {
+            status: 'ok',
+            channel: 'cloud',
+            whatsapp: true,
+            usable: true,
+            detail: 'Cloud API',
+            error: null,
+        };
+    }
+    if (m === 'cloud' && cloudConfigured && !appSecretSet) {
+        return missingAppSecretResult(gateway);
+    }
+    if (!gateway) return null;
+    if (m === 'cloud_first' && cloudConfigured && !appSecretSet && !gateway.ready) {
+        return missingAppSecretResult(gateway);
+    }
+    if (gateway.unreachable) {
+        return {
+            status: 'error',
+            channel: 'gateway',
+            whatsapp: false,
+            usable: false,
+            detail: 'Gateway unreachable',
+            error: gateway.error || 'unreachable',
+            phase: gateway.phase || null,
+        };
+    }
+    const ready = !!gateway.ready;
+    return {
+        status: ready ? 'ok' : gateway.status === 'starting' ? 'starting' : 'degraded',
+        channel: 'gateway',
+        whatsapp: ready,
+        detail: gateway.detail || gateway.status || (ready ? 'ready' : 'not_ready'),
+        number: gateway.number || null,
+        pushname: gateway.pushname || null,
+        phase: gateway.phase || null,
+        usable: gateway.usable != null ? !!gateway.usable : ready,
+        error: null,
+    };
+}
+
 async function checkWhatsappGateway() {
     counters.gatewayStatusChecks += 1;
     const t0 = Date.now();
     try {
         const cfg = await getWhatsappConnectionConfig();
-        const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+        const cloudOk = !!(cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId);
         const mode = cfg.connectionMode || 'cloud_first';
+        const appSecretSet = isCloudAppSecretConfigured();
         const base = {
             mode,
             cloudConfigured: !!cloudOk,
             gatewayEnabled: cfg.gatewayEnabled !== false,
             latencyMs: 0,
         };
-
-        if ((mode === 'cloud' || mode === 'cloud_first') && cloudOk && mode === 'cloud') {
-            return {
-                ...base,
-                status: 'ok',
-                channel: 'cloud',
-                whatsapp: true,
-                detail: 'Cloud API',
-                latencyMs: Date.now() - t0,
-            };
-        }
+        const early = resolveWhatsappChannel({
+            mode,
+            cloudConfigured: cloudOk,
+            appSecretSet,
+            gateway: null,
+        });
+        if (early) return { ...base, ...early, latencyMs: Date.now() - t0 };
 
         try {
             const r = await gatewayGet('/api/status', { timeout: 8000 });
             const data = r.data || {};
             const ready = !!(data.whatsapp || data.status === 'ready' || data.usable);
-            base.latencyMs = Date.now() - t0;
             if (!ready) counters.gatewayStatusFailures += 1;
-            return {
-                ...base,
-                status: ready ? 'ok' : data.status === 'starting' ? 'starting' : 'degraded',
-                channel: 'gateway',
-                whatsapp: ready,
-                detail: data.status || (ready ? 'ready' : 'not_ready'),
-                number: data.number || null,
-                pushname: data.pushname || null,
-                phase: data.phase || null,
-                // اگر Gateway فیلد usable نفرستد، از whatsapp/status استفاده کن
-                usable: data.usable != null ? !!data.usable : ready,
-            };
+            const decided = resolveWhatsappChannel({
+                mode,
+                cloudConfigured: cloudOk,
+                appSecretSet,
+                gateway: {
+                    ready,
+                    status: data.status,
+                    phase: data.phase || null,
+                    number: data.number || null,
+                    pushname: data.pushname || null,
+                    usable: data.usable != null ? !!data.usable : ready,
+                    detail: data.status || (ready ? 'ready' : 'not_ready'),
+                    unreachable: false,
+                },
+            });
+            return { ...base, ...decided, latencyMs: Date.now() - t0 };
         } catch (gwErr) {
             counters.gatewayStatusFailures += 1;
-            base.latencyMs = Date.now() - t0;
-            if (cloudOk && mode === 'cloud_first') {
-                return {
-                    ...base,
-                    status: 'degraded',
-                    channel: 'cloud_fallback_available',
-                    whatsapp: false,
-                    detail: 'Gateway unreachable; Cloud may still send',
-                    error: gwErr.code || gwErr.message || 'gateway_unreachable',
-                };
-            }
-            return {
-                ...base,
-                status: 'error',
-                channel: 'gateway',
-                whatsapp: false,
-                detail: 'Gateway unreachable',
-                error:
-                    gwErr.response?.status === 401
-                        ? 'auth_failed'
-                        : gwErr.code || gwErr.message || 'unreachable',
-            };
+            const decided = resolveWhatsappChannel({
+                mode,
+                cloudConfigured: cloudOk,
+                appSecretSet,
+                gateway: {
+                    ready: false,
+                    unreachable: true,
+                    error:
+                        gwErr.response?.status === 401
+                            ? 'auth_failed'
+                            : gwErr.code || gwErr.message || 'unreachable',
+                },
+            });
+            return { ...base, ...decided, latencyMs: Date.now() - t0 };
         }
     } catch (e) {
         counters.gatewayStatusFailures += 1;
@@ -349,4 +408,5 @@ module.exports = {
     recordHttpRequest,
     getCounters,
     checkWhatsappGateway,
+    resolveWhatsappChannel,
 };

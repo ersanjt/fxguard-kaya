@@ -6,6 +6,7 @@ const fs = require('fs').promises;
 const { FileTemplate, User } = require('../models');
 const logger = require('../config/logger');
 const { isValidUUID } = require('../lib/validation');
+const { ensureTenantUploadDir, tenantUploadUrl } = require('../lib/tenantUploads');
 
 function safeUploadBasename(originalName) {
     const ext = path.extname(originalName || '').slice(0, 20);
@@ -21,6 +22,11 @@ function safeUploadBasename(originalName) {
 function publicFileTemplateUrl(filepathOrName) {
     const fname = path.basename(filepathOrName || '');
     if (!fname) return null;
+    const scoped = tenantUploadUrl(fname, 'file-templates');
+    if (scoped) {
+        const i = scoped.lastIndexOf('/');
+        return scoped.slice(0, i + 1) + encodeURIComponent(fname);
+    }
     return '/uploads/file-templates/' + encodeURIComponent(fname);
 }
 
@@ -35,10 +41,8 @@ function toPublicFileTemplate(row) {
 // تنظیمات multer برای آپلود فایل
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
-        const uploadDir = path.join(__dirname, '../uploads/file-templates');
         try {
-            await fs.mkdir(uploadDir, { recursive: true });
-            cb(null, uploadDir);
+            cb(null, ensureTenantUploadDir('file-templates'));
         } catch (err) {
             cb(err);
         }

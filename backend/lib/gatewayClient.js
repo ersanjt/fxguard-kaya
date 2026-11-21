@@ -21,6 +21,13 @@ function getGatewayHeadersFromConfig(cfg) {
     const headers = { 'Content-Type': 'application/json' };
     const secret = (cfg?.gatewayApiSecret || '').trim();
     if (secret) headers['X-Gateway-Secret'] = secret;
+    try {
+        const { getCurrentTenant } = require('./tenantContext');
+        const tenant = getCurrentTenant();
+        if (tenant && tenant.slug) headers['x-tenant-slug'] = String(tenant.slug);
+    } catch (_) {
+        /* زمینهٔ سازمان نیست */
+    }
     return headers;
 }
 

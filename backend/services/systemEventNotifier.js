@@ -2,10 +2,15 @@ const { getPanelSettings, getPanelAlertConfig } = require('./config/panelSetting
 const telegramService = require('./telegramService');
 const logger = require('../config/logger');
 const { evaluateSystemEventTelegram, shouldSkipTelegramDedupe } = require('./incidentTelegramPolicy');
+const { getPanelSettingsKey, getCurrentTenantId } = require('../lib/tenantContext');
 
 const CACHE_TTL_MS = 10000;
-let cachedConfig = null;
-let cachedAt = 0;
+/** کش جدا برای هر سازمان — هرگز تنظیمات تلگرام شرکت دیگر را برنگرداند */
+const _cfgByTenant = new Map();
+
+function configCacheKey() {
+    return String(getPanelSettingsKey() || getCurrentTenantId() || '__none__');
+}
 
 /** Legacy “notify all” gate for non-critical operational chatter (mostly unused after incident policy). */
 function isCategoryEnabled(cfg, category) {
@@ -33,11 +38,13 @@ function isTelegramCategoryAllowed(cfg, category, decision) {
 }
 
 async function getConfig() {
+    const key = configCacheKey();
     const now = Date.now();
-    if (cachedConfig && (now - cachedAt) < CACHE_TTL_MS) return cachedConfig;
+    const hit = _cfgByTenant.get(key);
+    if (hit && now - hit.at < CACHE_TTL_MS) return hit.cfg;
     const settings = await getPanelSettings();
     const alertConfig = getPanelAlertConfig(settings);
-    cachedConfig = {
+    const cfg = {
         ...alertConfig,
         telegramNotifyAllEvents: settings.telegramNotifyAllEvents === true,
         telegramNotifyApiRequests: settings.telegramNotifyApiRequests === true,
@@ -45,10 +52,10 @@ async function getConfig() {
         telegramNotifySocketEvents: settings.telegramNotifySocketEvents === true,
         telegramNotifyIncomingMessages: settings.telegramNotifyIncomingMessages === true,
         telegramNotifySystemEvents: settings.telegramNotifySystemEvents !== false,
-        telegramNotifyErrorEvents: settings.telegramNotifyErrorEvents !== false
+        telegramNotifyErrorEvents: settings.telegramNotifyErrorEvents !== false,
     };
-    cachedAt = now;
-    return cachedConfig;
+    _cfgByTenant.set(key, { cfg, at: now });
+    return cfg;
 }
 
 async function notifySystemEvent(category, title, payload = {}) {
@@ -66,13 +73,13 @@ async function notifySystemEvent(category, title, payload = {}) {
                     bodyText: decision.text,
                     correlationId: decision.correlationId || null,
                     dedupeKey: decision.mainAdminDedupeKey || null,
-                    dedupeWindowMs: decision.mainAdminDedupeWindowMs
+                    dedupeWindowMs: decision.mainAdminDedupeWindowMs,
                 });
             } catch (e) {
                 logger.warn('main admin incident notify failed', {
                     error: e.message || String(e),
                     category,
-                    title
+                    title,
                 });
             }
         }
@@ -81,7 +88,7 @@ async function notifySystemEvent(category, title, payload = {}) {
         const tgConfig = {
             botToken: cfg.telegramBotToken,
             chatIds: cfg.telegramChatIds,
-            timeoutMs: cfg.telegramTimeoutMs
+            timeoutMs: cfg.telegramTimeoutMs,
         };
         if (!telegramService.isEnabled(tgConfig)) {
             return { ok: true, skipped: true, reason: 'telegram_not_configured' };
@@ -110,5 +117,5 @@ async function notifySystemEvent(category, title, payload = {}) {
 }
 
 module.exports = {
-    notifySystemEvent
+    notifySystemEvent,
 };

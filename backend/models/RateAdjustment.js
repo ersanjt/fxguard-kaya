@@ -7,11 +7,14 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
         currencyKey: {
             type: DataTypes.STRING(20),
             allowNull: false,
-            unique: true,
-            comment: 'کلید ارز مثلاً usd, eur, gold'
+            comment: 'کلید ارز مثلاً usd, eur, gold — یکتا در هر سازمان'
         },
         adjustmentType: {
             type: DataTypes.ENUM('none', 'fixed', 'delta_toman', 'percent'),
@@ -25,7 +28,10 @@ module.exports = (sequelize) => {
         }
     }, {
         timestamps: true,
-        indexes: [{ unique: true, fields: ['currencyKey'] }]
+        indexes: [
+            { unique: true, fields: ['tenantId', 'currencyKey'] },
+            { fields: ['tenantId'] },
+        ]
     });
 
     return RateAdjustment;

@@ -15,10 +15,19 @@ const DEFAULT_CONVERSATION_ENDED = 'گفتگوی شما با کارشناس {{na
 
 let rabbitChannel = null;
 
+async function loadWhatsappConfigRow() {
+    const key = getPanelSettingsKey();
+    if (!key) return null;
+    return WhatsappConfig.findByPk(key);
+}
+
 async function isAutoAssignmentMessagesEnabled() {
     try {
-        const cfg = await WhatsappConfig.findByPk(getPanelSettingsKey(), { attributes: ['autoAssignmentMessagesEnabled'] });
-        return !cfg || cfg.autoAssignmentMessagesEnabled !== false;
+        const cfg = await loadWhatsappConfigRow();
+        if (cfg) {
+            return cfg.autoAssignmentMessagesEnabled !== false;
+        }
+        return true;
     } catch (err) {
         if (/no such column|SQLITE_ERROR|column.*does not exist/i.test(err.message)) return true;
         throw err;
@@ -82,7 +91,7 @@ async function sendDeptAssignedMessage(conversation, department) {
         const deptName = department && department.name ? department.name : 'پشتیبانی';
         let template = DEFAULT_DEPT_ASSIGNED;
         try {
-            const cfg = await WhatsappConfig.findByPk(getPanelSettingsKey()).catch(() => null);
+            const cfg = await loadWhatsappConfigRow().catch(() => null);
             if (cfg && cfg.deptAssignedMessage && String(cfg.deptAssignedMessage).trim()) {
                 template = String(cfg.deptAssignedMessage).trim();
             }
@@ -126,7 +135,7 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
         const deptName = department && department.name ? department.name : 'پشتیبانی';
         let template = DEFAULT_EMPLOYEE_INTRO;
         try {
-            const cfg = await WhatsappConfig.findByPk(getPanelSettingsKey()).catch(() => null);
+            const cfg = await loadWhatsappConfigRow().catch(() => null);
             if (cfg && cfg.employeeIntroMessage && String(cfg.employeeIntroMessage).trim()) {
                 template = String(cfg.employeeIntroMessage).trim();
             }
@@ -178,7 +187,7 @@ async function sendConversationEndedMessage(conversationId) {
 
         let template = DEFAULT_CONVERSATION_ENDED;
         try {
-            const cfg = await WhatsappConfig.findByPk(getPanelSettingsKey()).catch(() => null);
+            const cfg = await loadWhatsappConfigRow().catch(() => null);
             if (cfg && cfg.conversationEndedMessage && String(cfg.conversationEndedMessage).trim()) {
                 template = String(cfg.conversationEndedMessage).trim();
             }

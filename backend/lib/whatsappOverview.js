@@ -6,6 +6,7 @@
  * @see     docs/META-TECH-PROVIDER-PLAN-FA.md
  */
 const { getWhatsappConnectionConfig, isCloudApiConfigured } = require('./whatsappConnectionLoader');
+const { isCloudAppSecretConfigured } = require('./cloudAppSecret');
 const { gatewayGet } = require('./gatewayClient');
 const { getPublicEmbeddedSignupConfig } = require('./metaEmbeddedSignup');
 const { getPanelSettingsKey } = require('./tenantContext');
@@ -68,7 +69,7 @@ function resolveActiveChannel(mode, cloudReady, gatewayReady) {
 async function buildWhatsappOverview(req) {
     const cfg = await getWhatsappConnectionConfig();
     const cloudConfigured = await isCloudApiConfigured();
-    const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
+    const appSecretSet = isCloudAppSecretConfigured();
     const publicUrl = getPublicBaseUrl(req);
     const webhookUrl = getCloudWebhookUrl(req);
 

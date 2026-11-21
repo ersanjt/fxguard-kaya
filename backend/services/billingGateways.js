@@ -64,7 +64,7 @@ async function recordGatewayPayment(paid, logger, opts) {
                     consentVersion: paid.consentVersion || null,
                     consentAt: paid.consentAt || null,
                 },
-                { transaction }
+                { transaction, skipTenantScope: true }
             );
             if (!tenant) return { ok: true, activated: false, reason: 'tenant_not_found' };
 
@@ -76,7 +76,11 @@ async function recordGatewayPayment(paid, logger, opts) {
                 updates.status = 'active';
                 await BillingPayment.update(
                     { periodEnd: paidUntil },
-                    { where: { provider: paid.provider, providerPaymentId: paid.paymentId }, transaction }
+                    {
+                        where: { provider: paid.provider, providerPaymentId: paid.paymentId },
+                        transaction,
+                        skipTenantScope: true,
+                    }
                 );
             } else {
                 // اشتراک خودکار: پایان دوره را webhookهای Paddle مدیریت می‌کنند

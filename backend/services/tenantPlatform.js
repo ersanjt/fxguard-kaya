@@ -25,6 +25,9 @@ async function ensurePlatformTenant(logger) {
         CashBox,
         BankAccount,
         Transaction,
+        AutoResponse,
+        WhatsappConnection,
+        BillingPayment,
     } = require('../models');
 
     const [row] = await Tenant.findOrCreate({
@@ -64,6 +67,9 @@ async function ensurePlatformTenant(logger) {
         { model: CashBox, name: 'CashBoxes' },
         { model: BankAccount, name: 'BankAccounts' },
         { model: Transaction, name: 'Transactions' },
+        { model: AutoResponse, name: 'AutoResponses' },
+        { model: WhatsappConnection, name: 'whatsapp_connections' },
+        { model: BillingPayment, name: 'billing_payments' },
     ];
 
     for (const t of tables) {
@@ -81,6 +87,7 @@ async function ensurePlatformTenant(logger) {
     }
 
     await backfillOwnedTenantIds(User.sequelize, row.id, logger);
+    await backfillPerTenantRateRows(User.sequelize, row.id, logger);
 
     return shaped;
 }
@@ -191,6 +198,8 @@ async function addTenantIdColumns(sequelize, logger) {
         'whatsapp_numbers',
         'whatsapp_connections',
         'notification_preferences',
+        'AutoResponses',
+        'billing_payments',
     ];
     for (const table of tables) {
         try {
@@ -224,6 +233,139 @@ async function addTenantIdColumns(sequelize, logger) {
     // این ستون‌ها حالا در هر سازمان یکتا هستند (tenantId + ستون)؛ قید سراسری قدیمی باید برداشته شود
     await dropGlobalColumnUnique(sequelize, 'Tags', 'name', logger);
     await dropGlobalColumnUnique(sequelize, 'whatsapp_numbers', 'slotKey', logger);
+    await migratePerTenantRateKeys(sequelize, logger);
+}
+
+async function migratePerTenantRateKeys(sequelize, logger) {
+    const qi = sequelize.getQueryInterface();
+    const { DataTypes } = require('sequelize');
+    let currencies = null;
+    try {
+        currencies = await qi.describeTable('rate_currencies');
+    } catch (_) {
+        currencies = null;
+    }
+    if (currencies && !currencies.id) {
+        if (sequelize.getDialect() === 'postgres') await migratePostgresRateCurrencies(sequelize, logger);
+        else if (sequelize.getDialect() === 'sqlite') await migrateSqliteRateCurrencies(sequelize, logger);
+    }
+    if (currencies) await dropGlobalColumnUnique(sequelize, 'rate_currencies', 'key', logger);
+
+    let adjustments = null;
+    try {
+        adjustments = await qi.describeTable('RateAdjustments');
+    } catch (_) {
+        adjustments = null;
+    }
+    if (adjustments && !adjustments.tenantId) {
+        await qi.addColumn('RateAdjustments', 'tenantId', { type: DataTypes.UUID, allowNull: true }).catch(() => {});
+    }
+    if (adjustments) await dropGlobalColumnUnique(sequelize, 'RateAdjustments', 'currencyKey', logger);
+
+    let ticker = null;
+    try {
+        ticker = await qi.describeTable('ticker_configs');
+    } catch (_) {
+        ticker = null;
+    }
+    if (ticker && !ticker.tenantId) {
+        await qi.addColumn('ticker_configs', 'tenantId', { type: DataTypes.UUID, allowNull: true }).catch(() => {});
+    }
+}
+
+async function migratePostgresRateCurrencies(sequelize, logger) {
+    const { QueryTypes } = require('sequelize');
+    await sequelize.query('ALTER TABLE rate_currencies ADD COLUMN IF NOT EXISTS id UUID');
+    await sequelize.query('ALTER TABLE rate_currencies ADD COLUMN IF NOT EXISTS "tenantId" UUID');
+    await sequelize.query("UPDATE rate_currencies SET id = md5(random()::text || key)::uuid WHERE id IS NULL");
+    const pks = await sequelize.query(
+        "SELECT conname AS name FROM pg_constraint WHERE conrelid = 'rate_currencies'::regclass AND contype = 'p'",
+        { type: QueryTypes.SELECT }
+    );
+    for (const pk of pks) {
+        await sequelize.query('ALTER TABLE rate_currencies DROP CONSTRAINT IF EXISTS "' + pk.name + '"');
+    }
+    await sequelize.query('ALTER TABLE rate_currencies ALTER COLUMN id SET NOT NULL');
+    await sequelize.query('ALTER TABLE rate_currencies ADD PRIMARY KEY (id)');
+    if (logger && logger.info) logger.info('✅ rate_currencies: primary key is now per-row id');
+}
+
+async function migrateSqliteRateCurrencies(sequelize, logger) {
+    const crypto = require('crypto');
+    const { QueryTypes } = require('sequelize');
+    const rows = await sequelize.query('SELECT * FROM rate_currencies', { type: QueryTypes.SELECT });
+    await sequelize.query('PRAGMA foreign_keys = OFF');
+    try {
+        await sequelize.transaction(async (transaction) => {
+            await sequelize.query('DROP TABLE IF EXISTS rate_currencies__new', { transaction });
+            await sequelize.query(
+                'CREATE TABLE rate_currencies__new (' +
+                    'id TEXT PRIMARY KEY, tenantId TEXT, key VARCHAR(32) NOT NULL, label VARCHAR(120) NOT NULL DEFAULT \'\', ' +
+                    'apiKeys JSON NOT NULL, sortOrder INTEGER NOT NULL DEFAULT 0, createdAt DATETIME, updatedAt DATETIME)',
+                { transaction }
+            );
+            for (const row of rows) {
+                const apiKeys = row.apiKeys == null ? '[]' : typeof row.apiKeys === 'string' ? row.apiKeys : JSON.stringify(row.apiKeys);
+                await sequelize.query(
+                    'INSERT INTO rate_currencies__new (id, tenantId, key, label, apiKeys, sortOrder, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    {
+                        replacements: [
+                            crypto.randomUUID(),
+                            row.tenantId || null,
+                            row.key,
+                            row.label || row.key,
+                            apiKeys,
+                            row.sortOrder || 0,
+                            row.createdAt || null,
+                            row.updatedAt || null,
+                        ],
+                        transaction,
+                    }
+                );
+            }
+            await sequelize.query('DROP TABLE rate_currencies', { transaction });
+            await sequelize.query('ALTER TABLE rate_currencies__new RENAME TO rate_currencies', { transaction });
+        });
+    } finally {
+        await sequelize.query('PRAGMA foreign_keys = ON');
+    }
+    if (logger && logger.info) logger.info('✅ rate_currencies: rebuilt with per-company key');
+}
+
+async function backfillPerTenantRateRows(sequelize, platformId, logger) {
+    for (const name of ['RateCurrency', 'RateAdjustment']) {
+        const model = sequelize.models[name];
+        if (!model) continue;
+        try {
+            await model.update({ tenantId: platformId }, { where: { tenantId: null }, skipTenantScope: true });
+        } catch (err) {
+            if (logger && logger.warn) logger.warn(name + ' tenant backfill', { error: err.message });
+        }
+    }
+    const ticker = sequelize.models.TickerConfig;
+    if (ticker) {
+        try {
+            await ticker.update(
+                { tenantId: platformId },
+                { where: { id: 'default', tenantId: null }, skipTenantScope: true }
+            );
+        } catch (err) {
+            if (logger && logger.warn) logger.warn('TickerConfig tenant backfill', { error: err.message });
+        }
+    }
+    try {
+        const qg = sequelize.getQueryInterface().queryGenerator;
+        const table = qg.quoteTable('whatsapp_connections');
+        const tenants = qg.quoteTable('tenants');
+        const id = qg.quoteIdentifier('id');
+        const panelKey = qg.quoteIdentifier('panelKey');
+        const tenantId = qg.quoteIdentifier('tenantId');
+        await sequelize.query(
+            `UPDATE ${table} SET ${tenantId} = (SELECT t.${id} FROM ${tenants} t WHERE t.${panelKey} = ${table}.${id} LIMIT 1) WHERE ${tenantId} IS NULL`
+        );
+    } catch (err) {
+        if (logger && logger.warn) logger.warn('whatsapp_connections tenant backfill', { error: err.message });
+    }
 }
 
 async function dropGlobalColumnUnique(sequelize, table, column, logger) {
@@ -338,4 +480,6 @@ module.exports = {
     backfillOwnedTenantIds,
     ensureTenantTableColumns,
     dropGlobalColumnUnique,
+    migratePerTenantRateKeys,
+    backfillPerTenantRateRows,
 };

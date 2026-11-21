@@ -12,7 +12,7 @@ const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 const { asCallId, callUserRoom, normalizeCallSignal, canRelayCallSignal } = require('../lib/internalCallSignaling');
 const { countUserSockets } = require('../lib/staffPresence');
-const { bindSocketTenant, tenantRoom } = require('../lib/tenantContext');
+const { bindSocketTenant, tenantRoom, departmentRoom } = require('../lib/tenantContext');
 const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
@@ -57,7 +57,10 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
         logger.info(`🔌 User connected: ${socket.userId}`);
 
         if (socket.userId) socket.join('user_' + String(socket.userId));
-        if (socket.departmentId) socket.join(`department_${socket.departmentId}`);
+        if (socket.departmentId) {
+            const dRoom = departmentRoom(socket.tenantId, socket.departmentId);
+            if (dRoom) socket.join(dRoom);
+        }
         // room سازمانی — رویدادهای کل پنل (escalation و …) فقط به همین سازمان
         socket.join(tenantRoom(socket.tenantId));
 
@@ -171,7 +174,10 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 // Emit only to users in this conversation's room, not all clients
                 io.to(`conversation_${conversation.id}`).emit('message_sent', { conversationId: conversation.id, message: newMessage });
                 if (conversation.departmentId) {
-                    io.to(`department_${conversation.departmentId}`).emit('message_sent', { conversationId: conversation.id, message: newMessage });
+                    const dRoom = departmentRoom(conversation.tenantId, conversation.departmentId);
+                    if (dRoom) {
+                        io.to(dRoom).emit('message_sent', { conversationId: conversation.id, message: newMessage });
+                    }
                 }
                 logger.info(`📤 Message sent by user ${socket.userId}`);
             } catch (error) {

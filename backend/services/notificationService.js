@@ -3,8 +3,8 @@
  */
 
 const emailService = require('./emailService');
-const { NotificationPreference, User, PanelSetting } = require('../models');
-const { getPanelEmailConfig } = require('./panelSettingsLoader');
+const { NotificationPreference, User } = require('../models');
+const { getPanelEmailConfig, getPanelSettings } = require('./panelSettingsLoader');
 const logger = require('../config/logger');
 
 /**
@@ -29,7 +29,7 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
     const [users, prefs, settings] = await Promise.all([
         User.findAll({ where: { id: recipientIds }, attributes: ['id', 'email', 'name'] }),
         NotificationPreference.findAll({ where: { userId: recipientIds } }),
-        PanelSetting.findByPk('default')
+        getPanelSettings()
     ]);
     const userMap = Object.fromEntries(users.map(u => [u.id, u]));
     const prefMap = Object.fromEntries(prefs.map(p => [p.userId, p]));
@@ -147,7 +147,7 @@ async function notifyTaskAssigned(task, io) {
         // ایمیل
         if (pref && pref.taskAssignedEmailEnabled && user.email) {
             try {
-                const settings = await PanelSetting.findByPk('default');
+                const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
                 const esc = emailService.escHtml;
                 const title = `New task assigned: ${esc(task.title)}`;
@@ -231,7 +231,7 @@ async function notifyTicketAssigned(ticket, io) {
         // ایمیل با template جدید
         if (pref && pref.ticketAssignedEmailEnabled && user.email) {
             try {
-                const settings = await PanelSetting.findByPk('default');
+                const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
                 const assignedByUser = ticket.creator ? ticket.creator.name || ticket.creator.email : null;
                 await emailService.sendTicketAssigned(user, ticket, assignedByUser, emailConfig && emailConfig.host ? emailConfig : null);
@@ -276,7 +276,7 @@ async function notifyTicketReply(ticket, reply, io) {
     const [users, prefs, settings] = await Promise.all([
         User.findAll({ where: { id: recipientIds }, attributes: ['id', 'email', 'name'] }),
         NotificationPreference.findAll({ where: { userId: recipientIds } }),
-        PanelSetting.findByPk('default')
+        getPanelSettings()
     ]);
     const userMap = Object.fromEntries(users.map(u => [u.id, u]));
     const prefMap = Object.fromEntries(prefs.map(p => [p.userId, p]));

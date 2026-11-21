@@ -14,13 +14,17 @@ const { isValidUUID, parsePagination, safeString } = require('../lib/validation'
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
 const { getCustomerAvatar } = require('./customerAvatar');
 const { redactCustomerPhone } = require('../lib/customerPhoneVisibility');
+const { ensureTenantUploadDir, tenantUploadUrl } = require('../lib/tenantUploads');
 
-// آپلود اسناد مشتری
+// آپلود اسناد مشتری — داخل پوشهٔ همان سازمان
 const docStorage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const dir = path.join(__dirname, '../uploads/customers', req.params.id || 'tmp');
-        fs.mkdirSync(dir, { recursive: true });
-        cb(null, dir);
+        try {
+            const id = req.params.id || 'tmp';
+            cb(null, ensureTenantUploadDir(path.join('customers', id)));
+        } catch (e) {
+            cb(e);
+        }
     },
     filename: (req, file, cb) => {
         const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
@@ -694,7 +698,10 @@ router.post('/:id/documents', docUpload.single('file'), async (req, res, next) =
         else if (mime.startsWith('audio/')) fileType = 'audio';
         else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fileType = 'document';
 
-        const filePath = '/uploads/customers/' + req.params.id + '/' + req.file.filename;
+        const filePath = tenantUploadUrl(req.file.filename, path.join('customers', req.params.id));
+        if (!filePath) {
+            return res.status(400).json({ error: 'سازمان پنل برای آپلود مشخص نیست', code: 'TENANT_UPLOAD_CONTEXT' });
+        }
         const doc = await CustomerDocument.create({
             customerId: req.params.id,
             title: req.body.title || req.file.originalname,

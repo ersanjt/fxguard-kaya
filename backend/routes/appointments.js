@@ -44,7 +44,6 @@ function emitChange(req, type, appointment) {
         const payload = { type, id: appointment.id, startAt: appointment.startAt, staffId: appointment.staffId, status: appointment.status };
         const room = tenantRoom(req.user && req.user.tenantId);
         if (room) io.to(room).emit('appointment:changed', payload);
-        else io.emit('appointment:changed', payload);
     } catch (_) {}
 }
 

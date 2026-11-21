@@ -2,7 +2,6 @@
  * پردازش پیام‌های ورودی واتساپ — خوش‌آمدگویی، auto-response، AI، تخصیص خودکار
  */
 const path = require('path');
-const fs = require('fs');
 const fsPromises = require('fs').promises;
 const axios = require('axios');
 const mongoose = require('mongoose');
@@ -19,6 +18,7 @@ const {
 } = models;
 const { Op } = require('sequelize');
 const { getPanelSettingsKey } = require('../lib/tenantContext');
+const { ensureTenantUploadDir, tenantUploadUrl } = require('../lib/tenantUploads');
 const {
     normalizePhone,
     getCustomerSendTarget,
@@ -49,11 +49,19 @@ const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
 const { inboxPreviewFromIncoming } = require('../lib/conversationPreview');
 const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
-const uploadsDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadsDir))
-    try {
-        fs.mkdirSync(uploadsDir, { recursive: true });
-    } catch (_) {}
+function mediaUploadDir() {
+    return ensureTenantUploadDir();
+}
+
+function mediaUploadUrl(fileName) {
+    const url = tenantUploadUrl(fileName);
+    if (!url) {
+        const err = new Error('سازمان پنل برای ذخیرهٔ رسانه مشخص نیست');
+        err.code = 'TENANT_UPLOAD_CONTEXT';
+        throw err;
+    }
+    return url;
+}
 
 function buildSafeUploadName(suggestedName, ext) {
     let stem = String(suggestedName || 'file')
@@ -73,7 +81,7 @@ async function normalizeVoiceUploadForPlayback(filePath, mimetype, filename, log
         const { ensureVoiceFormat } = require('../lib/audioConverter');
         const converted = await ensureVoiceFormat(filePath, mimetype, filename);
         return {
-            url: '/uploads/' + path.basename(converted.filePath),
+            url: mediaUploadUrl(path.basename(converted.filePath)),
             filename: converted.filename,
             mimetype: 'audio/ogg',
         };
@@ -97,8 +105,12 @@ function isVoiceLikeMedia(media, isPtt) {
     return mime.startsWith('audio/') || /\.(ogg|opus|oga|webm|m4a|mp3|wav|aac)$/i.test(name);
 }
 
-const AUTO_RESPONSE_CACHE_KEY = 'cache:autoresponse:active';
 const AUTO_RESPONSE_CACHE_TTL = 60;
+
+function autoResponseCacheKey() {
+    const { getCurrentTenantId } = require('../lib/tenantContext');
+    return 'cache:autoresponse:active:' + (getCurrentTenantId() || 'platform');
+}
 
 // پیشوند پیام AI به مشتری در واتساپ (ایموجی ربات به‌جای متن)
 const AI_MESSAGE_PREFIX = '🤖 ';
@@ -111,13 +123,19 @@ const WC_CACHE_TTL_MS = 30 * 1000;
 const AVATAR_LOOKUP_TTL_MS = 5 * 60 * 1000;
 const _avatarLookupCache = new Map();
 
+function avatarLookupCacheKey(phoneDigits) {
+    const { getCurrentTenantId } = require('../lib/tenantContext');
+    return (getCurrentTenantId() || 'platform') + ':' + phoneDigits;
+}
+
 async function tryFetchProfilePicFromGateway(phone, logger, extraIds) {
     const raw = String(phone || '').trim();
     const p = /@g\.us$/i.test(raw) ? raw : digitsOnlyChatPhone(raw);
     if (!p) return null;
     if (!/@g\.us$/i.test(p) && p.length < 8) return null;
     const now = Date.now();
-    const cached = _avatarLookupCache.get(p);
+    const cacheKey = avatarLookupCacheKey(p);
+    const cached = _avatarLookupCache.get(cacheKey);
     if (cached && now - cached.at < AVATAR_LOOKUP_TTL_MS) {
         return cached.url || null;
     }
@@ -142,13 +160,13 @@ async function tryFetchProfilePicFromGateway(phone, logger, extraIds) {
                     : '';
             if (url) break;
         }
-        _avatarLookupCache.set(p, {
+        _avatarLookupCache.set(cacheKey, {
             at: url ? now : now - AVATAR_LOOKUP_TTL_MS + 10000,
             url: url || null,
         });
         return url || null;
     } catch (err) {
-        _avatarLookupCache.set(p, { at: now - AVATAR_LOOKUP_TTL_MS + 10000, url: null });
+        _avatarLookupCache.set(cacheKey, { at: now - AVATAR_LOOKUP_TTL_MS + 10000, url: null });
         logger.warn('profile pic lookup failed', { phone: p.slice(-6), error: err?.message });
         return null;
     }
@@ -156,6 +174,7 @@ async function tryFetchProfilePicFromGateway(phone, logger, extraIds) {
 
 async function getCachedWhatsappConfig() {
     const key = getPanelSettingsKey();
+    if (!key) return null;
     const now = Date.now();
     const hit = _wcCache.get(key);
     if (hit && now - hit.at < WC_CACHE_TTL_MS) return hit.wc;
@@ -371,6 +390,7 @@ async function resolveIncomingMedia(media, logger) {
         }
         if (!ext) ext = '.bin';
         const safeName = buildSafeUploadName(suggestedName, ext);
+        const uploadsDir = mediaUploadDir();
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
         if (
@@ -381,7 +401,7 @@ async function resolveIncomingMedia(media, logger) {
         }
         await fsPromises.writeFile(filePath, buf);
         return {
-            url: '/uploads/' + safeName,
+            url: mediaUploadUrl(safeName),
             filename: media.filename || suggestedName,
             mimetype: media.mimetype || ct || null,
         };
@@ -418,6 +438,7 @@ async function resolveIncomingMediaFromBase64(media, logger, options = {}) {
         }
         if (!ext) ext = '.bin';
         const safeName = buildSafeUploadName(suggestedName, ext);
+        const uploadsDir = mediaUploadDir();
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
         if (
@@ -437,7 +458,7 @@ async function resolveIncomingMediaFromBase64(media, logger, options = {}) {
             if (normalized) return normalized;
         }
         return {
-            url: '/uploads/' + safeName,
+            url: mediaUploadUrl(safeName),
             filename: media.filename || suggestedName,
             mimetype: media.mimetype || ct || null,
         };
@@ -487,9 +508,10 @@ function matchesAutoResponseConditions(rule, conversation, now) {
 }
 
 async function getActiveAutoResponses(redisClient) {
+    const cacheKey = autoResponseCacheKey();
     try {
         if (redisClient && typeof redisClient.get === 'function') {
-            const cached = await redisClient.get(AUTO_RESPONSE_CACHE_KEY).catch(() => null);
+            const cached = await redisClient.get(cacheKey).catch(() => null);
             if (cached) return JSON.parse(cached);
         }
     } catch (_) {}
@@ -503,7 +525,7 @@ async function getActiveAutoResponses(redisClient) {
     try {
         if (redisClient && typeof redisClient.setEx === 'function') {
             await redisClient
-                .setEx(AUTO_RESPONSE_CACHE_KEY, AUTO_RESPONSE_CACHE_TTL, JSON.stringify(responses))
+                .setEx(cacheKey, AUTO_RESPONSE_CACHE_TTL, JSON.stringify(responses))
                 .catch(() => {});
         }
     } catch (_) {}
@@ -512,8 +534,10 @@ async function getActiveAutoResponses(redisClient) {
 
 async function sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger) {
     try {
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return;
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: getPanelSettingsKey() },
+            where: { id: panelKey },
             defaults: { welcomeMessage: null, welcomeEnabled: true },
         });
         if (!cfg.welcomeEnabled || !cfg.welcomeMessage || !String(cfg.welcomeMessage).trim())
@@ -783,7 +807,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         try {
             const { WhatsappConnection } = require('../models');
             const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
-            const row = await WhatsappConnection.findByPk(getPanelSettingsKey());
+            const panelKey = getPanelSettingsKey();
+            const row = panelKey ? await WhatsappConnection.findByPk(panelKey) : null;
             linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
             lockdownAt = row?.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
         } catch (_) {}

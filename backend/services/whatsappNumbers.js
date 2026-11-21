@@ -5,6 +5,7 @@ const { WhatsappNumber, WhatsappConnection } = require('../models');
 const { getWhatsappConnectionConfig, invalidateCache } = require('../lib/whatsappConnectionLoader');
 const {
     getPanelSettingsKey,
+    requirePanelSettingsKey,
     getCurrentTenant,
     getCurrentTenantId,
     getCachedPlatformTenant,
@@ -22,6 +23,29 @@ function invalidateNumbersCache() {
     invalidateCache();
 }
 
+async function loadOwnConnection() {
+    const key = getPanelSettingsKey();
+    if (!key) return null;
+    return WhatsappConnection.findByPk(key);
+}
+
+async function loadOrCreateOwnConnection(defaults) {
+    const key = requirePanelSettingsKey();
+    const tenantId = getCurrentTenantId() || null;
+    const [row, created] = await WhatsappConnection.findOrCreate({
+        where: { id: key },
+        defaults: Object.assign(
+            { connectionMode: 'cloud_first', tenantId },
+            defaults || {}
+        ),
+    });
+    if (!created && !row.tenantId && tenantId) {
+        row.tenantId = tenantId;
+        await row.save().catch(() => {});
+    }
+    return [row, created];
+}
+
 /** بدون context درخواست (کارهای پس‌زمینه) شماره‌های سکو؛ هرگز شماره‌های همهٔ سازمان‌ها. */
 function ownerTenantId() {
     const platform = getCachedPlatformTenant();
@@ -30,7 +54,13 @@ function ownerTenantId() {
 
 function ownWhere(where = {}) {
     const tenantId = ownerTenantId();
-    return tenantId ? { ...where, tenantId } : where;
+    if (!tenantId) {
+        const err = new Error('سازمان برای شماره‌های واتساپ مشخص نیست');
+        err.code = 'TENANT_REQUIRED';
+        err.status = 400;
+        throw err;
+    }
+    return { ...where, tenantId };
 }
 
 /** آدرس Gateway شمارهٔ سازمان را سرور تعیین می‌کند (Gateway اختصاصی خودش)، نه ورودی پنل. */
@@ -120,7 +150,7 @@ async function ensurePrimaryNumber() {
     const cfg = await getWhatsappConnectionConfig();
     let connRow = null;
     try {
-        connRow = await WhatsappConnection.findByPk(getPanelSettingsKey());
+        connRow = await loadOwnConnection();
     } catch (_) {}
 
     const defaults = {
@@ -213,7 +243,8 @@ async function syncPrimaryFromConnection(connRow) {
 
 async function listNumbers() {
     const now = Date.now();
-    const cacheKey = getPanelSettingsKey();
+    const cacheKey =
+        (ownerTenantId() || 'unknown') + ':' + (getPanelSettingsKey() || 'default');
     const hit = _numbersCache.get(cacheKey);
     if (hit && now - hit.ts < NUMBERS_TTL_MS) return hit.value;
 
@@ -232,7 +263,7 @@ async function listNumbers() {
     const list = rows.map((r) => assessReady(sanitizeNumberRow(r), baseCfg));
     let failoverEnabled = true;
     try {
-        const conn = await WhatsappConnection.findByPk(getPanelSettingsKey());
+        const conn = await loadOwnConnection();
         if (conn && conn.numberFailoverEnabled === false) failoverEnabled = false;
     } catch (_) {}
 
@@ -341,10 +372,7 @@ async function updateNumber(id, body = {}) {
     // Mirror primary edits back to WhatsappConnection
     if (row.slotKey === PRIMARY_SLOT) {
         try {
-            const [conn] = await WhatsappConnection.findOrCreate({
-                where: { id: getPanelSettingsKey() },
-                defaults: { connectionMode: 'cloud_first' },
-            });
+            const [conn] = await loadOrCreateOwnConnection({ connectionMode: 'cloud_first' });
             if (body.cloudAccessToken !== undefined && String(body.cloudAccessToken || '').trim()) {
                 conn.cloudAccessToken = row.cloudAccessToken;
             }
@@ -377,9 +405,9 @@ async function deleteNumber(id) {
 }
 
 async function setFailoverEnabled(enabled) {
-    const [conn] = await WhatsappConnection.findOrCreate({
-        where: { id: getPanelSettingsKey() },
-        defaults: { connectionMode: 'cloud_first', numberFailoverEnabled: true },
+    const [conn] = await loadOrCreateOwnConnection({
+        connectionMode: 'cloud_first',
+        numberFailoverEnabled: true,
     });
     conn.numberFailoverEnabled = !!enabled;
     await conn.save();
@@ -441,7 +469,7 @@ async function resolveOutboundNumberChain(opts = {}) {
     const baseCfg = await getWhatsappConnectionConfig();
     let failoverEnabled = true;
     try {
-        const conn = await WhatsappConnection.findByPk(getPanelSettingsKey());
+        const conn = await loadOwnConnection();
         if (conn && conn.numberFailoverEnabled === false) failoverEnabled = false;
     } catch (_) {}
 

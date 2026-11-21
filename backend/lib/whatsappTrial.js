@@ -83,9 +83,10 @@ function applyExpired(row, now) {
 
 async function loadTrialRow() {
     const { WhatsappConfig } = require('../models');
-    const { getPanelSettingsKey } = require('./tenantContext');
+    const { requirePanelSettingsKey } = require('./tenantContext');
+    const panelKey = requirePanelSettingsKey();
     const [cfg] = await WhatsappConfig.findOrCreate({
-        where: { id: getPanelSettingsKey() },
+        where: { id: panelKey },
         defaults: { welcomeEnabled: true },
     });
     return cfg;
@@ -124,8 +125,7 @@ async function convertWhatsappTrial() {
     return serializeTrial(row, new Date());
 }
 
-async function expireDueWhatsappTrial(logger) {
-    const row = await loadTrialRow();
+async function expireOneTrialRow(row, logger) {
     if (!shouldExpire(row, new Date())) return { expired: false, trial: serializeTrial(row) };
 
     let loggedOut = false;
@@ -141,6 +141,7 @@ async function expireDueWhatsappTrial(logger) {
     } catch (err) {
         if (logger && logger.warn) {
             logger.warn('WhatsApp trial expiry logout failed; will retry', {
+                panelKey: row.id,
                 error: err.message,
             });
         }
@@ -156,7 +157,58 @@ async function expireDueWhatsappTrial(logger) {
             خروج_gateway: loggedOut ? 'بله' : 'Cloud-only — بدون QR',
         });
     } catch (_) {}
-    return { expired: true, loggedOut, trial: serializeTrial(row) };
+    return { expired: true, loggedOut, trial: serializeTrial(row), panelKey: row.id };
+}
+
+/**
+ * همهٔ سازمان‌هایی که آزمایش واتساپ‌شان تمام شده را منقضی می‌کند.
+ * job بدون context نباید فقط به default سکو محدود شود.
+ */
+async function expireDueWhatsappTrial(logger) {
+    const { WhatsappConfig, Tenant } = require('../models');
+    const { runWithTenant } = require('./tenantContext');
+    const { tenantShape, loadPlatformTenant } = require('../middleware/tenantContext');
+    const { Op } = require('sequelize');
+    const now = new Date();
+    const due = await WhatsappConfig.findAll({
+        where: {
+            trialStatus: 'active',
+            trialEndsAt: { [Op.ne]: null, [Op.lte]: now },
+        },
+    });
+    if (!due.length) return { expired: 0, results: [] };
+
+    const results = [];
+    for (const row of due) {
+        let tenant = null;
+        if (row.id === 'default') {
+            tenant = await loadPlatformTenant();
+        } else {
+            const t = await Tenant.findOne({ where: { panelKey: row.id } });
+            tenant = t ? tenantShape(t) : null;
+        }
+        if (!tenant) {
+            if (logger && logger.warn) {
+                logger.warn('WhatsApp trial expire: no tenant for panel key', { panelKey: row.id });
+            }
+            continue;
+        }
+        try {
+            const r = await runWithTenant(tenant, () => expireOneTrialRow(row, logger));
+            results.push(r);
+        } catch (err) {
+            if (logger && logger.warn) {
+                logger.warn('WhatsApp trial expire tenant failed', {
+                    panelKey: row.id,
+                    error: err.message,
+                });
+            }
+        }
+    }
+    return {
+        expired: results.filter((r) => r && r.expired).length,
+        results,
+    };
 }
 
 module.exports = {

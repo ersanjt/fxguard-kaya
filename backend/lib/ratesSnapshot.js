@@ -8,9 +8,15 @@ const logger = require('../config/logger');
 const defaultRateCurrencies = require('./defaultRateCurrencies');
 const { navasanLatestUrl } = require('./navasanApiKey');
 const { getRatesApiCredentials } = require('./ratesApiProvider');
-const { fetchRawAlanChand, getAlanChandCache, clearAlanChandCache } = require('./alanChandApi');
+const { fetchRawAlanChand, clearAlanChandCache } = require('./alanChandApi');
+const { ensureTenantCurrencies, loadTickerConfig } = require('./tenantRates');
 
-let lastRatesCache = null;
+const lastRatesByTenant = new Map();
+
+function tenantCacheKey() {
+    const { getCurrentTenantId } = require('./tenantContext');
+    return String(getCurrentTenantId() || 'platform');
+}
 
 function pickValue(raw, apiKeys) {
     const keys = Array.isArray(apiKeys) ? apiKeys : [];
@@ -78,22 +84,18 @@ async function fetchRawNavasan() {
     let raw = null;
     const provider = creds.provider;
 
+    const bucket = tenantCacheKey();
     if (provider === 'alanchand') {
-        const cachedAlan = getAlanChandCache();
-        if (cachedAlan) {
-            lastRatesCache = cachedAlan;
-            return { raw: cachedAlan, fromCache: true, hasApiKey, provider: 'alanchand' };
-        }
         const alan = await fetchRawAlanChand(creds.alanChandKey);
         if (alan.ok && alan.raw && Object.keys(alan.raw).length > 0) {
-            lastRatesCache = alan.raw;
+            lastRatesByTenant.set(bucket, alan.raw);
             return { raw: alan.raw, fromCache: !!alan.fromCache, hasApiKey, provider: 'alanchand' };
         }
         logger.warn('Alan Chand API error', { error: alan.error || 'empty' });
         if (creds.navasanKey) {
             raw = await fetchRawNavasanOnly(creds.navasanKey);
             if (raw && typeof raw === 'object' && Object.keys(raw).length > 0) {
-                lastRatesCache = raw;
+                lastRatesByTenant.set(bucket, raw);
                 return { raw, fromCache: false, hasApiKey, provider: 'navasan' };
             }
         }
@@ -104,34 +106,33 @@ async function fetchRawNavasan() {
     }
 
     if (raw && typeof raw === 'object' && Object.keys(raw).length > 0) {
-        lastRatesCache = raw;
+        lastRatesByTenant.set(bucket, raw);
         return { raw, fromCache: false, hasApiKey, provider: provider || 'navasan' };
     }
+    const cached = lastRatesByTenant.get(bucket);
     return {
-        raw: lastRatesCache && typeof lastRatesCache === 'object' ? lastRatesCache : {},
-        fromCache: !!(lastRatesCache && Object.keys(lastRatesCache).length),
+        raw: cached && typeof cached === 'object' ? cached : {},
+        fromCache: !!(cached && Object.keys(cached).length),
         hasApiKey,
         provider: provider || null
     };
 }
 
 function clearRatesCaches() {
-    lastRatesCache = null;
-    clearAlanChandCache();
+    lastRatesByTenant.delete(tenantCacheKey());
+    // فقط کش همین سازمان؛ clear() سراسری نرخ بقیهٔ شرکت‌ها را بی‌دلیل باطل می‌کرد
+    Promise.resolve()
+        .then(async () => {
+            const { getAlanChandApiKey } = require('./alanChandApi');
+            const key = await getAlanChandApiKey();
+            if (key) clearAlanChandCache(key);
+        })
+        .catch(() => {});
 }
 
 async function getRatesKeys(models) {
     const RateCurrency = models && models.RateCurrency;
-    if (RateCurrency) {
-        const rows = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
-        if (rows && rows.length > 0) {
-            return rows.map((r) => ({
-                key: r.key,
-                label: r.label || r.key,
-                apiKeys: Array.isArray(r.apiKeys) ? r.apiKeys : r.apiKeys ? [r.apiKeys] : []
-            }));
-        }
-    }
+    if (RateCurrency) return ensureTenantCurrencies(RateCurrency);
     return defaultRateCurrencies.map(({ key, label, apiKeys }) => ({
         key,
         label,
@@ -171,7 +172,7 @@ async function buildRatesSnapshot(opts = {}) {
         try {
             const { TickerConfig } = models;
             if (TickerConfig) {
-                const cfg = await TickerConfig.findByPk('default');
+                const cfg = await loadTickerConfig(TickerConfig);
                 if (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys) && cfg.visibleKeys.length > 0) {
                     visibleKeys = cfg.visibleKeys;
                 }
@@ -218,7 +219,7 @@ async function buildRatesSnapshot(opts = {}) {
 }
 
 function getLastRatesCache() {
-    return lastRatesCache;
+    return lastRatesByTenant.get(tenantCacheKey()) || null;
 }
 
 module.exports = {

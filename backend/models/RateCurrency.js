@@ -2,11 +2,19 @@ const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {
     const RateCurrency = sequelize.define('RateCurrency', {
+        id: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+        },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
         key: {
             type: DataTypes.STRING(32),
             allowNull: false,
-            primaryKey: true,
-            comment: 'کلید ارز مثلاً usd, eur, gold'
+            comment: 'کلید ارز مثلاً usd, eur, gold — یکتا در هر سازمان'
         },
         label: {
             type: DataTypes.STRING(120),
@@ -29,7 +37,10 @@ module.exports = (sequelize) => {
     }, {
         timestamps: true,
         tableName: 'rate_currencies',
-        indexes: [{ unique: true, fields: ['key'] }]
+        indexes: [
+            { unique: true, fields: ['tenantId', 'key'] },
+            { fields: ['tenantId'] },
+        ]
     });
 
     return RateCurrency;

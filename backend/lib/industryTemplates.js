@@ -125,7 +125,13 @@ async function applyTemplate(key, deps) {
         }
 
         // تنظیمات پنل: واژگان، بخش‌های مخفی، یادآوری نوبت، کلید صنعت
-        const [row] = await PanelSetting.findOrCreate({ where: { id: getPanelSettingsKey() }, defaults: {}, transaction });
+        const panelKey = typeof getPanelSettingsKey === 'function' ? getPanelSettingsKey() : null;
+        if (!panelKey) {
+            const err = new Error('سازمان پنل برای اعمال قالب مشخص نیست');
+            err.code = 'PANEL_KEY_REQUIRED';
+            throw err;
+        }
+        const [row] = await PanelSetting.findOrCreate({ where: { id: panelKey }, defaults: {}, transaction });
         const prev = row.industryKey ? getTemplate(row.industryKey) : null;
 
         let hidden = parseArr(row.hiddenSections);

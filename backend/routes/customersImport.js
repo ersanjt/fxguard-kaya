@@ -5,7 +5,6 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
 const ExcelJS = require('exceljs');
 const { Customer } = require('../models');
@@ -13,11 +12,16 @@ const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
 const { logActivity } = require('../services/activityLog');
 
-const uploadDir = path.join(__dirname, '..', 'uploads', 'import');
-try { if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true }); } catch (e) {}
+const { ensureTenantUploadDir } = require('../lib/tenantUploads');
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
+    destination: (req, file, cb) => {
+        try {
+            cb(null, ensureTenantUploadDir('import'));
+        } catch (e) {
+            cb(e);
+        }
+    },
     filename: (req, file, cb) => cb(null, 'import-' + Date.now() + '-' + (file.originalname || 'file').replace(/[^a-zA-Z0-9._-]/g, '_'))
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });

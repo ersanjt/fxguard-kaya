@@ -121,6 +121,7 @@ function gatewayEnv(tenant) {
         NODE_ENV: process.env.NODE_ENV || 'production',
         PORT: String(tenant.gatewayPort),
         GATEWAY_TENANT_ID: String(tenant.id),
+        GATEWAY_TENANT_SLUG: String(tenant.slug || ''),
         GATEWAY_API_SECRET: tenantGatewayApiSecret(tenant.id),
         WEBHOOK_SECRET: tenantWebhookSecret(tenant.id),
         BACKEND_API_URL: backendUrl(),
@@ -290,16 +291,24 @@ async function enableTenantGateway(tenantId, logger) {
     row.gatewayEnabled = true;
     await row.save();
 
+    // پنل سکو خارج از زمینهٔ سازمان مشتری است؛ اتصال با panelKey یکتا پیدا می‌شود
     const [conn] = await WhatsappConnection.findOrCreate({
         where: { id: row.panelKey },
-        defaults: { connectionMode: 'gateway', cloudEnabled: true, gatewayEnabled: true },
+        defaults: {
+            connectionMode: 'gateway',
+            cloudEnabled: true,
+            gatewayEnabled: true,
+            tenantId: row.id,
+        },
+        skipTenantScope: true,
     });
     const cloudReady = !!(conn.cloudAccessToken && conn.cloudPhoneNumberId);
     conn.gatewayEnabled = true;
     conn.connectionMode = cloudReady ? 'cloud_first' : 'gateway';
     conn.gatewayUrl = null;
     conn.gatewayApiSecret = null;
-    await conn.save();
+    if (!conn.tenantId) conn.tenantId = row.id;
+    await conn.save({ skipTenantScope: true });
     await invalidateWhatsappCaches();
 
     const gateway = await startTenantGateway(row, logger);
@@ -314,11 +323,11 @@ async function disableTenantGateway(tenantId, logger) {
     row.gatewayPort = null;
     await row.save();
 
-    const conn = await WhatsappConnection.findByPk(row.panelKey);
+    const conn = await WhatsappConnection.findByPk(row.panelKey, { skipTenantScope: true });
     if (conn) {
         conn.gatewayEnabled = false;
         conn.connectionMode = 'cloud';
-        await conn.save();
+        await conn.save({ skipTenantScope: true });
     }
     await invalidateWhatsappCaches();
     return { tenantId: row.id, gatewayEnabled: false };

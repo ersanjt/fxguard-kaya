@@ -10,6 +10,7 @@ const assert = require('assert');
 const {
     sameTenant,
     tenantRoom,
+    departmentRoom,
     isPlatformTenantId,
     setPlatformTenantCache,
 } = require('../lib/tenantContext');
@@ -63,6 +64,14 @@ test('tenantRoom: platform and legacy share one room; tenants get their own', ()
     assert.strictEqual(tenantRoom(PLATFORM_ID), 'tenant_platform');
     assert.strictEqual(tenantRoom(TENANT_A), 'tenant_' + TENANT_A);
     assert.notStrictEqual(tenantRoom(TENANT_A), tenantRoom(TENANT_B));
+});
+
+test('departmentRoom includes the company so two companies never share a department channel', () => {
+    const dept = 'dept-shared-uuid';
+    assert.strictEqual(departmentRoom(TENANT_A, dept), 'department_' + TENANT_A + '_' + dept);
+    assert.strictEqual(departmentRoom(null, dept), 'department_platform_' + dept);
+    assert.notStrictEqual(departmentRoom(TENANT_A, dept), departmentRoom(TENANT_B, dept));
+    assert.strictEqual(departmentRoom(TENANT_A, null), null);
 });
 
 const liveConvA = { id: 'c1', tenantId: TENANT_A, status: 'open', assignedTo: null, departmentId: null };

@@ -323,6 +323,10 @@ const AutoResponseModel = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
         name: {
             type: DataTypes.STRING,
             allowNull: false
@@ -349,7 +353,8 @@ const AutoResponseModel = (sequelize) => {
             defaultValue: {}
         }
     }, {
-        timestamps: true
+        timestamps: true,
+        indexes: [{ fields: ['tenantId'] }],
     });
 
     return AutoResponse;

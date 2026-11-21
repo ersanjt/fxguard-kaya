@@ -5,44 +5,42 @@ const models = require('../models');
 const { sequelize, Conversation, Customer, User, Department, WhatsappConfig } = models;
 const { Op } = require('sequelize');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
-const { sameTenant, tenantRoom, normalizeTenantId } = require('../lib/tenantContext');
+const { sameTenant, tenantRoom, departmentRoom, normalizeTenantId } = require('../lib/tenantContext');
 
-let _cfgCache = null;
-let _cfgCacheAt = 0;
-const CFG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 دقیقه
+const _cfgByKey = new Map();
+const CFG_CACHE_TTL_MS = 5 * 60 * 1000;
+
+async function configForConversation(conv) {
+    const { Tenant } = models;
+    const { isPlatformTenantId } = require('../lib/tenantContext');
+    let key = 'default';
+    if (conv.tenantId && !isPlatformTenantId(conv.tenantId)) {
+        const tenant = await Tenant.findByPk(conv.tenantId, { attributes: ['panelKey'] });
+        if (tenant && tenant.panelKey) key = String(tenant.panelKey);
+    }
+    const hit = _cfgByKey.get(key);
+    if (hit && Date.now() - hit.at < CFG_CACHE_TTL_MS) return hit.cfg;
+    const [cfg] = await WhatsappConfig.findOrCreate({
+        where: { id: key },
+        defaults: { alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15 },
+    });
+    _cfgByKey.set(key, { cfg, at: Date.now() });
+    return cfg;
+}
 
 async function checkUnansweredConversations(io, logger) {
     try {
-        const nowMs = Date.now();
-        if (!_cfgCache || (nowMs - _cfgCacheAt) > CFG_CACHE_TTL_MS) {
-            const [cfg] = await WhatsappConfig.findOrCreate({
-                where: { id: 'default' },
-                defaults: { alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15 }
-            });
-            _cfgCache = cfg;
-            _cfgCacheAt = nowMs;
-        }
-        const cfg = _cfgCache;
-        const alertMin = cfg.alertUnansweredAfterMinutes ?? 5;
-        const escalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
-        const escalationDeptId = cfg.escalationDepartmentId;
+        const alertMin = 1;
 
         // این job خارج از زمینهٔ سازمان اجرا می‌شود؛ دپارتمان مقصد باید هم‌سازمانِ مکالمه باشد
-        const configuredDept = escalationDeptId
-            ? await Department.findByPk(escalationDeptId, { skipTenantScope: true })
-            : null;
         const defaultDepts = await Department.findAll({
             where: { isDefault: true },
             skipTenantScope: true,
         });
-        const resolveEscalationDept = (conv) => {
-            if (configuredDept && sameTenant(configuredDept.tenantId, conv.tenantId)) return configuredDept;
-            return defaultDepts.find((d) => sameTenant(d.tenantId, conv.tenantId)) || null;
-        };
+        const defaultDeptFor = (conv) => defaultDepts.find((d) => sameTenant(d.tenantId, conv.tenantId)) || null;
 
         const now = new Date();
         const alertThreshold = new Date(now.getTime() - alertMin * 60000);
-        const escalateThreshold = new Date(now.getTime() - escalateMin * 60000);
 
         const BATCH_SIZE = 200;
         let offset = 0;
@@ -65,7 +63,9 @@ async function checkUnansweredConversations(io, logger) {
                     { model: Department, as: 'department', attributes: ['id', 'name'] }
                 ],
                 limit: BATCH_SIZE,
-                offset
+                offset,
+                // job سراسری است؛ نباید با ALS تصادفی یک سازمان فیلتر شود
+                skipTenantScope: true,
             });
             unanswered = unanswered.concat(batch);
             if (batch.length < BATCH_SIZE) hasMoreBatches = false;
@@ -75,10 +75,21 @@ async function checkUnansweredConversations(io, logger) {
         for (const conv of unanswered) {
             const lastIn = conv.lastIncomingMessageAt ? new Date(conv.lastIncomingMessageAt) : null;
             if (!lastIn) continue;
+            const cfg = await configForConversation(conv);
+            const convAlertMin = cfg.alertUnansweredAfterMinutes ?? 5;
+            const convEscalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
+            if ((now - lastIn) / 60000 < convAlertMin) continue;
             const minsWaiting = Math.floor((now - lastIn) / 60000);
+            const escalateThreshold = new Date(now.getTime() - convEscalateMin * 60000);
+            let configuredDept = null;
+            if (cfg.escalationDepartmentId) {
+                configuredDept = await Department.findByPk(cfg.escalationDepartmentId, { skipTenantScope: true });
+            }
+            const targetDept = (configuredDept && sameTenant(configuredDept.tenantId, conv.tenantId))
+                ? configuredDept
+                : defaultDeptFor(conv);
 
             if (lastIn < escalateThreshold && (!conv.escalatedAt || new Date(conv.escalatedAt) < lastIn)) {
-                const targetDept = resolveEscalationDept(conv);
                 if (targetDept) {
                     await conv.update({
                         departmentId: targetDept.id,
@@ -93,7 +104,7 @@ async function checkUnansweredConversations(io, logger) {
                     });
                     logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDept.name} (${minsWaiting} min unanswered)`);
                 }
-            } else if (lastIn < alertThreshold && (!conv.unansweredAlertSentAt || new Date(conv.unansweredAlertSentAt) < lastIn)) {
+            } else if (!conv.unansweredAlertSentAt || new Date(conv.unansweredAlertSentAt) < lastIn) {
                 const payload = {
                     conversationId: conv.id,
                     customer: publicCustomerSocketPayload(conv.customer),
@@ -105,7 +116,8 @@ async function checkUnansweredConversations(io, logger) {
                     io.to(`user_${conv.assignedTo}`).emit('unanswered_alert', payload);
                 }
                 if (conv.departmentId) {
-                    io.to(`department_${conv.departmentId}`).emit('unanswered_alert', payload);
+                    const dRoom = departmentRoom(conv.tenantId, conv.departmentId);
+                    if (dRoom) io.to(dRoom).emit('unanswered_alert', payload);
                 }
                 await conv.update({ unansweredAlertSentAt: now });
                 logger.info(`🔔 Unanswered alert sent for conversation ${conv.id} (${minsWaiting} min)`);

@@ -66,7 +66,7 @@ const { createSystemStatusRouter } = require('./systemStatus');
 const { getProfileImage } = require('./profileImage');
 
 function getCloudWebhookAppSecret() {
-    return String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
+    return require('../lib/cloudAppSecret').getCloudAppSecret();
 }
 
 function extractMetaSignature(req) {

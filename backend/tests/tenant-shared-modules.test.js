@@ -135,12 +135,48 @@ async function main() {
             assert.strictEqual((await b.put('/api/exchange/cash-boxes/' + box.body.id, { balance: 0 })).status, 404);
         });
 
-        await test('rate settings shared by the server are read-only for companies', async () => {
-            const r = await a.put('/api/rates/adjustments', { USD: { type: 'percent', value: 5 } });
-            assert.strictEqual(r.status, 403, JSON.stringify(r.body));
-            assert.strictEqual(r.body.code, 'RATES_SETTINGS_READ_ONLY');
-            assert.strictEqual((await a.put('/api/rates/api-keys', { navasanApiKey: 'x' })).status, 403);
-            assert.strictEqual((await a.post('/api/rates/currencies', { key: 'XAU', label: 'Gold' })).status, 403);
+        await test('auto-replies stay inside each company', async () => {
+            const { runWithTenant } = require('../lib/tenantContext');
+            const tenantA = await models.Tenant.findOne({ where: { slug: 'shared-a' } });
+            const tenantB = await models.Tenant.findOne({ where: { slug: 'shared-b' } });
+            await runWithTenant(
+                { id: tenantA.id, slug: tenantA.slug, panelKey: tenantA.panelKey, isPlatform: false },
+                () =>
+                    models.AutoResponse.create({
+                        name: 'VIP A',
+                        keywords: 'vip',
+                        response: 'Hello from A',
+                        isActive: true,
+                    })
+            );
+            const forB = await runWithTenant(
+                { id: tenantB.id, slug: tenantB.slug, panelKey: tenantB.panelKey, isPlatform: false },
+                () => models.AutoResponse.findAll({ where: { isActive: true } })
+            );
+            assert.strictEqual(forB.length, 0);
+            const forA = await runWithTenant(
+                { id: tenantA.id, slug: tenantA.slug, panelKey: tenantA.panelKey, isPlatform: false },
+                () => models.AutoResponse.findAll({ where: { isActive: true } })
+            );
+            assert.strictEqual(forA.length, 1);
+            assert.strictEqual(forA[0].name, 'VIP A');
+        });
+
+        await test('rate currencies and adjustments stay inside each company', async () => {
+            const created = await a.post('/api/rates/currencies', { key: 'xau', label: 'Gold A' });
+            assert.strictEqual(created.status, 200, JSON.stringify(created.body));
+            const saved = await a.put('/api/rates/adjustments', {
+                adjustments: [{ currencyKey: 'usd', adjustmentType: 'percent', value: 3 }],
+            });
+            assert.strictEqual(saved.status, 200, JSON.stringify(saved.body));
+            const listB = await b.get('/api/rates/currencies');
+            assert.strictEqual(listB.status, 200, JSON.stringify(listB.body));
+            assert.ok(!(listB.body.data || []).some((row) => row.key === 'xau'));
+            const adjB = await b.get('/api/rates/adjustments');
+            const usdB = (adjB.body.data || []).find((row) => row.currencyKey === 'usd');
+            assert.ok(!usdB || usdB.adjustmentType === 'none' || usdB.value == null);
+            const keys = await a.put('/api/rates/api-keys', { navasanApiKey: 'company-a-key' });
+            assert.strictEqual(keys.status, 200, JSON.stringify(keys.body));
         });
 
         await test('background writes take the company of their parent row', async () => {

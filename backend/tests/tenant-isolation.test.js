@@ -107,6 +107,23 @@ queue.push(test('tenant filter keeps OR conditions', () => {
     });
 }));
 
+queue.push(test('platform queries still see legacy rows without tenantId', () => {
+    setPlatformTenantCache({ id: 'platform-1', slug: 'platform', isPlatform: true, panelKey: 'default' });
+    runWithTenant({ id: 'platform-1', slug: 'platform', isPlatform: true, panelKey: 'default' }, () => {
+        const options = { where: { status: 'open' } };
+        mergeTenantWhere(options);
+        const clause = options.where[Op.and][1];
+        assert.ok(clause[Op.or]);
+        assert.deepStrictEqual(clause[Op.or], [{ tenantId: 'platform-1' }, { tenantId: null }]);
+    });
+    runWithTenant({ id: 'company-9', slug: 'acme', isPlatform: false, panelKey: 't-acme' }, () => {
+        const options = { where: { status: 'open' } };
+        mergeTenantWhere(options);
+        assert.strictEqual(options.where[Op.and][1].tenantId, 'company-9');
+        assert.strictEqual(options.where[Op.and][1][Op.or], undefined);
+    });
+}));
+
 queue.push(test('skipTenantScope leaves the query untouched', () => {
     runWithTenant({ id: 'tid-1', slug: 'acme', isPlatform: false }, () => {
         const options = { where: { id: 'x' }, skipTenantScope: true };

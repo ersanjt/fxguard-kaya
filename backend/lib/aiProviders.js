@@ -225,9 +225,10 @@ function applyAiConfigUpdate(cfg, body) {
 function cacheSlot() {
     try {
         const { getPanelSettingsKey } = require('./tenantContext');
-        return getPanelSettingsKey() || 'default';
+        const key = getPanelSettingsKey();
+        return key || '__none__';
     } catch (_e) {
-        return 'default';
+        return '__none__';
     }
 }
 
@@ -238,8 +239,10 @@ function clearAiProviderCache() {
 async function loadAiConfigRow() {
     const { WhatsappConfig } = require('../models');
     const { getPanelSettingsKey } = require('./tenantContext');
+    const panelKey = getPanelSettingsKey();
+    if (!panelKey) return null;
     const [cfg] = await WhatsappConfig.findOrCreate({
-        where: { id: getPanelSettingsKey() },
+        where: { id: panelKey },
         defaults: {},
     });
     return cfg;

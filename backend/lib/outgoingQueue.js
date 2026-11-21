@@ -42,7 +42,17 @@ function verifyOutgoingSignature(buf, signature, secret) {
  */
 function publishOutgoingMessage(channel, payload, opts = {}) {
     if (!channel || typeof channel.sendToQueue !== 'function') return null;
-    const buf = Buffer.from(JSON.stringify(payload));
+    const body = { ...(payload || {}) };
+    if (!body.tenantSlug) {
+        try {
+            const { getCurrentTenant } = require('./tenantContext');
+            const tenant = getCurrentTenant();
+            if (tenant && tenant.slug) body.tenantSlug = tenant.slug;
+        } catch (_) {
+            /* job بدون زمینه */
+        }
+    }
+    const buf = Buffer.from(JSON.stringify(body));
     const secret = currentSecret();
     const headers = { ...(opts.headers || {}) };
     if (secret) headers[SIGNATURE_HEADER] = signOutgoingPayload(buf, secret);

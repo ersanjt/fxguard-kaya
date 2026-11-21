@@ -47,35 +47,35 @@ const DEFAULT_BY_ROLE = {
     owner: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true, system_status: true,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
         records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: true,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, clinic: true, panel_settings: true,
         records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false, system_status: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         records: true, appointments: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true, [BULK_MESSAGING_KEY]: false,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false, system_status: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         records: true, appointments: true,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false, system_status: false,
-        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
+        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, clinic: true, panel_settings: false,
         records: true, appointments: true,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false, [VIEW_CUSTOMER_PHONE_KEY]: false, [BULK_MESSAGING_KEY]: false,
     },
@@ -245,6 +245,16 @@ function getManageUsersKey() {
     return MANAGE_USERS_KEY;
 }
 
+/**
+ * صفحهٔ ورود پیش‌فرض هر نقش داخل همان پوستهٔ مشترک.
+ * کارشناس/ناظر → مکالمات؛ بقیه → داشبورد.
+ */
+function defaultHomePage(user) {
+    const role = (user && user.role) || 'agent';
+    if (role === 'agent' || role === 'supervisor') return 'conversations';
+    return 'dashboard';
+}
+
 module.exports = {
     getPermissions,
     canAccess,
@@ -264,6 +274,7 @@ module.exports = {
     isMainAdmin,
     getSectionKeys,
     getManageUsersKey,
+    defaultHomePage,
     SECTION_KEYS,
     MANAGE_USERS_KEY,
     MANAGE_TICKETS_KEY,

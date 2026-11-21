@@ -399,13 +399,21 @@ async function enforceCurrentNumberInbox(chatIds, gatewayNumber, opts = {}) {
     };
 }
 
+async function connectionPanelKey() {
+    const { requirePanelSettingsKey } = require('../lib/tenantContext');
+    return requirePanelSettingsKey();
+}
+
 async function getOrCreateConnectionRow() {
+    const panelKey = await connectionPanelKey();
+    const { getCurrentTenantId } = require('../lib/tenantContext');
     const [row] = await WhatsappConnection.findOrCreate({
-        where: { id: 'default' },
+        where: { id: panelKey },
         defaults: {
             connectionMode: 'cloud_first',
             cloudEnabled: true,
             gatewayEnabled: true,
+            tenantId: getCurrentTenantId() || null,
         },
     });
     return row;
@@ -413,7 +421,8 @@ async function getOrCreateConnectionRow() {
 
 async function getLegacyLockdownAt() {
     try {
-        const row = await WhatsappConnection.findByPk('default');
+        const panelKey = await connectionPanelKey();
+        const row = await WhatsappConnection.findByPk(panelKey);
         return row && row.legacyLockdownAt ? new Date(row.legacyLockdownAt) : null;
     } catch (_) {
         return null;

@@ -49,22 +49,32 @@ async function stampTenantIdFromOwners(model, owners, instance, options) {
     if (tid) instance.tenantId = tid;
 }
 
+/** شرط سازمان: شرکت‌های خودخدمت فقط ردیف خودشان؛ سکو ردیف خودش + legacy بدون tenantId. */
+function tenantIdClause(tid) {
+    const platformId = platformTenantId();
+    if (platformId && tid === platformId) {
+        return { [Op.or]: [{ tenantId: tid }, { tenantId: null }] };
+    }
+    return { tenantId: tid };
+}
+
 function mergeTenantWhere(options) {
     if (!options || options.skipTenantScope) return options;
     const tid = getCurrentTenantId();
     if (!tid) return options;
+    const clause = tenantIdClause(tid);
     const where = options.where;
     if (!where) {
-        options.where = { tenantId: tid };
+        options.where = clause;
         return options;
     }
     if (Array.isArray(where)) {
-        options.where = where.concat([{ tenantId: tid }]);
+        options.where = where.concat([clause]);
         return options;
     }
     if (typeof where !== 'object') return options;
     if (where.tenantId !== undefined) return options;
-    options.where = { [Op.and]: [where, { tenantId: tid }] };
+    options.where = { [Op.and]: [where, clause] };
     return options;
 }
 
@@ -128,6 +138,11 @@ const TENANT_SCOPED_MODELS = [
     'CustomRecord',
     'BookableService',
     'Appointment',
+    'RateCurrency',
+    'RateAdjustment',
+    'TickerConfig',
+    'AutoResponse',
+    'BillingPayment',
 ];
 
 const byUser = (column) => ({ model: 'User', on: ['id', column] });

@@ -6,7 +6,11 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING(32),
             defaultValue: 'default',
             primaryKey: true,
-            comment: 'کلید تنظیم (فقط default)'
+            comment: 'کلید پنل سازمان (panelKey)؛ سکو = default'
+        },
+        tenantId: {
+            type: DataTypes.UUID,
+            allowNull: true,
         },
         visibleKeys: {
             type: DataTypes.JSON,
@@ -16,7 +20,8 @@ module.exports = (sequelize) => {
         }
     }, {
         timestamps: true,
-        tableName: 'ticker_configs'
+        tableName: 'ticker_configs',
+        indexes: [{ fields: ['tenantId'] }]
     });
 
     return TickerConfig;
