@@ -1,0 +1,61 @@
+name: Find Kaya WhatsApp token backup
+
+# Searches backups for a long System User token without printing the secret.
+on:
+  workflow_dispatch:
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Scan env backups and sqlite history metadata
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-kaya/backend
+            echo "== current env token meta =="
+            node -e "
+              require('dotenv').config();
+              const t=(process.env.WHATSAPP_CLOUD_ACCESS_TOKEN||'').trim();
+              console.log(JSON.stringify({len:t.length, appShape:/^\d+\|/.test(t), prefix:t.slice(0,8)}));
+            "
+            echo "== candidate backup files =="
+            ls -la .env* 2>/dev/null | head -n 40
+            ls -la /var/www/kayaCRM-kaya/backend/.env* 2>/dev/null | head -n 40
+            find /var/www/kayaCRM-kaya -maxdepth 3 -type f \( -name '.env*' -o -name '*whatsapp*' -o -name '*.sqlite*' \) 2>/dev/null | head -n 80
+            echo "== scan backup env for long non-app tokens =="
+            for f in .env .env.bak .env.backup .env.save .env.old .env.local \
+              /var/www/kayaCRM-kaya/backend/.env.bak \
+              /var/www/kayaCRM-kaya/.env \
+              /home/fxguard/backups/*kaya*env* \
+              /var/backups/*kaya* 2>/dev/null; do
+              [ -f "$f" ] || continue
+              node -e "
+                const fs=require('fs');
+                const text=fs.readFileSync(process.argv[1],'utf8');
+                const m=text.match(/^WHATSAPP_CLOUD_ACCESS_TOKEN=(.*)$/m);
+                const t=m?String(m[1]||'').trim().replace(/^['\"]|['\"]$/g,''):'';
+                console.log(JSON.stringify({file:process.argv[1],len:t.length,appShape:/^\d+\|/.test(t),has:!!t}));
+              " "$f"
+            done
+            echo "== db token meta =="
+            node -e "
+              require('dotenv').config();
+              const {WhatsappConnection,sequelize}=require('./models');
+              (async()=>{
+                const row=await WhatsappConnection.findByPk('default',{skipTenantScope:true});
+                const t=row&&row.cloudAccessToken?String(row.cloudAccessToken):'';
+                console.log(JSON.stringify({phone:row&&row.cloudPhoneNumberId,len:t.length,appShape:/^\d+\|/.test(t),updatedAt:row&&row.updatedAt}));
+                await sequelize.close();
+              })().catch(e=>{console.error(e.message);process.exit(1);});
+            "
+            echo DONE
