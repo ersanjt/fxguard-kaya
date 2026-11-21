@@ -1,0 +1,99 @@
+name: Harden Kaya WhatsApp cloud webhook
+
+on:
+  workflow_dispatch:
+    inputs:
+      disable_gateway:
+        description: 'Disable QR gateway on kaya default connection (cloud-only for this line)'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+      ensure_verify_token:
+        description: 'Ensure WHATSAPP_CLOUD_VERIFY_TOKEN exists in .env (generate if missing)'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+
+jobs:
+  harden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Harden kaya cloud webhook + mode
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          DISABLE_GW: ${{ github.event.inputs.disable_gateway }}
+          ENSURE_VT: ${{ github.event.inputs.ensure_verify_token }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DISABLE_GW,ENSURE_VT
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            ENVF=.env
+            UPSERT=scripts/upsert-dotenv.js
+            if [ ! -f "$UPSERT" ]; then UPSERT=/var/www/kayaCRM-kaya/backend/scripts/upsert-dotenv.js; fi
+
+            if [ "$ENSURE_VT" = "yes" ]; then
+              CUR=$(grep '^WHATSAPP_CLOUD_VERIFY_TOKEN=' "$ENVF" 2>/dev/null | cut -d= -f2- || true)
+              if [ -z "$CUR" ]; then
+                VT="kaya_verify_$(openssl rand -hex 12)"
+                node "$UPSERT" "$ENVF" WHATSAPP_CLOUD_VERIFY_TOKEN "$VT"
+                echo "VERIFY_TOKEN_CREATED=$VT"
+              else
+                echo "VERIFY_TOKEN_EXISTS=yes"
+                echo "VERIFY_TOKEN_VALUE=$CUR"
+              fi
+              node "$UPSERT" "$ENVF" WHATSAPP_CLOUD_GRAPH_API_VERSION v26.0 || true
+            fi
+
+            # Reflect verify token into DB panel settings if column empty
+            node -e "
+              require('dotenv').config();
+              const { WhatsappConnection, sequelize } = require('./models');
+              (async () => {
+                const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+                if (!row) throw new Error('no connection');
+                const vt = process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '';
+                const patch = {};
+                if (vt && !row.cloudVerifyToken) patch.cloudVerifyToken = vt;
+                if (process.env.DISABLE_GW === 'yes') {
+                  patch.gatewayEnabled = false;
+                  patch.connectionMode = 'cloud';
+                  patch.cloudEnabled = true;
+                }
+                // keep phone id for 0868
+                if (!row.cloudPhoneNumberId) patch.cloudPhoneNumberId = '1007665702430638';
+                if (Object.keys(patch).length) {
+                  Object.assign(row, patch);
+                  await row.save({ skipTenantScope: true });
+                }
+                console.log(JSON.stringify({
+                  mode: row.connectionMode,
+                  cloudEnabled: row.cloudEnabled,
+                  gatewayEnabled: row.gatewayEnabled,
+                  phoneNumberId: row.cloudPhoneNumberId,
+                  hasToken: !!(row.cloudAccessToken && row.cloudAccessToken.length > 8),
+                  hasVerifyToken: !!(row.cloudVerifyToken || process.env.WHATSAPP_CLOUD_VERIFY_TOKEN),
+                  hasAppSecretEnv: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET)
+                }));
+                try { require('./lib/whatsappConnectionLoader').invalidateCache(); } catch (_) {}
+                await sequelize.close();
+              })().catch(e => { console.error(e.message); process.exit(1); });
+            "
+
+            pm2 reload crm-backend-kaya --update-env
+            sleep 2
+            echo "== webhook tip =="
+            echo "Callback: https://kaya.fxguard.io/api/webhook/whatsapp-cloud"
+            echo "Fields: messages,smb_message_echoes,history,smb_app_state_sync,account_update"
+            echo "App Secret still required in WHATSAPP_CLOUD_APP_SECRET"
+            echo DONE
