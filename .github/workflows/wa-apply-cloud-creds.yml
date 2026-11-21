@@ -1,0 +1,141 @@
+name: Apply Kaya WhatsApp cloud credentials
+
+# Applies secrets from GitHub Actions secrets onto kaya server without printing them.
+# Required secrets (optional individually):
+#   WHATSAPP_CLOUD_ACCESS_TOKEN
+#   WHATSAPP_CLOUD_APP_SECRET
+# Optional inputs override phone / waba / verify token.
+on:
+  workflow_dispatch:
+    inputs:
+      phone_number_id:
+        description: Phone Number ID to bind (empty = keep current)
+        required: false
+        default: '1402168889654134'
+      waba_id:
+        description: WABA ID
+        required: false
+        default: '1395714801963738'
+      verify_token:
+        description: Webhook verify token (empty = keep env)
+        required: false
+        default: ''
+      force_phone_even_if_graph_fails:
+        description: Bind phone id even when Graph returns non-200
+        required: false
+        default: 'true'
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Write cloud token/secret and bind phone on kaya
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          PHONE_ID: ${{ github.event.inputs.phone_number_id }}
+          WABA_ID: ${{ github.event.inputs.waba_id }}
+          VERIFY_TOKEN_IN: ${{ github.event.inputs.verify_token }}
+          FORCE_PHONE: ${{ github.event.inputs.force_phone_even_if_graph_fails }}
+          NEW_TOKEN: ${{ secrets.WHATSAPP_CLOUD_ACCESS_TOKEN }}
+          NEW_APP_SECRET: ${{ secrets.WHATSAPP_CLOUD_APP_SECRET }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: PHONE_ID,WABA_ID,VERIFY_TOKEN_IN,FORCE_PHONE,NEW_TOKEN,NEW_APP_SECRET
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+
+            # Patch .env for App Secret / verify token without echoing values
+            node <<'NODE'
+            const fs = require('fs');
+            const path = '.env';
+            let text = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : '';
+            function upsert(key, val) {
+              if (!val) return false;
+              const re = new RegExp('^' + key + '=.*$', 'm');
+              const line = key + '=' + val;
+              if (re.test(text)) text = text.replace(re, line);
+              else text = text.replace(/\s*$/, '\n') + line + '\n';
+              return true;
+            }
+            const secret = process.env.NEW_APP_SECRET || '';
+            const verify = process.env.VERIFY_TOKEN_IN || '';
+            const changed = [];
+            if (upsert('WHATSAPP_CLOUD_APP_SECRET', secret)) changed.push('APP_SECRET');
+            if (upsert('META_APP_SECRET', secret)) changed.push('META_APP_SECRET');
+            if (upsert('WHATSAPP_CLOUD_VERIFY_TOKEN', verify)) changed.push('VERIFY_TOKEN');
+            if (changed.length) fs.writeFileSync(path, text);
+            console.log(JSON.stringify({ envPatched: changed }));
+            NODE
+
+            node <<'NODE'
+            require('dotenv').config();
+            const axios = require('axios');
+            const { WhatsappConnection, WhatsappNumber, sequelize } = require('./models');
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              if (!row) throw new Error('no connection');
+              const phoneId = (process.env.PHONE_ID || '').trim();
+              const wabaId = (process.env.WABA_ID || '').trim();
+              const newToken = (process.env.NEW_TOKEN || '').trim();
+              const force = String(process.env.FORCE_PHONE || 'true') === 'true';
+              if (newToken) row.cloudAccessToken = newToken;
+              const token = row.cloudAccessToken || process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '';
+              const ver = process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || 'v26.0';
+              let probe = null;
+              if (token && phoneId) {
+                const r = await axios.get(
+                  'https://graph.facebook.com/' + ver + '/' + phoneId +
+                    '?fields=id,display_phone_number,verified_name,quality_rating,account_mode,is_on_biz_app',
+                  { headers: { Authorization: 'Bearer ' + token }, timeout: 15000, validateStatus: () => true }
+                );
+                probe = { status: r.status, ok: r.status === 200, data: r.data };
+              }
+              const canBind = phoneId && (force || (probe && probe.ok));
+              if (canBind) {
+                row.cloudPhoneNumberId = phoneId;
+                if (wabaId) row.cloudWabaId = wabaId;
+              }
+              row.cloudEnabled = true;
+              row.gatewayEnabled = false;
+              row.connectionMode = 'cloud';
+              await row.save({ skipTenantScope: true });
+              if (canBind) {
+                try {
+                  const [num] = await WhatsappNumber.findOrCreate({
+                    where: { slotKey: 'primary' },
+                    defaults: {
+                      slotKey: 'primary', role: 'primary', priority: 0, enabled: true,
+                      displayPhone: '+905339470868', cloudPhoneNumberId: phoneId, tenantId: row.tenantId,
+                    },
+                    skipTenantScope: true,
+                  });
+                  num.displayPhone = '+905339470868';
+                  num.cloudPhoneNumberId = phoneId;
+                  num.enabled = true;
+                  await num.save({ skipTenantScope: true });
+                } catch (e) { console.log('slot', e.message); }
+              }
+              try { require('./lib/whatsappConnectionLoader').invalidateCache(); } catch (_) {}
+              console.log(JSON.stringify({
+                phoneId: row.cloudPhoneNumberId,
+                wabaId: row.cloudWabaId,
+                tokenUpdated: !!newToken,
+                tokenLen: token ? String(token).length : 0,
+                hasAppSecret: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET),
+                probe,
+                bound: canBind,
+              }, null, 2));
+              await sequelize.close();
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+
+            pm2 reload crm-backend-kaya --update-env
+            echo DONE
