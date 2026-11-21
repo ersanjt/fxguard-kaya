@@ -1,6 +1,5 @@
 name: Find Kaya WhatsApp token backup
 
-# Searches backups for a long System User token without printing the secret.
 on:
   workflow_dispatch:
 
@@ -11,7 +10,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Scan env backups and sqlite history metadata
+      - name: Scan env backups for long System User token
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: 92.205.58.83
@@ -22,40 +21,61 @@ jobs:
           script: |
             set +e
             cd /var/www/kayaCRM-kaya/backend
-            echo "== current env token meta =="
-            node -e "
-              require('dotenv').config();
-              const t=(process.env.WHATSAPP_CLOUD_ACCESS_TOKEN||'').trim();
-              console.log(JSON.stringify({len:t.length, appShape:/^\d+\|/.test(t), prefix:t.slice(0,8)}));
-            "
-            echo "== candidate backup files =="
-            ls -la .env* 2>/dev/null | head -n 40
-            ls -la /var/www/kayaCRM-kaya/backend/.env* 2>/dev/null | head -n 40
-            find /var/www/kayaCRM-kaya -maxdepth 3 -type f \( -name '.env*' -o -name '*whatsapp*' -o -name '*.sqlite*' \) 2>/dev/null | head -n 80
-            echo "== scan backup env for long non-app tokens =="
-            for f in .env .env.bak .env.backup .env.save .env.old .env.local \
-              /var/www/kayaCRM-kaya/backend/.env.bak \
-              /var/www/kayaCRM-kaya/.env \
-              /home/fxguard/backups/*kaya*env* \
-              /var/backups/*kaya* 2>/dev/null; do
+            echo "== current env/db meta =="
+            node <<'NODE'
+            require('dotenv').config();
+            const { WhatsappConnection, sequelize } = require('./models');
+            (async () => {
+              const env = (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim();
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              const db = row && row.cloudAccessToken ? String(row.cloudAccessToken).trim() : '';
+              console.log(JSON.stringify({
+                envLen: env.length,
+                envAppShape: /^\d+\|/.test(env),
+                dbLen: db.length,
+                dbAppShape: /^\d+\|/.test(db),
+                phone: row && row.cloudPhoneNumberId,
+                updatedAt: row && row.updatedAt,
+              }));
+              await sequelize.close();
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+            echo "== list env-like files =="
+            ls -la .env .env.* 2>/dev/null | head -n 50
+            find /var/www/kayaCRM-kaya -maxdepth 4 -type f -name '.env*' 2>/dev/null | head -n 50
+            find /home/fxguard -maxdepth 4 -type f -name '.env*' 2>/dev/null | head -n 50
+            echo "== parse each env file for WHATSAPP_CLOUD_ACCESS_TOKEN length =="
+            while IFS= read -r f; do
               [ -f "$f" ] || continue
-              node -e "
-                const fs=require('fs');
-                const text=fs.readFileSync(process.argv[1],'utf8');
+              node -e '
+                const fs=require("fs");
+                const file=process.argv[1];
+                const text=fs.readFileSync(file,"utf8");
                 const m=text.match(/^WHATSAPP_CLOUD_ACCESS_TOKEN=(.*)$/m);
-                const t=m?String(m[1]||'').trim().replace(/^['\"]|['\"]$/g,''):'';
-                console.log(JSON.stringify({file:process.argv[1],len:t.length,appShape:/^\d+\|/.test(t),has:!!t}));
-              " "$f"
+                const t=m?String(m[1]||"").trim().replace(/^['\''"]|['\''"]$/g,""):"";
+                console.log(JSON.stringify({file,len:t.length,appShape:/^\d+\|/.test(t),has:!!t}));
+              ' "$f"
+            done <<'EOF'
+            .env
+            .env.bak
+            .env.backup
+            .env.save
+            .env.old
+            .env.local
+            .env.production
+            EOF
+            find /var/www/kayaCRM-kaya /home/fxguard -maxdepth 5 -type f -name '.env*' 2>/dev/null | while IFS= read -r f; do
+              node -e '
+                const fs=require("fs");
+                const file=process.argv[1];
+                try {
+                  const text=fs.readFileSync(file,"utf8");
+                  const m=text.match(/^WHATSAPP_CLOUD_ACCESS_TOKEN=(.*)$/m);
+                  const t=m?String(m[1]||"").trim().replace(/^['\''"]|['\''"]$/g,""):"";
+                  if (t.length >= 80 && !/^\d+\|/.test(t)) {
+                    console.log(JSON.stringify({file,len:t.length,appShape:false,candidate:true}));
+                  }
+                } catch (e) {}
+              ' "$f"
             done
-            echo "== db token meta =="
-            node -e "
-              require('dotenv').config();
-              const {WhatsappConnection,sequelize}=require('./models');
-              (async()=>{
-                const row=await WhatsappConnection.findByPk('default',{skipTenantScope:true});
-                const t=row&&row.cloudAccessToken?String(row.cloudAccessToken):'';
-                console.log(JSON.stringify({phone:row&&row.cloudPhoneNumberId,len:t.length,appShape:/^\d+\|/.test(t),updatedAt:row&&row.updatedAt}));
-                await sequelize.close();
-              })().catch(e=>{console.error(e.message);process.exit(1);});
-            "
             echo DONE
