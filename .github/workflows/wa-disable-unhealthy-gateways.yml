@@ -1,0 +1,64 @@
+name: Disable unhealthy locked tenant gateways
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Turn off unhealthy gateways for locked/suspended tenants
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-app/backend
+            node <<'NODE'
+            require('dotenv').config();
+            const { Tenant, sequelize } = require('./models');
+            const { PLATFORM_SLUG } = require('./lib/tenantHost');
+            const { disableTenantGateway, probeTenantGateway } = require('./services/tenantGatewaySupervisor');
+            const { tenantAccessState } = require('./lib/tenantTrial');
+            (async () => {
+              const rows = await Tenant.findAll({
+                where: { gatewayEnabled: true },
+              });
+              const out = [];
+              for (const row of rows) {
+                if (row.slug === PLATFORM_SLUG) continue;
+                const access = tenantAccessState(row).code || 'ok';
+                const probe = row.gatewayPort ? await probeTenantGateway(row, 1500) : { status: 'off' };
+                const locked = access !== 'ok' || row.status === 'suspended' || row.status === 'cancelled';
+                const unhealthy = !probe.running || ['unhealthy','stopped','port_conflict','disconnected'].includes(probe.status);
+                let action = 'keep';
+                if (locked || unhealthy) {
+                  try {
+                    await disableTenantGateway(row.id, console);
+                    action = 'disabled';
+                  } catch (e) {
+                    action = 'fail:' + e.message;
+                  }
+                }
+                out.push({
+                  slug: row.slug,
+                  status: row.status,
+                  access,
+                  port: row.gatewayPort,
+                  probe: probe.status,
+                  running: !!probe.running,
+                  action,
+                });
+              }
+              console.log(JSON.stringify(out, null, 2));
+              await sequelize.close();
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+            echo DONE
