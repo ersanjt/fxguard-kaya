@@ -17,10 +17,14 @@
     const countEl = document.getElementById('taCount');
     const dialog = document.getElementById('taCred');
     const credBody = document.getElementById('taCredBody');
+    const autoRefreshEl = document.getElementById('taAutoRefresh');
+    const statsEl = document.getElementById('taStats');
 
     const LOGIN_URL = '/login?panel=platform&return=' + encodeURIComponent('/tenants-admin');
     const STATUS_LABEL = { trial: 'آزمایشی', active: 'فعال', suspended: 'تعلیق', cancelled: 'لغو شده' };
     const PLAN_LABEL = { start: 'شروع', business: 'کسب‌وکار', legacy: 'قدیمی', pro: 'حرفه‌ای' };
+    const AUTO_MS = 60000;
+    let autoTimer = null;
     const INDUSTRY_LABEL = {
         travel: 'مسافرت',
         health: 'سلامت',
@@ -194,6 +198,13 @@
         return '<span class="ta-badge ' + cls + '">' + esc(GW_LABEL[st] || st) + '</span>' + num;
     }
 
+    function gatewayUnhealthy(t) {
+        if (!t.gatewayEnabled) return false;
+        if (!t.gateway || !t.gateway.running) return true;
+        const st = t.gateway.status || '';
+        return st === 'unhealthy' || st === 'port_conflict' || st === 'disconnected' || st === 'stopped';
+    }
+
     function matches(t) {
         const q = (searchEl.value || '').trim().toLowerCase();
         const st = statusEl.value;
@@ -205,9 +216,22 @@
         } else if (st && t.status !== st) return false;
         if (gw === 'on' && !t.gatewayEnabled) return false;
         if (gw === 'off' && t.gatewayEnabled) return false;
+        if (gw === 'bad' && !gatewayUnhealthy(t)) return false;
+        if (gw === 'wa' && !(t.gateway && t.gateway.whatsapp)) return false;
         if (!q) return true;
         const hay = [t.name, t.slug, t.ownerEmail, t.industry].join(' ').toLowerCase();
         return hay.indexOf(q) >= 0;
+    }
+
+    function paintStatFilters() {
+        if (!statsEl) return;
+        statsEl.querySelectorAll('.ta-stat[data-filter-status], .ta-stat[data-filter-gateway]').forEach(function (el) {
+            const fs = el.getAttribute('data-filter-status');
+            const fg = el.getAttribute('data-filter-gateway');
+            const active = (fs !== null && fs !== undefined && statusEl.value === fs && !gatewayEl.value) ||
+                (fg && gatewayEl.value === fg && !statusEl.value);
+            el.classList.toggle('active', !!active);
+        });
     }
 
     function paintStats() {
@@ -246,18 +270,24 @@
         }
         body.innerHTML = rows.map(function (t) {
             const toggle = t.gatewayEnabled
-                ? '<button type="button" class="ta-btn off" data-act="off" data-id="' + esc(t.id) + '">خاموش کردن QR</button>'
-                : '<button type="button" class="ta-btn on" data-act="on" data-id="' + esc(t.id) + '">روشن کردن QR</button>';
+                ? '<button type="button" class="ta-btn off" data-act="off" data-id="' + esc(t.id) + '">خاموش QR</button>'
+                : '<button type="button" class="ta-btn on" data-act="on" data-id="' + esc(t.id) + '">روشن QR</button>';
             const restart = t.gatewayEnabled
-                ? '<button type="button" class="ta-btn" data-act="restart" data-id="' + esc(t.id) + '">راه‌اندازی مجدد</button>'
+                ? '<button type="button" class="ta-btn" data-act="restart" data-id="' + esc(t.id) + '">ری‌استارت</button>'
                 : '';
-            const reset = '<button type="button" class="ta-btn" data-act="password" data-id="' + esc(t.id) + '">رمز موقت مالک</button>';
-            const details = '<button type="button" class="ta-btn primary" data-act="details" data-id="' + esc(t.id) + '">جزئیات و کاربران</button>';
+            const wipe = t.gatewayEnabled
+                ? '<button type="button" class="ta-btn" data-act="wipe" data-id="' + esc(t.id) + '" title="پاک کردن نشست و QR تازه">پاک‌کردن نشست</button>'
+                : '';
+            const reset = '<button type="button" class="ta-btn" data-act="password" data-id="' + esc(t.id) + '">رمز مالک</button>';
+            const details = '<button type="button" class="ta-btn primary" data-act="details" data-id="' + esc(t.id) + '">مدیریت</button>';
             const confirmPay = isPayPending(t)
                 ? '<button type="button" class="ta-btn primary" data-act="confirm-pay" data-id="' + esc(t.id) + '">تأیید پرداخت</button>'
                 : '';
+            const suspend = t.status !== 'suspended'
+                ? '<button type="button" class="ta-btn off" data-act="suspend" data-id="' + esc(t.id) + '">تعلیق</button>'
+                : '<button type="button" class="ta-btn on" data-act="activate" data-id="' + esc(t.id) + '">فعال‌سازی</button>';
             const extend = t.status !== 'active'
-                ? '<button type="button" class="ta-btn" data-act="extend-trial" data-id="' + esc(t.id) + '">تمدید آزمایش ۱۴ روز</button>'
+                ? '<button type="button" class="ta-btn" data-act="extend-trial" data-id="' + esc(t.id) + '">تمدید ۱۴ روز</button>'
                 : '';
             const login = t.loginUrl
                 ? '<a class="ta-ltr ta-link" href="' + esc(t.loginUrl) + '" target="_blank" rel="noopener" title="برای ورود به پنل سازمان از پنجرهٔ ناشناس استفاده کنید تا نشست مدیر سکو عوض نشود">' + esc(t.loginUrl.replace(/^https?:\/\//, '')) + '</a>'
@@ -265,20 +295,22 @@
             const industry = INDUSTRY_LABEL[t.industry] || t.industry || '';
             const plan = PLAN_LABEL[t.planTier] || t.planTier || '';
             const statusCls = t.status === 'active' ? 'ok' : (t.status === 'suspended' || t.status === 'cancelled' ? 'err' : 'warn');
+            const lockBadge = isLocked(t) ? ' <span class="ta-badge err">قفل</span>' : '';
             return '<tr>' +
                 '<td><div class="ta-org"><strong>' + esc(t.name || '—') + '</strong>' +
                 '<span class="ta-sub">' + esc(industry) + (industry && plan ? ' · ' : '') + esc(plan) + '</span></div></td>' +
                 '<td><div class="ta-org"><span class="ta-ltr">' + esc(t.slug) + '</span>' + login + '</div></td>' +
                 '<td class="ta-ltr ta-hide-sm">' + esc(t.ownerEmail || '—') + '</td>' +
-                '<td><span class="ta-badge ' + statusCls + '">' + esc(STATUS_LABEL[t.status] || t.status || '—') + '</span></td>' +
+                '<td><span class="ta-badge ' + statusCls + '">' + esc(STATUS_LABEL[t.status] || t.status || '—') + '</span>' + lockBadge + '</td>' +
                 '<td class="ta-hide-sm">' + trialBadge(t) + '</td>' +
                 '<td>' + paymentCell(t) + '</td>' +
                 '<td>' + usageCell(t) + '</td>' +
                 '<td>' + gatewayCell(t) + '</td>' +
                 '<td class="ta-hide-sm">' + whatsappCell(t) + '</td>' +
-                '<td><div class="ta-row-actions">' + details + confirmPay + extend + toggle + restart + reset + '</div></td>' +
+                '<td><div class="ta-row-actions">' + details + confirmPay + suspend + extend + toggle + restart + wipe + reset + '</div></td>' +
                 '</tr>';
         }).join('');
+        paintStatFilters();
     }
 
     function loadingRow() {
@@ -410,7 +442,62 @@
             kv('آخرین فعالیت', esc(fmtDateTime(u.lastActivityAt))) +
             '</dl>' +
             '<div class="ta-section-head"><h3>ماژول‌های فعال</h3></div>' +
-            '<div class="ta-chips">' + (skills || '<span class="ta-sub">—</span>') + '</div>';
+            '<div class="ta-chips">' + (skills || '<span class="ta-sub">—</span>') + '</div>' +
+            '<div class="ta-quick-actions">' +
+            '<button type="button" class="ta-btn primary" data-tabjump="manage">ویرایش وضعیت و ماژول‌ها</button>' +
+            (t.gatewayEnabled
+                ? '<button type="button" class="ta-btn" data-act="wipe" data-id="' + esc(t.id) + '">پاک کردن نشست QR</button>' +
+                  '<button type="button" class="ta-btn" data-act="restart" data-id="' + esc(t.id) + '">راه‌اندازی مجدد Gateway</button>'
+                : '<button type="button" class="ta-btn on" data-act="on" data-id="' + esc(t.id) + '">روشن کردن QR</button>') +
+            '</div>';
+    }
+
+    function skillLabel(s) {
+        if (!s) return '';
+        if (s.label && s.label.fa) return s.label.fa;
+        return s.id || '';
+    }
+
+    function renderManage() {
+        const t = detail.tenant;
+        const catalog = detail.catalog || {};
+        const industries = catalog.industries || [];
+        const skills = (catalog.skills || []).filter(function (s) { return s.tier !== 'general' && !s.comingSoon; });
+        const enabled = {};
+        (t.enabledSkills || []).forEach(function (id) { enabled[id] = true; });
+        const industryOpts = industries.map(function (i) {
+            const lab = (i.label && i.label.fa) || i.id;
+            return '<option value="' + esc(i.id) + '"' + (t.industry === i.id ? ' selected' : '') + '>' + esc(lab) + '</option>';
+        }).join('');
+        const skillChecks = skills.map(function (s) {
+            return '<label class="ta-check"><input type="checkbox" name="skill" value="' + esc(s.id) + '"' +
+                (enabled[s.id] ? ' checked' : '') + '> ' + esc(skillLabel(s)) + '</label>';
+        }).join('');
+        return '<form class="ta-manage-form" id="taManageForm">' +
+            '<div class="ta-form-grid">' +
+            '<label>نام سازمان<input class="ta-search" name="name" maxlength="255" value="' + esc(t.name || '') + '" required></label>' +
+            '<label>وضعیت اشتراک<select class="ta-select" name="status">' +
+            ['trial', 'active', 'suspended', 'cancelled'].map(function (s) {
+                return '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + esc(STATUS_LABEL[s]) + '</option>';
+            }).join('') +
+            '</select></label>' +
+            '<label>پلن<select class="ta-select" name="planTier">' +
+            Object.keys(PLAN_LABEL).map(function (p) {
+                return '<option value="' + p + '"' + (t.planTier === p ? ' selected' : '') + '>' + esc(PLAN_LABEL[p]) + '</option>';
+            }).join('') +
+            '</select></label>' +
+            '<label>حوزهٔ فعالیت<select class="ta-select" name="industry">' + industryOpts + '</select></label>' +
+            '<label>تمدید آزمایش (روز)<input class="ta-search" name="extendTrialDays" type="number" min="0" max="90" placeholder="خالی = بدون تغییر"></label>' +
+            '</div>' +
+            '<div class="ta-section-head"><h3>ماژول‌های اختیاری / صنعتی</h3></div>' +
+            '<div class="ta-skills-grid">' + (skillChecks || '<span class="ta-sub">کاتالوگ ماژول در دسترس نیست</span>') + '</div>' +
+            '<div class="ta-msg" id="taManageMsg" role="alert"></div>' +
+            '<div class="ta-dialog-actions" style="justify-content:flex-start">' +
+            '<button type="submit" class="ta-btn primary">ذخیره تغییرات</button>' +
+            (t.status !== 'suspended'
+                ? '<button type="button" class="ta-btn off" data-act="suspend" data-id="' + esc(t.id) + '">تعلیق فوری</button>'
+                : '<button type="button" class="ta-btn on" data-act="activate" data-id="' + esc(t.id) + '">فعال‌سازی فوری</button>') +
+            '</div></form>';
     }
 
     function renderUsers() {
@@ -466,9 +553,87 @@
         detailDlg.querySelectorAll('.ta-tab').forEach(function (b) {
             b.classList.toggle('active', b.getAttribute('data-tab') === detailTab);
         });
-        detailBody.innerHTML = detailTab === 'users'
-            ? renderUsers()
-            : (detailTab === 'customers' ? renderCustomers() : renderOverview());
+        if (detailTab === 'users') detailBody.innerHTML = renderUsers();
+        else if (detailTab === 'customers') detailBody.innerHTML = renderCustomers();
+        else if (detailTab === 'manage') detailBody.innerHTML = renderManage();
+        else detailBody.innerHTML = renderOverview();
+    }
+
+    async function saveManagedTenant(ev) {
+        ev.preventDefault();
+        if (!detail) return;
+        const form = document.getElementById('taManageForm');
+        if (!form) return;
+        const f = form.elements;
+        const skills = [];
+        form.querySelectorAll('input[name="skill"]:checked').forEach(function (el) { skills.push(el.value); });
+        const payload = {
+            name: f.name.value.trim(),
+            status: f.status.value,
+            planTier: f.planTier.value,
+            industry: f.industry.value,
+            enabledSkills: skills,
+        };
+        const days = parseInt(String(f.extendTrialDays.value || ''), 10);
+        if (Number.isFinite(days) && days > 0) payload.extendTrialDays = days;
+        const msg = document.getElementById('taManageMsg');
+        const btn = form.querySelector('button[type="submit"]');
+        if (btn) btn.disabled = true;
+        if (msg) { msg.className = 'ta-msg'; msg.textContent = ''; }
+        try {
+            await api('/tenants/admin/' + encodeURIComponent(detail.tenant.id), {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            });
+            showMsg('سازمان به‌روزرسانی شد.');
+            await loadDetail(detail.tenant.id);
+            detailTab = 'manage';
+            paintDetail();
+            await load();
+        } catch (e) {
+            if (e.message !== 'unauthorized' && msg) {
+                msg.textContent = e.message || 'ذخیره ناموفق بود';
+                msg.className = 'ta-msg show err';
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function setTenantStatus(btn, id, status) {
+        const t = allTenants.find(function (x) { return x.id === id; }) || (detail && detail.tenant) || {};
+        const label = STATUS_LABEL[status] || status;
+        if (!confirm('وضعیت پنل «' + (t.slug || '') + '» به «' + label + '» تغییر کند؟')) return;
+        btn.disabled = true;
+        showMsg('');
+        try {
+            await api('/tenants/admin/' + encodeURIComponent(id), {
+                method: 'PATCH',
+                body: JSON.stringify({ status: status }),
+            });
+            showMsg('وضعیت به «' + label + '» تغییر کرد.');
+            if (detail && detail.tenant && detail.tenant.id === id) await loadDetail(id);
+            await load();
+        } catch (e) {
+            if (e.message !== 'unauthorized') showMsg(e.message || 'تغییر وضعیت ناموفق بود', true);
+            btn.disabled = false;
+        }
+    }
+
+    async function wipeGateway(btn, id) {
+        const t = allTenants.find(function (x) { return x.id === id; }) || {};
+        if (!confirm('نشست واتساپ وب پنل «' + (t.slug || '') + '» پاک شود و QR تازه ساخته شود؟ مالک باید دوباره اسکن کند.')) return;
+        btn.disabled = true;
+        showMsg('');
+        try {
+            await api('/tenants/admin/' + encodeURIComponent(id) + '/gateway/wipe', { method: 'POST', body: '{}' });
+            showMsg('نشست پاک شد. مالک می‌تواند QR تازه را اسکن کند.');
+            if (detail && detail.tenant && detail.tenant.id === id) await loadDetail(id);
+            await load();
+        } catch (e) {
+            if (e.message !== 'unauthorized') showMsg(e.message || 'پاک کردن نشست ناموفق بود', true);
+            btn.disabled = false;
+        }
     }
 
     async function loadDetail(id) {
@@ -560,7 +725,25 @@
         detailTab = tab.getAttribute('data-tab');
         paintDetail();
     });
-    detailBody.addEventListener('click', function (ev) {
+    detailBody.addEventListener('click', async function (ev) {
+        const jump = ev.target.closest('[data-tabjump]');
+        if (jump && detail) {
+            detailTab = jump.getAttribute('data-tabjump');
+            paintDetail();
+            return;
+        }
+        const actBtn = ev.target.closest('button[data-act]');
+        if (actBtn) {
+            const id = actBtn.getAttribute('data-id');
+            const act = actBtn.getAttribute('data-act');
+            if (act === 'wipe') { await wipeGateway(actBtn, id); return; }
+            if (act === 'suspend') { await setTenantStatus(actBtn, id, 'suspended'); return; }
+            if (act === 'activate') { await setTenantStatus(actBtn, id, 'active'); return; }
+            if (act === 'on' || act === 'off' || act === 'restart') {
+                await runGatewayAction(actBtn, id, act);
+                return;
+            }
+        }
         const btn = ev.target.closest('button[data-uact]');
         if (!btn || !detail) return;
         if (btn.getAttribute('data-uact') === 'create') {
@@ -571,6 +754,9 @@
         const user = detail.users.find(function (u) { return u.id === uid; });
         if (user) openUserForm(user);
     });
+    detailBody.addEventListener('submit', function (ev) {
+        if (ev.target && ev.target.id === 'taManageForm') saveManagedTenant(ev);
+    });
     document.getElementById('taDetailClose').addEventListener('click', function () {
         if (detailDlg.close) detailDlg.close();
     });
@@ -578,6 +764,25 @@
         if (userDlg.close) userDlg.close();
     });
     userForm.addEventListener('submit', saveUser);
+
+    async function runGatewayAction(btn, id, act) {
+        if (act === 'off' && !confirm('Gateway این سازمان متوقف شود؟ نشست واتساپ حفظ می‌شود و با روشن کردن دوباره برمی‌گردد.')) return;
+        btn.disabled = true;
+        showMsg('');
+        try {
+            const path = '/tenants/admin/' + encodeURIComponent(id) + '/gateway' + (act === 'restart' ? '/restart' : '');
+            const payload = act === 'restart' ? {} : { enabled: act === 'on' };
+            await api(path, { method: 'POST', body: JSON.stringify(payload) });
+            showMsg(act === 'on'
+                ? 'QR برای این سازمان روشن شد. مالک پنل می‌تواند از بخش اتصال واتساپ کد QR را اسکن کند.'
+                : (act === 'off' ? 'Gateway خاموش شد.' : 'Gateway دوباره راه‌اندازی شد.'));
+            if (detail && detail.tenant && detail.tenant.id === id) await loadDetail(id);
+            await load();
+        } catch (e) {
+            if (e.message !== 'unauthorized') showMsg(e.message || 'عملیات ناموفق بود', true);
+            btn.disabled = false;
+        }
+    }
 
     body.addEventListener('click', async function (ev) {
         const btn = ev.target.closest('button[data-act]');
@@ -600,20 +805,20 @@
             await extendTrial(btn, id);
             return;
         }
-        if (act === 'off' && !confirm('Gateway این سازمان متوقف شود؟ نشست واتساپ حفظ می‌شود و با روشن کردن دوباره برمی‌گردد.')) return;
-        btn.disabled = true;
-        showMsg('');
-        try {
-            const path = '/tenants/admin/' + encodeURIComponent(id) + '/gateway' + (act === 'restart' ? '/restart' : '');
-            const payload = act === 'restart' ? {} : { enabled: act === 'on' };
-            await api(path, { method: 'POST', body: JSON.stringify(payload) });
-            showMsg(act === 'on'
-                ? 'QR برای این سازمان روشن شد. مالک پنل می‌تواند از بخش اتصال واتساپ کد QR را اسکن کند.'
-                : (act === 'off' ? 'Gateway خاموش شد.' : 'Gateway دوباره راه‌اندازی شد.'));
-            await load();
-        } catch (e) {
-            if (e.message !== 'unauthorized') showMsg(e.message || 'عملیات ناموفق بود', true);
-            btn.disabled = false;
+        if (act === 'wipe') {
+            await wipeGateway(btn, id);
+            return;
+        }
+        if (act === 'suspend') {
+            await setTenantStatus(btn, id, 'suspended');
+            return;
+        }
+        if (act === 'activate') {
+            await setTenantStatus(btn, id, 'active');
+            return;
+        }
+        if (act === 'on' || act === 'off' || act === 'restart') {
+            await runGatewayAction(btn, id, act);
         }
     });
 
@@ -632,8 +837,32 @@
     });
 
     searchEl.addEventListener('input', render);
-    statusEl.addEventListener('change', render);
-    gatewayEl.addEventListener('change', render);
+    statusEl.addEventListener('change', function () { paintStatFilters(); render(); });
+    gatewayEl.addEventListener('change', function () { paintStatFilters(); render(); });
+    if (statsEl) {
+        statsEl.addEventListener('click', function (ev) {
+            const btn = ev.target.closest('.ta-stat[data-filter-status], .ta-stat[data-filter-gateway]');
+            if (!btn) return;
+            const fs = btn.getAttribute('data-filter-status');
+            const fg = btn.getAttribute('data-filter-gateway');
+            if (fs !== null && fs !== undefined) {
+                statusEl.value = statusEl.value === fs ? '' : fs;
+                gatewayEl.value = '';
+            } else if (fg) {
+                gatewayEl.value = gatewayEl.value === fg ? '' : fg;
+                statusEl.value = '';
+            }
+            paintStatFilters();
+            render();
+        });
+    }
+    function syncAutoRefresh() {
+        if (autoTimer) { clearInterval(autoTimer); autoTimer = null; }
+        if (autoRefreshEl && autoRefreshEl.checked) {
+            autoTimer = setInterval(function () { load(); }, AUTO_MS);
+        }
+    }
+    if (autoRefreshEl) autoRefreshEl.addEventListener('change', syncAutoRefresh);
     refreshBtn.addEventListener('click', load);
     load();
 })();

@@ -412,6 +412,8 @@
         if (!el) return;
         el.textContent = text || '';
         el.className = 'lp-msg ' + (type || 'error');
+        /* پیام انگلیسی داخل UI فارسی نباید با dir=rtl نقطه‌گذاری را بشکند */
+        try { el.setAttribute('dir', text ? 'auto' : ''); } catch (_) {}
         if (text) {
             el.classList.add('has-text');
             try { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
@@ -593,7 +595,11 @@
             setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
             if (!res.ok) {
                 if (suc) { suc.textContent = ''; suc.className = 'lp-msg success'; }
-                setMsg('forgotMsg', (res.data && res.data.error) || t('forgot_send_fail'));
+                var code = res.data && res.data.code;
+                var failMsg = (code === 'SMTP_NOT_CONFIGURED' || code === 'EMAIL_SEND_FAILED' || !code)
+                    ? t('forgot_send_fail')
+                    : ((res.data && res.data.error) || t('forgot_send_fail'));
+                setMsg('forgotMsg', failMsg);
                 return;
             }
             if (suc) {

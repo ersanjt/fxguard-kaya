@@ -343,6 +343,28 @@ async function restartTenantGateway(tenantId, logger) {
     return { tenantId: row.id, gatewayEnabled: true, gatewayPort: row.gatewayPort, gateway };
 }
 
+/** توقف، پاک کردن نشست واتساب وب، و راه‌اندازی دوباره برای گرفتن QR تازه. */
+async function wipeTenantGatewaySession(tenantId, logger) {
+    const row = await loadCustomerTenant(tenantId);
+    if (!row.gatewayEnabled || !row.gatewayPort) {
+        throw httpError(400, 'GATEWAY_DISABLED', 'Gateway این سازمان خاموش است');
+    }
+    await stopTenantGateway(row, logger);
+    const sessionPath = path.join(tenantDir(row), 'session');
+    try {
+        fs.rmSync(sessionPath, { recursive: true, force: true });
+    } catch (err) {
+        if (logger && logger.warn) {
+            logger.warn('Tenant gateway session wipe incomplete', { tenant: row.slug, error: err.message });
+        }
+    }
+    try {
+        fs.mkdirSync(sessionPath, { recursive: true });
+    } catch (_) {}
+    const gateway = await startTenantGateway(row, logger);
+    return { tenantId: row.id, gatewayEnabled: true, gatewayPort: row.gatewayPort, wiped: true, gateway };
+}
+
 /** Gatewayهای روشن را زنده نگه می‌دارد؛ بین دو اجرای مجدد فاصله می‌گذارد تا حلقهٔ کرش سرور را پر نکند. */
 async function superviseTenantGateways(logger) {
     const { Tenant } = require('../models');
@@ -388,6 +410,7 @@ module.exports = {
     enableTenantGateway,
     disableTenantGateway,
     restartTenantGateway,
+    wipeTenantGatewaySession,
     startTenantGateway,
     probeTenantGateway,
     startTenantGatewayWatchdog,

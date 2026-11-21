@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/brand/fxguard-favicon-32.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/brand/fxguard-apple-touch.png">
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/tenants-admin.css?v=tgw6">
+    <link rel="stylesheet" href="/css/tenants-admin.css?v=tgw9">
 </head>
 <body>
 <main class="ta-wrap">
@@ -23,26 +23,27 @@
             </div>
         </div>
         <div class="ta-actions">
+            <label class="ta-check ta-autorefresh"><input type="checkbox" id="taAutoRefresh"> به‌روزرسانی خودکار</label>
             <button type="button" class="ta-btn" id="taRefresh">به‌روزرسانی</button>
             <a class="ta-btn" href="/dashboard?panel=platform">بازگشت به پنل</a>
         </div>
     </div>
     <p class="ta-hint">
-        هر سازمان پنل و ورود جدا دارد. روشن کردن QR یک پروسهٔ Gateway اختصاصی (نشست واتساپ وب همان سازمان) روی سرور می‌سازد.
-        هر نشست حدود ۲۰۰ تا ۴۰۰ مگابایت حافظه می‌گیرد. اتصال QR غیررسمی است و ارسال انبوه ممکن است شماره را مسدود کند.
+        مدیریت کامل سازمان‌ها: وضعیت اشتراک، پلن، ماژول‌ها، کاربران، پرداخت و Gateway واتساپ.
+        روشن کردن QR یک پروسهٔ اختصاصی روی سرور می‌سازد (حدود ۲۰۰ تا ۴۰۰ مگابایت). برای Gateway ناسالم از «پاک کردن نشست QR» استفاده کنید.
     </p>
 
-    <section class="ta-stats" aria-label="خلاصه">
-        <article class="ta-stat"><span>سازمان‌ها</span><b id="taStatTotal">—</b></article>
-        <article class="ta-stat"><span>آزمایشی</span><b id="taStatTrial">—</b></article>
-        <article class="ta-stat"><span>پرداخت‌شده</span><b id="taStatPaid">—</b></article>
-        <article class="ta-stat"><span>منتظر تأیید پرداخت</span><b id="taStatPending">—</b></article>
-        <article class="ta-stat"><span>منقضی / قفل</span><b id="taStatLocked">—</b></article>
-        <article class="ta-stat"><span>Gateway روشن</span><b id="taStatGw">—</b></article>
-        <article class="ta-stat"><span>واتساپ متصل</span><b id="taStatWa">—</b></article>
-        <article class="ta-stat"><span>کاربران پنل‌ها</span><b id="taStatUsers">—</b></article>
-        <article class="ta-stat"><span>مشتریان</span><b id="taStatCustomers">—</b></article>
-        <article class="ta-stat"><span>پیام‌ها</span><b id="taStatMessages">—</b></article>
+    <section class="ta-stats" aria-label="خلاصه" id="taStats">
+        <button type="button" class="ta-stat" data-filter-status=""><span>سازمان‌ها</span><b id="taStatTotal">—</b></button>
+        <button type="button" class="ta-stat" data-filter-status="trial"><span>آزمایشی</span><b id="taStatTrial">—</b></button>
+        <button type="button" class="ta-stat" data-filter-status="active"><span>پرداخت‌شده</span><b id="taStatPaid">—</b></button>
+        <button type="button" class="ta-stat" data-filter-status="pay_pending"><span>منتظر تأیید پرداخت</span><b id="taStatPending">—</b></button>
+        <button type="button" class="ta-stat" data-filter-status="locked"><span>منقضی / قفل</span><b id="taStatLocked">—</b></button>
+        <button type="button" class="ta-stat" data-filter-gateway="on"><span>Gateway روشن</span><b id="taStatGw">—</b></button>
+        <button type="button" class="ta-stat" data-filter-gateway="wa"><span>واتساپ متصل</span><b id="taStatWa">—</b></button>
+        <article class="ta-stat ta-stat-static"><span>کاربران پنل‌ها</span><b id="taStatUsers">—</b></article>
+        <article class="ta-stat ta-stat-static"><span>مشتریان</span><b id="taStatCustomers">—</b></article>
+        <article class="ta-stat ta-stat-static"><span>پیام‌ها</span><b id="taStatMessages">—</b></article>
     </section>
 
     <div class="ta-msg" id="taMsg" role="status" aria-live="polite"></div>
@@ -62,6 +63,8 @@
             <option value="">همهٔ Gatewayها</option>
             <option value="on">روشن</option>
             <option value="off">خاموش</option>
+            <option value="bad">ناسالم / قطع</option>
+            <option value="wa">واتساپ متصل</option>
         </select>
         <span class="ta-count" id="taCount"></span>
     </div>
@@ -109,6 +112,7 @@
     </div>
     <nav class="ta-tabs" role="tablist">
         <button type="button" class="ta-tab active" data-tab="overview" role="tab">خلاصه</button>
+        <button type="button" class="ta-tab" data-tab="manage" role="tab">مدیریت</button>
         <button type="button" class="ta-tab" data-tab="users" role="tab">کاربران و دسترسی</button>
         <button type="button" class="ta-tab" data-tab="customers" role="tab">مشتریان اخیر</button>
     </nav>
@@ -144,6 +148,6 @@
     </form>
 </dialog>
 
-<script src="/js/tenants-admin.js?v=tgw8"></script>
+<script src="/js/tenants-admin.js?v=tgw9"></script>
 </body>
 </html>

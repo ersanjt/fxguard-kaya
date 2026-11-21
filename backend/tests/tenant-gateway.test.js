@@ -333,6 +333,37 @@ async function main() {
             assert.strictEqual((await admin.patch(base + other.id, { name: 'x' })).status, 404);
         });
 
+        await test('platform admin updates company status, plan and modules', async () => {
+            assert.strictEqual((await a.patch('/api/tenants/admin/' + tenantA.id, { status: 'suspended' })).status, 404);
+            const bad = await admin.patch('/api/tenants/admin/' + tenantA.id, { status: 'nope' });
+            assert.strictEqual(bad.status, 400);
+            const r = await admin.patch('/api/tenants/admin/' + tenantA.id, {
+                name: 'GW A Managed',
+                status: 'suspended',
+                planTier: 'business',
+                industry: 'health',
+                enabledSkills: ['patients', 'doctors'],
+            });
+            assert.strictEqual(r.status, 200, JSON.stringify(r.body));
+            assert.strictEqual(r.body.tenant.status, 'suspended');
+            assert.strictEqual(r.body.tenant.planTier, 'business');
+            assert.strictEqual(r.body.tenant.industry, 'health');
+            assert(r.body.tenant.enabledSkills.indexOf('patients') >= 0);
+            await tenantA.reload();
+            assert.strictEqual(tenantA.status, 'suspended');
+            assert.strictEqual(tenantA.name, 'GW A Managed');
+            const on = await admin.patch('/api/tenants/admin/' + tenantA.id, { status: 'active' });
+            assert.strictEqual(on.status, 200, JSON.stringify(on.body));
+            assert.strictEqual(on.body.tenant.status, 'active');
+        });
+
+        await test('wipe gateway session refuses when QR is off', async () => {
+            await tenantA.update({ gatewayEnabled: false, gatewayPort: null });
+            const wipe = await admin.post('/api/tenants/admin/' + tenantA.id + '/gateway/wipe');
+            assert.strictEqual(wipe.status, 400, JSON.stringify(wipe.body));
+            assert.strictEqual((await a.post('/api/tenants/admin/' + tenantA.id + '/gateway/wipe')).status, 404);
+        });
+
         await test('SQLite migration drops a global inline UNIQUE so two companies can share a value', async () => {
             const { dropGlobalColumnUnique } = require('../services/tenantPlatform');
             const { sequelize } = models;

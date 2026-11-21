@@ -305,15 +305,24 @@ router.post('/forgot-password', async (req, res, next) => {
         });
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
+        const smtpConfigured = !!(emailConfig && emailConfig.host) || emailService.isEnabled();
         let sent = false;
         try {
             sent = await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);
         } catch (err) {
-            logger.error('Failed to send password reset email:', err);
+            logger.error('Failed to send password reset email:', {
+                error: err && err.message,
+                code: err && err.code,
+                smtpConfigured,
+                hasPanelSmtp: !!(emailConfig && emailConfig.host),
+            });
         }
         if (!sent) {
             await PasswordResetToken.destroy({ where: { userId: user.id } });
-            return res.status(503).json({ error: RESET_EMAIL_FAIL });
+            return res.status(503).json({
+                error: RESET_EMAIL_FAIL,
+                code: smtpConfigured ? 'EMAIL_SEND_FAILED' : 'SMTP_NOT_CONFIGURED',
+            });
         }
         return res.status(200).json({ message: FORGOT_OK_MESSAGE });
     } catch (err) {

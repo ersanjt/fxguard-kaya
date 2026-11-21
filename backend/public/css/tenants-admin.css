@@ -89,7 +89,19 @@ body {
     border: 1px solid var(--ta-border);
     border-radius: 14px;
     padding: 14px 16px;
+    text-align: start;
+    color: inherit;
+    font: inherit;
+    width: 100%;
 }
+
+button.ta-stat { cursor: pointer; }
+button.ta-stat:hover { border-color: rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.06); }
+button.ta-stat.active {
+    border-color: var(--ta-accent);
+    box-shadow: 0 0 0 1px rgba(16, 185, 129, 0.35);
+}
+.ta-stat-static { cursor: default; }
 
 .ta-stat b {
     display: block;
@@ -99,6 +111,56 @@ body {
 }
 
 .ta-stat span { color: var(--ta-muted); font-size: 0.78rem; }
+
+.ta-autorefresh {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--ta-muted);
+    font-size: 0.82rem;
+    margin-inline-end: 4px;
+}
+
+.ta-manage-form {
+    display: grid;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+.ta-manage-form .ta-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+}
+
+.ta-manage-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: var(--ta-muted);
+}
+
+.ta-skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.ta-skills-grid .ta-check {
+    margin: 0;
+    padding: 8px 10px;
+    border: 1px solid var(--ta-border);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.ta-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
 
 .ta-toolbar {
     display: flex;

@@ -10,12 +10,17 @@
 const crypto = require('crypto');
 const { Op, fn, col } = require('sequelize');
 const { Tenant, User, Customer, Conversation, Message } = require('../../models');
-const { PLATFORM_SLUG } = require('../../lib/tenantHost');
+const { PLATFORM_SLUG, trialDays } = require('../../lib/tenantHost');
+const { trialEndsAtFromNow } = require('../../lib/tenantTrial');
+const { updateTenantSkills } = require('../tenantProvision');
+const { invalidatePlanCache } = require('../../lib/planLimits');
 const { validatePassword } = require('../../lib/passwordValidation');
 const { displayableWhatsAppPhone } = require('../../lib/phoneUtils');
 const { revokeStaffSessions } = require('../../lib/staffSession');
 
 const ROLES = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
+const STATUSES = ['trial', 'active', 'suspended', 'cancelled'];
+const PLAN_TIERS = ['start', 'business', 'legacy', 'pro'];
 const USERNAME_RE = /^[a-z0-9._-]{3,40}$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const RECENT_CUSTOMERS = 50;
@@ -244,10 +249,76 @@ async function updateTenantUser(tenantId, userId, body) {
     return { user: shapeUser(user), password, tenant };
 }
 
+/**
+ * ویرایش وضعیت اشتراک، پلن، نام، حوزه و ماژول‌ها از کنسول مدیر سکو.
+ * @param {string} tenantId
+ * @param {object} body
+ */
+async function updateManagedTenant(tenantId, body) {
+    const tenant = await findManagedTenant(tenantId);
+    const b = body || {};
+    const updates = {};
+
+    if (b.name !== undefined) {
+        const name = String(b.name || '').trim().slice(0, 255);
+        if (!name) throw httpError(400, 'نام سازمان خالی است', 'BAD_NAME');
+        updates.name = name;
+    }
+    if (b.status !== undefined) {
+        if (!STATUSES.includes(b.status)) throw httpError(400, 'وضعیت نامعتبر است', 'BAD_STATUS');
+        updates.status = b.status;
+    }
+    if (b.planTier !== undefined) {
+        if (!PLAN_TIERS.includes(b.planTier)) throw httpError(400, 'پلن نامعتبر است', 'BAD_PLAN');
+        updates.planTier = b.planTier;
+    }
+    if (b.trialEndsAt !== undefined) {
+        if (b.trialEndsAt === null || b.trialEndsAt === '') {
+            updates.trialEndsAt = null;
+        } else {
+            const d = new Date(b.trialEndsAt);
+            if (isNaN(d.getTime())) throw httpError(400, 'تاریخ پایان آزمایش نامعتبر است', 'BAD_TRIAL');
+            updates.trialEndsAt = d;
+        }
+    }
+    if (b.extendTrialDays !== undefined) {
+        const requested = parseInt(String(b.extendTrialDays), 10);
+        const days = Number.isFinite(requested) && requested >= 1 && requested <= 90
+            ? requested
+            : trialDays(process.env);
+        const nextStatus = updates.status || tenant.status;
+        if (nextStatus === 'active') {
+            throw httpError(400, 'این پنل اشتراک فعال دارد و نیازی به تمدید آزمایش ندارد', 'ACTIVE_NO_TRIAL');
+        }
+        updates.status = 'trial';
+        updates.trialEndsAt = trialEndsAtFromNow(days);
+    }
+
+    if (Object.keys(updates).length) {
+        await tenant.update(updates);
+        try { invalidatePlanCache(); } catch (_) {}
+    }
+
+    if (b.industry !== undefined || b.enabledSkills !== undefined) {
+        await updateTenantSkills(tenant.id, {
+            industry: b.industry,
+            enabledSkills: b.enabledSkills,
+        });
+        await tenant.reload();
+    } else if (Object.keys(updates).length) {
+        await tenant.reload();
+    }
+
+    return tenant;
+}
+
 module.exports = {
     ROLES,
+    STATUSES,
+    PLAN_TIERS,
     tenantUsageMap,
     tenantDetails,
     createTenantUser,
     updateTenantUser,
+    updateManagedTenant,
 };

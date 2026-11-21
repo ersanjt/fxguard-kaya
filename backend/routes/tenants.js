@@ -43,6 +43,7 @@ const {
     tenantDetails,
     createTenantUser,
     updateTenantUser,
+    updateManagedTenant,
 } = require('../services/tenancy/tenantAdminConsole');
 
 function createTenantsRouter(logger) {
@@ -333,9 +334,41 @@ function createTenantsRouter(logger) {
                 usage,
                 users,
                 customers,
+                catalog: publicCatalog(),
             });
         } catch (err) {
             return sendAdminError(res, err, 'خواندن جزئیات سازمان ناموفق بود');
+        }
+    });
+
+    /** ویرایش وضعیت، پلن، نام، حوزه و ماژول‌های سازمان از کنسول مدیر سکو. */
+    router.patch('/tenants/admin/:id', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const row = await updateManagedTenant(req.params.id, req.body);
+            if (logger && logger.info) {
+                logger.info('Tenant updated by platform admin', {
+                    tenantId: row.id,
+                    fields: Object.keys(req.body || {}),
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.json({
+                ok: true,
+                tenant: {
+                    id: row.id,
+                    slug: row.slug,
+                    name: row.name,
+                    industry: normalizeIndustry(row.industry),
+                    status: row.status,
+                    planTier: row.planTier,
+                    trialEndsAt: row.trialEndsAt,
+                    enabledSkills: parseSkillsColumn(row.enabledSkills) || LEGACY_SKILLS.slice(),
+                    access: tenantAccessState(row).code || 'ok',
+                    loginUrl: tenantLoginUrl(row.slug, process.env, process.env.SELF_SERVE_PUBLIC_PROTO),
+                },
+            });
+        } catch (err) {
+            return sendAdminError(res, err, 'به‌روزرسانی سازمان ناموفق بود');
         }
     });
 
@@ -471,6 +504,23 @@ function createTenantsRouter(logger) {
             return res.json({ ok: true, ...(await restartTenantGateway(req.params.id, logger)) });
         } catch (err) {
             return sendAdminError(res, err, 'راه‌اندازی مجدد Gateway ناموفق بود');
+        }
+    });
+
+    /** پاک کردن نشست واتساپ وب و گرفتن QR تازه (برای Gateway ناسالم یا قفل‌شده). */
+    router.post('/tenants/admin/:id/gateway/wipe', authMiddleware, requirePlatformAdmin, async (req, res) => {
+        try {
+            const { wipeTenantGatewaySession } = require('../services/tenantGatewaySupervisor');
+            const result = await wipeTenantGatewaySession(req.params.id, logger);
+            if (logger && logger.info) {
+                logger.info('Tenant gateway session wiped by platform admin', {
+                    tenantId: req.params.id,
+                    by: req.user && req.user.email,
+                });
+            }
+            return res.json({ ok: true, ...result });
+        } catch (err) {
+            return sendAdminError(res, err, 'پاک کردن نشست Gateway ناموفق بود');
         }
     });
 
