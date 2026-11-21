@@ -1,0 +1,193 @@
+name: Connect WhatsApp line by E.164
+
+on:
+  workflow_dispatch:
+    inputs:
+      e164:
+        description: 'E.164 digits only, e.g. 905339470868'
+        required: true
+        default: '905339470868'
+      apply:
+        description: 'If match found, write Phone Number ID into WhatsappConnection'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+
+jobs:
+  connect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Match Meta phone and optionally bind to Kaya CRM
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          WANT_E164: ${{ github.event.inputs.e164 }}
+          DO_APPLY: ${{ github.event.inputs.apply }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: WANT_E164,DO_APPLY
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-kaya/backend
+            WANT_E164=$(printf '%s' "$WANT_E164" | tr -d ' +-' | sed 's/^00//' | sed 's/^0/90/')
+            echo "WANT_E164=$WANT_E164 DO_APPLY=$DO_APPLY"
+            node <<'NODE'
+            require('dotenv').config();
+            const axios = require('axios');
+            const { WhatsappConnection, WhatsappNumber, sequelize } = require('./models');
+            const want = String(process.env.WANT_E164 || '').replace(/\D/g, '');
+            const apply = process.env.DO_APPLY === 'yes';
+
+            function digits(v) {
+              return String(v || '').replace(/\D/g, '').replace(/^0+/, '');
+            }
+            function samePhone(a, b) {
+              const x = digits(a);
+              const y = digits(b);
+              if (!x || !y) return false;
+              return x === y || x.endsWith(y) || y.endsWith(x);
+            }
+
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              if (!row) throw new Error('no default WhatsappConnection');
+              const token = row.cloudAccessToken || process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '';
+              const currentId = row.cloudPhoneNumberId || process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '';
+              const ver = (process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || 'v26.0').replace(/[^v0-9.]/g, '') || 'v26.0';
+              console.log(JSON.stringify({
+                mode: row.connectionMode,
+                cloudEnabled: row.cloudEnabled,
+                gatewayEnabled: row.gatewayEnabled,
+                currentPhoneNumberId: currentId || null,
+                hasToken: token.length > 8,
+                tokenLen: token.length,
+                appSecretEnv: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET),
+                want
+              }));
+              if (!token) throw new Error('NO_TOKEN');
+
+              const headers = { Authorization: 'Bearer ' + token };
+              // Discover WABA / phones via current phone id, then me/businesses fallback
+              let phones = [];
+              let wabaId = row.cloudWabaId || null;
+              const tried = [];
+
+              async function get(url) {
+                tried.push(url);
+                const r = await axios.get(url, { headers, timeout: 20000, validateStatus: () => true });
+                return r;
+              }
+
+              if (currentId) {
+                const r = await get('https://graph.facebook.com/' + ver + '/' + currentId + '?fields=id,display_phone_number,verified_name,quality_rating,is_on_biz_app,platform_type,account_mode');
+                console.log('current_phone', r.status, JSON.stringify(r.data));
+                if (r.status === 200 && r.data && r.data.id) phones.push(r.data);
+                const r2 = await get('https://graph.facebook.com/' + ver + '/' + currentId + '?fields=whatsapp_business_account{id,name,phone_numbers{id,display_phone_number,verified_name,quality_rating}}');
+                console.log('waba_via_phone', r2.status, JSON.stringify(r2.data && (r2.data.whatsapp_business_account || r2.data.error || r2.data)).slice(0, 1200));
+                const waba = r2.data && r2.data.whatsapp_business_account;
+                if (waba && waba.id) wabaId = waba.id;
+                if (waba && waba.phone_numbers && waba.phone_numbers.data) {
+                  phones = phones.concat(waba.phone_numbers.data);
+                }
+              }
+
+              // Known target WABA from docs
+              for (const wid of [wabaId, '1395714801963738'].filter(Boolean)) {
+                const r = await get('https://graph.facebook.com/' + ver + '/' + wid + '/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,is_on_biz_app,platform_type');
+                console.log('waba_phones', wid, r.status, JSON.stringify(r.data).slice(0, 2000));
+                if (r.status === 200 && r.data && Array.isArray(r.data.data)) {
+                  wabaId = wid;
+                  phones = phones.concat(r.data.data);
+                }
+              }
+
+              // debug token
+              const dbg = await get('https://graph.facebook.com/' + ver + '/debug_token?input_token=' + encodeURIComponent(token));
+              console.log('debug_token', dbg.status, JSON.stringify({
+                app_id: dbg.data && dbg.data.data && dbg.data.data.app_id,
+                type: dbg.data && dbg.data.data && dbg.data.data.type,
+                is_valid: dbg.data && dbg.data.data && dbg.data.data.is_valid,
+                scopes: dbg.data && dbg.data.data && dbg.data.data.scopes,
+                error: dbg.data && dbg.data.error
+              }));
+
+              const uniq = new Map();
+              for (const p of phones) {
+                if (p && p.id) uniq.set(String(p.id), p);
+              }
+              const list = Array.from(uniq.values());
+              console.log('phones_found', list.length);
+              list.forEach((p) => console.log('PHONE', p.id, p.display_phone_number, p.verified_name || '', p.is_on_biz_app, p.platform_type));
+
+              const match = list.find((p) => samePhone(p.display_phone_number, want));
+              if (!match) {
+                console.log('NO_MATCH_FOR', want);
+                // also try known correct id for 0880 if want is 0880
+                process.exitCode = 2;
+                await sequelize.close();
+                return;
+              }
+              console.log('MATCH', JSON.stringify(match));
+
+              if (!apply) {
+                console.log('DRY_RUN only');
+                await sequelize.close();
+                return;
+              }
+
+              row.cloudPhoneNumberId = String(match.id);
+              if (wabaId) row.cloudWabaId = String(wabaId);
+              row.cloudEnabled = true;
+              if (!row.connectionMode || row.connectionMode === 'gateway') row.connectionMode = 'cloud_first';
+              await row.save({ skipTenantScope: true });
+
+              // primary slot display
+              try {
+                const [num] = await WhatsappNumber.findOrCreate({
+                  where: { slotKey: 'primary' },
+                  defaults: {
+                    slotKey: 'primary',
+                    role: 'primary',
+                    priority: 0,
+                    enabled: true,
+                    displayPhone: '+' + want.replace(/^90/, '90'),
+                    cloudPhoneNumberId: String(match.id),
+                    tenantId: row.tenantId || null,
+                  },
+                  skipTenantScope: true,
+                });
+                num.displayPhone = '+' + (want.startsWith('90') ? want : want);
+                num.cloudPhoneNumberId = String(match.id);
+                num.enabled = true;
+                num.role = 'primary';
+                await num.save({ skipTenantScope: true });
+                console.log('primary_slot_updated', num.id);
+              } catch (e) {
+                console.log('number_slot_skip', e.message);
+              }
+
+              try {
+                require('./lib/whatsappConnectionLoader').invalidateCache();
+              } catch (_) {}
+              try {
+                require('./services/whatsappNumbers').invalidateNumbersCache();
+              } catch (_) {}
+
+              // verify credentials against new id
+              const vr = await get('https://graph.facebook.com/' + ver + '/' + match.id + '?fields=id,display_phone_number,verified_name,is_on_biz_app,platform_type');
+              console.log('VERIFY_AFTER', vr.status, JSON.stringify(vr.data));
+              console.log('APPLIED_OK', match.id, match.display_phone_number);
+              await sequelize.close();
+            })().catch(async (e) => {
+              console.error('FAIL', e.message);
+              try { await sequelize.close(); } catch (_) {}
+              process.exit(1);
+            });
+            NODE
