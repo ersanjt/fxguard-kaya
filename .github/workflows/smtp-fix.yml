@@ -1,0 +1,176 @@
+name: Fix SMTP host + reset platform admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_smtp_host_fix:
+        description: 'Set SMTP_HOST=smtpout.secureserver.net and align panel_settings to port 465'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+      clear_panel_smtp:
+        description: 'Clear panel DB SMTP so .env is used (yes) or sync panel host/port from .env (no)'
+        required: true
+        default: 'no'
+        type: choice
+        options: ['yes', 'no']
+      reset_platform_admin:
+        description: 'Reset password for fxguard@bizdavar.com on platform panel'
+        required: true
+        default: 'yes'
+        type: choice
+        options: ['yes', 'no']
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Fix SMTP and optionally reset admin
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          APPLY_HOST: ${{ github.event.inputs.apply_smtp_host_fix }}
+          CLEAR_PANEL: ${{ github.event.inputs.clear_panel_smtp }}
+          DO_RESET: ${{ github.event.inputs.reset_platform_admin }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: APPLY_HOST,CLEAR_PANEL,DO_RESET
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set +e
+            echo "== start $(date -u) =="
+
+            show_smtp_env() {
+              local f="$1"
+              echo "-- $f --"
+              local plen
+              plen=$(grep '^SMTP_PASS=' "$f" 2>/dev/null | cut -d= -f2- | wc -c | tr -d ' ')
+              grep -E '^SMTP_' "$f" | sed -E "s/^(SMTP_PASS)=.*/\1=<redacted len=${plen}>/"
+            }
+
+            for ENVF in /var/www/kayaCRM-app/backend/.env /var/www/kayaCRM-kaya/backend/.env; do
+              [ -f "$ENVF" ] || continue
+              show_smtp_env "$ENVF"
+            done
+
+            echo "== panel_settings SMTP (app DB) =="
+            cd /var/www/kayaCRM-app/backend
+            node -e "
+              require('dotenv').config();
+              const { PanelSetting, sequelize } = require('./models');
+              (async () => {
+                const rows = await PanelSetting.findAll({ attributes: ['id','tenantId','smtpHost','smtpPort','smtpUser','smtpFrom','smtpSecure','smtpPass'], raw: true });
+                for (const r of rows) {
+                  console.log(JSON.stringify({
+                    id: r.id,
+                    tenantId: r.tenantId,
+                    smtpHost: r.smtpHost,
+                    smtpPort: r.smtpPort,
+                    smtpUser: r.smtpUser,
+                    smtpFrom: r.smtpFrom,
+                    smtpSecure: r.smtpSecure,
+                    passLen: r.smtpPass ? String(r.smtpPass).length : 0
+                  }));
+                }
+                await sequelize.close();
+              })().catch(e => { console.error(e.message); process.exit(1); });
+            "
+
+            if [ "$APPLY_HOST" = "yes" ]; then
+              echo "== apply SMTP_HOST=smtpout.secureserver.net =="
+              for ENVF in /var/www/kayaCRM-app/backend/.env /var/www/kayaCRM-kaya/backend/.env; do
+                [ -f "$ENVF" ] || continue
+                node /var/www/kayaCRM-kaya/backend/scripts/upsert-dotenv.js "$ENVF" SMTP_HOST smtpout.secureserver.net
+                node /var/www/kayaCRM-kaya/backend/scripts/upsert-dotenv.js "$ENVF" SMTP_PORT 465
+                node /var/www/kayaCRM-kaya/backend/scripts/upsert-dotenv.js "$ENVF" SMTP_SECURE true
+                show_smtp_env "$ENVF"
+              done
+
+              echo "== update panel_settings host/port =="
+              for BEDIR in /var/www/kayaCRM-app/backend /var/www/kayaCRM-kaya/backend; do
+                [ -d "$BEDIR" ] || continue
+                echo "panel fix in $BEDIR"
+                cd "$BEDIR"
+                CLEAR_PANEL="$CLEAR_PANEL" node -e "
+                  require('dotenv').config();
+                  const { PanelSetting, sequelize } = require('./models');
+                  (async () => {
+                    const clear = process.env.CLEAR_PANEL === 'yes';
+                    const rows = await PanelSetting.findAll();
+                    for (const row of rows) {
+                      if (clear) {
+                        row.smtpHost = null;
+                        row.smtpPort = null;
+                        row.smtpUser = null;
+                        row.smtpPass = null;
+                        row.smtpFrom = null;
+                        row.smtpFromName = null;
+                        row.smtpSecure = false;
+                        console.log('cleared panel smtp id=' + row.id);
+                      } else if (row.smtpHost || row.smtpPort) {
+                        row.smtpHost = 'smtpout.secureserver.net';
+                        row.smtpPort = '465';
+                        row.smtpSecure = true;
+                        console.log('aligned panel smtp id=' + row.id);
+                      }
+                      await row.save();
+                    }
+                    await sequelize.close();
+                  })().catch(e => { console.error(e.message); process.exit(1); });
+                "
+              done
+
+              echo "== smtp verify with .env =="
+              cd /var/www/kayaCRM-app/backend
+              node -e "
+                require('dotenv').config();
+                const nodemailer = require('nodemailer');
+                const host = process.env.SMTP_HOST;
+                const port = parseInt(process.env.SMTP_PORT, 10) || 465;
+                const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+                const user = process.env.SMTP_USER;
+                const pass = process.env.SMTP_PASS;
+                console.log(JSON.stringify({ host, port, secure, user, passLen: pass ? pass.length : 0 }));
+                const t = nodemailer.createTransport({
+                  host, port, secure,
+                  auth: user && pass ? { user, pass } : undefined,
+                  connectionTimeout: 12000,
+                  greetingTimeout: 10000,
+                  socketTimeout: 15000,
+                  tls: { minVersion: 'TLSv1.2', rejectUnauthorized: false }
+                });
+                t.verify().then(() => console.log('VERIFY_OK')).catch(e => console.log('VERIFY_FAIL', e.message));
+              "
+
+              pm2 reload crm-backend-app --update-env
+              pm2 reload crm-backend-kaya --update-env
+              sleep 2
+            fi
+
+            if [ "$DO_RESET" = "yes" ]; then
+              echo "== reset platform admin password =="
+              TEMP_PASS=$(openssl rand -base64 18 | tr -d '/+=' | head -c 20)
+              TEMP_PASS="Fx$(echo "$TEMP_PASS")!9"
+              cd /var/www/kayaCRM-app/backend
+              NEW_PASSWORD="$TEMP_PASS" node scripts/reset-platform-admin-password.js fxguard@bizdavar.com
+              RC=$?
+              if [ $RC -eq 0 ]; then
+                umask 077
+                printf '%s\n' "$TEMP_PASS" > /home/fxguard/.fxguard-platform-admin-temp-pass
+                chmod 600 /home/fxguard/.fxguard-platform-admin-temp-pass
+                echo "TEMP_PASS_FILE=/home/fxguard/.fxguard-platform-admin-temp-pass"
+                echo "TEMP_PASS_B64=$(printf '%s' "$TEMP_PASS" | base64 -w0)"
+              else
+                echo "RESET_FAILED rc=$RC"
+              fi
+            fi
+
+            echo "== recent email errors =="
+            pm2 logs crm-backend-app --nostream --lines 30 2>/dev/null | grep -iE 'smtp|email|535|VERIFY|reset' | tail -n 20
+            echo "== done =="
