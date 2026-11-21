@@ -18,6 +18,9 @@
 | [WHATSAPP-GATEWAY.md](WHATSAPP-GATEWAY.md) | عیب‌یابی Gateway واتساپ (QR) |
 | [WHATSAPP-META-CHECKLIST-KAYA.md](WHATSAPP-META-CHECKLIST-KAYA.md) | چک‌لیست Meta Cloud (production) |
 | [WHATSAPP-CLOUD-API-SETUP.md](WHATSAPP-CLOUD-API-SETUP.md) | راه‌اندازی Cloud API |
+| **[META-TECH-PROVIDER-PLAN-FA.md](META-TECH-PROVIDER-PLAN-FA.md)** | **برنامه Tech Provider + Embedded Signup (SaaS خودخدمت)** |
+| [META-APP-REVIEW-PACK.md](META-APP-REVIEW-PACK.md) | متن آمادهٔ App Review + اسکریپت فیلم |
+| [META-EMBEDDED-SIGNUP-OPS-FA.md](META-EMBEDDED-SIGNUP-OPS-FA.md) | فعال‌سازی env/webhook روی app.fxguard.io |
 | [IRAN_ACCESS.md](IRAN_ACCESS.md) | دسترسی از ایران |
 | [SERVER-STATUS-COMMANDS.md](SERVER-STATUS-COMMANDS.md) | دستورات وضعیت سرور |
 | [CONSOLE-FIXES.md](CONSOLE-FIXES.md) | رفع خطاهای کنسول |

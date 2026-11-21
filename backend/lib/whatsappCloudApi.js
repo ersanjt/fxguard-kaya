@@ -10,7 +10,10 @@ const fs = require('fs').promises;
 const FormData = require('form-data');
 const { getWhatsappConnectionConfig, isCloudApiConfigured: isCloudConfigured } = require('./whatsappConnectionLoader');
 
-const API_BASE = 'https://graph.facebook.com/v18.0';
+// Meta Graph API v18.0 از ژانویه ۲۰۲۶ منقضی شده؛ نسخه قابل تنظیم است.
+const requestedGraphVersion = String(process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || '').trim();
+const graphVersion = /^v\d+\.\d+$/.test(requestedGraphVersion) ? requestedGraphVersion : 'v26.0';
+const API_BASE = `https://graph.facebook.com/${graphVersion}`;
 
 /** sync — برای سازگاری؛ فقط env چک می‌کند */
 function isConfiguredSync() {
@@ -314,73 +317,261 @@ async function downloadMedia(mediaId) {
     };
 }
 
-/**
- * تبدیل payload وب‌هوک Meta به فرمت داخلی (سازگار با processIncomingMessage)
- */
-function transformCloudWebhookToInternal(entry) {
-    const value = entry?.changes?.[0]?.value;
-    if (!value || !value.messages) return [];
+function digitsOnly(value) {
+    return String(value || '').replace(/\D/g, '');
+}
 
-    const messages = value.messages || [];
-    const contacts = (value.contacts || []).reduce((acc, c) => {
-        if (c.wa_id) acc[c.wa_id] = c;
+function mapCloudMessageBody(m) {
+    let body = '';
+    let media = null;
+    let hasMedia = false;
+    let msgType = String(m?.type || 'text').toLowerCase();
+
+    if (m?.text) body = m.text.body || '';
+    if (m?.image || m?.audio || m?.video || m?.document || m?.voice || m?.sticker) {
+        hasMedia = true;
+        const mediaObj = m.image || m.audio || m.video || m.document || m.voice || m.sticker;
+        media = { id: mediaObj.id, mimetype: mediaObj.mime_type, caption: mediaObj.caption };
+        if (mediaObj.caption) body = mediaObj.caption;
+    }
+    if (m?.interactive) {
+        const btn = m.interactive?.button_reply || m.interactive?.list_reply;
+        body = btn?.title || btn?.description || JSON.stringify(m.interactive);
+    }
+    if (m?.button) body = m.button.text || '';
+    if (msgType === 'media_placeholder') {
+        body = body || '[media]';
+        hasMedia = false;
+        media = null;
+    }
+    if (msgType === 'unknown') msgType = 'text';
+
+    return { body, media, hasMedia, msgType };
+}
+
+function buildInternalCloudMessage({
+    m,
+    peerPhone,
+    contactName,
+    phoneNumberId,
+    fromMe,
+    source,
+}) {
+    const peer = digitsOnly(peerPhone);
+    if (!peer) return null;
+    const t = String(m?.type || '').toLowerCase();
+    if (['reaction', 'unsupported'].includes(t)) return null;
+
+    const { body, media, hasMedia, msgType } = mapCloudMessageBody(m);
+    const peerJid = `${peer}@c.us`;
+
+    return {
+        id: m.id,
+        from: fromMe ? (phoneNumberId ? String(phoneNumberId) : 'me') : peerJid,
+        to: fromMe ? peerJid : phoneNumberId ? String(phoneNumberId) : null,
+        phoneNumberId: phoneNumberId ? String(phoneNumberId) : null,
+        body,
+        timestamp: parseInt(m.timestamp || '0', 10),
+        hasMedia,
+        type: msgType,
+        isForwarded: !!m.forwarded,
+        isStatus: false,
+        fromMe: !!fromMe,
+        contact: { number: peer, name: contactName || null },
+        chat: { id: peerJid, name: contactName || null, isGroup: false },
+        author: null,
+        authorName: null,
+        media,
+        _cloudMediaId: media?.id || null,
+        _cloudSource: source || 'messages',
+    };
+}
+
+function contactsByWaId(value) {
+    return (value?.contacts || []).reduce((acc, c) => {
+        if (c.wa_id) acc[String(c.wa_id)] = c;
         return acc;
     }, {});
+}
 
-    return messages
-        .filter((m) => {
-            const t = (m.type || '').toLowerCase();
-            return !['reaction', 'unsupported'].includes(t);
-        })
-        .map((m) => {
-            const from = String(m.from || '');
-            const contact = contacts[from] || {};
-            const name = contact?.profile?.name || null;
-            let body = '';
-            let media = null;
-            let hasMedia = false;
-            let msgType = (m.type || 'text').toLowerCase();
+/**
+ * تبدیل یک change وب‌هوک Cloud (شامل Coexistence) به رویدادهای داخلی
+ * @returns {{ messages: object[], contacts: object[], events: object[] }}
+ */
+function transformCloudWebhookChange(change) {
+    const field = String(change?.field || '').trim();
+    const value = change?.value;
+    const phoneNumberId = value?.metadata?.phone_number_id
+        ? String(value.metadata.phone_number_id)
+        : null;
+    const businessPhone = digitsOnly(value?.metadata?.display_phone_number);
+    const out = { messages: [], contacts: [], events: [] };
+    if (!value) return out;
 
-            if (m.text) {
-                body = m.text.body || '';
-            }
-            if (m.image || m.audio || m.video || m.document || m.voice) {
-                hasMedia = true;
-                const mediaObj = m.image || m.audio || m.video || m.document || m.voice;
-                media = { id: mediaObj.id, mimetype: mediaObj.mime_type, caption: mediaObj.caption };
-                if (mediaObj.caption) body = mediaObj.caption;
-            }
-            if (m.interactive) {
-                const btn = m.interactive?.button_reply || m.interactive?.list_reply;
-                body = btn?.title || btn?.description || JSON.stringify(m.interactive);
-            }
-            if (m.button) {
-                body = m.button.text || '';
-            }
-            if (msgType === 'unknown') msgType = 'text';
-
-            return {
-                id: m.id,
-                from: `${from}@c.us`,
-                to: value.metadata?.phone_number_id ? `${value.metadata.phone_number_id}` : null,
-                phoneNumberId: value.metadata?.phone_number_id
-                    ? String(value.metadata.phone_number_id)
-                    : null,
-                body,
-                timestamp: parseInt(m.timestamp || '0', 10),
-                hasMedia,
-                type: msgType,
-                isForwarded: !!m.forwarded,
-                isStatus: false,
+    if (field === 'messages' || (!field && value.messages)) {
+        const contacts = contactsByWaId(value);
+        for (const m of value.messages || []) {
+            const from = digitsOnly(m.from);
+            const contact = contacts[from] || contacts[String(m.from || '')] || {};
+            const mapped = buildInternalCloudMessage({
+                m,
+                peerPhone: from,
+                contactName: contact?.profile?.name || null,
+                phoneNumberId,
                 fromMe: false,
-                contact: { number: from, name },
-                chat: { id: `${from}@c.us`, name, isGroup: false },
-                author: null,
-                authorName: null,
-                media,
-                _cloudMediaId: media?.id,
-            };
+                source: 'messages',
+            });
+            if (mapped) out.messages.push(mapped);
+        }
+        return out;
+    }
+
+    if (field === 'smb_message_echoes') {
+        const contacts = contactsByWaId(value);
+        for (const m of value.message_echoes || []) {
+            const peer = digitsOnly(m.to) || digitsOnly(m.to_user_id);
+            const contact = contacts[peer] || {};
+            const mapped = buildInternalCloudMessage({
+                m,
+                peerPhone: peer,
+                contactName: contact?.profile?.name || contact?.profile?.username || null,
+                phoneNumberId,
+                fromMe: true,
+                source: 'smb_message_echoes',
+            });
+            if (mapped) out.messages.push(mapped);
+        }
+        return out;
+    }
+
+    if (field === 'history') {
+        for (const chunk of value.history || []) {
+            const errors = chunk?.errors || chunk?.metadata?.errors;
+            if (Array.isArray(errors) && errors.length) {
+                out.events.push({
+                    type: 'history_error',
+                    phoneNumberId,
+                    errors,
+                    progress: chunk?.metadata?.progress,
+                });
+                continue;
+            }
+            out.events.push({
+                type: 'history_progress',
+                phoneNumberId,
+                phase: chunk?.metadata?.phase,
+                chunkOrder: chunk?.metadata?.chunk_order,
+                progress: chunk?.metadata?.progress,
+            });
+            for (const thread of chunk?.threads || []) {
+                const threadPeer =
+                    digitsOnly(thread.id) ||
+                    digitsOnly(thread?.context?.wa_id) ||
+                    digitsOnly(thread?.context?.user_id);
+                for (const m of thread.messages || []) {
+                    const fromDigits = digitsOnly(m.from);
+                    const toDigits = digitsOnly(m.to);
+                    const fromMe =
+                        !!toDigits ||
+                        (!!businessPhone && !!fromDigits && fromDigits === businessPhone);
+                    const peer = fromMe
+                        ? toDigits || threadPeer
+                        : fromDigits || threadPeer;
+                    const mapped = buildInternalCloudMessage({
+                        m,
+                        peerPhone: peer,
+                        contactName: thread?.context?.username || null,
+                        phoneNumberId,
+                        fromMe,
+                        source: 'history',
+                    });
+                    if (mapped) out.messages.push(mapped);
+                }
+            }
+        }
+        return out;
+    }
+
+    if (field === 'smb_app_state_sync') {
+        for (const item of value.state_sync || []) {
+            if (String(item?.type || '') !== 'contact') continue;
+            const phone =
+                digitsOnly(item?.contact?.phone_number) ||
+                digitsOnly(item?.contact?.user_id);
+            if (!phone) continue;
+            out.contacts.push({
+                phone,
+                fullName: item?.contact?.full_name || null,
+                firstName: item?.contact?.first_name || null,
+                username: item?.contact?.username || null,
+                action: String(item?.action || 'add').toLowerCase(),
+                timestamp: parseInt(item?.metadata?.timestamp || '0', 10) || null,
+                phoneNumberId,
+            });
+        }
+        return out;
+    }
+
+    if (field === 'account_update') {
+        out.events.push({
+            type: 'account_update',
+            phoneNumberId,
+            event: value.event || value.phone_number || null,
+            value,
         });
+    }
+
+    return out;
+}
+
+/**
+ * تبدیل کل entry وب‌هوک Meta (همهٔ changes) به رویدادهای داخلی
+ */
+function transformCloudWebhookEntry(entry) {
+    const aggregated = { messages: [], contacts: [], events: [] };
+    for (const change of entry?.changes || []) {
+        const part = transformCloudWebhookChange(change);
+        aggregated.messages.push(...part.messages);
+        aggregated.contacts.push(...part.contacts);
+        aggregated.events.push(...part.events);
+    }
+    return aggregated;
+}
+
+/**
+ * تبدیل payload وب‌هوک Meta به فرمت داخلی پیام (سازگار با processIncomingMessage)
+ * شامل messages معمولی + echoهای Coexistence + history
+ */
+function transformCloudWebhookToInternal(entry) {
+    return transformCloudWebhookEntry(entry).messages;
+}
+
+/**
+ * درخواست همگام‌سازی مخاطبین یا تاریخچه بعد از onboarding Coexistence
+ * @param {'smb_app_state_sync'|'history'} syncType
+ */
+async function requestSmbAppData(syncType, cfgOverride) {
+    const cfg = await _getConfig(cfgOverride);
+    if (!cfg) throw new Error('WhatsApp Cloud API not configured');
+    const type = String(syncType || '').trim();
+    if (type !== 'smb_app_state_sync' && type !== 'history') {
+        throw new Error('syncType must be smb_app_state_sync or history');
+    }
+    const res = await axios.post(
+        `${API_BASE}/${cfg.cloudPhoneNumberId}/smb_app_data`,
+        {
+            messaging_product: 'whatsapp',
+            sync_type: type,
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${cfg.cloudAccessToken}`,
+            },
+            timeout: 30000,
+        }
+    );
+    return res.data || { success: true };
 }
 
 /** برای نمایش در UI — Phone Number ID (ممکن است از env باشد) */
@@ -398,6 +589,9 @@ module.exports = {
     sendMessage,
     downloadMedia,
     transformCloudWebhookToInternal,
+    transformCloudWebhookEntry,
+    transformCloudWebhookChange,
+    requestSmbAppData,
     getPhoneNumberId,
     verifyCredentials,
     buildBodyTemplateComponents,

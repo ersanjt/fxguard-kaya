@@ -31,6 +31,16 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Phone Number ID از Meta',
         },
+        cloudWabaId: {
+            type: DataTypes.STRING(64),
+            allowNull: true,
+            comment: 'WhatsApp Business Account / Messaging account ID از Embedded Signup',
+        },
+        embeddedSignupAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'زمان آخرین اتصال موفق از طریق Meta Embedded Signup',
+        },
         cloudVerifyToken: {
             type: DataTypes.STRING(128),
             allowNull: true,

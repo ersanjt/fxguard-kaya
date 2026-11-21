@@ -19,7 +19,7 @@ function tenantGatewayFields(row) {
         return { gatewayEnabled: false, gatewayUrl: '', gatewayApiSecret: '' };
     }
     return {
-        gatewayEnabled: row?.gatewayEnabled !== false,
+        gatewayEnabled: true,
         gatewayUrl: tenantGatewayUrl(tenant.gatewayPort),
         gatewayApiSecret: tenantGatewayApiSecret(tenant.id),
     };
@@ -28,8 +28,24 @@ function tenantGatewayFields(row) {
 let _cache = new Map();
 const CACHE_TTL_MS = 30000;
 
+function emptyConnectionConfig() {
+    return {
+        connectionMode: 'cloud',
+        cloudEnabled: false,
+        cloudAccessToken: '',
+        cloudPhoneNumberId: '',
+        cloudVerifyToken: '',
+        cloudBulkTemplateName: '',
+        cloudBulkTemplateLanguage: 'fa',
+        gatewayEnabled: false,
+        gatewayUrl: '',
+        gatewayApiSecret: '',
+    };
+}
+
 async function getWhatsappConnectionConfig() {
     const key = getPanelSettingsKey();
+    if (!key) return emptyConnectionConfig();
     const now = Date.now();
     const hit = _cache.get(key);
     if (hit && now - hit.ts < CACHE_TTL_MS) return hit.value;
@@ -102,10 +118,32 @@ async function getCloudVerifyToken() {
     return c.cloudVerifyToken || '';
 }
 
+/**
+ * Meta ممکن است روی یک URL مشترک تایید کند؛ توکن هر سازمان (یا env سکو) قبول می‌شود.
+ */
+async function matchesCloudVerifyToken(token) {
+    const t = String(token || '').trim();
+    if (!t) return false;
+    const current = String(await getCloudVerifyToken() || '').trim();
+    if (current && t === current) return true;
+    const envTok = String(process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '').trim();
+    if (envTok && t === envTok) return true;
+    try {
+        const row = await WhatsappConnection.findOne({
+            where: { cloudVerifyToken: t },
+            attributes: ['id'],
+        });
+        return !!row;
+    } catch (_) {
+        return false;
+    }
+}
+
 module.exports = {
     getWhatsappConnectionConfig,
     invalidateCache,
     isCloudApiConfigured,
     isGatewayEnabled,
     getCloudVerifyToken,
+    matchesCloudVerifyToken,
 };

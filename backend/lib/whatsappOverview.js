@@ -1,8 +1,14 @@
 /**
- * خلاصه وضعیت سیستم واتساپ — برای صفحه #whatsapp (مرکز کنترل)
+ * Kaya CRM — خلاصه وضعیت سیستم واتساپ — برای صفحه #whatsapp (مرکز کنترل)
+ * @file    backend/lib/whatsappOverview.js
+ * @layer   backend
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/META-TECH-PROVIDER-PLAN-FA.md
  */
 const { getWhatsappConnectionConfig, isCloudApiConfigured } = require('./whatsappConnectionLoader');
 const { gatewayGet } = require('./gatewayClient');
+const { getPublicEmbeddedSignupConfig } = require('./metaEmbeddedSignup');
+const { getPanelSettingsKey } = require('./tenantContext');
 
 function getPublicBaseUrl(req) {
     const env = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
@@ -89,6 +95,30 @@ async function buildWhatsappOverview(req) {
         { id: 'secret', ok: !!String(cfg.gatewayApiSecret || process.env.GATEWAY_API_SECRET || '').trim(), optional: true },
     ];
 
+    const embeddedSignup = getPublicEmbeddedSignupConfig();
+    let cloudWabaId = '';
+    let embeddedSignupAt = null;
+    try {
+        const { WhatsappConnection } = require('../models');
+        const panelKey = getPanelSettingsKey();
+        if (panelKey) {
+            const row = await WhatsappConnection.findByPk(panelKey, {
+                attributes: ['cloudWabaId', 'embeddedSignupAt'],
+            });
+            if (row) {
+                cloudWabaId = row.cloudWabaId || '';
+                embeddedSignupAt = row.embeddedSignupAt || null;
+            }
+        }
+    } catch (_) { /* جدول/ستون ممکن است هنوز نباشد */ }
+
+    cloudChecks.push({
+        id: 'embeddedSignup',
+        ok: !!embeddedSignupAt || (!!cloudConfigured && !!String(cfg.cloudPhoneNumberId || '').trim()),
+        optional: true,
+        platformEnabled: !!embeddedSignup.enabled,
+    });
+
     const warnings = [];
     if (mode === 'cloud_first' && !cloudReady && gatewayReady) {
         warnings.push({ id: 'cloud_fallback', level: 'info' });
@@ -108,6 +138,9 @@ async function buildWhatsappOverview(req) {
     if (activeChannel === 'none') {
         warnings.push({ id: 'no_channel', level: 'error' });
     }
+    if (activeChannel === 'none' && embeddedSignup.enabled) {
+        warnings.push({ id: 'es_connect_hint', level: 'info' });
+    }
 
     return {
         connectionMode: mode,
@@ -120,6 +153,8 @@ async function buildWhatsappOverview(req) {
                 checks: cloudChecks,
                 complete: cloudChecks.filter((c) => !c.optional).every((c) => (c.envOnly && c.id === 'appSecret') ? appSecretSet : c.ok) && appSecretSet,
                 phoneNumberId: cfg.cloudPhoneNumberId || '',
+                wabaId: cloudWabaId || '',
+                embeddedSignupAt,
                 bulkTemplateName: cfg.cloudBulkTemplateName || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_NAME || '',
                 bulkTemplateLanguage: cfg.cloudBulkTemplateLanguage || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE || 'fa',
                 webhookUrl,
@@ -135,10 +170,12 @@ async function buildWhatsappOverview(req) {
                 authFailure: gateway.authFailure || null,
             },
         },
+        embeddedSignup,
         warnings,
         meta: {
             backendPublicUrl: publicUrl || null,
             metaDocsUrl: 'https://developers.facebook.com/docs/whatsapp/cloud-api',
+            embeddedSignupDocsUrl: 'https://developers.facebook.com/docs/whatsapp/embedded-signup/',
         },
     };
 }

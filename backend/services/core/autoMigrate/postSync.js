@@ -175,6 +175,8 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                 ['cloudBulkTemplateName', { type: DataTypes.STRING(128), allowNull: true }],
                 ['cloudBulkTemplateLanguage', { type: DataTypes.STRING(16), allowNull: true, defaultValue: 'fa' }],
                 ['numberFailoverEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+                ['cloudWabaId', { type: DataTypes.STRING(64), allowNull: true }],
+                ['embeddedSignupAt', { type: DataTypes.DATE, allowNull: true }],
             ];
             for (const [name, def] of connCols) {
                 if (connDesc[name] !== undefined) continue;
@@ -321,10 +323,16 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     }
 
     const defaultRateCurrencies = require('../../../lib/defaultRateCurrencies');
-    const rateCurrencyCount = await RateCurrency.count();
-    if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {
-        await RateCurrency.bulkCreate(defaultRateCurrencies);
-        logger.info('✅ ارزهای پیش‌فرض نرخ (RateCurrency) ثبت شدند');
+    const { runWithTenant, getCachedPlatformTenant } = require('../../../lib/tenantContext');
+    const platform = getCachedPlatformTenant();
+    if (platform && defaultRateCurrencies.length > 0) {
+        await runWithTenant(platform, async () => {
+            const rateCurrencyCount = await RateCurrency.count();
+            if (rateCurrencyCount === 0) {
+                await RateCurrency.bulkCreate(defaultRateCurrencies);
+                logger.info('✅ ارزهای پیش‌فرض نرخ سکو ثبت شدند');
+            }
+        });
     }
 
     if (!process.env.USE_SQLITE) {

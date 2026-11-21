@@ -33,6 +33,22 @@ function pickHeaderSlug(headers) {
  *   بر هر slug اعلامی و env مقدم است و slug مغایر رد می‌شود
  * @returns {Promise<{ok:true,tenant:object}|{ok:false,error:string,slug:string}>}
  */
+async function tenantFromConnectionRow(conn) {
+    if (!conn) return null;
+    const { Tenant } = require('../models');
+    const { tenantShape, loadPlatformTenant } = require('../middleware/tenantContext');
+    if (conn.tenantId) {
+        const row = await Tenant.findByPk(conn.tenantId);
+        return row ? tenantShape(row) : null;
+    }
+    const panelKey = String(conn.id || '').trim();
+    if (!panelKey || panelKey === 'default') {
+        return loadPlatformTenant();
+    }
+    const row = await Tenant.findOne({ where: { panelKey } });
+    return row ? tenantShape(row) : null;
+}
+
 async function findTenantByCloudPhoneNumberId(phoneNumberId) {
     const id = String(phoneNumberId || '').trim();
     if (!id) return null;
@@ -42,17 +58,15 @@ async function findTenantByCloudPhoneNumberId(phoneNumberId) {
         where: { cloudPhoneNumberId: id },
         skipTenantScope: true,
     });
-    let tenantId = num && num.tenantId;
-    if (!tenantId) {
-        const conn = await WhatsappConnection.findOne({
-            where: { cloudPhoneNumberId: id },
-            skipTenantScope: true,
-        });
-        tenantId = conn && conn.tenantId;
+    if (num && num.tenantId) {
+        const row = await Tenant.findByPk(num.tenantId);
+        if (row) return tenantShape(row);
     }
-    if (!tenantId) return null;
-    const row = await Tenant.findByPk(tenantId);
-    return row ? tenantShape(row) : null;
+    const conn = await WhatsappConnection.findOne({
+        where: { cloudPhoneNumberId: id },
+        skipTenantScope: true,
+    });
+    return tenantFromConnectionRow(conn);
 }
 
 async function resolveInboundTenant(opts = {}) {

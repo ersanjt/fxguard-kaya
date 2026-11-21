@@ -5451,6 +5451,8 @@
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }
+                if (target.closest('#btnWhatsappEmbeddedSignup') && typeof launchWhatsappEmbeddedSignup === 'function') { e.preventDefault(); e.stopPropagation(); launchWhatsappEmbeddedSignup(); return; }
+                if (target.closest('#btnWhatsappEmbeddedSignupHelp') && typeof showWhatsappEmbeddedSignupBillingHelp === 'function') { e.preventDefault(); e.stopPropagation(); showWhatsappEmbeddedSignupBillingHelp(); return; }
                 if (target.closest('#btnCopyWhatsappWebhook') && typeof copyWhatsappWebhookUrl === 'function') { e.preventDefault(); e.stopPropagation(); copyWhatsappWebhookUrl(); return; }
                 if (target.closest('.whatsapp-conn-tab') && typeof switchWhatsappConnectionTab === 'function') { e.preventDefault(); var tb = target.closest('.whatsapp-conn-tab'); if (tb) switchWhatsappConnectionTab(tb.getAttribute('data-tab')); return; }
                 // ویرایش و حذف فایل تمپلیت
@@ -10963,8 +10965,17 @@
             const perms = (currentUser && currentUser.permissions) || {};
             return perms[key] === true;
         }
+        function roleDefaultHomePage() {
+            var role = (currentUser && currentUser.role) || 'agent';
+            if (role === 'agent' || role === 'supervisor') return 'conversations';
+            return 'dashboard';
+        }
         function applyNavByRole() {
             const can = canAccessSection;
+            try {
+                if (currentUser && currentUser.role) document.body.setAttribute('data-role', currentUser.role);
+                else document.body.removeAttribute('data-role');
+            } catch (_) {}
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -12538,7 +12549,7 @@
             }
             if (btn) btn.disabled = false;
         }
-        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','records','appointments','modules','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
         function applyHashRoute() {
             try {
                 initSidebarCollapsedState();
@@ -12571,7 +12582,13 @@
                     showPage('customers');
                     return;
                 }
-                const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
+                const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() {
+                    try {
+                        const last = sessionStorage.getItem('crm_last_page');
+                        if (last && VALID_PAGES.indexOf(last) >= 0) return last;
+                    } catch (_) {}
+                    return roleDefaultHomePage();
+                })();
                 showPage(page);
             } catch (e) {
                 console.error('[applyHashRoute]', e);
@@ -12678,11 +12695,9 @@
             });
             if (page === 'message-templates') runPageInit('message-templates', function() { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); });
             if (page === 'rates') runPageInit('rates', function() {
-                const readOnly = typeof isSelfServeTenantDesk === 'function' && isSelfServeTenantDesk();
                 const ratesPage = document.getElementById('pageRates');
-                if (ratesPage) ratesPage.classList.toggle('rates-page--readonly', readOnly);
+                if (ratesPage) ratesPage.classList.remove('rates-page--readonly');
                 loadRatesAdjustments();
-                if (readOnly) return;
                 loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus();
             });
             if (page === 'rates-charts') runPageInit('rates-charts', function() { initRatesChartsPage(); });
@@ -15759,7 +15774,205 @@
             if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
             renderWhatsappTrialBanner(d.trial);
             applySelfServeWhatsappCloudLock();
+            renderWhatsappEmbeddedSignupUi(d);
         }
+
+        var _waEsPending = { code: null, wabaId: null, phoneNumberId: null, displayPhone: null };
+        var _waEsConfig = null;
+        var _waEsListenerBound = false;
+
+        function renderWhatsappEmbeddedSignupUi(connectionData) {
+            var box = document.getElementById('whatsappEmbeddedSignupBox');
+            var unavailable = document.getElementById('whatsappEmbeddedSignupUnavailable');
+            var statusEl = document.getElementById('whatsappEmbeddedSignupStatus');
+            var billingHint = document.getElementById('whatsappEmbeddedSignupBillingHint');
+            var es = (connectionData && connectionData.embeddedSignup) || _waEsConfig || {};
+            _waEsConfig = es;
+            var enabled = !!(es && es.enabled);
+            if (box) box.hidden = !enabled;
+            if (unavailable) unavailable.hidden = enabled;
+            if (billingHint) billingHint.hidden = !(enabled && es.billingHintRequired !== false);
+            if (statusEl) {
+                if (connectionData && connectionData.embeddedSignupAt) {
+                    statusEl.textContent = t('whatsapp_es_connected_at') + ' ' + String(connectionData.embeddedSignupAt).slice(0, 19).replace('T', ' ');
+                } else if (connectionData && connectionData.cloudWabaId) {
+                    statusEl.textContent = t('whatsapp_es_waba') + ': ' + connectionData.cloudWabaId;
+                } else if (enabled) {
+                    statusEl.textContent = t('whatsapp_es_ready');
+                } else {
+                    statusEl.textContent = '';
+                }
+            }
+            if (enabled) ensureWhatsappEmbeddedSignupListener();
+        }
+
+        function ensureFbSdk(appId, version) {
+            return new Promise(function (resolve, reject) {
+                var ver = version || 'v21.0';
+                if (window.FB && typeof window.FB.login === 'function') {
+                    try {
+                        window.FB.init({ appId: appId, autoLogAppEvents: true, xfbml: false, version: ver });
+                    } catch (_) { /* already initialized */ }
+                    resolve(window.FB);
+                    return;
+                }
+                window.fbAsyncInit = function () {
+                    try {
+                        window.FB.init({ appId: appId, autoLogAppEvents: true, xfbml: false, version: ver });
+                        resolve(window.FB);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                if (document.getElementById('facebook-jssdk')) {
+                    var wait = 0;
+                    var timer = setInterval(function () {
+                        wait += 1;
+                        if (window.FB && typeof window.FB.login === 'function') {
+                            clearInterval(timer);
+                            window.fbAsyncInit();
+                        } else if (wait > 50) {
+                            clearInterval(timer);
+                            reject(new Error('FB SDK timeout'));
+                        }
+                    }, 100);
+                    return;
+                }
+                var s = document.createElement('script');
+                s.id = 'facebook-jssdk';
+                s.async = true;
+                s.defer = true;
+                s.crossOrigin = 'anonymous';
+                s.src = 'https://connect.facebook.net/en_US/sdk.js';
+                s.onerror = function () { reject(new Error('FB SDK load failed')); };
+                document.head.appendChild(s);
+            });
+        }
+
+        function ensureWhatsappEmbeddedSignupListener() {
+            if (_waEsListenerBound) return;
+            _waEsListenerBound = true;
+            window.addEventListener('message', function (event) {
+                var origin = String(event.origin || '');
+                if (origin.indexOf('facebook.com') === -1 && origin.indexOf('instagram.com') === -1 && origin.indexOf('whatsapp.com') === -1) return;
+                var raw = event.data;
+                var data = raw;
+                if (typeof raw === 'string') {
+                    try { data = JSON.parse(raw); } catch (_) { return; }
+                }
+                if (!data || data.type !== 'WA_EMBEDDED_SIGNUP') return;
+                var payload = data.data || {};
+                if (payload.waba_id) _waEsPending.wabaId = String(payload.waba_id);
+                if (payload.phone_number_id) _waEsPending.phoneNumberId = String(payload.phone_number_id);
+                if (payload.display_phone_number) _waEsPending.displayPhone = String(payload.display_phone_number);
+                if (typeof finishWhatsappEmbeddedSignupIfReady === 'function') finishWhatsappEmbeddedSignupIfReady();
+            });
+        }
+
+        async function finishWhatsappEmbeddedSignupIfReady() {
+            if (!_waEsPending.code || !_waEsPending.wabaId || !_waEsPending.phoneNumberId) return;
+            if (_waEsPending._submitting) return;
+            _waEsPending._submitting = true;
+            var btn = document.getElementById('btnWhatsappEmbeddedSignup');
+            var statusEl = document.getElementById('whatsappEmbeddedSignupStatus');
+            waBtnLoading(btn, true);
+            if (statusEl) statusEl.textContent = t('whatsapp_es_saving');
+            try {
+                var body = {
+                    code: _waEsPending.code,
+                    wabaId: _waEsPending.wabaId,
+                    phoneNumberId: _waEsPending.phoneNumberId,
+                    displayPhoneNumber: _waEsPending.displayPhone || undefined
+                };
+                var res = await apiFetch('/api/whatsapp/embedded-signup/complete', {
+                    method: 'POST',
+                    body: JSON.stringify(body)
+                });
+                if (res.needLogin) return;
+                if (res.ok && res.data && res.data.ok) {
+                    toast(t('whatsapp_es_success'));
+                    if (statusEl) statusEl.textContent = t('whatsapp_es_success');
+                    if (res.data.billingHintRequired !== false) {
+                        var billingHint = document.getElementById('whatsappEmbeddedSignupBillingHint');
+                        if (billingHint) billingHint.hidden = false;
+                    }
+                    _waEsPending = { code: null, wabaId: null, phoneNumberId: null, displayPhone: null };
+                    loadWhatsappConnectionSettings();
+                    if (typeof loadWhatsappStatus === 'function') loadWhatsappStatus();
+                    if (typeof loadWhatsappOverview === 'function') loadWhatsappOverview();
+                } else {
+                    var err = (res.data && (res.data.error || res.data.code)) || t('err_generic');
+                    if (statusEl) statusEl.textContent = err;
+                    toast(err, true);
+                }
+            } catch (e) {
+                var msg = (e && e.message) || t('err_generic');
+                if (statusEl) statusEl.textContent = msg;
+                toast(msg, true);
+            } finally {
+                _waEsPending._submitting = false;
+                waBtnLoading(btn, false);
+            }
+        }
+
+        async function launchWhatsappEmbeddedSignup() {
+            var statusEl = document.getElementById('whatsappEmbeddedSignupStatus');
+            var btn = document.getElementById('btnWhatsappEmbeddedSignup');
+            try {
+                waBtnLoading(btn, true);
+                if (!_waEsConfig || !_waEsConfig.enabled) {
+                    var cfgRes = await apiFetch('/api/whatsapp/embedded-signup/config');
+                    if (cfgRes.ok && cfgRes.data) _waEsConfig = cfgRes.data;
+                }
+                if (!_waEsConfig || !_waEsConfig.enabled) {
+                    toast(t('whatsapp_es_unavailable'), true);
+                    return;
+                }
+                ensureWhatsappEmbeddedSignupListener();
+                _waEsPending = { code: null, wabaId: null, phoneNumberId: null, displayPhone: null };
+                if (statusEl) statusEl.textContent = t('whatsapp_es_opening');
+                await ensureFbSdk(_waEsConfig.appId, _waEsConfig.graphVersion);
+                window.FB.login(function (response) {
+                    if (response && response.authResponse && response.authResponse.code) {
+                        _waEsPending.code = String(response.authResponse.code);
+                        finishWhatsappEmbeddedSignupIfReady();
+                    } else if (response && response.status === 'unknown') {
+                        if (statusEl) statusEl.textContent = t('whatsapp_es_cancelled');
+                        toast(t('whatsapp_es_cancelled'), true);
+                    } else {
+                        if (statusEl) statusEl.textContent = t('whatsapp_es_failed');
+                        toast(t('whatsapp_es_failed'), true);
+                    }
+                    waBtnLoading(btn, false);
+                }, {
+                    config_id: _waEsConfig.configId,
+                    response_type: 'code',
+                    override_default_response_type: true,
+                    extras: {
+                        setup: {},
+                        featureType: '',
+                        sessionInfoVersion: '3'
+                    }
+                });
+            } catch (e) {
+                var msg = (e && e.message) || t('whatsapp_es_failed');
+                if (statusEl) statusEl.textContent = msg;
+                toast(msg, true);
+                waBtnLoading(btn, false);
+            }
+        }
+
+        function showWhatsappEmbeddedSignupBillingHelp() {
+            var billingHint = document.getElementById('whatsappEmbeddedSignupBillingHint');
+            if (billingHint) billingHint.hidden = false;
+            toast(t('whatsapp_es_billing_hint'));
+            try {
+                window.open('https://www.facebook.com/business/help/488291839463771', '_blank', 'noopener,noreferrer');
+            } catch (_) {}
+        }
+        window.launchWhatsappEmbeddedSignup = launchWhatsappEmbeddedSignup;
+        window.showWhatsappEmbeddedSignupBillingHelp = showWhatsappEmbeddedSignupBillingHelp;
+        window.renderWhatsappEmbeddedSignupUi = renderWhatsappEmbeddedSignupUi;
         function renderWhatsappTrialBanner(trial) {
             var box = document.getElementById('whatsappTrialBanner');
             var textEl = document.getElementById('whatsappTrialText');
@@ -16257,6 +16470,7 @@
                 appSecret: t('whatsapp_check_app_secret'),
                 publicUrl: t('whatsapp_check_public_url'),
                 bulkTemplate: t('whatsapp_check_bulk_template'),
+                embeddedSignup: t('whatsapp_check_embedded_signup'),
                 enabled: t('whatsapp_check_gw_enabled'),
                 reachable: t('whatsapp_check_gw_reachable'),
                 connected: t('whatsapp_check_gw_connected'),
@@ -16268,7 +16482,8 @@
                 number_risk: t('whatsapp_warn_number_risk'),
                 no_app_secret: t('whatsapp_warn_no_app_secret'),
                 dual_connected: t('whatsapp_warn_dual_connected'),
-                no_channel: t('whatsapp_warn_no_channel')
+                no_channel: t('whatsapp_warn_no_channel'),
+                es_connect_hint: t('whatsapp_warn_es_connect_hint')
             };
             function renderChecks(listEl, checks) {
                 if (!listEl || !checks) return;
@@ -17967,6 +18182,8 @@
         })();
 
         (function exposeOnclickHandlers() {
+            window.launchWhatsappEmbeddedSignup = launchWhatsappEmbeddedSignup;
+            window.showWhatsappEmbeddedSignupBillingHelp = showWhatsappEmbeddedSignupBillingHelp;
             window.logout = logout;
             window.showPage = showPage;
             window.showTenantPaywall = showTenantPaywall;
@@ -18517,7 +18734,7 @@
                     descKey: 'onboarding_step_telegram_desc',
                 },
                 {
-                    page: null,
+                    page: 'whatsapp',
                     titleKey: 'onboarding_step_whatsapp_title',
                     descKey: 'onboarding_step_whatsapp_desc',
                 },
@@ -19001,7 +19218,7 @@
                 sub.style.display = showBuilder ? '' : 'none';
                 var bl = sub.querySelector('.nav-link'); if (bl) bl.style.display = showBuilder ? '' : 'none';
             }
-            var bookingOn = engCan('appointments') && hiddenNav.indexOf('appointments') < 0;
+            var bookingOn = chatBookingMode() !== '';
             var bookBtn = document.getElementById('waChatBookBtn');
             if (bookBtn) bookBtn.style.display = bookingOn ? '' : 'none';
             document.querySelectorAll('.customer-detail-tab-engine').forEach(function(b) {
@@ -19277,13 +19494,41 @@
             var box = document.getElementById('customerAppointmentsList');
             if (!box) return;
             box.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var mode = chatBookingMode();
+            var addBtn = document.getElementById('btnCustomerAddAppointment');
+            if (mode === 'clinic') {
+                var clinicRes = await apiFetch('/api/clinic/appointments?customerId=' + encodeURIComponent(custId) + '&limit=50');
+                if (clinicRes.needLogin) return;
+                if (!clinicRes.ok) { box.innerHTML = '<div class="empty">' + escapeHtml(engErr(clinicRes)) + '</div>'; return; }
+                var clinicRows = ((clinicRes.data && clinicRes.data.data) || []).slice();
+                if (!clinicRows.length) {
+                    box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>';
+                } else {
+                    box.innerHTML = '<div class="engine-appt-list">' + clinicRows.map(function(a) {
+                        var start = a.startsAt || a.startAt;
+                        var label = (a.doctor && (a.doctor.name || a.doctor.fullName)) || a.reason || '';
+                        return '<div class="engine-cust-row"><div class="engine-cust-row-main"><b>' + escapeHtml(label || '—') + '</b> <span class="badge">' + escapeHtml(a.status || '') + '</span></div><div class="engine-muted">' + escapeHtml(engFmtDateTime(start)) + '</div></div>';
+                    }).join('') + '</div>';
+                }
+                if (addBtn) {
+                    addBtn.onclick = function() {
+                        if (typeof showPage === 'function') showPage('clinic-appointments');
+                    };
+                }
+                return;
+            }
+            if (mode !== 'generic') {
+                box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>';
+                if (addBtn) addBtn.style.display = 'none';
+                return;
+            }
+            if (addBtn) addBtn.style.display = '';
             var res = await apiFetch('/api/appointments?customerId=' + encodeURIComponent(custId));
             if (res.needLogin) return;
             if (!res.ok) { box.innerHTML = '<div class="empty">' + escapeHtml(engErr(res)) + '</div>'; return; }
             var rows = ((res.data && res.data.data) || []).slice().sort(function(a, b) { return new Date(b.startAt) - new Date(a.startAt); });
             if (!rows.length) { box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>'; return; }
             box.innerHTML = '<div class="engine-appt-list">' + rows.map(function(a) { return bkCardHtml(a, { compact: true }); }).join('') + '</div>';
-            var addBtn = document.getElementById('btnCustomerAddAppointment');
             if (addBtn && !addBtn._bound) { addBtn._bound = true; addBtn.addEventListener('click', function() { var name = currentCustomerData ? (currentCustomerData.name || currentCustomerData.phone || '') : ''; openAppointmentForm({ customerId: currentCustomerId, customerName: name }); }); }
         }
         window.loadCustomerAppointments = loadCustomerAppointments;
@@ -19323,6 +19568,10 @@
         }
         async function initAppointmentsPage() {
             var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (chatBookingMode() === 'clinic') {
+                if (typeof showPage === 'function') showPage('clinic-appointments');
+                return;
+            }
             if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             bkBindStaticHandlers();
             if (!BK.date) BK.date = new Date();
@@ -19538,9 +19787,20 @@
             bkRefreshVisible();
             return false;
         }
-        function openAppointmentFromChat() {
+        function chatBookingMode() {
             var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
-            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
+            // کلینیک و رزرو عمومی دو دامنهٔ جدا هستند؛ اگر هر دو روشن باشند اولویت با کلینیک است
+            if (engCan('clinic') && hiddenNav.indexOf('clinic-appointments') < 0) return 'clinic';
+            if (engCan('appointments') && hiddenNav.indexOf('appointments') < 0) return 'generic';
+            return '';
+        }
+        function openAppointmentFromChat() {
+            var mode = chatBookingMode();
+            if (!mode) return;
+            if (mode === 'clinic') {
+                if (typeof showPage === 'function') showPage('clinic-appointments');
+                return;
+            }
             var p = (typeof openChatCustomerPreview !== 'undefined') ? openChatCustomerPreview : null;
             if (!p || !p.id) { toast(t('bk_customer_required'), true); return; }
             openAppointmentForm({ customerId: p.id, customerName: p.name || p.phone || '', conversationId: (typeof currentConvId !== 'undefined' && currentConvId) ? currentConvId : null });

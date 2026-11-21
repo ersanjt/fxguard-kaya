@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
-const { getPanelSettingsKey, isPlatformTenant } = require('../lib/tenantContext');
+const { getPanelSettingsKey, getCurrentTenantId, isPlatformTenant } = require('../lib/tenantContext');
 const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
@@ -12,8 +12,10 @@ const { buildWhatsappOverview } = require('../lib/whatsappOverview');
 router.get('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: getPanelSettingsKey() },
+            where: { id: panelKey },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
         });
         const aiStatus = publicAiStatus(cfg);
@@ -58,9 +60,11 @@ router.get('/config', async (req, res, next) => {
 router.put('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
         const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, aiProvider, aiKeys, deptAssignedMessage, employeeIntroMessage, conversationEndedMessage, callIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
         const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: getPanelSettingsKey() },
+            where: { id: panelKey },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
         });
         if (welcomeMessage !== undefined) {
@@ -144,19 +148,40 @@ router.get('/overview', async (req, res, next) => {
 router.get('/connection', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
+        const selfServe = isSelfServeTenant(req.tenant);
         const [row] = await WhatsappConnection.findOrCreate({
-            where: { id: getPanelSettingsKey() },
-            defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
+            where: { id: panelKey },
+            defaults: {
+                connectionMode: selfServe ? 'cloud' : 'cloud_first',
+                cloudEnabled: true,
+                gatewayEnabled: !selfServe,
+                tenantId: getCurrentTenantId() || null,
+            },
         });
+        if (!row.tenantId && getCurrentTenantId()) {
+            row.tenantId = getCurrentTenantId();
+            await row.save().catch(() => {});
+        }
         const payload = {
             connectionMode: row.connectionMode || 'cloud_first',
             cloudEnabled: row.cloudEnabled !== false,
             cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
             cloudPhoneNumberId: row.cloudPhoneNumberId || '',
+            cloudWabaId: row.cloudWabaId || '',
+            embeddedSignupAt: row.embeddedSignupAt || null,
             cloudVerifyTokenSet: !!(row.cloudVerifyToken && String(row.cloudVerifyToken).trim().length > 0),
             cloudBulkTemplateName: row.cloudBulkTemplateName || '',
             cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
             cloudAppSecretSet: !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim(),
+            embeddedSignup: (() => {
+                try {
+                    return require('../lib/metaEmbeddedSignup').getPublicEmbeddedSignupConfig();
+                } catch (_) {
+                    return { enabled: false, reason: 'unavailable' };
+                }
+            })(),
             gatewayEnabled: row.gatewayEnabled !== false,
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
@@ -204,11 +229,21 @@ router.put('/connection', async (req, res, next) => {
             return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند تنظیمات اتصال را تغییر دهد' });
         }
         const body = req.body || {};
-        const [row] = await WhatsappConnection.findOrCreate({
-            where: { id: getPanelSettingsKey() },
-            defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
-        });
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
         const cloudOnlyDesk = isSelfServeTenant(req.tenant) && !isTenantGatewayAllowed(req.tenant);
+        const [row] = await WhatsappConnection.findOrCreate({
+            where: { id: panelKey },
+            defaults: {
+                connectionMode: cloudOnlyDesk ? 'cloud' : 'cloud_first',
+                cloudEnabled: true,
+                gatewayEnabled: !cloudOnlyDesk,
+                tenantId: getCurrentTenantId() || null,
+            },
+        });
+        if (!row.tenantId && getCurrentTenantId()) {
+            row.tenantId = getCurrentTenantId();
+        }
         const gatewayManaged = isSelfServeTenant(req.tenant);
         if (cloudOnlyDesk) {
             row.connectionMode = 'cloud';
@@ -251,6 +286,8 @@ router.put('/connection', async (req, res, next) => {
             cloudEnabled: row.cloudEnabled,
             cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
             cloudPhoneNumberId: row.cloudPhoneNumberId || '',
+            cloudWabaId: row.cloudWabaId || '',
+            embeddedSignupAt: row.embeddedSignupAt || null,
             cloudVerifyTokenSet: !!(row.cloudVerifyToken && String(row.cloudVerifyToken).trim().length > 0),
             cloudBulkTemplateName: row.cloudBulkTemplateName || '',
             cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
@@ -264,6 +301,100 @@ router.put('/connection', async (req, res, next) => {
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً ابتدا اسکریپت add-whatsapp-connection-table را اجرا کنید: node scripts/add-whatsapp-connection-table.js' });
+        }
+        next(err);
+    }
+});
+
+/** وضعیت عمومی Embedded Signup (بدون secret) */
+router.get('/embedded-signup/config', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const { getPublicEmbeddedSignupConfig } = require('../lib/metaEmbeddedSignup');
+        res.json(getPublicEmbeddedSignupConfig());
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * تکمیل جریان Meta Embedded Signup — تعویض code، subscribe، ذخیره per-tenant
+ * Body: { code, wabaId, phoneNumberId, pin?, displayPhoneNumber? }
+ */
+router.post('/embedded-signup/complete', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند واتساپ را با Meta وصل کند' });
+        }
+        const panelKey = getPanelSettingsKey();
+        if (!panelKey) return res.status(400).json({ error: 'سازمان پنل مشخص نیست' });
+
+        const {
+            completeEmbeddedSignupFlow,
+            getPublicEmbeddedSignupConfig,
+        } = require('../lib/metaEmbeddedSignup');
+
+        let result;
+        try {
+            result = await completeEmbeddedSignupFlow(req.body || {});
+        } catch (err) {
+            const status = err.status || 500;
+            return res.status(status).json({
+                error: err.message || 'Embedded Signup failed',
+                code: err.code || 'ES_FAILED',
+            });
+        }
+
+        const selfServe = isSelfServeTenant(req.tenant);
+        const cloudOnlyDesk = selfServe && !isTenantGatewayAllowed(req.tenant);
+        const [row] = await WhatsappConnection.findOrCreate({
+            where: { id: panelKey },
+            defaults: {
+                connectionMode: cloudOnlyDesk || selfServe ? 'cloud' : 'cloud_first',
+                cloudEnabled: true,
+                gatewayEnabled: !cloudOnlyDesk,
+                tenantId: getCurrentTenantId() || null,
+            },
+        });
+        if (!row.tenantId && getCurrentTenantId()) row.tenantId = getCurrentTenantId();
+
+        row.cloudEnabled = true;
+        row.connectionMode = cloudOnlyDesk || selfServe ? 'cloud' : (row.connectionMode === 'gateway' ? 'cloud_first' : (row.connectionMode || 'cloud_first'));
+        row.cloudAccessToken = result.accessToken;
+        row.cloudPhoneNumberId = result.phoneNumberId;
+        row.cloudWabaId = result.wabaId;
+        row.embeddedSignupAt = new Date();
+        if (!row.cloudVerifyToken) {
+            const envTok = String(process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '').trim();
+            row.cloudVerifyToken = envTok || require('crypto').randomBytes(16).toString('hex');
+        }
+        await row.save();
+        invalidateCache();
+        try {
+            const { syncPrimaryFromConnection } = require('../services/whatsappNumbers');
+            await syncPrimaryFromConnection(row);
+        } catch (_) { /* جدول شماره ممکن است نباشد */ }
+
+        const pub = getPublicEmbeddedSignupConfig();
+        res.json({
+            ok: true,
+            cloudPhoneNumberId: row.cloudPhoneNumberId,
+            cloudWabaId: row.cloudWabaId,
+            embeddedSignupAt: row.embeddedSignupAt,
+            cloudAccessTokenSet: true,
+            subscribed: true,
+            registered: !!result.registered,
+            billingHintRequired: pub.billingHintRequired !== false,
+            partnerType: pub.partnerType || 'tech_provider',
+            displayPhone: result.displayPhone || null,
+        });
+    } catch (err) {
+        if (/no such column|column.*does not exist/i.test(String(err.message || ''))) {
+            return res.status(500).json({
+                error: 'ستون Embedded Signup نیست. اجرا کنید: node scripts/add-embedded-signup-columns.js',
+                code: 'ES_MIGRATION_REQUIRED',
+            });
         }
         next(err);
     }
@@ -395,8 +526,75 @@ router.get('/cloud/diagnostics', async (req, res, next) => {
                 verifyHint: webhookUrl
                     ? `${webhookUrl}${webhookUrl.includes('?') ? '&' : '?'}hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
                     : null,
+                coexistenceFields: [
+                    'messages',
+                    'smb_message_echoes',
+                    'history',
+                    'smb_app_state_sync',
+                    'account_update',
+                ],
+            },
+            coexistence: {
+                syncEndpoint: '/api/whatsapp/cloud/coexistence/sync',
+                note: 'برای شماره فعال روی WhatsApp Business App: Embedded Signup/Coexistence + Subscribe فیلدهای بالا، سپس sync مخاطبین و history در ۲۴ ساعت اول.',
             },
             sessionWindowHours: parseInt(process.env.WHATSAPP_CLOUD_SESSION_HOURS || '24', 10) || 24,
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * همگام‌سازی Coexistence بعد از Embedded Signup / ثبت شماره Business
+ * contacts → smb_app_state_sync ؛ history → history (فقط یک‌بار در ۲۴h اول)
+ */
+router.post('/cloud/coexistence/sync', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند همگام‌سازی Coexistence را اجرا کند' });
+        }
+        const whatsappCloud = require('../lib/whatsappCloudApi');
+        const configured = await whatsappCloud.isConfigured();
+        if (!configured) return res.status(400).json({ error: 'Cloud API تنظیم نشده است' });
+
+        const requested = String(req.body?.syncType || req.body?.type || 'both').trim().toLowerCase();
+        const jobs = [];
+        if (requested === 'contacts' || requested === 'smb_app_state_sync' || requested === 'both') {
+            jobs.push({ key: 'contacts', syncType: 'smb_app_state_sync' });
+        }
+        if (requested === 'history' || requested === 'both') {
+            jobs.push({ key: 'history', syncType: 'history' });
+        }
+        if (!jobs.length) {
+            return res.status(400).json({
+                error: 'syncType نامعتبر است',
+                allowed: ['contacts', 'history', 'both'],
+            });
+        }
+
+        const results = {};
+        for (const job of jobs) {
+            try {
+                results[job.key] = {
+                    ok: true,
+                    data: await whatsappCloud.requestSmbAppData(job.syncType),
+                };
+            } catch (err) {
+                const metaErr = err?.response?.data?.error;
+                results[job.key] = {
+                    ok: false,
+                    error: metaErr?.message || err.message || 'sync_failed',
+                    code: metaErr?.code,
+                };
+            }
+        }
+        const ok = Object.values(results).every((r) => r && r.ok);
+        res.status(ok ? 200 : 502).json({
+            ok,
+            results,
+            hint: 'Webhook باید فیلدهای history، smb_app_state_sync و smb_message_echoes را Subscribe کرده باشد.',
         });
     } catch (err) {
         next(err);

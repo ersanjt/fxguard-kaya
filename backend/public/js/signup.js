@@ -713,7 +713,11 @@
                     } catch (_) {}
                     const dash = res.d.dashboardUrl;
                     if (res.d.session && dash) {
-                        window.location.href = dash;
+                        // بعد از ثبت‌نام مستقیم به اتصال واتساپ (Embedded Signup / Cloud)
+                        var waDash = String(dash);
+                        if (waDash.indexOf('#') === -1) waDash += '#whatsapp';
+                        else if (waDash.indexOf('#whatsapp') === -1) waDash = waDash.replace(/#.*$/, '#whatsapp');
+                        window.location.href = waDash;
                         return;
                     }
                     const url = res.d.loginUrl;

@@ -599,6 +599,17 @@
                                 </div>
                                 <p class="text-muted whatsapp-hint" id="whatsappGroupsNeedGatewayHint" data-i18n="whatsapp_groups_need_gateway_hint">همگام‌سازی گروه‌ها فقط با Gateway (QR) کار می‌کند؛ تب Cloud برای پیام خصوصی/Meta است و جایگزین QR نیست.</p>
                                 <div id="whatsappCloudSettings" class="whatsapp-conn-panel active">
+                                    <div id="whatsappEmbeddedSignupBox" class="whatsapp-embedded-signup" hidden>
+                                        <h4 class="whatsapp-embedded-title" data-i18n="whatsapp_es_title">اتصال سریع با Meta</h4>
+                                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_es_hint">بدون کپی Token: با حساب Meta لاگین کنید، شماره واتساپ بیزنس را بسازید یا انتخاب کنید، و CRM دسترسی می‌گیرد.</p>
+                                        <p id="whatsappEmbeddedSignupStatus" class="whatsapp-embedded-status text-muted" aria-live="polite"></p>
+                                        <div class="whatsapp-form-actions-inline">
+                                            <button type="button" class="btn-primary" id="btnWhatsappEmbeddedSignup" data-i18n="whatsapp_es_connect_btn">اتصال با Meta</button>
+                                            <button type="button" class="btn-secondary btn-sm" id="btnWhatsappEmbeddedSignupHelp" data-i18n="whatsapp_es_billing_help_btn">راهنمای پرداخت Meta</button>
+                                        </div>
+                                        <p id="whatsappEmbeddedSignupBillingHint" class="text-muted whatsapp-hint" data-i18n="whatsapp_es_billing_hint" hidden>بعد از اتصال، در WhatsApp Manager یک روش پرداخت روی حساب واتساپ خود اضافه کنید تا ارسال تجاری فعال شود.</p>
+                                    </div>
+                                    <p id="whatsappEmbeddedSignupUnavailable" class="text-muted whatsapp-hint" data-i18n="whatsapp_es_unavailable" hidden>اتصال یک‌کلیکی Meta هنوز روی این سرور فعال نشده است. می‌توانید Access Token را دستی وارد کنید یا با پشتیبانی هماهنگ کنید.</p>
                                     <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudEnabled" checked> <span data-i18n="whatsapp_cloud_enabled">فعال</span></label>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID</label><input type="text" id="whatsappCloudPhoneNumberId" class="whatsapp-input" placeholder="1007665702430638"></div>

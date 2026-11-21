@@ -3041,6 +3041,8 @@
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }
+                if (target.closest('#btnWhatsappEmbeddedSignup') && typeof launchWhatsappEmbeddedSignup === 'function') { e.preventDefault(); e.stopPropagation(); launchWhatsappEmbeddedSignup(); return; }
+                if (target.closest('#btnWhatsappEmbeddedSignupHelp') && typeof showWhatsappEmbeddedSignupBillingHelp === 'function') { e.preventDefault(); e.stopPropagation(); showWhatsappEmbeddedSignupBillingHelp(); return; }
                 if (target.closest('#btnCopyWhatsappWebhook') && typeof copyWhatsappWebhookUrl === 'function') { e.preventDefault(); e.stopPropagation(); copyWhatsappWebhookUrl(); return; }
                 if (target.closest('.whatsapp-conn-tab') && typeof switchWhatsappConnectionTab === 'function') { e.preventDefault(); var tb = target.closest('.whatsapp-conn-tab'); if (tb) switchWhatsappConnectionTab(tb.getAttribute('data-tab')); return; }
                 // ویرایش و حذف فایل تمپلیت

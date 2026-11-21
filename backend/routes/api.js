@@ -9,8 +9,12 @@ const { authMiddleware, optionalAuthMiddleware, requireSection } = require('../m
 const { createWebhookAuth, gatewayTenantIdFromHeaders } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
 const { resolveInboundTenant, runInboundWithTenant, pickHeaderSlug } = require('../lib/inboundTenant');
-const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
-const { getCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
+const {
+    transformCloudWebhookEntry,
+    downloadMedia,
+    isConfigured: isCloudApiConfigured,
+} = require('../lib/whatsappCloudApi');
+const { matchesCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
 const models = require('../models');
 const { Message } = models;
 const { createContactRouter } = require('./contact');
@@ -316,8 +320,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const mode = req.query['hub.mode'];
         const token = req.query['hub.verify_token'];
         const challenge = req.query['hub.challenge'];
-        const expectedToken = (await getCloudVerifyToken()).trim();
-        if (mode === 'subscribe' && expectedToken && token === expectedToken) {
+        if (mode === 'subscribe' && (await matchesCloudVerifyToken(token))) {
             return res.type('text/plain').send(challenge || '');
         }
         res.status(403).send('Verification failed');
@@ -342,9 +345,68 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             }
             const body = req.body;
             if (!body || body.object !== 'whatsapp_business_account') return res.status(200).send('ok');
+            const { Customer } = models;
             const entries = body.entry || [];
             for (const entry of entries) {
-                const internalMessages = transformCloudWebhookToInternal(entry);
+                const { messages: internalMessages, contacts: contactSyncs, events: cloudEvents } =
+                    transformCloudWebhookEntry(entry);
+
+                for (const evt of cloudEvents) {
+                    if (evt.type === 'history_error') {
+                        logger.warn('Cloud coexistence history declined or failed', {
+                            phoneNumberId: evt.phoneNumberId,
+                            errors: evt.errors,
+                        });
+                    } else if (evt.type === 'history_progress' && Number(evt.progress) === 100) {
+                        logger.info('Cloud coexistence history sync complete', {
+                            phoneNumberId: evt.phoneNumberId,
+                            phase: evt.phase,
+                        });
+                    } else if (evt.type === 'account_update') {
+                        logger.info('Cloud account_update', {
+                            phoneNumberId: evt.phoneNumberId,
+                            event: evt.event,
+                        });
+                    }
+                }
+
+                for (const contactEvt of contactSyncs) {
+                    const inbound = await resolveInboundTenant({
+                        reqTenant: req.tenant,
+                        phoneNumberId: contactEvt.phoneNumberId,
+                    });
+                    if (!inbound.ok) {
+                        logger.warn('Cloud contact sync skipped: phone number is not mapped to a tenant', {
+                            slug: inbound.slug,
+                        });
+                        continue;
+                    }
+                    if (contactEvt.action === 'remove') {
+                        logger.info('Cloud coexistence contact remove ignored (CRM keeps history)', {
+                            phone: contactEvt.phone,
+                        });
+                        continue;
+                    }
+                    const displayName =
+                        String(contactEvt.fullName || contactEvt.firstName || contactEvt.username || '').trim() ||
+                        null;
+                    await runInboundWithTenant(inbound.tenant, async () => {
+                        const [customer, created] = await Customer.findOrCreate({
+                            where: { phone: contactEvt.phone },
+                            defaults: {
+                                name: displayName,
+                                source: 'whatsapp',
+                            },
+                        });
+                        if (!created && displayName) {
+                            const current = String(customer.name || '').trim();
+                            if (!current || current === contactEvt.phone) {
+                                await customer.update({ name: displayName });
+                            }
+                        }
+                    });
+                }
+
                 for (const msgData of internalMessages) {
                     const inbound = await resolveInboundTenant({
                         reqTenant: req.tenant,
