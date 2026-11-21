@@ -1,0 +1,100 @@
+﻿name: Bind Kaya phone number ID
+
+on:
+  workflow_dispatch:
+    inputs:
+      phone_number_id:
+        description: Meta Phone Number ID
+        required: true
+        default: '1402168889654134'
+      waba_id:
+        description: WhatsApp Business Account ID
+        required: true
+        default: '1395714801963738'
+
+jobs:
+  bind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    permissions:
+      contents: read
+    steps:
+      - name: Update WhatsappConnection phone id on kaya
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          PHONE_ID: ${{ github.event.inputs.phone_number_id }}
+          WABA_ID: ${{ github.event.inputs.waba_id }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: PHONE_ID,WABA_ID
+          timeout: 2m
+          command_timeout: 6m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya/backend
+            node <<'NODE'
+            require('dotenv').config();
+            const axios = require('axios');
+            const { WhatsappConnection, WhatsappNumber, sequelize } = require('./models');
+            const phoneId = process.env.PHONE_ID;
+            const wabaId = process.env.WABA_ID;
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              if (!row) throw new Error('no connection');
+              const prev = row.cloudPhoneNumberId;
+              row.cloudPhoneNumberId = phoneId;
+              row.cloudWabaId = wabaId;
+              row.cloudEnabled = true;
+              row.gatewayEnabled = false;
+              row.connectionMode = 'cloud';
+              await row.save({ skipTenantScope: true });
+              try {
+                const [num] = await WhatsappNumber.findOrCreate({
+                  where: { slotKey: 'primary' },
+                  defaults: {
+                    slotKey: 'primary',
+                    role: 'primary',
+                    priority: 0,
+                    enabled: true,
+                    displayPhone: '+905339470868',
+                    cloudPhoneNumberId: phoneId,
+                    tenantId: row.tenantId,
+                  },
+                  skipTenantScope: true,
+                });
+                num.displayPhone = '+905339470868';
+                num.cloudPhoneNumberId = phoneId;
+                num.enabled = true;
+                await num.save({ skipTenantScope: true });
+              } catch (e) {
+                console.log('slot', e.message);
+              }
+              try { require('./lib/whatsappConnectionLoader').invalidateCache(); } catch (_) {}
+              const token = row.cloudAccessToken || process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '';
+              const ver = process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || 'v26.0';
+              let verify = null;
+              if (token) {
+                const r = await axios.get(
+                  'https://graph.facebook.com/' + ver + '/' + phoneId +
+                    '?fields=id,display_phone_number,verified_name,quality_rating',
+                  { headers: { Authorization: 'Bearer ' + token }, timeout: 15000, validateStatus: () => true }
+                );
+                verify = { status: r.status, data: r.data };
+              }
+              console.log(JSON.stringify({
+                prev,
+                phoneId,
+                wabaId,
+                mode: row.connectionMode,
+                gatewayEnabled: row.gatewayEnabled,
+                hasToken: !!token,
+                hasAppSecret: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET),
+                verify,
+              }, null, 2));
+              await sequelize.close();
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+            pm2 reload crm-backend-kaya --update-env
+            echo DONE
