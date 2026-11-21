@@ -1,0 +1,144 @@
+name: Diagnose SMTP / password-reset mail
+
+on:
+  workflow_dispatch:
+    inputs:
+      reset_platform_admin:
+        description: 'Also run reset-platform-admin-password.js for fxguard@bizdavar.com (prints new password in logs — use carefully)'
+        required: true
+        default: 'no'
+        type: choice
+        options:
+          - 'no'
+          - 'yes'
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Inspect SMTP on app + kaya backends
+        uses: appleboy/ssh-action@v1.2.5
+        env:
+          DO_RESET: ${{ github.event.inputs.reset_platform_admin }}
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DO_RESET
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set +e
+            mask_secrets() {
+              sed -E \
+                -e 's/(PASS|PASSWORD|SECRET|TOKEN|KEY|AUTH)=.*/\1=<redacted>/Ig' \
+                -e 's/(pass|password|secret|token)[" ]*[:=][" ]*[^"'\'' ,}]+/\1=<redacted>/Ig' \
+                -e 's/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/<email>/g'
+            }
+
+            echo "== host =="
+            hostname; whoami; date -u
+
+            echo "== pm2 list =="
+            pm2 jlist | node -e "
+              let raw=''; process.stdin.on('data',c=>raw+=c); process.stdin.on('end',()=>{
+                const list=JSON.parse(raw||'[]');
+                for (const p of list) {
+                  const e=p.pm2_env||{};
+                  console.log([p.name, e.status, e.pm_cwd, e.script].join(' | '));
+                }
+              });
+            "
+
+            inspect_backend() {
+              local label="$1"
+              local cwd="$2"
+              echo ""
+              echo "==== BACKEND: $label ($cwd) ===="
+              local root="$cwd"
+              if [ -d "$cwd/backend" ]; then root="$cwd"; elif [ -f "$cwd/../backend/package.json" ]; then root="$(cd "$cwd/.." && pwd)"; fi
+              local be="$root/backend"
+              [ -d "$be" ] || { echo "no backend dir"; return; }
+              echo "-- paths --"
+              echo "root=$root"
+              ls -la "$be/.env" "$root/.env" 2>/dev/null | mask_secrets
+              echo "-- SMTP env (redacted) --"
+              for f in "$be/.env" "$root/.env"; do
+                [ -f "$f" ] || continue
+                echo "file=$f"
+                grep -E '^(SMTP_|EMAIL_|FRONTEND_URL|CORS_ORIGINS|PANEL_)' "$f" 2>/dev/null | mask_secrets || echo '(no SMTP/EMAIL keys)'
+              done
+              echo "-- outbound TCP to mail hosts --"
+              for target in 'mail.fxguard.io:587' 'mail.fxguard.io:465' 'smtpout.secureserver.net:587' 'smtpout.secureserver.net:465' '143.182.205.92:587'; do
+                host="${target%%:*}"; port="${target##*:}"
+                timeout 5 bash -c "echo >/dev/tcp/$host/$port" 2>/dev/null && echo "OK  $target" || echo "FAIL $target"
+              done
+              echo "-- recent pm2 email/forgot logs ($label) --"
+              local pname
+              case "$label" in
+                app) pname=crm-backend-app ;;
+                kaya) pname=crm-backend-kaya ;;
+                *) pname="$label" ;;
+              esac
+              pm2 logs "$pname" --nostream --lines 200 2>/dev/null | grep -iE 'smtp|email|forgot|reset|mail|nodemailer|ECONN|ETIMEDOUT|auth|535|550|553|SSL|TLS' | tail -n 80 | mask_secrets
+              if [ -f "$be/scripts/check-email-config.js" ]; then
+                echo "-- check-email-config.js --"
+                (cd "$be" && node scripts/check-email-config.js) 2>&1 | mask_secrets | tail -n 40
+              fi
+              if [ -f "$be/scripts/test-smtp.js" ]; then
+                echo "-- test-smtp.js (if present) --"
+                (cd "$be" && node scripts/test-smtp.js) 2>&1 | mask_secrets | tail -n 40
+              fi
+            }
+
+            APP_CWD=$(pm2 jlist | node -e "
+              let raw=''; process.stdin.on('data',c=>raw+=c); process.stdin.on('end',()=>{
+                const list=JSON.parse(raw||'[]');
+                const p=list.find(x=>x&&x.name==='crm-backend-app');
+                if(!p||!p.pm2_env||!p.pm2_env.pm_cwd) process.exit(3);
+                process.stdout.write(p.pm2_env.pm_cwd);
+              });
+            " 2>/dev/null)
+            KAYA_CWD=$(pm2 jlist | node -e "
+              let raw=''; process.stdin.on('data',c=>raw+=c); process.stdin.on('end',()=>{
+                const list=JSON.parse(raw||'[]');
+                const p=list.find(x=>x&&(x.name==='crm-backend-kaya'||x.name==='crm-backend'));
+                if(!p||!p.pm2_env||!p.pm2_env.pm_cwd) process.exit(3);
+                process.stdout.write(p.pm2_env.pm_cwd);
+              });
+            " 2>/dev/null)
+
+            [ -n "$APP_CWD" ] && inspect_backend app "$APP_CWD" || echo "crm-backend-app not found"
+            [ -n "$KAYA_CWD" ] && inspect_backend kaya "$KAYA_CWD" || echo "kaya backend not found in pm2"
+
+            if [ -d /var/www/kayaCRM-kaya/backend ]; then
+              echo ""
+              echo "==== /var/www/kayaCRM-kaya SMTP env ===="
+              grep -E '^(SMTP_|EMAIL_)' /var/www/kayaCRM-kaya/backend/.env 2>/dev/null | mask_secrets || echo '(none)'
+            fi
+
+            echo ""
+            echo "== DNS from server =="
+            getent hosts mail.fxguard.io smtpout.secureserver.net app.fxguard.io 2>/dev/null || true
+            dig +short mail.fxguard.io A 2>/dev/null || true
+
+            if [ "$DO_RESET" = "yes" ]; then
+              echo ""
+              echo "==== RESET PLATFORM ADMIN (requested) ===="
+              for candidate in "$APP_CWD" /var/www/fxguard-kaya /var/www/kayaCRM-app; do
+                [ -z "$candidate" ] && continue
+                be="$candidate/backend"
+                [ -d "$be" ] || continue
+                if [ -f "$be/scripts/reset-platform-admin-password.js" ]; then
+                  echo "running in $be"
+                  (cd "$be" && node scripts/reset-platform-admin-password.js) 2>&1 | mask_secrets
+                  break
+                fi
+              done
+            fi
+
+            echo ""
+            echo "== done =="
