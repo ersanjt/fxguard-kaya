@@ -16,7 +16,7 @@
 
 > **اولویت:** برای حفظ شماره و ارسال انبوه امن، **Meta Cloud** را کامل کنید. Gateway (QR) فقط fallback یا توسعه است و با نشست Web نباید روی همان شماره موازی باشد.
 >
-> **وضعیت production کایا (۲۰۲۶-۱۱-۲۱):** خط فعال Cloud روی سرور = **`+90 533 947 08 68`** — Phone Number ID **`1007665702430638`** (verified_name: Kaya Exchange، توکن System User معتبر، `account_mode=LIVE`). اسلات primary در CRM روی همین شماره ست شد. **هنوز `WHATSAPP_CLOUD_APP_SECRET` روی `.env` خالی است** → وب‌هوک ورودی رد می‌شود. `is_on_biz_app=false` → همزیستی اپ Business برای این شناسه فعال نیست. شمارهٔ جدا در Business Suite (`+90 533 947 08 80` / ID `1382387304965587` در WABA `1395714801963738`) با این توکن قابل خواندن نیست — قاطی نکنید.
+> **وضعیت production کایا (۲۰۲۶-۱۱-۲۱ عصر):** هدف اتصال = **`+90 533 947 08 68`** روی WABA **`1395714801963738`** با Phone Number ID **`1402168889654134`** (در Meta Manager وضعیت **Beklemede / Pending**). سرور CRM فعلاً همین ID را نگه می‌دارد؛ Graph با توکن فعلی روی این ID خطای دسترسی می‌دهد تا OTP ثبت‌نام کامل و System User token تازه برای همین WABA ساخته شود. شناسهٔ قبلی LIVE (`1007665702430638`) فقط به‌عنوان fallback در workflow `Finalize Kaya WhatsApp cloud bind` باقی است. **`WHATSAPP_CLOUD_APP_SECRET` روی `.env` هنوز خالی است** → وب‌هوک ورودی رد می‌شود. `0880` / ID `1382387304965587` را با `0868` قاطی نکنید.
 >
 > **کد:** نسخه Graph در `whatsappCloudApi.js` پیش‌فرض `v26.0`؛ webhook فیلدهای Coexistence را digest می‌کند؛ sync از `POST /api/whatsapp/cloud/coexistence/sync`. Runbook: [WHATSAPP-COEXISTENCE-RUNBOOK.md](./WHATSAPP-COEXISTENCE-RUNBOOK.md). PR مرتبط: [#3](https://github.com/ersanjt/fxguard-kaya/pull/3) — تا deploy روی سرور کایا، تست عملی روی production معلق است.
 

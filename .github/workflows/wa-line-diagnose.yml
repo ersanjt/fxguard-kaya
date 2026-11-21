@@ -48,7 +48,7 @@ jobs:
                 }
                 if (WhatsappNumber) {
                   const nums = await WhatsappNumber.findAll({
-                    attributes: ['id','slotKey','label','phoneE164','phoneNumberId','isActive','tenantId'],
+                    attributes: ['id','slotKey','label','displayPhone','cloudPhoneNumberId','enabled','tenantId'],
                     raw: true,
                     skipTenantScope: true
                   });
@@ -57,30 +57,41 @@ jobs:
                 await sequelize.close();
               })().catch(e => { console.error(e.message); process.exit(1); });
             "
-            echo "== local verify against Graph (if token+phone id) =="
+            echo "== Graph probe (prefer + fallback phone ids) =="
             node -e "
               require('dotenv').config();
-              const cloud = require('./lib/whatsappCloudApi');
+              const axios = require('axios');
+              const { WhatsappConnection, sequelize } = require('./models');
               (async () => {
-                try {
-                  if (typeof cloud.verifyCloudConnection === 'function') {
-                    const r = await cloud.verifyCloudConnection();
-                    console.log(JSON.stringify(r, null, 2));
-                  } else if (typeof cloud.getCloudConfig === 'function') {
-                    const cfg = await cloud.getCloudConfig();
-                    console.log(JSON.stringify({
-                      enabled: !!(cfg && cfg.enabled),
-                      phoneNumberId: cfg && cfg.phoneNumberId,
-                      hasToken: !!(cfg && cfg.accessToken),
-                      apiVersion: cfg && cfg.apiVersion
-                    }));
-                  } else {
-                    console.log('no verify helper');
-                  }
-                } catch (e) {
-                  console.log('VERIFY_ERR', e.message);
+                const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+                const token = (row && row.cloudAccessToken) || process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '';
+                const ver = process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || 'v26.0';
+                const ids = [
+                  row && row.cloudPhoneNumberId,
+                  '1402168889654134',
+                  '1007665702430638',
+                  '1382387304965587'
+                ].filter(Boolean);
+                const seen = new Set();
+                for (const id of ids) {
+                  if (seen.has(id)) continue;
+                  seen.add(id);
+                  if (!token) { console.log(JSON.stringify({ id, error: 'no_token' })); continue; }
+                  const r = await axios.get(
+                    'https://graph.facebook.com/' + ver + '/' + id +
+                      '?fields=id,display_phone_number,verified_name,quality_rating,account_mode,is_on_biz_app',
+                    { headers: { Authorization: 'Bearer ' + token }, timeout: 15000, validateStatus: () => true }
+                  );
+                  console.log(JSON.stringify({ id, status: r.status, data: r.data }));
                 }
-              })();
+                console.log(JSON.stringify({
+                  hasAppSecret: !!(process.env.WHATSAPP_CLOUD_APP_SECRET || process.env.META_APP_SECRET),
+                  verifyTokenSet: !!process.env.WHATSAPP_CLOUD_VERIFY_TOKEN,
+                  boundPhoneId: row && row.cloudPhoneNumberId,
+                  boundWaba: row && row.cloudWabaId
+                }));
+                await sequelize.close();
+              })().catch(e => { console.error('VERIFY_ERR', e.message); process.exit(1); });
             "
             echo "== recent cloud/coexistence logs =="
             pm2 logs crm-backend-kaya --nostream --lines 120 2>/dev/null | grep -iE 'cloud|coexist|meta|graph|0880|1382387304965587|token|webhook' | tail -n 40
