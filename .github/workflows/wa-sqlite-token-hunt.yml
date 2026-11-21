@@ -1,0 +1,70 @@
+name: Hunt WhatsApp token in Kaya DB backups
+
+on:
+  workflow_dispatch:
+
+jobs:
+  hunt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - name: Search sqlite copies for long cloudAccessToken
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 10m
+          script: |
+            set +e
+            cd /var/www/kayaCRM-kaya/backend
+            echo "== current db meta =="
+            node <<'NODE'
+            require('dotenv').config();
+            const { WhatsappConnection, sequelize } = require('./models');
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              const t = row && row.cloudAccessToken ? String(row.cloudAccessToken) : '';
+              console.log(JSON.stringify({
+                phone: row && row.cloudPhoneNumberId,
+                len: t.length,
+                appShape: /^\d+\|/.test(t),
+                updatedAt: row && row.updatedAt,
+              }));
+              await sequelize.close();
+            })().catch((e) => { console.error(e.message); process.exit(1); });
+            NODE
+            echo "== find sqlite files =="
+            find /var/www/kayaCRM-kaya /home/fxguard /var/backups -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' -o -name '*crm*.bak' \) 2>/dev/null | head -n 80
+            echo "== probe each db for long tokens (lengths only) =="
+            while IFS= read -r f; do
+              [ -f "$f" ] || continue
+              node -e '
+                const fs=require("fs");
+                const Database=require("better-sqlite3");
+                const file=process.argv[1];
+                try {
+                  const db=new Database(file,{readonly:true,fileMustExist:true});
+                  let rows=[];
+                  try {
+                    rows=db.prepare("SELECT id, cloudPhoneNumberId as phone, length(cloudAccessToken) as len, substr(cloudAccessToken,1,8) as prefix, updatedAt FROM WhatsappConnections").all();
+                  } catch(_) {
+                    try {
+                      rows=db.prepare("SELECT id, cloudPhoneNumberId as phone, length(cloudAccessToken) as len, substr(cloudAccessToken,1,8) as prefix, updatedAt FROM whatsapp_connections").all();
+                    } catch(e2) {
+                      db.close();
+                      return;
+                    }
+                  }
+                  const interesting=rows.filter(r=>r.len && r.len>=80);
+                  if (interesting.length) console.log(JSON.stringify({file, interesting}));
+                  db.close();
+                } catch(e) {}
+              ' "$f"
+            done <<EOF
+            $(find /var/www/kayaCRM-kaya /home/fxguard /var/backups -type f \( -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.db' \) 2>/dev/null | head -n 60)
+            EOF
+            echo DONE
