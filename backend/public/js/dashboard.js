@@ -10965,17 +10965,8 @@
             const perms = (currentUser && currentUser.permissions) || {};
             return perms[key] === true;
         }
-        function roleDefaultHomePage() {
-            var role = (currentUser && currentUser.role) || 'agent';
-            if (role === 'agent' || role === 'supervisor') return 'conversations';
-            return 'dashboard';
-        }
         function applyNavByRole() {
             const can = canAccessSection;
-            try {
-                if (currentUser && currentUser.role) document.body.setAttribute('data-role', currentUser.role);
-                else document.body.removeAttribute('data-role');
-            } catch (_) {}
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -12549,7 +12540,7 @@
             }
             if (btn) btn.disabled = false;
         }
-        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','records','appointments','modules','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','system-status','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings','clinic-patients','clinic-doctors','clinic-appointments','clinic-packages'];
         function applyHashRoute() {
             try {
                 initSidebarCollapsedState();
@@ -12582,13 +12573,7 @@
                     showPage('customers');
                     return;
                 }
-                const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() {
-                    try {
-                        const last = sessionStorage.getItem('crm_last_page');
-                        if (last && VALID_PAGES.indexOf(last) >= 0) return last;
-                    } catch (_) {}
-                    return roleDefaultHomePage();
-                })();
+                const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
                 showPage(page);
             } catch (e) {
                 console.error('[applyHashRoute]', e);
@@ -12695,9 +12680,11 @@
             });
             if (page === 'message-templates') runPageInit('message-templates', function() { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); });
             if (page === 'rates') runPageInit('rates', function() {
+                const readOnly = typeof isSelfServeTenantDesk === 'function' && isSelfServeTenantDesk();
                 const ratesPage = document.getElementById('pageRates');
-                if (ratesPage) ratesPage.classList.remove('rates-page--readonly');
+                if (ratesPage) ratesPage.classList.toggle('rates-page--readonly', readOnly);
                 loadRatesAdjustments();
+                if (readOnly) return;
                 loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus();
             });
             if (page === 'rates-charts') runPageInit('rates-charts', function() { initRatesChartsPage(); });
@@ -19218,7 +19205,7 @@
                 sub.style.display = showBuilder ? '' : 'none';
                 var bl = sub.querySelector('.nav-link'); if (bl) bl.style.display = showBuilder ? '' : 'none';
             }
-            var bookingOn = chatBookingMode() !== '';
+            var bookingOn = engCan('appointments') && hiddenNav.indexOf('appointments') < 0;
             var bookBtn = document.getElementById('waChatBookBtn');
             if (bookBtn) bookBtn.style.display = bookingOn ? '' : 'none';
             document.querySelectorAll('.customer-detail-tab-engine').forEach(function(b) {
@@ -19494,41 +19481,13 @@
             var box = document.getElementById('customerAppointmentsList');
             if (!box) return;
             box.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var mode = chatBookingMode();
-            var addBtn = document.getElementById('btnCustomerAddAppointment');
-            if (mode === 'clinic') {
-                var clinicRes = await apiFetch('/api/clinic/appointments?customerId=' + encodeURIComponent(custId) + '&limit=50');
-                if (clinicRes.needLogin) return;
-                if (!clinicRes.ok) { box.innerHTML = '<div class="empty">' + escapeHtml(engErr(clinicRes)) + '</div>'; return; }
-                var clinicRows = ((clinicRes.data && clinicRes.data.data) || []).slice();
-                if (!clinicRows.length) {
-                    box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>';
-                } else {
-                    box.innerHTML = '<div class="engine-appt-list">' + clinicRows.map(function(a) {
-                        var start = a.startsAt || a.startAt;
-                        var label = (a.doctor && (a.doctor.name || a.doctor.fullName)) || a.reason || '';
-                        return '<div class="engine-cust-row"><div class="engine-cust-row-main"><b>' + escapeHtml(label || '—') + '</b> <span class="badge">' + escapeHtml(a.status || '') + '</span></div><div class="engine-muted">' + escapeHtml(engFmtDateTime(start)) + '</div></div>';
-                    }).join('') + '</div>';
-                }
-                if (addBtn) {
-                    addBtn.onclick = function() {
-                        if (typeof showPage === 'function') showPage('clinic-appointments');
-                    };
-                }
-                return;
-            }
-            if (mode !== 'generic') {
-                box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>';
-                if (addBtn) addBtn.style.display = 'none';
-                return;
-            }
-            if (addBtn) addBtn.style.display = '';
             var res = await apiFetch('/api/appointments?customerId=' + encodeURIComponent(custId));
             if (res.needLogin) return;
             if (!res.ok) { box.innerHTML = '<div class="empty">' + escapeHtml(engErr(res)) + '</div>'; return; }
             var rows = ((res.data && res.data.data) || []).slice().sort(function(a, b) { return new Date(b.startAt) - new Date(a.startAt); });
             if (!rows.length) { box.innerHTML = '<div class="empty"><span class="empty-icon">📅</span><p>' + escapeHtml(t('bk_no_appointments')) + '</p></div>'; return; }
             box.innerHTML = '<div class="engine-appt-list">' + rows.map(function(a) { return bkCardHtml(a, { compact: true }); }).join('') + '</div>';
+            var addBtn = document.getElementById('btnCustomerAddAppointment');
             if (addBtn && !addBtn._bound) { addBtn._bound = true; addBtn.addEventListener('click', function() { var name = currentCustomerData ? (currentCustomerData.name || currentCustomerData.phone || '') : ''; openAppointmentForm({ customerId: currentCustomerId, customerName: name }); }); }
         }
         window.loadCustomerAppointments = loadCustomerAppointments;
@@ -19568,10 +19527,6 @@
         }
         async function initAppointmentsPage() {
             var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
-            if (chatBookingMode() === 'clinic') {
-                if (typeof showPage === 'function') showPage('clinic-appointments');
-                return;
-            }
             if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             bkBindStaticHandlers();
             if (!BK.date) BK.date = new Date();
@@ -19787,20 +19742,9 @@
             bkRefreshVisible();
             return false;
         }
-        function chatBookingMode() {
-            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
-            // کلینیک و رزرو عمومی دو دامنهٔ جدا هستند؛ اگر هر دو روشن باشند اولویت با کلینیک است
-            if (engCan('clinic') && hiddenNav.indexOf('clinic-appointments') < 0) return 'clinic';
-            if (engCan('appointments') && hiddenNav.indexOf('appointments') < 0) return 'generic';
-            return '';
-        }
         function openAppointmentFromChat() {
-            var mode = chatBookingMode();
-            if (!mode) return;
-            if (mode === 'clinic') {
-                if (typeof showPage === 'function') showPage('clinic-appointments');
-                return;
-            }
+            var hiddenNav = (typeof HIDDEN_SECTIONS !== 'undefined' && Array.isArray(HIDDEN_SECTIONS)) ? HIDDEN_SECTIONS : [];
+            if (hiddenNav.indexOf('appointments') >= 0 || !engCan('appointments')) return;
             var p = (typeof openChatCustomerPreview !== 'undefined') ? openChatCustomerPreview : null;
             if (!p || !p.id) { toast(t('bk_customer_required'), true); return; }
             openAppointmentForm({ customerId: p.id, customerName: p.name || p.phone || '', conversationId: (typeof currentConvId !== 'undefined' && currentConvId) ? currentConvId : null });
