@@ -234,6 +234,68 @@ async function addTenantIdColumns(sequelize, logger) {
     await dropGlobalColumnUnique(sequelize, 'Tags', 'name', logger);
     await dropGlobalColumnUnique(sequelize, 'whatsapp_numbers', 'slotKey', logger);
     await migratePerTenantRateKeys(sequelize, logger);
+    await migratePerTenantStaffIdentity(sequelize, logger);
+}
+
+/** ایمیل و نام کاربری کارمند فقط داخل همان سازمان یکتا است، نه بین سازمان‌ها. */
+async function migratePerTenantStaffIdentity(sequelize, logger) {
+    let users = null;
+    try {
+        users = await sequelize.getQueryInterface().describeTable('Users');
+    } catch (_) {
+        users = null;
+    }
+    if (!users || !users.email) return;
+    await dropGlobalColumnUnique(sequelize, 'Users', 'email', logger);
+    await dropGlobalColumnUnique(sequelize, 'Users', 'username', logger);
+    await dropSingleColumnUniqueIndex(sequelize, 'Users', 'email', logger);
+    await dropSingleColumnUniqueIndex(sequelize, 'Users', 'username', logger);
+    await ensureCompositeUnique(sequelize, 'Users', 'users_tenant_email', ['tenantId', 'email'], logger);
+    await ensureCompositeUnique(sequelize, 'Users', 'users_tenant_username', ['tenantId', 'username'], logger);
+}
+
+async function dropSingleColumnUniqueIndex(sequelize, table, column, logger) {
+    const { QueryTypes } = require('sequelize');
+    const dialect = sequelize.getDialect();
+    if (dialect === 'sqlite') {
+        const indexes = await sequelize.query(
+            "SELECT name, sql FROM sqlite_master WHERE type = 'index' AND tbl_name = ? AND sql IS NOT NULL",
+            { replacements: [table], type: QueryTypes.SELECT }
+        );
+        const re = new RegExp('^CREATE UNIQUE INDEX[\\s\\S]*\\(\\s*[`"]?' + column + '[`"]?\\s*\\)\\s*$', 'i');
+        for (const idx of indexes) {
+            if (!idx.sql || !idx.name || !re.test(idx.sql)) continue;
+            await sequelize.query('DROP INDEX IF EXISTS `' + String(idx.name).replace(/`/g, '') + '`');
+            if (logger && logger.info) logger.info('✅ ' + table + '.' + column + ': single-column unique index dropped');
+        }
+        return;
+    }
+    if (dialect !== 'postgres') return;
+    const rows = await sequelize.query(
+        'SELECT indexname AS name FROM pg_indexes WHERE tablename = :table AND indexdef ILIKE :marker',
+        { replacements: { table, marker: '%(' + column + ')%' }, type: QueryTypes.SELECT }
+    );
+    for (const row of rows) {
+        const def = await sequelize.query(
+            'SELECT indexdef FROM pg_indexes WHERE indexname = :name',
+            { replacements: { name: row.name }, type: QueryTypes.SELECT }
+        );
+        const sql = def[0] && def[0].indexdef ? String(def[0].indexdef) : '';
+        if (!/^CREATE UNIQUE INDEX/i.test(sql)) continue;
+        if (!new RegExp('\\(' + column + '\\)\\s*$', 'i').test(sql)) continue;
+        await sequelize.query('DROP INDEX IF EXISTS "' + String(row.name).replace(/"/g, '') + '"');
+    }
+}
+
+async function ensureCompositeUnique(sequelize, table, name, columns, logger) {
+    try {
+        await sequelize.getQueryInterface().addIndex(table, columns, { unique: true, name });
+        if (logger && logger.info) logger.info('✅ ' + name + ' ready');
+    } catch (err) {
+        const msg = String((err && err.message) || err);
+        if (/already exists|duplicate|exists/i.test(msg)) return;
+        if (logger && logger.warn) logger.warn(name, { error: msg });
+    }
 }
 
 async function migratePerTenantRateKeys(sequelize, logger) {
@@ -481,5 +543,6 @@ module.exports = {
     ensureTenantTableColumns,
     dropGlobalColumnUnique,
     migratePerTenantRateKeys,
+    migratePerTenantStaffIdentity,
     backfillPerTenantRateRows,
 };

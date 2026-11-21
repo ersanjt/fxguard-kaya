@@ -82,8 +82,10 @@ function issueToken(user) {
 
 function loginTenantWhere(req) {
     const tenant = req && req.tenant;
-    if (!tenant || isPlatformTenant(tenant) || !tenant.id) {
-        return {};
+    if (!tenant || !tenant.id) return {};
+    // پنل سکو فقط کاربر خودش را می‌بیند. همان ایمیل می‌تواند در سازمان مشتری هم باشد.
+    if (isPlatformTenant(tenant)) {
+        return { [Op.or]: [{ tenantId: tenant.id }, { tenantId: null }] };
     }
     return { tenantId: tenant.id };
 }
@@ -275,13 +277,15 @@ router.post('/forgot-password', async (req, res, next) => {
     try {
         const email = (req.body.email || '').toString().trim().toLowerCase();
         if (!email) return res.status(400).json({ error: 'Email is required' });
-        let user = await User.findOne({ where: { email, isActive: true } });
+        const tenantWhere = loginTenantWhere(req);
+        let user = await User.findOne({ where: { email, isActive: true, ...tenantWhere } });
         if (!user) {
             user = await User.findOne({
                 where: {
                     [Op.and]: [
                         sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), email),
                         { isActive: true },
+                        tenantWhere,
                     ],
                 },
             });

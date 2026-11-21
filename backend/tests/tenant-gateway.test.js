@@ -305,8 +305,17 @@ async function main() {
             assert.strictEqual(login.status, 200, JSON.stringify(login.body));
             const user = await models.User.findOne({ where: { email: 'sara@gw-a.test' }, skipTenantScope: true });
             assert.strictEqual(user.tenantId, tenantA.id);
-            const dup = await admin.post('/api/tenants/admin/' + tenantB.id + '/users', { email: 'x@gw-b.test', username: 'sara.gwa' });
+            const sameOnOther = await admin.post('/api/tenants/admin/' + tenantB.id + '/users', {
+                email: 'sara@gw-a.test',
+                username: 'sara.gwa',
+            });
+            assert.strictEqual(sameOnOther.status, 201, JSON.stringify(sameOnOther.body));
+            const dup = await admin.post('/api/tenants/admin/' + tenantB.id + '/users', {
+                email: 'sara@gw-a.test',
+                username: 'sara.other',
+            });
             assert.strictEqual(dup.status, 409, JSON.stringify(dup.body));
+            assert.strictEqual(dup.body.code, 'EMAIL_TAKEN');
         });
 
         await test('platform admin sets a new password, disables a user and keeps the last owner', async () => {

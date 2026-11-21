@@ -147,15 +147,24 @@ function normUsername(v) {
     return String(v || '').trim().toLowerCase();
 }
 
-async function assertIdentityFree({ email, username }, exceptId) {
+async function assertIdentityFree(tenantId, { email, username }, exceptId) {
     const notSelf = exceptId ? { id: { [Op.ne]: exceptId } } : {};
+    const scope = { tenantId };
     if (email) {
-        const taken = await User.findOne({ where: { ...notSelf, email }, attributes: ['id'], skipTenantScope: true });
-        if (taken) throw httpError(409, 'این ایمیل قبلاً برای کاربر دیگری ثبت شده است', 'EMAIL_TAKEN');
+        const taken = await User.findOne({
+            where: { ...notSelf, ...scope, email },
+            attributes: ['id'],
+            skipTenantScope: true,
+        });
+        if (taken) throw httpError(409, 'این ایمیل در همین سازمان قبلاً ثبت شده است', 'EMAIL_TAKEN');
     }
     if (username) {
-        const taken = await User.findOne({ where: { ...notSelf, username }, attributes: ['id'], skipTenantScope: true });
-        if (taken) throw httpError(409, 'این نام کاربری قبلاً گرفته شده است', 'USERNAME_TAKEN');
+        const taken = await User.findOne({
+            where: { ...notSelf, ...scope, username },
+            attributes: ['id'],
+            skipTenantScope: true,
+        });
+        if (taken) throw httpError(409, 'این نام کاربری در همین سازمان قبلاً گرفته شده است', 'USERNAME_TAKEN');
     }
 }
 
@@ -193,7 +202,7 @@ async function createTenantUser(tenantId, body) {
     checkUsername(username);
     const password = String(b.password || '') || generatePassword();
     checkPassword(password);
-    await assertIdentityFree({ email, username });
+    await assertIdentityFree(tenant.id, { email, username });
     const user = await User.create({
         tenantId: tenant.id,
         email,
@@ -237,7 +246,7 @@ async function updateTenantUser(tenantId, userId, body) {
         patch.password = password;
     }
 
-    await assertIdentityFree({ email: patch.email, username: patch.username }, user.id);
+    await assertIdentityFree(tenant.id, { email: patch.email, username: patch.username }, user.id);
     await assertKeepsActiveOwner(tenant.id, user, {
         role: patch.role !== undefined ? patch.role : user.role,
         isActive: patch.isActive !== undefined ? patch.isActive : user.isActive,

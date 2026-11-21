@@ -15,9 +15,8 @@ module.exports = (sequelize) => {
         },
         username: {
             type: DataTypes.STRING,
-            unique: true,
             allowNull: true,
-            comment: 'نام کاربری برای ورود (غیر از ایمیل) — یکتا'
+            comment: 'نام کاربری برای ورود (غیر از ایمیل) — یکتا داخل همان سازمان'
         },
         name: {
             type: DataTypes.STRING,
@@ -42,11 +41,11 @@ module.exports = (sequelize) => {
         },
         email: {
             type: DataTypes.STRING,
-            unique: true,
             allowNull: false,
             validate: {
                 isEmail: true
-            }
+            },
+            comment: 'یکتا داخل همان سازمان؛ سازمان دیگر می‌تواند همین ایمیل را داشته باشد'
         },
         password: {
             type: DataTypes.STRING,
@@ -149,6 +148,8 @@ module.exports = (sequelize) => {
         timestamps: true,
         indexes: [
             { fields: ['tenantId'] },
+            { unique: true, fields: ['tenantId', 'email'], name: 'users_tenant_email' },
+            { unique: true, fields: ['tenantId', 'username'], name: 'users_tenant_username' },
             { fields: ['email'] },
             { fields: ['username'] },
             { fields: ['departmentId'] },

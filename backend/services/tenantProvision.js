@@ -68,24 +68,12 @@ async function provisionSelfServeTenant(input, env) {
         .trim()
         .slice(0, 120) || email.split('@')[0];
 
-    const { Tenant, User, PanelSetting, WhatsappConnection, WhatsappConfig, Branch, Department, sequelize } =
-        models;
+    const { Tenant, User, PanelSetting, WhatsappConnection, WhatsappConfig, Branch, Department } = models;
 
     const taken = await Tenant.findOne({ where: { slug } });
     if (taken) {
         const e = new Error('این شناسه قبلاً گرفته شده است');
         e.code = 'SLUG_TAKEN';
-        e.status = 409;
-        throw e;
-    }
-
-    const emailTaken = await User.findOne({
-        where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), email),
-        skipTenantScope: true,
-    });
-    if (emailTaken) {
-        const e = new Error('این ایمیل قبلاً ثبت شده است');
-        e.code = 'EMAIL_TAKEN';
         e.status = 409;
         throw e;
     }
