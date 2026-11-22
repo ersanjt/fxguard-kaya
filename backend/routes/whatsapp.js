@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { WhatsappConfig, WhatsappConnection } = require('../models');
-const { invalidateCache } = require('../lib/whatsappConnectionLoader');
+const { invalidateCache, getWhatsappConnectionConfig } = require('../lib/whatsappConnectionLoader');
 const { getPanelSettingsKey, getCurrentTenantId, isPlatformTenant } = require('../lib/tenantContext');
 const { isSelfServeTenant, isTenantGatewayAllowed } = require('../lib/tenantGateway');
 const { isValidUUID } = require('../lib/validation');
@@ -196,6 +196,12 @@ router.get('/connection', async (req, res, next) => {
         if (payload.gatewayManaged) {
             payload.gatewayUrl = '';
             payload.gatewayApiSecretSet = false;
+        } else if (!payload.gatewayUrl) {
+            // پنل سکو: اگر DB خالی است همان GATEWAY_URL واقعی را نشان بده تا اشتباه :8000 ذخیره نشود
+            try {
+                const cfg = await getWhatsappConnectionConfig();
+                if (cfg && cfg.gatewayUrl) payload.gatewayUrl = cfg.gatewayUrl;
+            } catch (_) { /* ignore */ }
         }
         try {
             const { getTrialSnapshot } = require('../lib/whatsappTrial');
@@ -267,7 +273,17 @@ router.put('/connection', async (req, res, next) => {
             row.cloudBulkTemplateLanguage = lang || 'fa';
         }
         if (!cloudOnlyDesk && typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
-        if (!gatewayManaged && body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
+        // حالت «فقط Gateway» بدون فعال بودن کانال QR بی‌معنی است — همیشه روشن کن
+        if (!cloudOnlyDesk && row.connectionMode === 'gateway') row.gatewayEnabled = true;
+        if (!gatewayManaged && body.gatewayUrl !== undefined) {
+            let gw = String(body.gatewayUrl || '').trim() || null;
+            if (gw) {
+                // localhost روی https معمولاً ERR_CONNECTION_REFUSED می‌دهد
+                gw = gw.replace(/^https:\/\/(127\.0\.0\.1|localhost)\b/i, 'http://$1');
+                gw = gw.replace(/\/$/, '');
+            }
+            row.gatewayUrl = gw;
+        }
         if (!gatewayManaged && body.gatewayApiSecret !== undefined) {
             const v = String(body.gatewayApiSecret || '').trim();
             row.gatewayApiSecret = v || null;
@@ -635,12 +651,12 @@ router.post('/cloud/test-send', async (req, res, next) => {
             payload = { to: phone, message: text };
         }
 
-        const { sendWhatsAppMessage } = require('../lib/gatewayClient');
-        const result = await sendWhatsAppMessage(payload, { timeout: 20000 });
+        // تست پنل فقط Cloud API — بدون failover/Gateway تا خطای واقعی Meta برگردد (نه 502 خام Cloudflare)
+        const result = await whatsappCloud.sendMessage(payload);
         res.json({
             ok: true,
-            messageId: result?.data?.messageId || null,
-            viaTemplate: !!(result?.data?.viaTemplate || payload.templateName),
+            messageId: result?.messageId || null,
+            viaTemplate: !!payload.templateName,
             to: phone,
         });
     } catch (err) {
@@ -655,7 +671,10 @@ router.post('/cloud/test-send', async (req, res, next) => {
                     : undefined,
             });
         }
-        next(err);
+        return res.status(502).json({
+            ok: false,
+            error: err?.message || 'ارسال تست ناموفق',
+        });
     }
 });
 
