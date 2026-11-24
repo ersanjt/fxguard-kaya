@@ -1,0 +1,57 @@
+/* Kaya CRM | Ersan Jahed Tabrizi | docs/CODEBASE-MAP.md | Employee AI review */
+.ai-review-panel {
+    padding: 10px 14px;
+    border-block-start: 1px solid #94a3b844;
+    background: var(--bg-card, #f4f8fb);
+    color: var(--text-primary, #243343);
+    max-height: 42vh;
+    overflow: auto;
+}
+.ai-review-panel[hidden] {
+    display: none;
+}
+.ai-review-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-block: 8px;
+}
+.ai-review-panel p {
+    font-size: 12px;
+    line-height: 1.7;
+    margin: 5px 0;
+}
+.ai-review-panel label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+}
+.ai-review-panel textarea {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 88px;
+    max-height: 180px;
+    resize: vertical;
+    padding: 10px;
+    border: 1px solid #94a3b866;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    background: var(--bg-input, #fff);
+    line-height: 1.8;
+}
+.ai-review-panel button:disabled {
+    opacity: 0.55;
+    cursor: wait;
+}
+@media (max-width: 600px) {
+    .ai-review-panel {
+        padding: 8px 10px;
+        max-height: 38vh;
+    }
+    .ai-review-panel button {
+        min-height: 36px;
+    }
+}

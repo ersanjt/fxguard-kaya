@@ -264,6 +264,8 @@ async function generateAIResponse({ conversation: _conversation, customer, incom
  * @returns {Promise<boolean>}
  */
 async function isAIAnswerEnabled() {
+    // During the reviewed pilot, inbound messages must never trigger AI delivery.
+    if (require('../lib/aiPilot').isAiPilotEnabled()) return false;
     const active = await resolveActiveAi();
     if (!active || !active.apiKey) return false;
     const enabled = process.env.AI_ANSWER_ENABLED;

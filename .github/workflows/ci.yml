@@ -30,6 +30,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run test:all
+      - run: npm run test:ai-pilot
       # همهٔ artifactهای legacy را بدون بازنویسی working tree بررسی می‌کند.
       - name: Verify dashboard bundle matches chunks
         run: npm run verify:dashboard

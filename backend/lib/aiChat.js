@@ -3,7 +3,7 @@
  */
 const axios = require('axios');
 const logger = require('../config/logger');
-const { getProvider, resolveActiveAi } = require('./aiProviders');
+const { getProvider, resolveActiveAi, resolveAiForProvider } = require('./aiProviders');
 
 function normalizeTurns(messages) {
     const out = [];
@@ -94,8 +94,8 @@ function readResponseText(providerId, data) {
     return (choice && choice.message && choice.message.content) ? String(choice.message.content).trim() : '';
 }
 
-async function completeChat({ system, messages, temperature, maxTokens, timeoutMs }) {
-    const active = await resolveActiveAi();
+async function completeChat({ system, messages, temperature, maxTokens, timeoutMs, providerId, safeErrors = false }) {
+    const active = providerId ? await resolveAiForProvider(providerId) : await resolveActiveAi();
     if (!active || !active.apiKey) {
         return { text: null, provider: active && active.provider, reason: 'no_key' };
     }
@@ -123,7 +123,7 @@ async function completeChat({ system, messages, temperature, maxTokens, timeoutM
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') {
             const errMsg = (err && err.response && err.response.data && (err.response.data.error && (err.response.data.error.message || err.response.data.error) || err.response.data.message)) || (err && err.message);
-            logger.warn('AI request failed', { provider: active.provider, error: typeof errMsg === 'string' ? errMsg : 'request failed' });
+            logger.warn('AI request failed', { provider: active.provider, error: !safeErrors && typeof errMsg === 'string' ? errMsg : 'request failed' });
         }
         return { text: null, provider: active.provider, reason: 'error' };
     }

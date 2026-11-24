@@ -2776,6 +2776,7 @@
         }
 
         function teardownActiveSession(redirectLogin, opts) {
+            if (window.CRMConversationAI) window.CRMConversationAI.reset();
             const o = opts || {};
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
@@ -7315,8 +7316,28 @@
                 items[next].scrollIntoView({ block: 'nearest' });
             });
         }
+        var aiComposerConversationId = null;
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
+            if (aiComposerConversationId && aiComposerConversationId !== id) {
+                var oldAiInput = document.getElementById('msgInput');
+                if (oldAiInput) oldAiInput.value = '';
+                aiComposerConversationId = null;
+            }
             currentConvId = id;
+            if (window.CRMConversationAI) window.CRMConversationAI.open({
+                id: id, isGroup: !!isGroup, language: LANG, request: apiFetch,
+                insertDraft: function(text, replacePrompt) {
+                    if (currentConvId !== id) return false;
+                    var composer = document.getElementById('msgInput');
+                    if (!composer) return false;
+                    if (composer.value.trim() && !window.confirm(replacePrompt)) return false;
+                    composer.value = text;
+                    aiComposerConversationId = id;
+                    updateWaComposerState();
+                    composer.focus();
+                    return true;
+                }
+            });
             persistLastConv(id, name, phone, profilePic, isGroup, customerId);
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
@@ -7885,6 +7906,7 @@
             if (res.ok) {
                 toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد؛ پیام‌ها حفظ شدند' : 'Conversation archived; messages preserved');
                 currentConvId = null;
+                if (window.CRMConversationAI) window.CRMConversationAI.reset();
                 clearLastConv();
                 closeChatMobile(true);
                 loadConversations();
@@ -7898,6 +7920,7 @@
             if (res.ok) {
                 toast((res.data && res.data.message) || (LANG === 'fa' ? 'آرشیو شد؛ پیام‌ها حفظ شدند' : 'Archived; messages preserved'));
                 currentConvId = null;
+                if (window.CRMConversationAI) window.CRMConversationAI.reset();
                 clearLastConv();
                 closeChatMobile(true);
                 loadConversations();
@@ -9225,6 +9248,7 @@
             const content = (input.value || '').trim();
             const file = fileInput && fileInput.files && fileInput.files[0];
             if ((!content && !file) || !currentConvId || _convSendInFlight) return;
+            if (aiComposerConversationId && aiComposerConversationId !== currentConvId) return;
             _convSendInFlight = true;
             try {
                 let media = null;
@@ -9240,6 +9264,11 @@
                 }
                 input.value = '';
                 const body = { content: content || '', media: media };
+                if (aiComposerConversationId === currentConvId) {
+                    body.aiAssisted = true;
+                    body.aiReviewConfirmed = true;
+                    aiComposerConversationId = null;
+                }
                 if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
                 const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
                 if (res.needLogin) return;

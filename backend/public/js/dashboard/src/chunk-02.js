@@ -366,6 +366,7 @@
         }
 
         function teardownActiveSession(redirectLogin, opts) {
+            if (window.CRMConversationAI) window.CRMConversationAI.reset();
             const o = opts || {};
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
