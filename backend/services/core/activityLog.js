@@ -5,6 +5,8 @@ const { ActivityLog } = require('../../models');
 const logger = require('../../config/logger');
 
 const VALID_ACTIONS = new Set([
+    'conversation_ai_generated',
+    'conversation_ai_approved',
     'user_login', 'user_logout', 'login_failed',
     'conversation_created', 'conversation_updated', 'conversation_closed', 'conversation_archived',
     'conversation_assigned', 'conversation_department_changed',

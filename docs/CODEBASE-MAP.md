@@ -89,6 +89,7 @@
 | چت داخلی (صفحه) | `chunk-05.js` + `html-part-02/03` + `html-part-06` + `routes/internal.js` | `#internal-chat`, `#internalChatPane`, مودال گفتگوی جدید / مدیریت اعضا |
 | پیوست چت داخلی | `chunk-02.js` → `renderInternalAttachment` | تصویر/ویدیو اینلاین؛ ذخیره فقط با `allowDownload` |
 | پیام خودکار «کارشناس X» | `backend/services/autoMessages.js` + `routes/conversations.js` | |
+| پایلوت AI با بازبینی کارمند | `routes/conversationAi.js` · `services/conversationAiAssist.js` · `lib/aiPilot.js` · `public/js/modules/conversation-ai-review.js` · `public/css/conversation-ai-review.css` | `AI_ASSISTANT_PILOT_ENABLED` + allowlist پنل؛ پیش‌نویس/خلاصه بدون ارسال؛ منبع UI در partial-01/06 و اتصال `openChat` در chunk-03؛ راهنما `docs/AI-ASSISTANT-PILOT.md` |
 | کاربران / کارت کاربر | `chunk-05.js` + `html-part-04` | `#users`, `renderUserList` |
 | تنظیمات ظاهر پنل | `chunk-04.js` + `routes/panelSettings.js` | `#panel-settings` |
 | اتصال واتساپ QR | `chunk-06.js` + `gateway/src/index.js` | |

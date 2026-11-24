@@ -1,5 +1,6 @@
 /* Türkçe çeviriler (İstanbul) - dashboard.js'den önce yüklenir */
 window.__I18N_TR = {
+    ai_review_copy: ["Görüşme asistanı","Yanıt taslağı","Dahili özet","Hazırlanıyor…","Oluşturma, son mesaj metinlerini OpenAI ile paylaşır. Çalışan incelemesi gereklidir; otomatik yanıt gönderilmez.","Onayla ve mesaj alanına yerleştir","Vazgeç","Taslak hazır. İnceleyip Gönder düğmesine basın.","Bu kuruluşun OpenAI anahtarı ayarlanmamış.","Oluşturulamadı. Tekrar deneyin.","Çok fazla istek. Bir dakika bekleyin.","Dahili özettir; müşteriye gönderilmez.","Son 30 mesaja kadar incelenir. Sonuç eksik veya yanlış olabilir.","İncelenecek yanıt taslağı","Mevcut mesaj taslağı değiştirilsin mi?"],
     page_title: 'Kaya CRM | Personel portalı',
     login_title: 'Kaya Personel Portalı',
     login_sub: 'Dünyanın her yerinden portala giriş yapın',

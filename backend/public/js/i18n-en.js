@@ -1,5 +1,6 @@
 /* English translations - loaded before dashboard.js */
 window.__I18N_EN = {
+    ai_review_copy: ["Conversation assistant","Draft reply","Internal summary","Preparing…","Generating sends recent message text to OpenAI. Employee review is required; nothing is sent automatically.","Approve and place in composer","Discard","Draft placed in composer. Review it, then press Send.","OpenAI key for this organization is not configured.","Generation failed. Please try again.","Too many requests. Wait one minute.","Internal summary only; not sent to the customer.","Up to 30 recent messages are reviewed. Output may be incomplete or incorrect.","Proposed reply for review","Replace the current composer draft?"],
     page_title: 'Kaya CRM | Staff Portal',
     login_title: 'Kaya Staff Portal',
     login_sub: 'Sign in to the portal from anywhere in the world',

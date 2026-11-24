@@ -275,6 +275,28 @@ async function getConfiguredKey(providerId) {
     return found.apiKey || null;
 }
 
+// Explicit provider, no cross-provider fallback and no platform key for SaaS tenants.
+async function resolveAiForProvider(providerId) {
+    const provider = getProvider(providerId);
+    if (!provider) return null;
+    const { getCurrentTenant, isPlatformTenant, getPanelSettingsKey } = require('./tenantContext');
+    if (!getPanelSettingsKey()) return null;
+    let cfg;
+    try {
+        cfg = await loadAiConfigRow();
+    } catch (_) {
+        return null;
+    }
+    const env = isPlatformTenant(getCurrentTenant()) ? process.env : {};
+    const found = keyFor(cfg, providerId, env);
+    return {
+        provider: providerId,
+        apiKey: found.apiKey,
+        keySource: found.source,
+        model: modelFor(providerId, process.env),
+    };
+}
+
 module.exports = {
     PROVIDERS,
     getProvider,
@@ -288,4 +310,5 @@ module.exports = {
     resolveActiveAi,
     getConfiguredKey,
     modelFor,
+    resolveAiForProvider,
 };

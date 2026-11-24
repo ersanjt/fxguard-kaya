@@ -7,7 +7,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "quality": "npm run lint && npm run format:gateway && npm run test:all && npm run test:gateway && npm run dashboard:verify && npm run dashboard:check",
+    "quality": "npm run lint && npm run format:gateway && npm run test:all && npm run test:ai-pilot --prefix backend && npm run test:gateway && npm run dashboard:verify && npm run dashboard:check",
     "lint": "npm run lint --prefix backend && npm run lint --prefix gateway",
     "lint:backend": "npm run lint --prefix backend",
     "lint:gateway": "npm run lint --prefix gateway",

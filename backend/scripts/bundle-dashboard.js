@@ -39,6 +39,16 @@ function resolveBuildId() {
     }
     const cssPath = path.join(root, 'public/css/dashboard.css');
     if (fs.existsSync(cssPath)) hash.update(readNormalized(cssPath));
+    [
+        'public/css/conversation-ai-review.css',
+        'public/js/modules/conversation-ai-review.js',
+        'public/js/i18n-fa.js',
+        'public/js/i18n-en.js',
+        'public/js/i18n-tr.js',
+    ].forEach((relative) => {
+        const file = path.join(root, relative);
+        if (fs.existsSync(file)) hash.update(readNormalized(file));
+    });
     return hash.digest('hex').slice(0, 12);
 }
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+router.use(require('./conversationAi'));
 const {
     sequelize,
     Conversation,
@@ -1640,6 +1641,9 @@ router.post('/:id/send', async (req, res, next) => {
         const content = safeString(req.body.content, 10000);
         const media = req.body.media || null;
         const replyTo = req.body.replyTo || null;
+        if (req.body.aiAssisted === true && req.body.aiReviewConfirmed !== true) {
+            return res.status(400).json({ error: 'AI_REVIEW_REQUIRED' });
+        }
         if (!content && !media)
             return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
         const result = await deliverOutboundConversationMessage(req, conversation, {
@@ -1651,6 +1655,12 @@ router.post('/:id/send', async (req, res, next) => {
             return res.status(result.status || 500).json({
                 error: result.error,
                 messageId: result.msg && result.msg.id ? result.msg.id : undefined,
+            });
+        }
+        if (req.body.aiAssisted === true) {
+            await logActivity({
+                userId: req.userId, action: 'conversation_ai_approved', entityType: 'conversation',
+                entityId: conversation.id, metadata: { messageId: result.msg && result.msg.id },
             });
         }
         let emitConv = conversation;
