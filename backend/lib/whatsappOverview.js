@@ -121,6 +121,9 @@ async function buildWhatsappOverview(req) {
     });
 
     const warnings = [];
+    if (mode === 'gateway' && cfg.gatewayEnabled === false) {
+        warnings.push({ id: 'gateway_disabled_in_gateway_mode', level: 'error' });
+    }
     if (mode === 'cloud_first' && !cloudReady && gatewayReady) {
         warnings.push({ id: 'cloud_fallback', level: 'info' });
     }

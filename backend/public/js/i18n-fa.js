@@ -1167,6 +1167,7 @@ window.__I18N_FA = {
     whatsapp_warn_no_app_secret: 'WHATSAPP_CLOUD_APP_SECRET در سرور تنظیم نشده — webhook ورودی Meta کار نمی‌کند.',
     whatsapp_warn_dual_connected: 'هر دو کانال آماده‌اند. طبق حالت اتصال، Cloud اولویت دارد.',
     whatsapp_warn_no_channel: 'هیچ کانال واتساپی آماده نیست — پیام ارسال/دریافت نمی‌شود.',
+    whatsapp_warn_gateway_disabled_mode: 'حالت «فقط Gateway» است ولی تیک فعال بودن Gateway خاموش است — QR کار نمی‌کند. تیک را روشن کنید و ذخیره بزنید.',
     whatsapp_warn_es_connect_hint: 'اتصال یک‌کلیکی Meta آماده است — از دکمهٔ «اتصال با Meta» در تنظیمات Cloud استفاده کنید.',
     whatsapp_check_embedded_signup: 'اتصال Embedded Signup / Cloud',
     whatsapp_cloud_app_secret_hint: 'App Secret را در backend/.env با نام WHATSAPP_CLOUD_APP_SECRET تنظیم کنید (از Meta App → Settings → Basic).',

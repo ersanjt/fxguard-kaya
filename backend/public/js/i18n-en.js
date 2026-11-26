@@ -1135,6 +1135,7 @@ window.__I18N_EN = {
     whatsapp_warn_no_app_secret: 'WHATSAPP_CLOUD_APP_SECRET is not set on the server — Meta inbound webhooks will fail.',
     whatsapp_warn_dual_connected: 'Both channels are ready. Per connection mode, Cloud takes priority.',
     whatsapp_warn_no_channel: 'No WhatsApp channel is ready — messages cannot be sent or received.',
+    whatsapp_warn_gateway_disabled_mode: 'Mode is Gateway-only but the Gateway channel is disabled — QR will not work. Enable it and save.',
     whatsapp_warn_es_connect_hint: 'One-click Meta connect is available — use Connect with Meta in Cloud settings.',
     whatsapp_check_embedded_signup: 'Embedded Signup / Cloud link',
     whatsapp_cloud_app_secret_hint: 'Set App Secret in backend/.env as WHATSAPP_CLOUD_APP_SECRET (Meta App → Settings → Basic).',

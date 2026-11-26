@@ -1119,6 +1119,7 @@ window.__I18N_TR = {
     whatsapp_warn_no_app_secret: 'WHATSAPP_CLOUD_APP_SECRET sunucuda ayarlı değil — Meta gelen webhook\'ları çalışmaz.',
     whatsapp_warn_dual_connected: 'Her iki kanal da hazır. Bağlantı moduna göre Cloud önceliklidir.',
     whatsapp_warn_no_channel: 'Hazır WhatsApp kanalı yok — mesaj gönderilemez/alınamaz.',
+    whatsapp_warn_gateway_disabled_mode: 'Mod yalnızca Gateway, ancak Gateway kanalı kapalı — QR çalışmaz. Etkinleştirip kaydedin.',
     whatsapp_warn_es_connect_hint: 'Tek tıkla Meta bağlantısı hazır — Cloud ayarlarında Meta ile bağlan’ı kullanın.',
     whatsapp_check_embedded_signup: 'Embedded Signup / Cloud bağlantısı',
     whatsapp_cloud_app_secret_hint: 'App Secret\'ı backend/.env içinde WHATSAPP_CLOUD_APP_SECRET olarak ayarlayın (Meta App → Settings → Basic).',

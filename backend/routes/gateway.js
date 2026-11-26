@@ -139,7 +139,8 @@ function createGatewayRouter(logger) {
             if (isCloudOnlyMode(cfg)) {
                 return res.json({ ok: true, status: 'ready', message: 'Cloud API فعال است (حالت فقط Cloud)' });
             }
-            gatewayPost('/api/start', {}, { timeout: 25000 })
+            // Gateway /api/start پاسخ سریع می‌دهد و initialize را پس‌زمینه ادامه می‌دهد
+            gatewayPost('/api/start', {}, { timeout: 15000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
                     res.status(503).json({

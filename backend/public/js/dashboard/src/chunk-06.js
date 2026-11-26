@@ -16,6 +16,8 @@
                 setWhatsappStatusBadge('disconnected');
                 if (btnDisconnect) btnDisconnect.disabled = true;
                 if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
+                qrBox.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 return;
             }
@@ -25,6 +27,8 @@
                 st.textContent = t('whatsapp_gateway_off');
                 setWhatsappStatusBadge('disconnected');
                 if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
+                qrBox.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 return;
             }
@@ -188,6 +192,9 @@
                 st.className = 'whatsapp-status-line empty';
                 st.textContent = t('whatsapp_server_err');
                 setWhatsappStatusBadge('disconnected');
+                qrBox.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
             }
         }
 
@@ -328,6 +335,11 @@
                 mode._crmWaModeBound = true;
                 mode.addEventListener('change', function () {
                     switchWhatsappConnectionTab(mode.value === 'gateway' ? 'gateway' : 'cloud');
+                    // انتخاب «فقط Gateway» باید تیک فعال بودن QR را هم روشن کند
+                    if (mode.value === 'gateway') {
+                        var gwEnToggle = document.getElementById('whatsappGatewayEnabled');
+                        if (gwEnToggle && !isSelfServeWhatsappCloudOnly()) gwEnToggle.checked = true;
+                    }
                 });
             }
             if (cloudEn) cloudEn.checked = d.cloudEnabled !== false;
@@ -593,14 +605,22 @@
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             var fo = document.getElementById('whatsappNumberFailoverEnabled');
+            var chosenMode = isSelfServeWhatsappCloudOnly() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first');
+            var gwEnabledChecked = isSelfServeWhatsappCloudOnly()
+                ? false
+                : (chosenMode === 'gateway' ? true : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false));
+            if (chosenMode === 'gateway') {
+                var gwEnBox = document.getElementById('whatsappGatewayEnabled');
+                if (gwEnBox) gwEnBox.checked = true;
+            }
             var body = {
-                connectionMode: isSelfServeWhatsappCloudOnly() ? 'cloud' : ((document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first'),
+                connectionMode: chosenMode,
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
                 cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
                 cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
                 cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
                 cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
-                gatewayEnabled: isSelfServeWhatsappCloudOnly() ? false : ((document.getElementById('whatsappGatewayEnabled') || {}).checked !== false),
+                gatewayEnabled: gwEnabledChecked,
                 gatewayUrl: isSelfServeTenantDesk() ? undefined : ((gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined),
                 numberFailoverEnabled: fo ? !!fo.checked : true
             };
@@ -1053,7 +1073,8 @@
                 no_app_secret: t('whatsapp_warn_no_app_secret'),
                 dual_connected: t('whatsapp_warn_dual_connected'),
                 no_channel: t('whatsapp_warn_no_channel'),
-                es_connect_hint: t('whatsapp_warn_es_connect_hint')
+                es_connect_hint: t('whatsapp_warn_es_connect_hint'),
+                gateway_disabled_in_gateway_mode: t('whatsapp_warn_gateway_disabled_mode')
             };
             function renderChecks(listEl, checks) {
                 if (!listEl || !checks) return;
