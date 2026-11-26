@@ -1158,7 +1158,9 @@ function buildClient() {
         },
     };
     // none = live WhatsApp Web (needed after WA module renames). remote/local only if explicitly set.
-    const webCacheMode = String(process.env.WHATSAPP_WEB_VERSION_CACHE || 'none').trim().toLowerCase();
+    const webCacheMode = String(process.env.WHATSAPP_WEB_VERSION_CACHE || 'none')
+        .trim()
+        .toLowerCase();
     if (webCacheMode === 'none') {
         clientOptions.webVersionCache = { type: 'none' };
     } else if (webCacheMode === 'remote') {
