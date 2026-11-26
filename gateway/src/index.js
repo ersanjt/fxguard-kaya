@@ -1157,8 +1157,18 @@ function buildClient() {
             ),
         },
     };
-    if (process.env.WHATSAPP_WEB_VERSION_CACHE === 'none') {
+    // none = live WhatsApp Web (needed after WA module renames). remote/local only if explicitly set.
+    const webCacheMode = String(process.env.WHATSAPP_WEB_VERSION_CACHE || 'none').trim().toLowerCase();
+    if (webCacheMode === 'none') {
         clientOptions.webVersionCache = { type: 'none' };
+    } else if (webCacheMode === 'remote') {
+        const remotePath =
+            process.env.WHATSAPP_WEB_VERSION_REMOTE_PATH ||
+            'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/{version}.html';
+        clientOptions.webVersionCache = { type: 'remote', remotePath };
+        if (process.env.WHATSAPP_WEB_VERSION) {
+            clientOptions.webVersion = String(process.env.WHATSAPP_WEB_VERSION).trim();
+        }
     }
 
     const c = new Client(clientOptions);
@@ -2025,9 +2035,24 @@ app.get('/api/qr', async (req, res) => {
 });
 
 app.post('/api/start', async (req, res) => {
-    const result = await startWhatsApp();
-    if (!result.ok) return res.status(500).json(result);
-    return res.json(result);
+    // initialize() می‌تواند >25s طول بکشد؛ پاسخ را زود بده تا پروکسی بک‌اند timeout ندهد
+    if (isClientReady) return res.json({ ok: true, status: 'already_ready' });
+    if (isClientStarting) return res.json({ ok: true, status: 'starting' });
+    if (connectionPhase === 'qr' && client?.pupPage) {
+        return res.json({ ok: true, status: 'awaiting_qr_scan' });
+    }
+    startWhatsApp()
+        .then((result) => {
+            if (!result?.ok) {
+                logger.warn('Background /api/start finished with error', {
+                    error: result?.error || 'start_failed',
+                });
+            }
+        })
+        .catch((e) =>
+            logger.error('Background /api/start rejected', { error: e?.message || String(e) })
+        );
+    return res.json({ ok: true, status: 'starting' });
 });
 
 app.post('/api/stop', async (req, res) => {
@@ -4642,7 +4667,10 @@ function isRecoverablePuppeteerRejection(reason) {
         /detached Frame/i.test(msg) ||
         /Protocol error.*Target closed/i.test(msg) ||
         /Navigation failed/i.test(msg) ||
-        /browser is already running/i.test(msg)
+        /browser is already running/i.test(msg) ||
+        /Waiting failed:\s*\d+ms exceeded/i.test(msg) ||
+        /TimeoutError/i.test(String(reason?.name || '')) ||
+        /TimeoutError/i.test(msg)
     );
 }
 

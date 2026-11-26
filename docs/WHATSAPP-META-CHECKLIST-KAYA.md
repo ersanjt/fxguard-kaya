@@ -16,9 +16,9 @@
 
 > **اولویت:** برای حفظ شماره و ارسال انبوه امن، **Meta Cloud** را کامل کنید. Gateway (QR) فقط fallback یا توسعه است و با نشست Web نباید روی همان شماره موازی باشد.
 >
-> **وضعیت production کایا (۲۰۲۶-۱۱-۲۱ عصر):** خط Cloud فعال روی سرور = **`+90 533 947 08 68`** با Phone Number ID **`1007665702430638`** (Graph ۲۰۰، توکن فعلی معتبر، `fallback_ok`). شناسهٔ جدید در Business Manager (`1402168889654134` / WABA `1395714801963738`) هنوز **Beklemede** است و با توکن فعلی Graph ساب‌کد ۳۳ می‌دهد — تا OTP و System User token تازه برای همان WABA، روی سرور سوییچ نکنید. **`WHATSAPP_CLOUD_APP_SECRET` خالی است** → وب‌هوک ورودی رد می‌شود. `0880` را با `0868` قاطی نکنید.
+> **وضعیت (۲۰۲۶-۱۱-۲۷):** شماره Connected = **`+90 533 947 08 68`** / Phone ID **`1402168889654134`** / WABA **`1395714801963738`** / BM **`164550221374247`**. اپ **ERST Kaya Cloud** (`2359495901481632`) ساخته شد؛ App Secret محلی آماده است. پنل هنوز توکن اپ حذف‌شده دارد → `Application has been deleted`. افزودن اپ به BM با **«Hesabın şu anda kısıtlandı»** بلاک است → System User/توکن دائم ممکن نیست. BV **ERST GROUP** هنوز **Değerlendirmede**. ساخت اپ WhatsApp: **No businesses available**. App Secret روی سرور خالی. تا رفع محدودیت Meta: Gateway را به‌عنوان fallback (`cloud_first`) نگه دارید.
 >
-> **کد:** نسخه Graph در `whatsappCloudApi.js` پیش‌فرض `v26.0`؛ webhook فیلدهای Coexistence را digest می‌کند؛ sync از `POST /api/whatsapp/cloud/coexistence/sync`. Runbook: [WHATSAPP-COEXISTENCE-RUNBOOK.md](./WHATSAPP-COEXISTENCE-RUNBOOK.md). PR مرتبط: [#3](https://github.com/ersanjt/fxguard-kaya/pull/3) — تا deploy روی سرور کایا، تست عملی روی production معلق است.
+> **کد:** نسخه Graph در `whatsappCloudApi.js` پیش‌فرض `v26.0`؛ webhook فیلدهای Coexistence را digest می‌کند؛ sync از `POST /api/whatsapp/cloud/coexistence/sync`. Runbook: [WHATSAPP-COEXISTENCE-RUNBOOK.md](./WHATSAPP-COEXISTENCE-RUNBOOK.md).
 
 ---
 
