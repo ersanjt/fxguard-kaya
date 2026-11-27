@@ -16238,8 +16238,18 @@
                 var res = await apiFetch('/api/whatsapp/cloud/verify', { method: 'POST' });
                 if (res.needLogin) return;
                 if (res.ok && res.data && res.data.ok) {
-                    var msg = (res.data.verifiedName || '') + (res.data.displayPhone ? ' · ' + res.data.displayPhone : '');
+                    var d = res.data;
+                    var parts = [];
+                    if (d.verifiedName) parts.push(d.verifiedName);
+                    if (d.displayPhone) parts.push(d.displayPhone);
+                    if (d.qualityRating) parts.push(t('whatsapp_health_quality') + ': ' + d.qualityRating);
+                    if (d.nameStatus) parts.push(t('whatsapp_health_name') + ': ' + d.nameStatus);
+                    if (d.messagingLimitTier) parts.push(t('whatsapp_health_limit') + ': ' + d.messagingLimitTier);
+                    if (d.isOnBizApp) parts.push(t('whatsapp_coex_on_biz_app'));
+                    var msg = parts.join(' · ');
                     if (out) out.textContent = msg || t('whatsapp_cloud_verify_ok');
+                    window._waCloudVerify = d;
+                    paintWhatsappCloudHealth(window._waOverview, d);
                     toast(t('whatsapp_cloud_verify_ok'));
                 } else {
                     var err = (res.data && res.data.error) || t('err_generic');
@@ -16289,6 +16299,60 @@
             if (btn && !btn._bound) {
                 btn._bound = true;
                 btn.addEventListener('click', sendWhatsappCloudTestMessage);
+            }
+        })();
+        function paintWhatsappCloudHealth(overview, verify) {
+            var box = document.getElementById('whatsappCloudHealth');
+            if (!box) return;
+            var d = overview || {};
+            var cloud = d.channels && d.channels.cloud ? d.channels.cloud : {};
+            var active = d.activeChannel || 'none';
+            var channelLabel = active === 'cloud' ? t('whatsapp_active_cloud') : (active === 'gateway' ? t('whatsapp_active_gateway') : t('whatsapp_active_none'));
+            var lines = ['<p><strong>' + escapeHtml(t('whatsapp_health_channel')) + ':</strong> ' + escapeHtml(channelLabel) + '</p>'];
+            if (cloud.bulkTemplateName) {
+                lines.push('<p><strong>' + escapeHtml(t('whatsapp_health_template')) + ':</strong> <span dir="ltr">' + escapeHtml(cloud.bulkTemplateName) + '</span></p>');
+            }
+            if (verify && verify.qualityRating) {
+                lines.push('<p><strong>' + escapeHtml(t('whatsapp_health_quality')) + ':</strong> ' + escapeHtml(String(verify.qualityRating)) + '</p>');
+            }
+            if (verify && verify.messagingLimitTier) {
+                lines.push('<p><strong>' + escapeHtml(t('whatsapp_health_limit')) + ':</strong> <span dir="ltr">' + escapeHtml(String(verify.messagingLimitTier)) + '</span></p>');
+            }
+            if (verify && verify.isOnBizApp) {
+                lines.push('<p>' + escapeHtml(t('whatsapp_coex_on_biz_app')) + '</p>');
+            }
+            box.innerHTML = lines.join('');
+            box.hidden = false;
+        }
+        async function syncWhatsappCoexistence() {
+            var btn = document.getElementById('btnWhatsappCoexistenceSync');
+            var out = document.getElementById('whatsappCoexistenceSyncResult');
+            waBtnLoading(btn, true);
+            if (out) out.textContent = '';
+            try {
+                var res = await apiFetch('/api/whatsapp/cloud/coexistence/sync', {
+                    method: 'POST',
+                    body: JSON.stringify({ syncType: 'both' })
+                });
+                if (res.needLogin) return;
+                var data = res.data || {};
+                var results = data.results || {};
+                var parts = [];
+                ['contacts', 'history'].forEach(function (key) {
+                    if (!results[key]) return;
+                    parts.push(key + ': ' + (results[key].ok ? 'ok' : (results[key].error || 'failed')));
+                });
+                var text = parts.join(' · ') || data.error || t('err_generic');
+                if (!data.ok && data.hint) text += ' — ' + data.hint;
+                if (out) out.textContent = text;
+                toast(data.ok ? t('whatsapp_coex_sync_ok') : text, !data.ok);
+            } finally { waBtnLoading(btn, false); }
+        }
+        (function bindWhatsappCoexistenceSync() {
+            var btn = document.getElementById('btnWhatsappCoexistenceSync');
+            if (btn && !btn._bound) {
+                btn._bound = true;
+                btn.addEventListener('click', syncWhatsappCoexistence);
             }
         })();
         async function loadWhatsappWelcomeConfig() {
@@ -16562,6 +16626,8 @@
                     return '<p class="whatsapp-overview-warn whatsapp-overview-warn--' + level + '">' + escapeHtml(msg) + '</p>';
                 }).join('');
             }
+            window._waOverview = d;
+            paintWhatsappCloudHealth(d, window._waCloudVerify || null);
             if (flowEl) {
                 var mode = d.connectionMode || 'cloud_first';
                 var modeLabel = mode === 'cloud' ? t('whatsapp_mode_cloud_only') : (mode === 'gateway' ? t('whatsapp_mode_gateway_only') : t('whatsapp_mode_cloud_first'));

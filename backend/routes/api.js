@@ -14,6 +14,7 @@ const {
     downloadMedia,
     isConfigured: isCloudApiConfigured,
 } = require('../lib/whatsappCloudApi');
+const { applyCloudDeliveryStatus } = require('../lib/cloudDeliveryStatus');
 const { matchesCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
 const models = require('../models');
 const { Message } = models;
@@ -352,6 +353,28 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                     transformCloudWebhookEntry(entry);
 
                 for (const evt of cloudEvents) {
+                    if (evt.type === 'message_status') {
+                        const inbound = await resolveInboundTenant({
+                            reqTenant: req.tenant,
+                            phoneNumberId: evt.phoneNumberId,
+                        });
+                        if (!inbound.ok) {
+                            logger.warn('Cloud status skipped: phone number is not mapped to a tenant', {
+                                slug: inbound.slug,
+                            });
+                            continue;
+                        }
+                        await runInboundWithTenant(inbound.tenant, () =>
+                            applyCloudDeliveryStatus({
+                                Message,
+                                io,
+                                whatsappId: evt.whatsappId,
+                                status: evt.status,
+                                errors: evt.errors,
+                            })
+                        );
+                        continue;
+                    }
                     if (evt.type === 'history_error') {
                         logger.warn('Cloud coexistence history declined or failed', {
                             phoneNumberId: evt.phoneNumberId,

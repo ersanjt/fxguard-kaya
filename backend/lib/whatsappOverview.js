@@ -137,7 +137,7 @@ async function buildWhatsappOverview(req) {
         warnings.push({ id: 'no_app_secret', level: 'error' });
     }
     if (cloudReady && gatewayReady) {
-        warnings.push({ id: 'dual_connected', level: 'info' });
+        warnings.push({ id: 'dual_connected', level: 'warn' });
     }
     if (activeChannel === 'none') {
         warnings.push({ id: 'no_channel', level: 'error' });

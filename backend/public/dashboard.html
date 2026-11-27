@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="3404d37b0526">
+    <meta name="crm-build" content="15d59bbd36b8">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=3404d37b0526">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=3404d37b0526" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=15d59bbd36b8">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=15d59bbd36b8" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -1854,7 +1854,7 @@
                                         <input type="text" id="whatsappWebhookUrl" class="whatsapp-input whatsapp-input-readonly" readonly dir="ltr">
                                         <button type="button" class="btn-secondary btn-sm" id="btnCopyWhatsappWebhook" data-i18n="whatsapp_copy">کپی</button>
                                     </div>
-                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_webhook_hint">در Meta for Developers → WhatsApp → Configuration ثبت کنید. فیلد messages را فعال کنید.</p>
+                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_webhook_hint">در Meta for Developers → WhatsApp → Configuration ثبت کنید. فیلدهای messages، smb_message_echoes، history، smb_app_state_sync و account_update را Subscribe کنید.</p>
                                 </div>
                                 <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener" class="whatsapp-meta-link" data-i18n="whatsapp_meta_docs">راهنمای Meta Cloud API ↗</a>
                             </article>
@@ -1904,6 +1904,7 @@
                                 <div id="gatewayStatus" class="whatsapp-status-line empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
                                 <div id="whatsappAuthFailure" class="whatsapp-auth-failure" style="display:none;" role="alert"></div>
                                 <div id="whatsappStatusBadge" class="whatsapp-status-badge whatsapp-status-checking" aria-hidden="true"></div>
+                                <div id="whatsappCloudHealth" class="whatsapp-cloud-health" hidden></div>
                                 <div class="qr-box" id="qrBox" style="display:none;">
                                     <p class="qr-box-title" data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
                                     <p class="qr-box-hint" data-i18n="whatsapp_qr_expiry">کد تا حدود ۶۰ ثانیه معتبر است. پس از اسکن، اتصال ظرف چند ثانیه برقرار می‌شود.</p>
@@ -1995,6 +1996,14 @@
                                         <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudTestUseTemplate"> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta</span></label>
                                         <button type="button" class="btn-secondary btn-sm" id="btnWhatsappCloudTestSend" data-i18n="whatsapp_cloud_test_send_btn">ارسال تست</button>
                                         <span id="whatsappCloudTestSendResult" class="text-muted whatsapp-verify-result"></span>
+                                    </div>
+                                    <div id="whatsappCoexistenceBox" class="whatsapp-coexistence-box">
+                                        <h4 data-i18n="whatsapp_coex_title">همزیستی اپ WhatsApp Business</h4>
+                                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_coex_hint">اگر همین شماره روی اپ Business موبایل است، QR را روی آن روشن نکنید. بعد از Embedded Signup، حداکثر تا ۲۴ ساعت مخاطبین و تاریخچه را یک‌بار همگام کنید. نتیجه از webhook می‌آید.</p>
+                                        <div class="whatsapp-form-actions-inline">
+                                            <button type="button" class="btn-secondary btn-sm" id="btnWhatsappCoexistenceSync" data-i18n="whatsapp_coex_sync_btn">همگام‌سازی مخاطبین و تاریخچه</button>
+                                        </div>
+                                        <span id="whatsappCoexistenceSyncResult" class="text-muted whatsapp-verify-result"></span>
                                     </div>
                                 </div>
                                 <div id="whatsappGatewaySettings" class="whatsapp-conn-panel" style="display:none;">
@@ -4785,11 +4794,11 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/modules/clinic-ui.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=3404d37b0526" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/modules/clinic-ui.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=15d59bbd36b8" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -4816,11 +4825,11 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/i18n-engine.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=3404d37b0526" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=3404d37b0526" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/i18n-engine.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=15d59bbd36b8" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=15d59bbd36b8" charset="utf-8"></script>
     <script>
     (function () {
         if (typeof window.showPage === 'function') return;

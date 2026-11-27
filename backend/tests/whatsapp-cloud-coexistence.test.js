@@ -7,7 +7,9 @@ const assert = require('assert');
 const {
     transformCloudWebhookEntry,
     transformCloudWebhookToInternal,
+    readQualityRating,
 } = require('../lib/whatsappCloudApi');
+const { advanceDeliveryStatus } = require('../lib/cloudDeliveryStatus');
 
 let passed = 0;
 let failed = 0;
@@ -185,6 +187,65 @@ async function main() {
         assert.strictEqual(messages.length, 0);
         assert.strictEqual(events[0].type, 'history_error');
         assert.strictEqual(events[0].errors[0].code, 2593109);
+    });
+
+    await test('messages webhook keeps inbound text and delivery statuses', async () => {
+        const { messages, events } = transformCloudWebhookEntry(
+            entryWithChange('messages', {
+                messaging_product: 'whatsapp',
+                metadata: {
+                    display_phone_number: '905339470868',
+                    phone_number_id: '1402168889654134',
+                },
+                contacts: [{ wa_id: '905551112233', profile: { name: 'Ali' } }],
+                messages: [
+                    {
+                        from: '905551112233',
+                        id: 'wamid.in2',
+                        timestamp: '1700000100',
+                        type: 'text',
+                        text: { body: 'سلام' },
+                    },
+                ],
+                statuses: [
+                    {
+                        id: 'wamid.out1',
+                        status: 'delivered',
+                        timestamp: '1700000101',
+                        recipient_id: '905551112233',
+                    },
+                    {
+                        id: 'wamid.out2',
+                        status: 'failed',
+                        timestamp: '1700000102',
+                        recipient_id: '905551112244',
+                        errors: [{ code: 131047, title: 'Re-engagement message' }],
+                    },
+                ],
+            })
+        );
+        assert.strictEqual(messages.length, 1);
+        assert.strictEqual(messages[0].body, 'سلام');
+        assert.strictEqual(events.length, 2);
+        assert.strictEqual(events[0].type, 'message_status');
+        assert.strictEqual(events[0].status, 'delivered');
+        assert.strictEqual(events[0].whatsappId, 'wamid.out1');
+        assert.strictEqual(events[1].status, 'failed');
+        assert.strictEqual(events[1].errors[0].code, 131047);
+    });
+
+    await test('delivery status only moves forward and failed does not undo read', async () => {
+        assert.strictEqual(advanceDeliveryStatus('sent', 'delivered'), 'delivered');
+        assert.strictEqual(advanceDeliveryStatus('read', 'delivered'), null);
+        assert.strictEqual(advanceDeliveryStatus('sent', 'failed'), 'failed');
+        assert.strictEqual(advanceDeliveryStatus('read', 'failed'), null);
+        assert.strictEqual(advanceDeliveryStatus('pending', 'sent'), 'sent');
+    });
+
+    await test('quality_rating is the Meta string, not .score', async () => {
+        assert.strictEqual(readQualityRating({ quality_rating: 'GREEN' }), 'GREEN');
+        assert.strictEqual(readQualityRating({ quality_rating: { score: 'YELLOW' } }), 'YELLOW');
+        assert.strictEqual(readQualityRating({}), null);
     });
 
     console.log(`\nResults: ${passed} passed, ${failed} failed`);

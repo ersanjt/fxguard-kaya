@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const FormData = require('form-data');
 const { getWhatsappConnectionConfig, isCloudApiConfigured: isCloudConfigured } = require('./whatsappConnectionLoader');
+const { describeCloudConfigGap } = require('./cloudConfigGap');
 
 // Meta Graph API v18.0 از ژانویه ۲۰۲۶ منقضی شده؛ نسخه قابل تنظیم است.
 const requestedGraphVersion = String(process.env.WHATSAPP_CLOUD_GRAPH_API_VERSION || '').trim();
@@ -130,10 +131,33 @@ function buildBodyTemplateComponents(bodyParams) {
     return [{ type: 'body', parameters: params }];
 }
 
+const PHONE_VERIFY_FIELDS = [
+    'verified_name',
+    'display_phone_number',
+    'quality_rating',
+    'code_verification_status',
+    'name_status',
+    'messaging_limit_tier',
+    'is_on_biz_app',
+    'platform_type',
+].join(',');
+
+/** Meta کیفیت را رشته (GREEN/YELLOW/RED) برمی‌گرداند؛ شکل قدیمی آبجکت هم پذیرفته می‌شود. */
+function readQualityRating(data) {
+    const q = data?.quality_rating;
+    if (q == null || q === '') return null;
+    if (typeof q === 'string') return q;
+    if (typeof q === 'object') return q.score || q.event || null;
+    return null;
+}
+
 /**
  * اعتبارسنجی Token و Phone Number ID با Meta Graph API
  */
 async function verifyCredentials() {
+    const raw = await getWhatsappConnectionConfig();
+    const gap = describeCloudConfigGap(raw);
+    if (gap) return gap;
     const cfg = await _getConfig();
     if (!cfg) {
         return { ok: false, error: 'not_configured', checks: { token: false, phoneId: false } };
@@ -141,25 +165,36 @@ async function verifyCredentials() {
     try {
         const res = await axios.get(`${API_BASE}/${cfg.cloudPhoneNumberId}`, {
             headers: { Authorization: `Bearer ${cfg.cloudAccessToken}` },
-            params: { fields: 'verified_name,display_phone_number,quality_rating' },
+            params: { fields: PHONE_VERIFY_FIELDS },
             timeout: 12000,
             validateStatus: () => true,
         });
         if (res.status >= 200 && res.status < 300) {
+            const data = res.data || {};
+            const isOnBizApp = data.is_on_biz_app === true;
+            const platformType = data.platform_type || null;
             return {
                 ok: true,
-                displayPhone: res.data?.display_phone_number || null,
-                verifiedName: res.data?.verified_name || null,
-                qualityRating: res.data?.quality_rating?.score || null,
+                displayPhone: data.display_phone_number || null,
+                verifiedName: data.verified_name || null,
+                qualityRating: readQualityRating(data),
+                codeVerificationStatus: data.code_verification_status || null,
+                nameStatus: data.name_status || null,
+                messagingLimitTier: data.messaging_limit_tier || null,
+                isOnBizApp,
+                platformType,
+                coexistence: isOnBizApp,
                 checks: { token: true, phoneId: true },
             };
         }
         const errMsg = res.data?.error?.message || `HTTP ${res.status}`;
-        return { ok: false, error: errMsg, checks: { token: false, phoneId: false } };
+        const errCode = res.data?.error?.code ?? null;
+        return { ok: false, error: errMsg, code: errCode, checks: { token: false, phoneId: false } };
     } catch (e) {
         return {
             ok: false,
             error: e.response?.data?.error?.message || e.message || 'verify_failed',
+            code: e.response?.data?.error?.code ?? null,
             checks: { token: false, phoneId: false },
         };
     }
@@ -394,6 +429,24 @@ function contactsByWaId(value) {
     }, {});
 }
 
+/** رسیدهای sent/delivered/read/failed داخل همان webhook فیلد messages */
+function pushCloudStatusEvents(out, value, phoneNumberId) {
+    for (const st of value?.statuses || []) {
+        const whatsappId = String(st?.id || '').trim();
+        const status = String(st?.status || '').trim().toLowerCase();
+        if (!whatsappId || !status) continue;
+        out.events.push({
+            type: 'message_status',
+            phoneNumberId,
+            whatsappId,
+            status,
+            recipientId: st.recipient_id ? String(st.recipient_id) : null,
+            timestamp: st.timestamp || null,
+            errors: Array.isArray(st.errors) ? st.errors : null,
+        });
+    }
+}
+
 /**
  * تبدیل یک change وب‌هوک Cloud (شامل Coexistence) به رویدادهای داخلی
  * @returns {{ messages: object[], contacts: object[], events: object[] }}
@@ -408,7 +461,7 @@ function transformCloudWebhookChange(change) {
     const out = { messages: [], contacts: [], events: [] };
     if (!value) return out;
 
-    if (field === 'messages' || (!field && value.messages)) {
+    if (field === 'messages' || (!field && (value.messages || value.statuses))) {
         const contacts = contactsByWaId(value);
         for (const m of value.messages || []) {
             const from = digitsOnly(m.from);
@@ -423,6 +476,7 @@ function transformCloudWebhookChange(change) {
             });
             if (mapped) out.messages.push(mapped);
         }
+        pushCloudStatusEvents(out, value, phoneNumberId);
         return out;
     }
 
@@ -594,6 +648,7 @@ module.exports = {
     requestSmbAppData,
     getPhoneNumberId,
     verifyCredentials,
+    readQualityRating,
     buildBodyTemplateComponents,
     API_BASE,
 };
