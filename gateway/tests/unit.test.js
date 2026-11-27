@@ -7,6 +7,7 @@ const { SendRateLimiter, createSendRateLimiter } = require('../src/sendRateLimit
 const { tenantBindError } = require('../src/tenantBind');
 const { decryptWhatsAppEnc, downloadAndDecryptWhatsAppMedia } = require('../src/waMediaDecrypt');
 const { startOutgoingCall } = require('../src/waCalls');
+const { isPublishablePairingQr } = require('../src/pairingQr');
 
 test('send limiter accepts concurrent events up to its configured maximum', async () => {
     const limiter = createSendRateLimiter(1000, 2);
@@ -41,6 +42,19 @@ test('a bound gateway rejects a different or missing company slug', () => {
     assert.equal(tenantBindError('other', env), 'tenant_mismatch');
     assert.equal(tenantBindError('', env), 'tenant_mismatch');
     assert.equal(tenantBindError('other', {}), null);
+});
+
+test('pairing QR is published only when every linking field is present', () => {
+    const good = 'ref123,noiseKey,identityKey,advSecret,smb_android';
+    assert.equal(isPublishablePairingQr(good), true);
+    assert.equal(
+        isPublishablePairingQr('undefined,noiseKey,identityKey,advSecret,smb_android'),
+        false
+    );
+    assert.equal(isPublishablePairingQr('ref123,noiseKey,identityKey,null,smb_android'), false);
+    assert.equal(isPublishablePairingQr('ref123,noiseKey,identityKey'), false);
+    assert.equal(isPublishablePairingQr(''), false);
+    assert.equal(isPublishablePairingQr(null), false);
 });
 
 test('outgoing calls reject an empty recipient without touching WhatsApp', async () => {
