@@ -9258,7 +9258,8 @@
         /* ========== مکالمات: رسپانسیو تمام عرض‌های دسکتاپ (۹۰۱px+) تا اولتراواید ========== */
         @media (min-width: 901px) {
             #pageConversations .conv-layout {
-                min-height: max(320px, min(56vh, 760px));
+                flex: 1 1 0;
+                min-height: 0;
             }
             #pageConversations .conv-layout > .chat-area {
                 flex: 1 1 50%;
@@ -9728,12 +9729,22 @@
             max-height: 100%;
             overflow: hidden;
         }
+        .app.show {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100dvh !important;
+            max-height: 100dvh !important;
+            min-height: 0 !important;
+        }
         .app > .main-wrap {
-            flex: 1 1 auto;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 0 !important;
             min-height: 0;
             min-width: 0;
             width: 100%;
             max-width: 100%;
+            height: auto !important;
             overflow: hidden;
             padding-bottom: 0 !important;
         }
@@ -9751,31 +9762,35 @@
         }
         .app > .main-wrap > #totpPromptBanner { flex: 0 0 auto; }
         .app > .main-wrap > .main {
-            flex: 1 1 auto;
-            min-height: 0;
+            flex: 1 1 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
             display: flex;
             align-items: stretch;
             margin: 0;
         }
         .content:has(#pageConversations.show) {
             display: flex !important;
-            flex-direction: column;
-            flex: 1 1 auto;
-            min-height: 0;
+            flex-direction: column !important;
+            flex: 1 1 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
             overflow: hidden;
             padding: 0 !important;
         }
         #pageConversations.show {
             display: flex !important;
-            flex-direction: column;
-            flex: 1 1 auto;
-            min-height: 0;
-            height: 100%;
+            flex-direction: column !important;
+            flex: 1 1 0 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            max-height: none !important;
         }
         #pageConversations.show .conv-layout {
-            flex: 1 1 auto;
+            flex: 1 1 0 !important;
             min-height: 0 !important;
-            height: 100%;
+            height: auto !important;
+            max-height: none !important;
             align-items: stretch;
         }
         #pageConversations .conv-layout .chat-area,
@@ -9783,6 +9798,7 @@
         #pageConversations .conv-sidebar {
             align-self: stretch;
             min-height: 0;
+            height: auto;
         }
         .conv-layout { min-height: 0 !important; }
         @media (min-width: 901px) {
