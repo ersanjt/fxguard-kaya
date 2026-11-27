@@ -26,6 +26,7 @@ const { execFileSync } = require('child_process');
 const { startOutgoingCall } = require('./waCalls');
 const { createSendRateLimiter } = require('./sendRateLimiter');
 const { downloadAndDecryptWhatsAppMedia } = require('./waMediaDecrypt');
+const { isPublishablePairingQr } = require('./pairingQr');
 require('dotenv').config();
 
 // Gateway اختصاصی یک سازمان (Backend آن را اجرا می‌کند): هر وب‌هوک شناسهٔ سازمان را می‌فرستد
@@ -982,6 +983,11 @@ let inboundPollTimer = null;
 let inboundPollBusy = false;
 
 let lastQrImageDataUrl = null;
+let lastQrPayload = null;
+let liveQrHooked = false;
+let qrHookGeneration = 0;
+let officialQrPollTimer = null;
+let usingOfficialCanvas = false;
 let lastAccountInfo = null;
 let lastAuthFailureMessage = null;
 /** وضعیت اتصال برای نمایش در پنل: qr | authenticated (اسکن شد، در حال همگام‌سازی) | ready | auth_failure */
@@ -1116,7 +1122,138 @@ function formatGatewayError(err) {
     return 'unknown_error';
 }
 
+function invalidateLiveQrHook() {
+    qrHookGeneration += 1;
+    liveQrHooked = false;
+    lastQrPayload = null;
+    usingOfficialCanvas = false;
+    if (officialQrPollTimer) {
+        clearInterval(officialQrPollTimer);
+        officialQrPollTimer = null;
+    }
+    if (redisClient?.isReady) redisClient.del(waRedisKey('qr')).catch(() => {});
+}
+
+function publishQrImage(dataUrl) {
+    if (!dataUrl || !dataUrl.startsWith('data:image')) return;
+    lastQrImageDataUrl = dataUrl;
+    io.emit('qr', { qr: dataUrl });
+    redisClient.set(waRedisKey('qr'), dataUrl, { EX: 25 }).catch(() => {});
+    redisClient.set(waRedisKey('status'), 'qr').catch(() => {});
+    connectionPhase = 'qr';
+    isClientStarting = true;
+}
+
+/**
+ * The page canvas is the QR WhatsApp itself renders after a secret rotation.
+ * The library string can stay on the retired secret, which the phone rejects.
+ */
+function startOfficialQrCanvasPoll(page) {
+    if (officialQrPollTimer || !page) return;
+    const generation = qrHookGeneration;
+    officialQrPollTimer = setInterval(async () => {
+        if (
+            generation !== qrHookGeneration ||
+            connectionPhase === 'ready' ||
+            connectionPhase === 'authenticated'
+        ) {
+            if (officialQrPollTimer) {
+                clearInterval(officialQrPollTimer);
+                officialQrPollTimer = null;
+            }
+            return;
+        }
+        try {
+            const dataUrl = await page.evaluate(() => {
+                const nodes = Array.from(document.querySelectorAll('canvas'));
+                const canvas = nodes.find((node) => node.width >= 160 && node.height >= 160);
+                if (!canvas) return null;
+                const url = canvas.toDataURL('image/png');
+                return url && url.length > 2500 ? url : null;
+            });
+            if (!dataUrl || dataUrl === lastQrImageDataUrl) return;
+            usingOfficialCanvas = true;
+            publishQrImage(dataUrl);
+            logger.info('QR synced from WhatsApp page');
+        } catch (_) {}
+    }, 1000);
+}
+
+/**
+ * whatsapp-web.js closes over the ADV secret once. WhatsApp retires that secret
+ * (companion_reg_refresh) and the phone then rejects the panel QR. Re-read the
+ * live keys and emit only when the payload actually changes.
+ */
+async function installLiveQrRefresh(page) {
+    if (liveQrHooked || !page) return;
+    const generation = qrHookGeneration;
+    liveQrHooked = true;
+    try {
+        await page.evaluate(() => {
+            if (window.__kayaLiveQr) return;
+            window.__kayaLiveQr = true;
+            const readQr = async () => {
+                const ref = window.require('WAWebConnModel').Conn.ref;
+                if (!ref) return null;
+                const registrationInfo = await window
+                    .require('WAWebSignalStoreApi')
+                    .waSignalStore.getRegistrationInfo();
+                const noiseKeyPair = await window
+                    .require('WAWebUserPrefsInfoStore')
+                    .waNoiseInfo.get();
+                const b64 = window.require('WABase64');
+                const advSecretKey = await window
+                    .require('WAWebUserPrefsMultiDevice')
+                    .getADVSecretKey();
+                const platform = window.require('WAWebCompanionRegClientUtils').DEVICE_PLATFORM;
+                return [
+                    ref,
+                    b64.encodeB64(noiseKeyPair.staticKeyPair.pubKey),
+                    b64.encodeB64(registrationInfo.identityKeyPair.pubKey),
+                    advSecretKey,
+                    platform,
+                ].join(',');
+            };
+            const emitLive = window.onQRChangedEvent;
+            let chain = Promise.resolve();
+            window.onQRChangedEvent = (fallbackQr) => {
+                chain = chain
+                    .then(async () => {
+                        let qr = null;
+                        try {
+                            qr = await readQr();
+                        } catch (_) {
+                            qr = null;
+                        }
+                        if (!qr && typeof fallbackQr === 'string') qr = fallbackQr;
+                        if (!qr || qr === window.__kayaLastQr) return;
+                        window.__kayaLastQr = qr;
+                        if (typeof emitLive === 'function') return emitLive(qr);
+                    })
+                    .catch(() => {});
+            };
+            const tick = () => window.onQRChangedEvent();
+            ['WAWebAdvSignatureApi', 'WAWebUserPrefsMultiDevice'].forEach((name) => {
+                try {
+                    const mod = window.require(name);
+                    [mod, mod && mod.advSecretEventEmitter].forEach((emitter) => {
+                        if (emitter && typeof emitter.on === 'function') emitter.on('change', tick);
+                    });
+                } catch (_) {}
+            });
+            tick();
+            window.__kayaQrTimer = setInterval(tick, 800);
+        });
+        if (generation !== qrHookGeneration) return;
+        logger.info('Live QR refresh hooked');
+    } catch (e) {
+        if (generation === qrHookGeneration) liveQrHooked = false;
+        logger.warn('Live QR refresh hook failed', { error: e?.message || String(e) });
+    }
+}
+
 function buildClient() {
+    invalidateLiveQrHook();
     const sessionPath = getWhatsAppSessionPath();
     logger.info('WhatsApp session path', { sessionPath });
 
@@ -1182,21 +1319,23 @@ function buildClient() {
 function attachClientEvents(c) {
     c.on('qr', async (qr) => {
         try {
-            logger.info('📱 QR Code Generated');
+            startOfficialQrCanvasPoll(c.pupPage);
+            installLiveQrRefresh(c.pupPage).catch(() => {});
+            if (!isPublishablePairingQr(qr) || qr === lastQrPayload) return;
+            const refreshed = Boolean(lastQrPayload);
+            lastQrPayload = qr;
+            logger.info(refreshed ? '📱 QR refreshed' : '📱 QR Code Generated');
 
             qrcode.generate(qr, { small: true });
 
-            const qrImage = await QRCode.toDataURL(qr);
-            lastQrImageDataUrl = qrImage;
-
-            io.emit('qr', { qr: qrImage });
-
-            // cache in redis
-            redisClient.set(waRedisKey('qr'), qrImage, { EX: 60 }).catch(() => {});
-            redisClient.set(waRedisKey('status'), 'qr').catch(() => {});
-            connectionPhase = 'qr';
-            // تا اسکن نشه، health/reconnect دوباره Chrome را بالا نیاورد
-            isClientStarting = true;
+            if (!usingOfficialCanvas) {
+                const qrImage = await QRCode.toDataURL(qr, {
+                    width: 360,
+                    margin: 1,
+                    errorCorrectionLevel: 'M',
+                });
+                publishQrImage(qrImage);
+            }
         } catch (e) {
             logger.error('QR event error', { error: e?.message });
         }
@@ -1288,6 +1427,8 @@ function attachClientEvents(c) {
         isClientReady = false;
         isClientStarting = false;
         connectionPhase = null;
+        invalidateLiveQrHook();
+        lastQrImageDataUrl = null;
         stopInboundPoll();
         client = null;
 
@@ -1953,6 +2094,7 @@ async function stopWhatsApp() {
     isClientStarting = false;
     connectionPhase = null;
     client = null;
+    invalidateLiveQrHook();
     lastQrImageDataUrl = null;
 
     redisClient.set(waRedisKey('status'), 'stopping').catch(() => {});
@@ -2086,6 +2228,7 @@ app.post('/api/logout', async (req, res) => {
         redisClient.set(waRedisKey('status'), 'logged_out').catch(() => {});
         redisClient.del(waRedisKey('qr')).catch(() => {});
 
+        invalidateLiveQrHook();
         lastQrImageDataUrl = null;
         connectionPhase = null;
         lastAuthFailureMessage = null;
@@ -4645,6 +4788,7 @@ function resetClientState() {
     isClientStarting = false;
     connectionPhase = null;
     lastAuthFailureMessage = null;
+    invalidateLiveQrHook();
     lastQrImageDataUrl = null;
     client = null;
     redisClient.set(waRedisKey('status'), 'disconnected').catch(() => {});
