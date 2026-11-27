@@ -10,6 +10,24 @@ const PLACEHOLDERS = {
     file: '📎 فایل',
 };
 
+function looksLikeEmbeddedMediaPayload(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return false;
+    const compact = raw.replace(/\s+/g, '');
+    if (/^data:(image|video|audio|application)\//i.test(compact)) return true;
+    if (
+        compact.startsWith('/9j/') ||
+        compact.startsWith('iVBORw0KGgo') ||
+        compact.startsWith('R0lGOD') ||
+        compact.startsWith('UklGR') ||
+        compact.startsWith('JVBERi0') ||
+        compact.startsWith('T2dnUw')
+    ) {
+        return true;
+    }
+    return !/\s/.test(raw) && compact.length >= 240 && /^[A-Za-z0-9+/]+=*$/.test(compact);
+}
+
 function looksLikeBareMediaFilename(value) {
     const t = String(value || '').trim();
     if (!t) return true;
@@ -53,9 +71,11 @@ function inboxPreviewFromIncoming({
     msgType,
     hasMedia,
 } = {}) {
-    const fromBody = String(body || '').trim();
-    const fromFile = String(filename || caption || '').trim();
-    let previewText = fromBody || fromFile;
+    const fromBodyRaw = String(body || '').trim();
+    const fromBody = looksLikeEmbeddedMediaPayload(fromBodyRaw) ? '' : fromBodyRaw;
+    const fromCaption = looksLikeEmbeddedMediaPayload(caption) ? '' : String(caption || '').trim();
+    const fromFile = String(filename || '').trim();
+    let previewText = fromBody || fromCaption || fromFile;
     if (!previewText || looksLikeBareMediaFilename(previewText)) {
         if (hasMedia || looksLikeBareMediaFilename(fromFile) || rawType || msgType) {
             previewText = mediaPlaceholder(
@@ -67,7 +87,8 @@ function inboxPreviewFromIncoming({
 }
 
 function inboxPreviewFromOutgoing({ text, hasMedia, isVoice, msgType, filename } = {}) {
-    const fromText = String(text || '').trim();
+    const fromTextRaw = String(text || '').trim();
+    const fromText = looksLikeEmbeddedMediaPayload(fromTextRaw) ? '' : fromTextRaw;
     if (fromText && !looksLikeBareMediaFilename(fromText)) {
         return clipPreview(fromText);
     }
@@ -81,6 +102,7 @@ function inboxPreviewFromOutgoing({ text, hasMedia, isVoice, msgType, filename }
 
 module.exports = {
     looksLikeBareMediaFilename,
+    looksLikeEmbeddedMediaPayload,
     mediaPlaceholder,
     inboxPreviewFromIncoming,
     inboxPreviewFromOutgoing,

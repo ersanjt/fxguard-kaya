@@ -4,6 +4,7 @@
 const assert = require('assert');
 const {
     looksLikeBareMediaFilename,
+    looksLikeEmbeddedMediaPayload,
     inboxPreviewFromIncoming,
     inboxPreviewFromOutgoing,
 } = require('../lib/conversationPreview');
@@ -71,6 +72,31 @@ test('outgoing voice without caption uses voice placeholder', () => {
             filename: 'voice.ogg',
         }),
         '🎤 پیام صوتی'
+    );
+});
+
+test('jpeg base64 is not a caption or inbox preview', () => {
+    const jpeg = '/9j/' + 'A'.repeat(300);
+    assert.strictEqual(looksLikeEmbeddedMediaPayload(jpeg), true);
+    assert.strictEqual(looksLikeEmbeddedMediaPayload('نرخ امروز؟'), false);
+    assert.strictEqual(
+        inboxPreviewFromIncoming({
+            body: jpeg,
+            caption: 'فاکتور',
+            filename: 'image.jpg',
+            rawType: 'image',
+            hasMedia: true,
+        }),
+        'فاکتور'
+    );
+    assert.strictEqual(
+        inboxPreviewFromIncoming({
+            body: jpeg,
+            filename: 'image.jpg',
+            rawType: 'image',
+            hasMedia: true,
+        }),
+        '📷 تصویر'
     );
 });
 

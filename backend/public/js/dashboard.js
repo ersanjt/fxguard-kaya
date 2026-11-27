@@ -5927,6 +5927,14 @@
             }
         }
         /* ========== Kaya CRM chunk-03 | مکالمات، مشتریان، setupGlobalEventHandlers | docs/CODEBASE-MAP.md ========== */
+        function looksLikeEmbeddedMediaPayload(text) {
+            var raw = String(text || '').trim();
+            if (!raw) return false;
+            var compact = raw.replace(/\s+/g, '');
+            if (/^data:(image|video|audio|application)\//i.test(compact)) return true;
+            if (compact.indexOf('/9j/') === 0 || compact.indexOf('iVBORw0KGgo') === 0 || compact.indexOf('R0lGOD') === 0 || compact.indexOf('UklGR') === 0 || compact.indexOf('JVBERi0') === 0 || compact.indexOf('T2dnUw') === 0) return true;
+            return !/\s/.test(raw) && compact.length >= 240 && /^[A-Za-z0-9+/]+=*$/.test(compact);
+        }
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
             const bindOnce = function(el, key, handler) {
@@ -8623,7 +8631,7 @@
                         mediaHtml = '<div class="msg-media msg-media-file">' + buildMsgFileCardHtml(mediaUrl, m.mediaData.filename || m.content, mediaType, fileSizeBytes) + '</div>';
                     }
                 } else if (m.hasMedia && (m.content || (m.mediaData && (m.mediaData.filename || m.mediaData.url)))) {
-                    const fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
+                    const fileName = (m.mediaData && m.mediaData.filename) || (looksLikeEmbeddedMediaPayload(m.content) ? '' : m.content) || (LANG === 'fa' ? 'فایل' : 'File');
                     const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
                     mediaHtml = '<div class="msg-media msg-media-file">' + buildMsgFileCardHtml('', fileName, isImageName ? 'image' : 'document', m.mediaData && m.mediaData.size) + '</div>';
                 }
@@ -8645,10 +8653,14 @@
                     else if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(displayContent)) displayContent = '';
                     else if (displayContent === 'file' || displayContent === '📎 فایل') displayContent = '';
                 }
-                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content && displayContent) contentHtml = '<div class="msg-caption">' + linkifyMessageContent(displayContent) + '</div>';
+                if (looksLikeEmbeddedMediaPayload(displayContent)) {
+                    var safeCaption = (m.mediaData && m.mediaData.caption) ? String(m.mediaData.caption).trim() : '';
+                    displayContent = safeCaption && !looksLikeEmbeddedMediaPayload(safeCaption) ? safeCaption : '';
+                }
+                if (m.hasMedia && m.mediaData && m.mediaData.url && displayContent) contentHtml = '<div class="msg-caption">' + linkifyMessageContent(displayContent) + '</div>';
                 else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url)) && !isWaCallMsg) contentHtml = '<div>' + linkifyMessageContent(displayContent) + '</div>';
-                let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
-                if ((m.content || '').length > 50) preview += '…';
+                let preview = (displayContent || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
+                if ((displayContent || '').length > 50) preview += '…';
                 if (resolvedMediaType === 'audio') {
                     preview = LANG === 'fa' ? '🎤 پیام صوتی' : (LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
                 } else if (resolvedMediaType === 'sticker') {

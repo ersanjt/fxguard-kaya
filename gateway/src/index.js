@@ -456,6 +456,46 @@ function defaultMediaMeta(type) {
     return { mimetype: 'application/octet-stream', filename: 'file.bin' };
 }
 
+function looksLikeEmbeddedMediaPayload(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return false;
+    const compact = raw.replace(/\s+/g, '');
+    if (/^data:(image|video|audio|application)\//i.test(compact)) return true;
+    if (
+        compact.startsWith('/9j/') ||
+        compact.startsWith('iVBORw0KGgo') ||
+        compact.startsWith('R0lGOD') ||
+        compact.startsWith('UklGR') ||
+        compact.startsWith('JVBERi0') ||
+        compact.startsWith('T2dnUw')
+    ) {
+        return true;
+    }
+    return !/\s/.test(raw) && compact.length >= 240 && /^[A-Za-z0-9+/]+=*$/.test(compact);
+}
+
+function historyMessageBody(m) {
+    const body = m && m.body != null ? String(m.body) : '';
+    const caption = m && m.caption != null ? String(m.caption) : '';
+    if (looksLikeEmbeddedMediaPayload(body)) {
+        return looksLikeEmbeddedMediaPayload(caption) ? '' : caption.trim();
+    }
+    return body || caption || (m && m.filename) || '';
+}
+
+function messageTextForCrm(msg) {
+    if (!msg) return '';
+    const caption = String(msg.caption || (msg._data && msg._data.caption) || '').trim();
+    const body = msg.body == null ? '' : String(msg.body);
+    if (looksLikeEmbeddedMediaPayload(body)) {
+        return looksLikeEmbeddedMediaPayload(caption) ? '' : caption;
+    }
+    if (!body.trim() && caption && isMediaMessageType(msg.type, msg.hasMedia)) {
+        return looksLikeEmbeddedMediaPayload(caption) ? '' : caption;
+    }
+    return body;
+}
+
 function isMediaMessageType(type, hasMedia) {
     const t = String(type || '').toLowerCase();
     return (
@@ -768,10 +808,12 @@ async function attachMediaToMessageData(messageData, msg) {
     if (media && media.data) {
         const fallback = defaultMediaMeta(messageData.type || (msg && msg.type));
         messageData.hasMedia = true;
+        const caption = String(messageData.body || '').trim();
         messageData.media = {
             mimetype: media.mimetype || fallback.mimetype,
             filename: media.filename || fallback.filename,
             data: media.data,
+            ...(caption && !looksLikeEmbeddedMediaPayload(caption) ? { caption } : {}),
         };
     }
 }
@@ -1584,7 +1626,7 @@ function attachClientEvents(c) {
             id: waMsgId,
             from: serializedJid(msg.from) || (typeof msg.from === 'string' ? msg.from : '') || '',
             to: serializedJid(msg.to) || (typeof msg.to === 'string' ? msg.to : '') || '',
-            body: msg.body,
+            body: messageTextForCrm(msg),
             timestamp: msg.timestamp,
             hasMedia: msg.hasMedia,
             type: msg.type,
@@ -3094,7 +3136,7 @@ async function hookIncomingMessageObserver() {
                     from,
                     to,
                     chatId,
-                    body: m.body || m.caption || m.filename || '',
+                    body: historyMessageBody(m),
                     timestamp: m.t || 0,
                     type,
                     hasMedia: !!(
@@ -3246,7 +3288,7 @@ async function pollUnreadIncomingMessages() {
                         from,
                         to,
                         chatId,
-                        body: m.body || m.caption || m.filename || '',
+                        body: historyMessageBody(m),
                         timestamp: m.t || 0,
                         type,
                         hasMedia: !!(

@@ -46,7 +46,10 @@ const {
 } = require('../lib/resolveMobileWhatsappUser');
 const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 const { emitNewMessageToAuthorized } = require('../lib/conversationRealtime');
-const { inboxPreviewFromIncoming } = require('../lib/conversationPreview');
+const {
+    inboxPreviewFromIncoming,
+    looksLikeEmbeddedMediaPayload,
+} = require('../lib/conversationPreview');
 const { publishOutgoingMessage } = require('../lib/outgoingQueue');
 
 function mediaUploadDir() {
@@ -234,6 +237,18 @@ function isSameWaDigits(a, b) {
     const y = extractDigits(b);
     if (!x || !y || x.length < 8 || y.length < 8) return false;
     return x === y || x.endsWith(y) || y.endsWith(x);
+}
+
+function textContentForStoredMessage(body, resolvedMedia, hasMedia) {
+    const text = body != null ? String(body).trim() : '';
+    if (text && !looksLikeEmbeddedMediaPayload(text)) return text;
+    const cap =
+        resolvedMedia && resolvedMedia.caption != null
+            ? String(resolvedMedia.caption).trim()
+            : '';
+    if (cap && !looksLikeEmbeddedMediaPayload(cap)) return cap;
+    if (hasMedia && resolvedMedia) return '';
+    return text;
 }
 
 function placeholderForIncomingMedia(rawType) {
@@ -772,6 +787,17 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         if (messageData.isStatus) return;
         const { contact, from, to, timestamp, hasMedia, media, chat } = messageData;
         let { body } = messageData;
+        const mediaCaption = media && media.caption != null ? String(media.caption).trim() : '';
+        if (looksLikeEmbeddedMediaPayload(body)) {
+            body =
+                mediaCaption && !looksLikeEmbeddedMediaPayload(mediaCaption) ? mediaCaption : '';
+        } else if (
+            (!body || !String(body).trim()) &&
+            mediaCaption &&
+            !looksLikeEmbeddedMediaPayload(mediaCaption)
+        ) {
+            body = mediaCaption;
+        }
         const isFromMe = !!messageData.fromMe;
         const groupChatId =
             [chat && chat.id, from, to]
@@ -1263,10 +1289,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 userId: isFromMe ? outboundUserId : null,
                 whatsappId: messageData.id || null,
                 direction: isFromMe ? 'outgoing' : 'incoming',
-                content:
-                    body ||
-                    (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) ||
-                    '',
+                content: textContentForStoredMessage(body, resolvedMedia, hasMedia),
                 type: msgType,
                 hasMedia: !!(hasMedia && resolvedMedia),
                 mediaData: resolvedMedia || null,
