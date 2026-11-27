@@ -2822,6 +2822,7 @@
                 if (!chatEl || !chatEl.contains(e.target)) return;
                 const a = e.target.closest && e.target.closest('.msg-media a[href], a.msg-media-link, a.msg-file-link');
                 if (!a || !a.href) return;
+                if (a.classList.contains('msg-media-image-link')) return;
                 if (e.ctrlKey || e.metaKey || e.button !== 0) return;
                 e.preventDefault();
                 e.stopPropagation();

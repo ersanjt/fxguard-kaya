@@ -2358,6 +2358,8 @@
             if (link) {
                 if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
                 e.preventDefault();
+                e.stopPropagation();
+                if (e.stopImmediatePropagation) e.stopImmediatePropagation();
                 openChatImageViewer(link);
                 return;
             }
@@ -2400,7 +2402,7 @@
         function bindChatImageViewer() {
             if (window._crmChatImageViewerBound) return;
             window._crmChatImageViewerBound = true;
-            document.addEventListener('click', onChatImageViewerClick);
+            document.addEventListener('click', onChatImageViewerClick, true);
             document.addEventListener('keydown', onChatImageViewerKey, true);
         }
         function initChatMessageVoicePlayers(root) {
@@ -2809,7 +2811,7 @@
                         const imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         const fnRaw = (m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         mediaHtml = '<div class="msg-media msg-media-image">' +
-                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-image-link" data-open="1">' +
+                            '<a href="' + escapeHtml(mediaUrl) + '" class="msg-media-link msg-media-image-link" data-open="1">' +
                             '<img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="crmMsgMediaImgErr(this)">' +
                             '</a>' +
                             '<div class="msg-media-image-fallback" hidden>' + buildMsgFileCardHtml(mediaUrl, fnRaw, 'image', fileSizeBytes) + '</div>' +
