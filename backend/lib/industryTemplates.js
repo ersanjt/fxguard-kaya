@@ -13,6 +13,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { Op } = require('sequelize');
 
 const TEMPLATES_DIR = path.join(__dirname, '..', 'data', 'industry-templates');
 const ORDER = ['exchange', 'beauty_clinic', 'hospital', 'tourism', 'health_tourism', 'retail'];
@@ -104,6 +105,11 @@ async function applyTemplate(key, deps) {
             const r = await moduleBuilder.createField({ ...f, entity: 'appointment' }, { templateKey: tpl.key, transaction, skipIfExists: true });
             if (r.created) result.appointmentFields += 1;
         }
+        const retired = await retireOtherTemplateArtifacts(models, moduleBuilder, tpl, transaction);
+        result.removedObjects = retired.removedObjects;
+        result.removedFields = retired.removedFields;
+        result.removedServices = retired.removedServices;
+
         for (let i = 0; i < (tpl.bookableServices || []).length; i++) {
             const s = tpl.bookableServices[i];
             const name = String(s.name || '').trim().slice(0, 120);
@@ -155,6 +161,123 @@ async function applyTemplate(key, deps) {
     return result;
 }
 
+function templateKeySet(items, field) {
+    return new Set((items || []).map((item) => String((item && item[field]) || '').trim().toLowerCase()).filter(Boolean));
+}
+
+/**
+ * ماژول، فیلد و خدمتی که از قالب دیگری آمده و در قالب جدید نیست پاک می‌شود.
+ * ردیف‌های بدون templateKey (ساختهٔ خود سازمان) دست نمی‌خورند.
+ */
+async function retireOtherTemplateArtifacts(models, moduleBuilder, tpl, transaction) {
+    const { CustomObject, FieldDefinition, BookableService, Appointment } = models;
+    const keepObjects = templateKeySet(tpl.objects, 'key');
+    const keepCustomer = templateKeySet(tpl.customerFields, 'key');
+    const keepAppointment = templateKeySet(tpl.appointmentFields, 'key');
+    const keepServices = new Set((tpl.bookableServices || []).map((s) => String((s && s.name) || '').trim()).filter(Boolean));
+    const tagged = { templateKey: { [Op.ne]: null } };
+    const out = { removedObjects: 0, removedFields: 0, removedServices: 0 };
+
+    const objects = await CustomObject.findAll({ where: tagged, transaction });
+    for (const obj of objects) {
+        if (keepObjects.has(String(obj.key || '').toLowerCase())) {
+            if (obj.templateKey !== tpl.key) {
+                obj.templateKey = tpl.key;
+                await obj.save({ transaction });
+            }
+            continue;
+        }
+        await moduleBuilder.deleteObject(obj, { hard: true, transaction });
+        out.removedObjects += 1;
+    }
+
+    const fields = await FieldDefinition.findAll({
+        where: { ...tagged, entity: { [Op.in]: ['customer', 'appointment'] } },
+        transaction,
+    });
+    for (const field of fields) {
+        const keep = field.entity === 'customer' ? keepCustomer : keepAppointment;
+        if (keep.has(String(field.key || '').toLowerCase())) {
+            if (field.templateKey !== tpl.key) {
+                field.templateKey = tpl.key;
+                await field.save({ transaction });
+            }
+            continue;
+        }
+        await field.destroy({ transaction });
+        out.removedFields += 1;
+    }
+
+    const services = await BookableService.findAll({ where: tagged, transaction });
+    for (const service of services) {
+        if (keepServices.has(String(service.name || '').trim())) {
+            if (service.templateKey !== tpl.key) {
+                service.templateKey = tpl.key;
+                await service.save({ transaction });
+            }
+            continue;
+        }
+        if (Appointment) {
+            await Appointment.update({ serviceId: null }, { where: { serviceId: service.id }, transaction });
+        }
+        await service.destroy({ transaction });
+        out.removedServices += 1;
+    }
+    return out;
+}
+
+/** برداشتن یک قالب: ماژول‌ها و فیلدها و خدمات همان قالب پاک می‌شوند. */
+async function removeTemplate(key, deps) {
+    const tpl = getTemplate(key);
+    if (!tpl) {
+        const err = new Error('قالب صنعت یافت نشد');
+        err.status = 404;
+        err.expose = true;
+        throw err;
+    }
+    const { models, moduleBuilder, getPanelSettingsKey } = deps;
+    const { PanelSetting, CustomObject, FieldDefinition, BookableService, Appointment, sequelize } = models;
+    const result = { key: tpl.key, removedObjects: 0, removedFields: 0, removedServices: 0 };
+
+    await sequelize.transaction(async (transaction) => {
+        const objects = await CustomObject.findAll({ where: { templateKey: tpl.key }, transaction });
+        for (const obj of objects) {
+            await moduleBuilder.deleteObject(obj, { hard: true, transaction });
+            result.removedObjects += 1;
+        }
+        const fields = await FieldDefinition.findAll({
+            where: { templateKey: tpl.key, entity: { [Op.in]: ['customer', 'appointment'] } },
+            transaction,
+        });
+        for (const field of fields) {
+            await field.destroy({ transaction });
+            result.removedFields += 1;
+        }
+        const services = await BookableService.findAll({ where: { templateKey: tpl.key }, transaction });
+        for (const service of services) {
+            if (Appointment) {
+                await Appointment.update({ serviceId: null }, { where: { serviceId: service.id }, transaction });
+            }
+            await service.destroy({ transaction });
+            result.removedServices += 1;
+        }
+
+        const panelKey = typeof getPanelSettingsKey === 'function' ? getPanelSettingsKey() : null;
+        if (!panelKey) return;
+        const row = await PanelSetting.findByPk(panelKey, { transaction });
+        if (!row || row.industryKey !== tpl.key) return;
+        let hidden = parseArr(row.hiddenSections);
+        if (Array.isArray(tpl.hiddenSections)) hidden = hidden.filter((h) => !tpl.hiddenSections.includes(h));
+        row.hiddenSections = hidden.length ? JSON.stringify(hidden) : null;
+        const overrides = parseObj(row.labelOverrides);
+        if (tpl.labelOverrides) for (const k of Object.keys(tpl.labelOverrides)) delete overrides[k];
+        row.labelOverrides = Object.keys(overrides).length ? JSON.stringify(overrides) : null;
+        row.industryKey = null;
+        await row.save({ transaction });
+    });
+    return result;
+}
+
 function parseArr(v) {
     if (Array.isArray(v)) return [...v];
     if (!v) return [];
@@ -181,4 +304,4 @@ function _resetCache() {
     cache = null;
 }
 
-module.exports = { listTemplates, getTemplate, applyTemplate, summarize, _resetCache, TEMPLATES_DIR };
+module.exports = { listTemplates, getTemplate, applyTemplate, removeTemplate, summarize, _resetCache, TEMPLATES_DIR };

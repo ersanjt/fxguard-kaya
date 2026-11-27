@@ -2916,16 +2916,27 @@ async function runTests() {
         const r = await asAdmin(req.post('/api/industry-templates/retail/apply'));
         assert.strictEqual(r.status, 200, JSON.stringify(r.body));
         assert(r.body.objects >= 3);
+        assert(r.body.removedObjects >= 1, 'previous template modules removed');
+        const afterRetail = await asAdmin(req.get('/api/objects?all=1'));
+        assert(!afterRetail.body.data.some((o) => o.key === 'treatments'), 'beauty module removed');
+        assert(afterRetail.body.data.some((o) => o.key === 'products' && o.templateKey === 'retail'));
         const vis = await asAdmin(req.get('/api/panel-settings/public/visibility'));
         assert.strictEqual(vis.body.industryKey, 'retail');
         assert.strictEqual(vis.body.labelOverrides.nav_customers.fa, 'مشتریان');
         assert(!vis.body.hiddenSections.includes('services') || true);
         const back = await asAdmin(req.post('/api/industry-templates/exchange/apply'));
         assert.strictEqual(back.status, 200);
+        assert(back.body.removedObjects >= 1, 'retail modules removed');
+        const afterExchange = await asAdmin(req.get('/api/objects?all=1'));
+        assert(!afterExchange.body.data.some((o) => o.templateKey && o.templateKey !== 'exchange'), 'no leftover template modules');
         const vis2 = await asAdmin(req.get('/api/panel-settings/public/visibility'));
         assert.strictEqual(vis2.body.industryKey, 'exchange');
         assert.strictEqual(vis2.body.labelOverrides.nav_customers, undefined, 'retail vocabulary removed');
         assert(!vis2.body.hiddenSections.includes('rates'), 'rates visible again for exchange');
+        const removed = await asAdmin(req.post('/api/industry-templates/exchange/remove'));
+        assert.strictEqual(removed.status, 200);
+        const vis3 = await asAdmin(req.get('/api/panel-settings/public/visibility'));
+        assert.strictEqual(vis3.body.industryKey, null);
     });
 
     await test('PUT /api/panel-settings stores custom labelOverrides and booking reminder settings', async () => {
@@ -3036,7 +3047,9 @@ async function runTests() {
     });
 
     await test('appointment custom fields (entity=appointment) are validated into data', async () => {
-        // «room» را قالب کلینیک زیبایی قبلاً ساخته — تکراری باید 409 باشد
+        // تعویض قالب، فیلد نوبت قالب قبلی را پاک می‌کند؛ پس room را همین‌جا می‌سازیم
+        const room = await asAdmin(req.post('/api/fields')).send({ entity: 'appointment', key: 'room', type: 'text', labels: { fa: 'اتاق' } });
+        assert.strictEqual(room.status, 201, JSON.stringify(room.body));
         const dup = await asAdmin(req.post('/api/fields')).send({ entity: 'appointment', key: 'room', type: 'text', labels: { fa: 'اتاق' } });
         assert.strictEqual(dup.status, 409);
         const f = await asAdmin(req.post('/api/fields')).send({ entity: 'appointment', key: 'chair', type: 'select', labels: { fa: 'صندلی' }, options: [{ value: 'c1' }, { value: 'c2' }] });

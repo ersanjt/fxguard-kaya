@@ -14,7 +14,7 @@ const router = express.Router();
 const models = require('../models');
 const { getPanelSettingsKey } = require('../lib/tenantContext');
 const { isMainAdmin } = require('../lib/permissions');
-const { listTemplates, getTemplate, applyTemplate } = require('../lib/industryTemplates');
+const { listTemplates, getTemplate, applyTemplate, removeTemplate } = require('../lib/industryTemplates');
 const moduleBuilder = require('../services/moduleBuilder');
 const { getPanelSettings } = require('../services/panelSettingsLoader');
 
@@ -41,6 +41,17 @@ router.post('/:key/apply', async (req, res, next) => {
     try {
         if (!canApply(req.user)) return res.status(403).json({ error: 'فقط مالک یا ادمین می‌تواند قالب صنعت را اعمال کند' });
         const result = await applyTemplate(req.params.key, { models, moduleBuilder, getPanelSettingsKey });
+        res.json({ ok: true, ...result });
+    } catch (err) {
+        if (err && err.expose && err.status) return res.status(err.status).json({ error: err.message });
+        next(err);
+    }
+});
+
+router.post('/:key/remove', async (req, res, next) => {
+    try {
+        if (!canApply(req.user)) return res.status(403).json({ error: 'فقط مالک یا ادمین می‌تواند قالب صنعت را بردارد' });
+        const result = await removeTemplate(req.params.key, { models, moduleBuilder, getPanelSettingsKey });
         res.json({ ok: true, ...result });
     } catch (err) {
         if (err && err.expose && err.status) return res.status(err.status).json({ error: err.message });

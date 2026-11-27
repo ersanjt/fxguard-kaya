@@ -182,18 +182,20 @@ async function listFields(entity, objectId = null, { includeInactive = false } =
 }
 
 /** حذف شیء: نرم (پیش‌فرض) یا سخت با همهٔ فیلدها/رکوردها */
-async function deleteObject(object, { hard = false } = {}) {
+async function deleteObject(object, { hard = false, transaction = null } = {}) {
     if (!hard) {
         object.isActive = false;
-        await object.save();
+        await object.save({ transaction });
         return { hard: false };
     }
-    return sequelize.transaction(async (transaction) => {
-        await CustomRecord.destroy({ where: { objectId: object.id }, transaction });
-        await FieldDefinition.destroy({ where: { objectId: object.id }, transaction });
-        await object.destroy({ transaction });
+    const run = async (tx) => {
+        await CustomRecord.destroy({ where: { objectId: object.id }, transaction: tx });
+        await FieldDefinition.destroy({ where: { objectId: object.id }, transaction: tx });
+        await object.destroy({ transaction: tx });
         return { hard: true };
-    });
+    };
+    if (transaction) return run(transaction);
+    return sequelize.transaction(run);
 }
 
 module.exports = {

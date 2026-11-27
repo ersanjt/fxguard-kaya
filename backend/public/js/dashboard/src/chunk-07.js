@@ -957,7 +957,7 @@
             if (!MB.objects.length) { box.innerHTML = '<div class="empty"><span class="empty-icon">▦</span><h3>' + escapeHtml(t('eng_no_modules_title')) + '</h3><p>' + escapeHtml(t('eng_no_modules_body')) + '</p><button type="button" class="btn-primary" onclick="setBuilderTab(\'templates\')">' + escapeHtml(t('mb_tab_templates')) + '</button></div>'; return; }
             box.innerHTML = MB.objects.map(function(o) {
                 var sts = (o.statuses || []).map(function(s) { return '<span class="badge engine-status-badge" style="' + (s.color ? 'background:' + engAttr(s.color) + '22;color:' + engAttr(s.color) : '') + '">' + escapeHtml(engLabel(s.labels, s.key)) + '</span>'; }).join(' ');
-                return '<div class="engine-mb-card' + (o.isActive === false ? ' inactive' : '') + '" style="--svc:' + engAttr(o.color || '#6366f1') + '"><div class="engine-mb-head"><div class="engine-mb-title"><span class="engine-mb-icon">' + escapeHtml(engIcon(o.icon)) + '</span><div><b>' + escapeHtml(engLabel(o.labels, o.key)) + '</b><div class="engine-muted"><code>' + escapeHtml(o.key) + '</code>' + (o.templateKey ? ' · ' + escapeHtml(t('mb_from_template')) + ' ' + escapeHtml(o.templateKey) : '') + (o.isActive === false ? ' · ' + escapeHtml(t('mb_inactive')) : '') + (o.linkToCustomer ? ' · 👤' : '') + (o.hasAssignee ? ' · 🧑‍💼' : '') + (o.showInMenu === false ? ' · 🙈' : '') + '</div></div></div><div class="engine-mb-actions"><button type="button" class="btn-secondary btn-sm" onclick="ENG.key=\'' + engAttr(o.key) + '\';window.__engineRecordsKey=ENG.key;showPage(\'records\')">' + escapeHtml(t('mb_records')) + '</button><button type="button" class="btn-secondary btn-sm" onclick="openModuleForm(\'' + engAttr(o.id) + '\')">' + escapeHtml(t('eng_edit_record')) + '</button>' + (o.isActive === false ? '<button type="button" class="btn-secondary btn-sm" onclick="toggleModule(\'' + engAttr(o.id) + '\', true)">' + escapeHtml(t('bk_act_reopen')) + '</button>' : '<button type="button" class="btn-danger btn-sm" onclick="deleteModule(\'' + engAttr(o.id) + '\', false)">' + escapeHtml(t('eng_delete_record')) + '</button>') + (engIsOwnerAdmin() && o.isActive === false ? '<button type="button" class="btn-danger btn-sm" onclick="deleteModule(\'' + engAttr(o.id) + '\', true)">🗑</button>' : '') + '</div></div>' + (sts ? '<div class="engine-mb-statuses">' + sts + '</div>' : '') + '<div class="engine-mb-fields">' + mbFieldsTableHtml(o.fields, 'record', o.id) + '</div></div>';
+                return '<div class="engine-mb-card' + (o.isActive === false ? ' inactive' : '') + '" style="--svc:' + engAttr(o.color || '#6366f1') + '"><div class="engine-mb-head"><div class="engine-mb-title"><span class="engine-mb-icon">' + escapeHtml(engIcon(o.icon)) + '</span><div><b>' + escapeHtml(engLabel(o.labels, o.key)) + '</b><div class="engine-muted"><code>' + escapeHtml(o.key) + '</code>' + (o.templateKey ? ' · ' + escapeHtml(t('mb_from_template')) + ' ' + escapeHtml(o.templateKey) : '') + (o.isActive === false ? ' · ' + escapeHtml(t('mb_inactive')) : '') + (o.linkToCustomer ? ' · 👤' : '') + (o.hasAssignee ? ' · 🧑‍💼' : '') + (o.showInMenu === false ? ' · 🙈' : '') + '</div></div></div><div class="engine-mb-actions"><button type="button" class="btn-secondary btn-sm" onclick="ENG.key=\'' + engAttr(o.key) + '\';window.__engineRecordsKey=ENG.key;showPage(\'records\')">' + escapeHtml(t('mb_records')) + '</button><button type="button" class="btn-secondary btn-sm" onclick="openModuleForm(\'' + engAttr(o.id) + '\')">' + escapeHtml(t('eng_edit_record')) + '</button>' + (o.isActive === false ? '<button type="button" class="btn-secondary btn-sm" onclick="toggleModule(\'' + engAttr(o.id) + '\', true)">' + escapeHtml(t('bk_act_reopen')) + '</button>' : '<button type="button" class="btn-secondary btn-sm" onclick="toggleModule(\'' + engAttr(o.id) + '\', false)">' + escapeHtml(t('mb_deactivate')) + '</button>') + ((engIsOwnerAdmin() || (currentUser && currentUser.isMainAdmin)) ? '<button type="button" class="btn-danger btn-sm" onclick="deleteModule(\'' + engAttr(o.id) + '\', true)">' + escapeHtml(t('eng_delete_record')) + '</button>' : '') + '</div></div>' + (sts ? '<div class="engine-mb-statuses">' + sts + '</div>' : '') + '<div class="engine-mb-fields">' + mbFieldsTableHtml(o.fields, 'record', o.id) + '</div></div>';
             }).join('');
         }
         async function loadBuilderEntityFields(entity) {
@@ -1148,7 +1148,14 @@
                 var cur = MB.current === tp.key;
                 var c = tp.counts || {};
                 var chips = [c.objects ? engFmtNum(c.objects) + ' ' + t('mb_template_modules') : '', c.customerFields ? engFmtNum(c.customerFields) + ' ' + t('mb_template_fields') : '', c.bookableServices ? engFmtNum(c.bookableServices) + ' ' + t('mb_template_services') : '', tp.booking ? '📅 ' + t('mb_template_booking') : ''].filter(Boolean);
-                return '<div class="engine-tpl-card' + (cur ? ' current' : '') + '"><div class="engine-tpl-head"><b>' + escapeHtml(engLabel(tp.labels, tp.key)) + '</b>' + (cur ? '<span class="badge done">' + escapeHtml(t('mb_template_current')) + '</span>' : '') + '</div><p class="engine-muted">' + escapeHtml(engLabel(tp.description, '')) + '</p><div class="engine-tpl-chips">' + chips.map(function(x) { return '<span class="engine-chip static">' + escapeHtml(x) + '</span>'; }).join('') + '</div>' + (canApply ? '<button type="button" class="btn-primary btn-sm" onclick="applyIndustryTemplate(\'' + engAttr(tp.key) + '\')">' + escapeHtml(t('mb_template_apply')) + '</button>' : '') + '</div>';
+                var actions = '';
+                if (canApply) {
+                    actions = '<div class="engine-tpl-actions">';
+                    if (!cur) actions += '<button type="button" class="btn-primary btn-sm" onclick="applyIndustryTemplate(\'' + engAttr(tp.key) + '\')">' + escapeHtml(t('mb_template_apply')) + '</button>';
+                    if (cur) actions += '<button type="button" class="btn-danger btn-sm" onclick="removeIndustryTemplate(\'' + engAttr(tp.key) + '\')">' + escapeHtml(t('mb_template_remove')) + '</button>';
+                    actions += '</div>';
+                }
+                return '<div class="engine-tpl-card' + (cur ? ' current' : '') + '"><div class="engine-tpl-head"><b>' + escapeHtml(engLabel(tp.labels, tp.key)) + '</b>' + (cur ? '<span class="badge done">' + escapeHtml(t('mb_template_current')) + '</span>' : '') + '</div><p class="engine-muted">' + escapeHtml(engLabel(tp.description, '')) + '</p><div class="engine-tpl-chips">' + chips.map(function(x) { return '<span class="engine-chip static">' + escapeHtml(x) + '</span>'; }).join('') + '</div>' + actions + '</div>';
             }).join('') + '</div>';
         }
         async function applyIndustryTemplate(key) {
@@ -1162,7 +1169,19 @@
             if (typeof loadPanelSettingsAndApply === 'function') { try { await loadPanelSettingsAndApply(); } catch (_) {} }
             loadIndustryTemplates();
         }
+        async function removeIndustryTemplate(key) {
+            var tp = MB.templates.filter(function(x) { return x.key === key; })[0];
+            if (!tp || !confirm(t('mb_template_remove_confirm').replace('{name}', engLabel(tp.labels, key)))) return;
+            var res = await apiFetch('/api/industry-templates/' + encodeURIComponent(key) + '/remove', { method: 'POST', body: JSON.stringify({}) });
+            if (!res.ok) { toast(engErr(res), true); return; }
+            toast(t('mb_template_removed'));
+            ENG.objects = null; ENG.apptFields = null; BK.services = null; ENG_CUSTOMER_FIELDS = null;
+            await engineBootstrapNav();
+            if (typeof loadPanelSettingsAndApply === 'function') { try { await loadPanelSettingsAndApply(); } catch (_) {} }
+            loadIndustryTemplates();
+        }
         window.applyIndustryTemplate = applyIndustryTemplate;
+        window.removeIndustryTemplate = removeIndustryTemplate;
         /* واژگان سازمان */
         function renderVocabPanel() {
             var box = document.getElementById('mbPanelVocab');
