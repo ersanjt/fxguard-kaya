@@ -9749,6 +9749,41 @@
             min-height: 0;
             max-width: 100%;
         }
+        .app > .main-wrap > #totpPromptBanner { flex: 0 0 auto; }
+        .app > .main-wrap > .main {
+            flex: 1 1 auto;
+            min-height: 0;
+            display: flex;
+            align-items: stretch;
+            margin: 0;
+        }
+        .content:has(#pageConversations.show) {
+            display: flex !important;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+            padding: 0 !important;
+        }
+        #pageConversations.show {
+            display: flex !important;
+            flex-direction: column;
+            flex: 1 1 auto;
+            min-height: 0;
+            height: 100%;
+        }
+        #pageConversations.show .conv-layout {
+            flex: 1 1 auto;
+            min-height: 0 !important;
+            height: 100%;
+            align-items: stretch;
+        }
+        #pageConversations .conv-layout .chat-area,
+        #pageConversations .conv-list-wrap,
+        #pageConversations .conv-sidebar {
+            align-self: stretch;
+            min-height: 0;
+        }
         .conv-layout { min-height: 0 !important; }
         @media (min-width: 901px) {
             .header-desktop { flex-wrap: nowrap; min-width: 0; }
