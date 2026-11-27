@@ -9708,6 +9708,77 @@
             .engine-toolbar select { max-width: 100%; }
             .engine-vocab-table td { flex-direction: column; align-items: stretch; }
         }
+        /* پوستهٔ ثابتِ پنجره: بدون اسکرول سند و بدون نیاز به زوم‌اوت، در هر سیستم و هر اندازهٔ پنجره */
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            min-height: 0 !important;
+            height: 100vh !important;
+            height: 100dvh !important;
+            max-height: 100vh !important;
+            max-height: 100dvh !important;
+            overflow: hidden !important;
+        }
+        .app {
+            flex: 1 1 auto;
+            width: 100%;
+            max-width: 100%;
+            min-height: 0;
+            height: 100%;
+            max-height: 100%;
+            overflow: hidden;
+        }
+        .app > .main-wrap {
+            flex: 1 1 auto;
+            min-height: 0;
+            min-width: 0;
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+            padding-bottom: 0 !important;
+        }
+        .bottom-bar {
+            position: relative;
+            inset: auto;
+            flex: 0 0 auto;
+            width: 100%;
+            max-width: 100%;
+        }
+        .main, .content {
+            min-width: 0;
+            min-height: 0;
+            max-width: 100%;
+        }
+        .conv-layout { min-height: 0 !important; }
+        @media (min-width: 901px) {
+            .header-desktop { flex-wrap: nowrap; min-width: 0; }
+            .header-left { flex: 1 1 auto; max-width: none; min-width: 0; }
+            .header-quick-actions, .header-right { flex-shrink: 1; min-width: 0; }
+            .header .user-dropdown-name,
+            .user-dropdown-name {
+                max-width: min(160px, 16vw);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            .sidebar {
+                width: clamp(188px, 16vw, 280px);
+                min-width: 176px;
+                max-width: 280px;
+                flex-shrink: 1;
+                padding-bottom: 12px;
+            }
+            .conv-list-wrap {
+                flex: 0 1 clamp(200px, 26vw, 380px);
+                min-width: min(180px, 100%);
+                max-width: min(380px, 36vw);
+            }
+        }
+        @media (max-width: 1366px) and (min-width: 901px) {
+            .header-page-info { display: none; }
+            .header-quick-btn span { display: none; }
+            .header-whatsapp-status .status-label { display: none; }
+        }
         .engine-view-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
         .engine-view-tabs:empty { display: none; }
         /* فیلدهای schema مشتری در مودال مشتری (بالای ردیف‌های آزاد کلید/مقدار) */
