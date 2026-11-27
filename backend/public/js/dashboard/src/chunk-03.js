@@ -1148,7 +1148,7 @@
                 const activeClass = (c.id === currentConvId) ? ' active' : '';
                 const previewLine = preview || metaPhone || '';
                 const namePrefix = (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '');
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-customer-id="' + escapeHtml(cust.id || '') + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + namePrefix + escapeHtml(name) + '</span><span class="conv-item-top-end"><span class="conv-item-time">' + timeStr + '</span>' + unreadPill + '</span></div>' + (previewLine ? '<div class="conv-item-preview" title="' + escapeHtml(previewLine) + '">' + escapeHtml(previewLine) + '</div>' : '') + '<div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div></div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-customer-id="' + escapeHtml(cust.id || '') + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + namePrefix + isolateBidiHtml(name) + '</span><span class="conv-item-top-end"><span class="conv-item-time">' + timeStr + '</span>' + unreadPill + '</span></div>' + (previewLine ? '<div class="conv-item-preview" title="' + escapeHtml(previewLine) + '">' + isolateBidiHtml(previewLine) + '</div>' : '') + '<div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + isolateBidiHtml(metaPhone) + assigneeMetaSuffix + '</div></div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -1240,6 +1240,16 @@
             if (rawName && (see || !(window.CRM && CRM.Utils && CRM.Utils.looksLikePhone && CRM.Utils.looksLikePhone(rawName)))) return rawName;
             if (see && merged.phone) return String(merged.phone);
             return fallback;
+        }
+        function isolateBidiHtml(text) {
+            var s = String(text || '');
+            if (!s) return '';
+            var phoneLike = window.CRM && CRM.Utils && typeof CRM.Utils.looksLikePhone === 'function' && CRM.Utils.looksLikePhone(s);
+            var digitRun = !phoneLike && /^[+()]?\d[\d\s().+-]{6,}$/.test(s);
+            if (phoneLike || digitRun) {
+                return '<span dir="ltr" class="bidi-isolate">' + escapeHtml(s) + '</span>';
+            }
+            return escapeHtml(s);
         }
         function customerUiPhone(cust) {
             if (window.CRM && CRM.Utils && typeof CRM.Utils.visibleCustomerPhone === 'function') {
@@ -1409,7 +1419,8 @@
             const supPanel = document.getElementById('convSupervisionPanel');
             const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) {
-                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || visiblePhone || t('customer'));
+                var titleText = name || visiblePhone || t('customer');
+                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + isolateBidiHtml(titleText);
             }
             var summaryElEarly = document.getElementById('chatHeaderSummary');
             if (summaryElEarly) {
@@ -1422,7 +1433,7 @@
                 if (currentConvIsGroup) {
                     headerSubEl.textContent = (LANG === 'fa' ? 'گروه · واتساپ' : LANG === 'tr' ? 'Grup · WhatsApp' : 'Group · WhatsApp');
                 } else if (visiblePhone) {
-                    headerSubEl.textContent = visiblePhone;
+                    headerSubEl.innerHTML = isolateBidiHtml(visiblePhone);
                 } else {
                     headerSubEl.textContent = typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp';
                 }
@@ -1482,7 +1493,8 @@
                         profilePic: String((ck.profilePic || '') || '').trim()
                     };
                     if (headerSubEl && !currentConvIsGroup) {
-                        headerSubEl.textContent = detailPhone || (typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp');
+                        var subFallback = typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp';
+                        headerSubEl.innerHTML = detailPhone ? isolateBidiHtml(detailPhone) : escapeHtml(subFallback);
                     }
                 }
                 if (avatarEl && d.customer) {

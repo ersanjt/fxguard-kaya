@@ -376,7 +376,7 @@
         .rate-card-type label, .rate-card-value label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
         .rate-card-value { grid-column: 2; }
         .rate-card-type select, .rate-card-value input { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
-        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(72px, calc(62px + env(safe-area-inset-bottom))); min-height: 0; width: 100%; max-width: 100vw; }
+        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(108px, calc(96px + env(safe-area-inset-bottom))); min-height: 0; width: 100%; max-width: 100vw; }
         body.bottom-bar-hidden .main-wrap { padding-bottom: 0; }
         .sidebar-overlay { display: none; position: fixed; top: var(--mobile-header-height, 0); left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
@@ -1222,7 +1222,7 @@
         .sidebar .nav-subsection .nav-subsection { margin-bottom: 8px; padding-inline-start: 8px; border-inline-start: 2px solid rgba(45,63,95,0.4); }
         .sidebar .nav-subsection-title { display: block; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 16px 6px; margin: 0 8px 4px; opacity: 0.85; border-bottom: 1px solid rgba(45,63,95,0.35); }
         .sidebar a.nav-link,
-        .sidebar .nav-link { display: flex; align-items: center; gap: 14px; padding: 11px 16px; color: var(--text-secondary); text-decoration: none; border-radius: 10px; transition: all 0.2s ease; font-size: 0.9375rem; margin: 0 8px 2px; min-width: 0; position: relative; }
+        .sidebar .nav-link { display: flex; align-items: center; gap: 10px; padding: 11px 16px; color: var(--text-secondary); text-decoration: none; border-radius: 10px; transition: background 0.2s ease, color 0.2s ease; font-size: 0.9375rem; margin: 0 8px 2px; min-width: 0; position: relative; }
         .sidebar a.nav-link > span:last-of-type,
         .sidebar .nav-link > span:last-of-type,
         .sidebar .nav-link-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
@@ -1233,10 +1233,10 @@
         }
         .sidebar a:active { transform: translateX(0); }
         .sidebar a:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
-        .sidebar a.active { background: linear-gradient(90deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.1) 100%); color: var(--accent); font-weight: 600; border-right: 3px solid var(--accent); margin-right: 5px; padding-right: 13px; box-shadow: 0 0 0 1px rgba(16,185,129,0.2); }
-        html[dir="ltr"] .sidebar a.active { border-right: none; border-left: 3px solid var(--accent); margin-right: 8px; margin-left: 5px; padding-right: 16px; padding-left: 13px; background: linear-gradient(270deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.1) 100%); }
+        .sidebar a.active { background: linear-gradient(90deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.1) 100%); color: var(--accent); font-weight: 600; border: none; margin: 0 8px 2px; padding: 11px 16px; box-shadow: inset 3px 0 0 var(--accent); }
+        html[dir="ltr"] .sidebar a.active { margin: 0 8px 2px; padding: 11px 16px; box-shadow: inset -3px 0 0 var(--accent); background: linear-gradient(270deg, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.1) 100%); }
         .sidebar .nav-icon { width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease; border: 1px solid rgba(255,255,255,0.04); pointer-events: none; }
-        .sidebar .nav-icon svg { width: 18px; height: 18px; opacity: 0.9; transition: opacity 0.2s ease; pointer-events: none; }
+        .sidebar .nav-icon svg { display: block; width: 18px; height: 18px; opacity: 0.9; transition: opacity 0.2s ease; pointer-events: none; }
         .sidebar a:hover .nav-icon { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.25); color: var(--accent); }
         .sidebar a:hover .nav-icon svg { opacity: 1; }
         .sidebar a.active .nav-icon { background: rgba(16,185,129,0.35); border-color: rgba(16,185,129,0.5); color: var(--accent); }
@@ -7326,6 +7326,8 @@
                 padding: 10px 12px;
                 background: #202c33;
                 border-bottom: 1px solid rgba(134, 150, 160, 0.15);
+                flex-wrap: wrap;
+                row-gap: 8px;
             }
             #pageConversations.wa-conversations-theme .conv-controls-header-title h2 {
                 font-size: 0.96rem;
@@ -7485,9 +7487,6 @@
             }
             @media (max-width: 1100px) {
                 #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-text {
-                    max-width: 7.5em;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
                     white-space: nowrap;
                 }
                 #pageConversations.wa-conversations-theme .conv-sync-groups-btn {
@@ -7616,6 +7615,21 @@
             border: none;
             border-radius: 0;
             box-shadow: none;
+            min-height: 0;
+        }
+        #pageConversations.wa-conversations-theme .chat-messages .conv-empty-thread {
+            margin: auto;
+            align-self: center;
+            max-width: 28rem;
+        }
+        #pageConversations .bidi-isolate {
+            direction: ltr;
+            unicode-bidi: isolate;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            vertical-align: bottom;
         }
         #pageConversations.wa-conversations-theme .chat-empty-state-inner {
             color: #8696a0;
@@ -7654,6 +7668,11 @@
             font-weight: 500;
             color: #e9edef;
             line-height: 1.2;
+            flex: 0 1 auto;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         #pageConversations.wa-conversations-theme .chat-header-sub {
             font-size: 0.8rem;
@@ -8929,13 +8948,13 @@
         }
         @media (min-width: 901px) {
             #pageConversations.wa-conversations-theme {
-                display: grid;
-                grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
-                grid-template-rows: auto auto minmax(0, 1fr);
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
                 gap: 0;
-                height: calc(100vh - 140px);
-                height: calc(100dvh - 140px);
-                min-height: 620px;
+                height: auto;
+                min-height: 0;
+                max-height: 100%;
                 overflow: hidden;
                 border: 1px solid rgba(134, 150, 160, 0.16);
                 border-radius: 14px;
@@ -8980,9 +8999,6 @@
                 display: none !important;
             }
             #pageConversations.wa-conversations-theme .conv-controls-header .conv-sync-groups-btn .conv-sync-text {
-                max-width: 108px;
-                overflow: hidden;
-                text-overflow: ellipsis;
                 white-space: nowrap;
             }
             #pageConversations.wa-conversations-theme .conv-quick-tabs-bar {
@@ -9077,7 +9093,7 @@
                 grid-template-columns: minmax(300px, min(460px, 42vw)) minmax(0, 1fr);
             }
             #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-text {
-                max-width: 160px;
+                white-space: nowrap;
             }
         }
         #pageConversations.wa-conversations-theme .wa-compose-row {
