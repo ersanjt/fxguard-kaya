@@ -33,6 +33,7 @@
             // Header announcement toggle button
             const annToggleBtn = document.getElementById('headerAnnToggleBtn');
             bindOnce(annToggleBtn, '_crmBoundAnnToggle', toggleAnnouncementMarquee);
+            bindChatImageViewer();
             
             // Header search triggers
             const searchTrigger = document.getElementById('headerSearchTrigger');
@@ -2191,6 +2192,217 @@
             });
         }
         window.crmMsgMediaImgErr = crmMsgMediaImgErr;
+        var chatImageViewerState = { items: [], index: 0, returnFocus: null };
+        function chatImageViewerText(key) {
+            var fa = LANG === 'fa';
+            var tr = LANG === 'tr';
+            if (key === 'close') return fa ? 'بستن' : (tr ? 'Kapat' : 'Close');
+            if (key === 'download') return fa ? 'دانلود' : (tr ? 'İndir' : 'Download');
+            if (key === 'prev') return fa ? 'تصویر قبلی' : (tr ? 'Önceki görsel' : 'Previous image');
+            if (key === 'next') return fa ? 'تصویر بعدی' : (tr ? 'Sonraki görsel' : 'Next image');
+            return '';
+        }
+        function chatImageViewerIcon(name) {
+            if (name === 'close') return '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M18.3 5.71 12 12l6.3 6.29-1.41 1.42L10.59 13.4 4.29 19.7 2.88 18.3 9.17 12 2.88 5.71 4.29 4.29l6.3 6.3 6.29-6.3z"/></svg>';
+            if (name === 'download') return '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M12 3a1 1 0 0 1 1 1v9.17l2.59-2.58a1 1 0 0 1 1.41 1.41l-4.3 4.3a1 1 0 0 1-1.4 0l-4.3-4.3a1 1 0 1 1 1.41-1.41L11 13.17V4a1 1 0 0 1 1-1zm-7 15a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1z"/></svg>';
+            return '<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M14.7 5.3a1 1 0 0 1 0 1.4L9.41 12l5.3 5.3a1 1 0 0 1-1.42 1.4l-6-6a1 1 0 0 1 0-1.4l6-6a1 1 0 0 1 1.41 0z"/></svg>';
+        }
+        function chatImageDownloadName(url, alt) {
+            try {
+                var path = new URL(url, window.location.href).pathname.split('/').pop() || '';
+                path = decodeURIComponent(path);
+                if (path && path.indexOf('.') > 0) return path;
+            } catch (_e) {}
+            if (alt && alt.indexOf('.') > 0) return alt;
+            return 'image.jpg';
+        }
+        function collectChatImages() {
+            var root = document.getElementById('chatMessages');
+            if (!root) return [];
+            return Array.prototype.map.call(root.querySelectorAll('a.msg-media-image-link'), function(link) {
+                var img = link.querySelector('img');
+                var shown = img ? (img.currentSrc || img.getAttribute('src') || '') : '';
+                var href = link.getAttribute('href') || '';
+                var src = (shown.indexOf('blob:') === 0) ? shown : (href || shown);
+                var msg = link.closest ? link.closest('.msg') : null;
+                var cap = msg && msg.querySelector('.msg-caption');
+                var time = msg && msg.querySelector('.msg-footer .time');
+                return {
+                    el: link,
+                    src: src,
+                    alt: (img && img.getAttribute('alt')) || '',
+                    caption: cap ? String(cap.textContent || '').trim() : '',
+                    time: time ? String(time.textContent || '').trim() : ''
+                };
+            }).filter(function(item) { return !!item.src; });
+        }
+        function ensureChatImageViewer() {
+            var el = document.getElementById('chatImageViewer');
+            if (el) return el;
+            el = document.createElement('div');
+            el.id = 'chatImageViewer';
+            el.className = 'chat-image-viewer';
+            el.hidden = true;
+            el.setAttribute('role', 'dialog');
+            el.setAttribute('aria-modal', 'true');
+            el.innerHTML =
+                '<div class="chat-image-viewer-bar">' +
+                '<button type="button" class="chat-image-viewer-btn" data-act="close">' + chatImageViewerIcon('close') + '</button>' +
+                '<div class="chat-image-viewer-title"></div>' +
+                '<a class="chat-image-viewer-btn chat-image-viewer-dl" data-act="download" rel="noopener noreferrer"></a>' +
+                '</div>' +
+                '<div class="chat-image-viewer-stage">' +
+                '<button type="button" class="chat-image-viewer-nav prev" data-act="prev"></button>' +
+                '<img class="chat-image-viewer-img" alt="" data-act="zoom">' +
+                '<button type="button" class="chat-image-viewer-nav next" data-act="next"></button>' +
+                '<div class="chat-image-viewer-caption" hidden></div>' +
+                '</div>';
+            document.body.appendChild(el);
+            var dl = el.querySelector('.chat-image-viewer-dl');
+            if (dl) dl.innerHTML = chatImageViewerIcon('download');
+            el.querySelectorAll('.chat-image-viewer-nav').forEach(function(btn) {
+                btn.innerHTML = chatImageViewerIcon('chevron');
+            });
+            return el;
+        }
+        function renderChatImageViewer() {
+            var el = ensureChatImageViewer();
+            var item = chatImageViewerState.items[chatImageViewerState.index];
+            if (!item) return;
+            var img = el.querySelector('.chat-image-viewer-img');
+            var title = el.querySelector('.chat-image-viewer-title');
+            var caption = el.querySelector('.chat-image-viewer-caption');
+            var dl = el.querySelector('.chat-image-viewer-dl');
+            var prev = el.querySelector('.chat-image-viewer-nav.prev');
+            var next = el.querySelector('.chat-image-viewer-nav.next');
+            var many = chatImageViewerState.items.length > 1;
+            if (img) {
+                img.src = item.src;
+                img.alt = item.alt || chatImageViewerText('close');
+            }
+            if (title) {
+                var bits = [];
+                if (item.time) bits.push(item.time);
+                if (many) bits.push((chatImageViewerState.index + 1) + ' / ' + chatImageViewerState.items.length);
+                title.textContent = bits.join('  ·  ');
+            }
+            if (caption) {
+                caption.textContent = item.caption || '';
+                caption.hidden = !item.caption;
+            }
+            if (dl) {
+                dl.href = item.src.indexOf('blob:') === 0 ? item.src : item.src;
+                dl.setAttribute('download', chatImageDownloadName(item.src, item.alt));
+                dl.setAttribute('aria-label', chatImageViewerText('download'));
+                dl.title = chatImageViewerText('download');
+            }
+            var closeBtn = el.querySelector('[data-act="close"]');
+            if (closeBtn) {
+                closeBtn.setAttribute('aria-label', chatImageViewerText('close'));
+                closeBtn.title = chatImageViewerText('close');
+            }
+            if (prev) {
+                prev.hidden = !many;
+                prev.setAttribute('aria-label', chatImageViewerText('prev'));
+                prev.title = chatImageViewerText('prev');
+            }
+            if (next) {
+                next.hidden = !many;
+                next.setAttribute('aria-label', chatImageViewerText('next'));
+                next.title = chatImageViewerText('next');
+            }
+            el.classList.remove('is-zoomed');
+            el.setAttribute('aria-label', item.caption || item.alt || chatImageViewerText('close'));
+        }
+        function openChatImageViewer(link) {
+            var items = collectChatImages();
+            if (!items.length) return;
+            var index = 0;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].el === link) { index = i; break; }
+            }
+            chatImageViewerState.items = items;
+            chatImageViewerState.index = index;
+            chatImageViewerState.returnFocus = link;
+            var el = ensureChatImageViewer();
+            renderChatImageViewer();
+            el.hidden = false;
+            document.body.classList.add('chat-image-viewer-open');
+            requestAnimationFrame(function() { el.classList.add('is-open'); });
+            var closeBtn = el.querySelector('[data-act="close"]');
+            if (closeBtn && closeBtn.focus) closeBtn.focus();
+        }
+        function closeChatImageViewer() {
+            var el = document.getElementById('chatImageViewer');
+            if (!el || el.hidden) return;
+            el.classList.remove('is-open');
+            document.body.classList.remove('chat-image-viewer-open');
+            var back = chatImageViewerState.returnFocus;
+            window.setTimeout(function() {
+                if (!el.classList.contains('is-open')) {
+                    el.hidden = true;
+                    var img = el.querySelector('.chat-image-viewer-img');
+                    if (img) img.removeAttribute('src');
+                }
+                if (back && back.focus) back.focus();
+            }, 180);
+        }
+        function stepChatImageViewer(delta) {
+            var n = chatImageViewerState.items.length;
+            if (n < 2) return;
+            chatImageViewerState.index = (chatImageViewerState.index + delta + n) % n;
+            renderChatImageViewer();
+        }
+        function onChatImageViewerClick(e) {
+            var link = e.target && e.target.closest && e.target.closest('a.msg-media-image-link');
+            if (link) {
+                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                e.preventDefault();
+                openChatImageViewer(link);
+                return;
+            }
+            var el = document.getElementById('chatImageViewer');
+            if (!el || el.hidden || !el.contains(e.target)) return;
+            var actEl = e.target.closest ? e.target.closest('[data-act]') : null;
+            var act = actEl && actEl.getAttribute('data-act');
+            var stage = el.querySelector('.chat-image-viewer-stage');
+            if (act === 'download') return;
+            if (act === 'close' || e.target === stage || e.target === el) {
+                e.preventDefault();
+                closeChatImageViewer();
+            } else if (act === 'prev') {
+                e.preventDefault();
+                stepChatImageViewer(-1);
+            } else if (act === 'next') {
+                e.preventDefault();
+                stepChatImageViewer(1);
+            } else if (act === 'zoom') {
+                e.preventDefault();
+                el.classList.toggle('is-zoomed');
+            }
+        }
+        function onChatImageViewerKey(e) {
+            var el = document.getElementById('chatImageViewer');
+            if (!el || el.hidden) return;
+            var rtl = (document.documentElement.getAttribute('dir') || '').toLowerCase() === 'rtl';
+            if (e.key === 'Escape') {
+                e.preventDefault();
+                e.stopPropagation();
+                closeChatImageViewer();
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                stepChatImageViewer(rtl ? 1 : -1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                stepChatImageViewer(rtl ? -1 : 1);
+            }
+        }
+        function bindChatImageViewer() {
+            if (window._crmChatImageViewerBound) return;
+            window._crmChatImageViewerBound = true;
+            document.addEventListener('click', onChatImageViewerClick);
+            document.addEventListener('keydown', onChatImageViewerKey, true);
+        }
         function initChatMessageVoicePlayers(root) {
             if (!root || !root.querySelectorAll) return;
             root.querySelectorAll('.msg-voice-player').forEach(function(wrap) {

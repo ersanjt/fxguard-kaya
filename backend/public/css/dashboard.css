@@ -1735,6 +1735,120 @@
             background: rgba(0, 0, 0, 0.18);
         }
         .msg-media-image a.msg-media-image-link { display: block; cursor: pointer; width: 100%; }
+        .chat-image-viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 13000;
+            display: flex;
+            flex-direction: column;
+            background: rgba(11, 20, 26, 0.96);
+            color: #fff;
+            opacity: 0;
+            transition: opacity 0.18s ease;
+        }
+        .chat-image-viewer[hidden] { display: none !important; }
+        .chat-image-viewer.is-open { opacity: 1; }
+        body.chat-image-viewer-open { overflow: hidden; }
+        .chat-image-viewer-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 56px;
+            padding: 8px 10px;
+            padding-top: max(8px, env(safe-area-inset-top));
+        }
+        .chat-image-viewer-title {
+            flex: 1;
+            min-width: 0;
+            text-align: center;
+            font-size: 0.92rem;
+            opacity: 0.92;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .chat-image-viewer-btn {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            border: 0;
+            border-radius: 50%;
+            background: transparent;
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .chat-image-viewer-btn:hover,
+        .chat-image-viewer-nav:hover { background: rgba(255, 255, 255, 0.12); }
+        .chat-image-viewer-stage {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 64px 24px;
+        }
+        .chat-image-viewer-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            cursor: zoom-in;
+            user-select: none;
+            -webkit-user-drag: none;
+        }
+        .chat-image-viewer.is-zoomed .chat-image-viewer-stage {
+            overflow: auto;
+            align-items: flex-start;
+            justify-content: center;
+        }
+        .chat-image-viewer.is-zoomed .chat-image-viewer-img {
+            max-width: none;
+            max-height: none;
+            width: auto;
+            cursor: zoom-out;
+        }
+        .chat-image-viewer-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.35);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .chat-image-viewer-nav[hidden] { display: none !important; }
+        .chat-image-viewer-nav.prev { inset-inline-start: 12px; }
+        .chat-image-viewer-nav.next { inset-inline-end: 12px; }
+        .chat-image-viewer-nav.next svg { transform: scaleX(-1); }
+        html[dir="rtl"] .chat-image-viewer-nav.prev svg { transform: scaleX(-1); }
+        html[dir="rtl"] .chat-image-viewer-nav.next svg { transform: none; }
+        .chat-image-viewer-caption {
+            position: absolute;
+            inset-inline: 0;
+            bottom: 0;
+            margin: 0;
+            padding: 28px 20px 16px;
+            text-align: center;
+            color: #fff;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.72));
+            white-space: pre-wrap;
+        }
+        .chat-image-viewer-caption[hidden] { display: none !important; }
+        @media (max-width: 640px) {
+            .chat-image-viewer-stage { padding-inline: 8px; }
+            .chat-image-viewer-nav.prev { inset-inline-start: 4px; }
+            .chat-image-viewer-nav.next { inset-inline-end: 4px; }
+        }
         .msg-media-image-failed img { display: none !important; min-height: 0; }
         .msg-media-image-fallback { margin-top: 6px; }
         .msg-media-filename { font-size: 0.9rem; color: var(--text-secondary); }
