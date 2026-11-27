@@ -1,0 +1,73 @@
+name: Force Kaya WhatsApp gateway mode
+
+# Cloud token is dead (Application deleted) + Meta account restricted.
+# Switch panel to gateway-only while the live QR session is Ready.
+on:
+  workflow_dispatch:
+
+jobs:
+  force-gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Set connectionMode=gateway and verify gateway ready
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 2m
+          command_timeout: 8m
+          script: |
+            set -e
+            cd /var/www/kayaCRM-kaya
+            SECRET=$(grep '^GATEWAY_API_SECRET=' gateway/.env | cut -d= -f2-)
+            GW_PORT=$(grep '^PORT=' gateway/.env | cut -d= -f2- | tr -d ' "' )
+            GW_PORT=${GW_PORT:-3201}
+
+            echo "== gateway status before =="
+            curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" | head -c 600
+            echo ""
+
+            cd backend
+            node <<'NODE'
+            require('dotenv').config();
+            const { WhatsappConnection, sequelize } = require('./models');
+            (async () => {
+              const row = await WhatsappConnection.findByPk('default', { skipTenantScope: true });
+              if (!row) throw new Error('no WhatsappConnection default');
+              const before = {
+                mode: row.connectionMode,
+                cloudEnabled: row.cloudEnabled,
+                gatewayEnabled: row.gatewayEnabled,
+                phoneId: row.cloudPhoneNumberId || null,
+                hasToken: !!(row.cloudAccessToken && String(row.cloudAccessToken).length > 8),
+              };
+              row.connectionMode = 'gateway';
+              row.gatewayEnabled = true;
+              // Keep cloud flags for later restore, but do not prefer dead cloud.
+              row.cloudEnabled = false;
+              await row.save({ skipTenantScope: true });
+              console.log(JSON.stringify({
+                before,
+                after: {
+                  mode: row.connectionMode,
+                  cloudEnabled: row.cloudEnabled,
+                  gatewayEnabled: row.gatewayEnabled,
+                  phoneId: row.cloudPhoneNumberId || null,
+                },
+              }));
+              await sequelize.close();
+            })().catch((e) => {
+              console.error(e && e.message ? e.message : e);
+              process.exit(1);
+            });
+            NODE
+
+            echo "== gateway status after =="
+            curl -sS -H "X-Gateway-Secret: $SECRET" "http://127.0.0.1:${GW_PORT}/api/status" | head -c 800
+            echo ""
+            echo "== pm2 gateway =="
+            pm2 describe crm-gateway-kaya | grep -E 'status|uptime|restarts' | head -n 10
